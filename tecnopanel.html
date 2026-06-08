@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tecno Panel</title>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;font-size:14px}
+
+/* ── Top bar ── */
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:0;flex-shrink:0;height:54px}
+.logo-area{display:flex;align-items:center;margin-right:28px;white-space:nowrap}
+.tb-nav{display:flex;gap:0;align-items:stretch;flex:1}
+.tb-tab{padding:0 20px;font-size:.87rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;transition:all .15s;height:54px;white-space:nowrap}
+.tb-tab:hover{color:var(--text)}
+.tb-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+.tb-right{display:flex;align-items:center;gap:12px;margin-left:auto}
+.upload-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none;transition:all .15s}
+.upload-btn:hover{color:var(--text);border-color:var(--accent)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ── Content area ── */
+#content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.sheet{display:none;flex:1;flex-direction:column;height:100%}
+.sheet.active{display:flex}
+iframe{border:none;width:100%;flex:1;min-height:0}
+
+/* ── Biblioteca ── */
+#sheet-biblioteca{padding:28px;overflow-y:auto}
+.bib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.bib-header h2{font-size:1.15rem;font-weight:700}
+.section-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.bib-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:32px}
+.bib-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.bc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.bc-type{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:99px}
+.bc-dash{background:rgba(79,142,247,.15);color:var(--accent)}
+.bc-prod{background:rgba(212,43,30,.15);color:var(--brand)}
+.bc-status{display:flex;align-items:center;gap:5px;font-size:.75rem}
+.bc-status.ok{color:var(--green)}.bc-status.empty{color:var(--muted)}
+.bc-name{font-size:.92rem;font-weight:600;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bc-meta{font-size:.75rem;color:var(--muted);margin-bottom:16px}
+.bc-actions{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{opacity:.85}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text)}
+.btn-danger{background:rgba(247,95,95,.15);color:var(--red);border:1px solid rgba(247,95,95,.2)}.btn-danger:hover{opacity:.8}
+.tip{font-size:.78rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;gap:10px;align-items:flex-start}
+.tip-icon{font-size:1.1rem;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo-area">
+    <span style="font-size:26px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:26px;font-weight:900;color:#D42B1E;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:11px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup>
+  </div>
+  <nav class="tb-nav">
+    <div class="tb-tab active" onclick="showSheet('dashboard')">&#127968; Dashboard</div>
+    <div class="tb-tab" onclick="showSheet('produccion')">&#128200; Producción</div>
+    <div class="tb-tab" onclick="showSheet('biblioteca')">&#128193; Biblioteca</div>
+  </nav>
+  <div class="tb-right">
+    <a href="upload.html" class="upload-btn" target="_blank">&#8679; Subir archivo</a>
+  </div>
+</div>
+
+<div id="content">
+
+  <!-- Dashboard -->
+  <div class="sheet active" id="sheet-dashboard">
+    <iframe id="frame-dashboard" src="dashboard.html" title="Dashboard principal"></iframe>
+  </div>
+
+  <!-- Producción -->
+  <div class="sheet" id="sheet-produccion">
+    <iframe id="frame-produccion" src="produccion.html" title="Dashboard de producción"></iframe>
+  </div>
+
+  <!-- Biblioteca -->
+  <div class="sheet" id="sheet-biblioteca">
+    <div class="bib-header">
+      <h2>&#128193; Biblioteca de Archivos</h2>
+      <a href="upload.html" class="btn btn-primary" target="_blank">&#8679; Subir nuevo archivo</a>
+    </div>
+
+    <div class="section-title">Archivos activos</div>
+    <div class="bib-cards" id="bib-cards">
+      <!-- Rendered by JS -->
+    </div>
+
+    <div class="tip">
+      <span class="tip-icon">&#128161;</span>
+      <span>Los archivos se guardan en el navegador. Para actualizar los dashboards con datos nuevos, sube un Excel actualizado desde <a href="upload.html" target="_blank" style="color:var(--accent)">la página de carga</a>. Los cambios se aplican automáticamente al recargar cada dashboard.</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var activeSheet = 'dashboard';
+var framesLoaded = {dashboard: true, produccion: false};
+
+function showSheet(name){
+  // Tabs
+  document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('active'); });
+  event.target.classList.add('active');
+
+  // Sheets
+  document.querySelectorAll('.sheet').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('sheet-' + name).classList.add('active');
+
+  // Lazy-load iframes
+  if(name === 'produccion' && !framesLoaded.produccion){
+    document.getElementById('frame-produccion').src = 'produccion.html';
+    framesLoaded.produccion = true;
+  }
+
+  if(name === 'biblioteca'){
+    renderBib();
+  }
+
+  activeSheet = name;
+}
+
+// ─── Biblioteca renderer ───
+function fmtSize(bytes){
+  if(!bytes) return '—';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+function fmtDate(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function renderBib(){
+  var lib = [];
+  try { lib = JSON.parse(localStorage.getItem('tp_biblioteca')||'[]'); } catch(e){}
+
+  var types = [{key:'dashboard', label:'Dashboard Principal', cls:'bc-dash'},
+               {key:'produccion', label:'Producción — Avance por Módulo', cls:'bc-prod'}];
+
+  var html = types.map(function(t){
+    var entry = lib.find(function(x){ return x.type === t.key; });
+    var hasData = !!entry;
+
+    var statusHtml = hasData
+      ? '<span class="bc-status ok">&#9679; Activo</span>'
+      : '<span class="bc-status empty">&#9679; Sin datos</span>';
+
+    var bodyHtml = hasData
+      ? '<div class="bc-name">' + entry.name + '</div>' +
+        '<div class="bc-meta">' + fmtSize(entry.size) +
+        (entry.rows ? ' &middot; ' + entry.rows.toLocaleString('es-CL') + ' registros' : '') +
+        ' &middot; Cargado ' + fmtDate(entry.date) + '</div>' +
+        '<div class="bc-actions">' +
+          '<button class="btn btn-ghost" onclick="reloadFrame(\'' + t.key + '\')">&#8635; Recargar dashboard</button>' +
+          '<button class="btn btn-danger" onclick="deleteEntry(\'' + t.key + '\')">&#128465;</button>' +
+        '</div>'
+      : '<div class="bc-name" style="color:var(--muted);font-weight:400">Sin archivo cargado</div>' +
+        '<div class="bc-meta" style="margin-bottom:16px">Los dashboards usan datos embebidos por defecto</div>' +
+        '<div class="bc-actions">' +
+          '<a href="upload.html" class="btn btn-ghost" target="_blank">&#8679; Subir archivo</a>' +
+        '</div>';
+
+    return '<div class="bib-card">' +
+      '<div class="bc-head">' +
+        '<span class="bc-type ' + t.cls + '">' + t.label + '</span>' +
+        statusHtml +
+      '</div>' + bodyHtml +
+      '</div>';
+  }).join('');
+
+  document.getElementById('bib-cards').innerHTML = html;
+}
+
+function deleteEntry(tipo){
+  if(!confirm('¿Eliminar este archivo de la biblioteca? Los dashboards volverán a usar los datos embebidos.')) return;
+  localStorage.removeItem('tp_' + tipo + '_data');
+  localStorage.removeItem('tp_' + tipo + '_meta');
+  var lib = [];
+  try { lib = JSON.parse(localStorage.getItem('tp_biblioteca')||'[]'); } catch(e){}
+  lib = lib.filter(function(x){ return x.type !== tipo; });
+  localStorage.setItem('tp_biblioteca', JSON.stringify(lib));
+  renderBib();
+  // Reload the iframe to apply the change
+  reloadFrame(tipo);
+}
+
+function reloadFrame(tipo){
+  var frameId = tipo === 'produccion' ? 'frame-produccion' : 'frame-dashboard';
+  var frame = document.getElementById(frameId);
+  if(frame) frame.src = frame.src;
+}
+
+// Listen for storage events (when upload.html saves new data in another tab)
+window.addEventListener('storage', function(e){
+  if(e.key === 'tp_biblioteca'){
+    if(activeSheet === 'biblioteca') renderBib();
+  }
+  if(e.key === 'tp_dashboard_data'){
+    var f = document.getElementById('frame-dashboard');
+    if(f) f.src = f.src; // reload with new data
+  }
+  if(e.key === 'tp_produccion_data'){
+    var f = document.getElementById('frame-produccion');
+    if(f && framesLoaded.produccion) f.src = f.src;
+  }
+});
+
+renderBib();
+</script>
+</body>
+</html>
