@@ -565,7 +565,7 @@ function showAutoStatus(msg, isErr){
 async function autoLoadFromRepo(){
   showAutoStatus('⏳ Cargando datos…');
   try{
-    const resp=await fetch('data/LA%20CHACRA.xlsm');
+    const resp=await fetch('data/lachacra.xlsm');
     if(!resp.ok) throw new Error('HTTP '+resp.status+' — archivo no encontrado en data/');
     const buf=await resp.arrayBuffer();
     showAutoStatus('⏳ Procesando Excel…');
@@ -1345,4 +1345,4 @@ function renderCompras(){
       const dp=x.difPct!=null?x.difPct*100:null;
       const dpColor=dp==null?'':dp<0?'var(--red)':'var(--green)';
       return`<tr>
-        <td>${fmtDat
+        <td>${fmtDate(x
