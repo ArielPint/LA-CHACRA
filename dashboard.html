@@ -1343,6 +1343,226 @@ function renderCompras(){
       const dt=x.difTotal;
       const dtColor=dt==null?'':dt<0?'var(--red)':'var(--green)';  // neg=más caro=rojo
       const dp=x.difPct!=null?x.difPct*100:null;
-      const dpColor=dp==null?'':dp<0?'var(--red)':'var(--green)';
       return`<tr>
-        <td>${fmtDate(x
+        <td>${fmtDate(x.fechaGuia)}</td>
+        <td>${x.gd||'—'}</td>
+        <td>${(x.desc2||x.desc||'—').substring(0,35)}</td>
+        <td class="num">${fmt(x.cant)}</td>
+        <td class="num">${fmtM(x.valorUN)}</td>
+        <td class="num">${fmtM(x.valorTotal)}</td>
+        <td class="num">${fmtM(x.valorPpto)}</td>
+        <td class="num" style="color:${dtColor}">${fmtM(dt)}</td>
+        <td class="num" style="color:${dpColor}">${dp!=null?dp.toFixed(2)+'%':'—'}</td>
+      </tr>`;
+    }).join('');
+  };
+  document.getElementById('gd-search').oninput=renderGD;
+  ms.onchange=renderGD; renderGD();
+}
+
+// ═══════════════════════════════════════════════
+// PRODUCTOS
+// ═══════════════════════════════════════════════
+let PROD_ALL=[];
+function renderProductos(){
+  const p=DATA.productos||[]; PROD_ALL=p;
+  const criticos=p.filter(x=>x.critico==='PRODUCTO CRITICO');
+  const conAv=p.filter(x=>x.avTeorico!=null);
+  const sobre100=conAv.filter(x=>(x.avTeorico||0)>100).length;
+  const bajo50=conAv.filter(x=>(x.avTeorico||0)<50).length;
+
+  document.getElementById('kpi-productos').innerHTML=kpiHTML([
+    {lbl:'Total productos',    val:fmt(p.length),        cls:'c-blue'},
+    {lbl:'Productos críticos', val:fmt(criticos.length), cls:'c-orange'},
+    {lbl:'Av. teórico >100%',  val:fmt(sobre100),        cls:'c-red',    sub:'exceso consumo'},
+    {lbl:'Av. teórico <50%',   val:fmt(bajo50),          cls:'c-yellow', sub:'en riesgo'},
+  ]);
+
+  const critConAv=criticos.filter(x=>x.avTeorico!=null).sort((a,b)=>b.avTeorico-a.avTeorico);
+  barChart('ch-av-teorico',critConAv.map(x=>(x.descCorta||x.desc||'').substring(0,22)),[{
+    label:'% Avance Teórico',
+    data:critConAv.map(x=>+(x.avTeorico||0).toFixed(2)),
+    backgroundColor:critConAv.map(x=>(x.avTeorico||0)>100?'rgba(248,81,73,.8)':(x.avTeorico||0)>=80?'rgba(63,185,80,.8)':(x.avTeorico||0)>=50?'rgba(227,144,62,.75)':'rgba(248,81,73,.5)'),
+    borderRadius:4
+  }],{horizontal:true,xPct:true,pct:true});
+
+  const critPed=criticos.filter(x=>x.pctAvPedidos!=null).sort((a,b)=>(b.pctAvPedidos||0)-(a.pctAvPedidos||0)).slice(0,15);
+  barChart('ch-av-pedidos',critPed.map(x=>(x.descCorta||'').substring(0,20)),[{
+    label:'% Avance pedidos',
+    data:critPed.map(x=>+((x.pctAvPedidos||0)*100).toFixed(2)),
+    backgroundColor:critPed.map(x=>((x.pctAvPedidos||0)*100)>=90?'rgba(63,185,80,.8)':((x.pctAvPedidos||0)*100)>=60?'rgba(227,144,62,.75)':'rgba(248,81,73,.75)'),
+    borderRadius:5
+  }],{yPct:true,pct:true});
+
+  const conVar=p.filter(x=>x.variacion!=null&&Math.abs(x.variacion||0)>0.01)
+    .sort((a,b)=>Math.abs(b.variacion||0)-Math.abs(a.variacion||0)).slice(0,15);
+  barChart('ch-var-unit',conVar.map(x=>(x.descCorta||'').substring(0,20)),[{
+    label:'% Variación',
+    data:conVar.map(x=>+((x.variacion||0)*100).toFixed(2)),
+    backgroundColor:conVar.map(x=>(x.variacion||0)<0?'rgba(63,185,80,.75)':'rgba(248,81,73,.75)'),
+    borderRadius:5
+  }],{yPct:true,pct:true});
+
+  const cs=document.getElementById('prod-critico');
+  cs.innerHTML=['Todos','PRODUCTO CRITICO','NO CRITICO'].map(v=>`<option>${v}</option>`).join('');
+
+  const renderProd=()=>{
+    const q=document.getElementById('prod-search').value.toLowerCase();
+    const c=cs.value;
+    const filtered=PROD_ALL.filter(x=>{
+      if(c!=='Todos'&&x.critico!==c) return false;
+      if(q&&!((x.desc||'').toLowerCase().includes(q)||(String(x.codigo||'')).toLowerCase().includes(q)||(x.descCorta||'').toLowerCase().includes(q))) return false;
+      return true;
+    }).slice(0,200);
+    document.querySelector('#tbl-productos thead').innerHTML=
+      `<tr><th>Código</th><th>Descripción</th><th>Tipo</th><th>Av. teórico</th><th>% Av. pedidos</th><th>Cant. comprada</th><th>Precio compra</th><th>Variación</th></tr>`;
+    document.querySelector('#tbl-productos tbody').innerHTML=filtered.map(x=>{
+      const av=x.avTeorico,avp=x.pctAvPedidos,vc=x.variacion||0;
+      return`<tr>
+        <td>${x.codigo||'—'}</td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${x.desc||''}">${(x.descCorta||x.desc||'').substring(0,35)}</td>
+        <td>${x.critico==='PRODUCTO CRITICO'?'<span class="badge b-orange">Crítico</span>':'<span class="badge b-blue">Normal</span>'}</td>
+        <td class="num" style="color:${av>100?'var(--red)':av>=80?'var(--green)':av>=50?'var(--yellow)':'var(--red)'}">${av!=null?av.toFixed(2)+'%':'—'}</td>
+        <td class="num">${avp!=null?(avp*100).toFixed(2)+'%':'—'}</td>
+        <td class="num">${fmt(x.cantComprada)}</td>
+        <td class="num">${fmtM(x.precioUN)}</td>
+        <td class="num" style="color:${vc<0?'var(--green)':vc>0?'var(--red)':'var(--text)'}">${(vc*100).toFixed(2)}%</td>
+      </tr>`;
+    }).join('');
+  };
+  document.getElementById('prod-search').oninput=renderProd;
+  cs.onchange=renderProd; renderProd();
+}
+
+// ═══════════════════════════════════════════════
+// STOCK
+// ═══════════════════════════════════════════════
+function renderStock(){
+  const s=DATA.stock||[];
+  const totalValor=s.reduce((a,x)=>a+(x.valorStock||0),0);
+  const totalPerdi=s.reduce((a,x)=>a+(x.valorPerdida||0),0);
+  const criticos=s.filter(x=>(x.alcanceMod||0)<5).length;
+  const modConstruidos=s.find(x=>x.modConstruidos)?.modConstruidos??null;
+
+  document.getElementById('kpi-stock').innerHTML=kpiHTML([
+    {lbl:'Materiales en stock',   val:fmt(s.length),       cls:'c-blue'},
+    {lbl:'Valor total stock',     val:fmtM(totalValor),    cls:'c-green'},
+    {lbl:'Stock crítico (<5 mód)',val:fmt(criticos),       cls:'c-red'},
+    {lbl:'Módulos construidos',   val:fmt(modConstruidos), cls:'c-orange'},
+    {lbl:'Val. pérdidas/proceso', val:fmtM(totalPerdi),    cls:totalPerdi>0?'c-yellow':''},
+  ]);
+
+  // ── Agrupar por tipo (desc) ──
+  const tipoMap={};
+  s.forEach(x=>{
+    const t=x.desc||'Sin desc';
+    if(!tipoMap[t]) tipoMap[t]={alcs:[],val:0,critico:0,bajo:0,ok:0};
+    if(x.alcanceMod!=null) tipoMap[t].alcs.push(x.alcanceMod);
+    tipoMap[t].val+=(x.valorStock||0);
+    const alc=x.alcanceMod||0;
+    if(alc<5) tipoMap[t].critico++;
+    else if(alc<15) tipoMap[t].bajo++;
+    else tipoMap[t].ok++;
+  });
+  const tipos=Object.keys(tipoMap).sort();
+  const cobAvg=tipos.map(t=>{const a=tipoMap[t].alcs;return a.length?+(a.reduce((s,v)=>s+v,0)/a.length).toFixed(2):0;});
+  const valTipo=tipos.map(t=>Math.round(tipoMap[t].val));
+  const critArr=tipos.map(t=>tipoMap[t].critico);
+  const bajoArr=tipos.map(t=>tipoMap[t].bajo);
+  const okArr  =tipos.map(t=>tipoMap[t].ok);
+
+  // Chart 1: cobertura promedio por tipo
+  barChart('ch-cob-tipo', tipos, [{
+    label:'Cobertura prom. (mód.)',
+    data: cobAvg,
+    backgroundColor: cobAvg.map(v=>v<5?'rgba(248,81,73,.82)':v<15?'rgba(210,153,34,.78)':'rgba(63,185,80,.78)'),
+    borderRadius:5
+  }], {horizontal:true});
+
+  // Chart 2: donut valor por tipo
+  doughnutChart('ch-val-tipo', tipos, valTipo,
+    ['#4f8ef7','#D42B1E','#3ecf8e','#f7a24f','#9f7aea','#f75f5f','#38bdf8','#fbbf24',
+     '#a3e635','#e879f9','#67e8f9','#fb923c','#94a3b8','#f472b6','#34d399'],
+    true);
+
+  // Chart 3: criticidad stacked por tipo
+  groupedBar('ch-crit-tipo', tipos, [
+    {label:'Crítico (<5 mód)',  data:critArr, backgroundColor:'rgba(248,81,73,.82)',  borderRadius:3},
+    {label:'Bajo (5-14 mód)',   data:bajoArr, backgroundColor:'rgba(210,153,34,.78)', borderRadius:3},
+    {label:'OK (≥15 mód)',      data:okArr,   backgroundColor:'rgba(63,185,80,.75)',  borderRadius:3}
+  ], {legend:true});
+
+  // Chart 4: top 20 menor alcance individual
+  const sorted=[...s].sort((a,b)=>(a.alcanceMod||0)-(b.alcanceMod||0)).slice(0,20);
+  barChart('ch-alcance',sorted.map(x=>(x.desc||x.material||'').substring(0,22)),[{
+    label:'Alcance (mód.)',data:sorted.map(x=>+(x.alcanceMod||0).toFixed(2)),
+    backgroundColor:sorted.map(x=>(x.alcanceMod||0)<5?'rgba(248,81,73,.8)':(x.alcanceMod||0)<15?'rgba(210,153,34,.75)':'rgba(63,185,80,.75)'),
+    borderRadius:5
+  }],{horizontal:true});
+
+  document.querySelector('#tbl-stock thead').innerHTML=
+    `<tr><th>Material</th><th>Stock físico</th><th>Consumo</th><th>Consumo/mód</th><th>Alcance (mód)</th><th>Val. unitario</th><th>Valor stock</th><th>Estado</th></tr>`;
+  document.querySelector('#tbl-stock tbody').innerHTML=
+    [...s].sort((a,b)=>(a.alcanceMod??999)-(b.alcanceMod??999)).map(x=>{
+    const alc=x.alcanceMod||0;
+    const badge=alc<5?'<span class="badge b-red">Crítico</span>':alc<15?'<span class="badge b-yellow">Bajo</span>':'<span class="badge b-green">OK</span>';
+    return`<tr>
+      <td>${(x.desc||x.material||'—').substring(0,40)}</td>
+      <td class="num">${fmt(x.stockFisico)}</td>
+      <td class="num">${fmt(x.consumo)}</td>
+      <td class="num">${x.consumoMod!=null?x.consumoMod.toFixed(2):'—'}</td>
+      <td class="num" style="color:${alc<5?'var(--red)':alc<15?'var(--yellow)':'var(--green)'}">${alc.toFixed(2)}</td>
+      <td class="num">${fmtM(x.valorUN)}</td>
+      <td class="num">${fmtM(x.valorStock)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// DESPACHOS
+// ═══════════════════════════════════════════════
+function renderDespachos(){
+  const d=DATA.despachos||[];
+  const totalMonto=d.reduce((s,x)=>s+(x.monto||0),0);
+  const nMods=new Set(d.map(x=>x.modulo).filter(Boolean)).size;
+  const modsTerminados=(DATA.modulos||[]).filter(x=>x.termReal).length;
+
+  document.getElementById('kpi-despachos').innerHTML=kpiHTML([
+    {lbl:'Módulos despachados', val:fmt(nMods),           cls:'c-green'},
+    {lbl:'Total GDs emitidas',  val:fmt(d.length),        cls:'c-blue'},
+    {lbl:'Monto total despach.',val:fmtM(totalMonto),     cls:'c-orange'},
+    {lbl:'Monto prom./módulo',  val:fmtM(nMods?totalMonto/nMods:0), cls:''},
+    {lbl:'Módulos terminados',  val:fmt(modsTerminados),  cls:'c-purple', sub:'total avance real'},
+  ]);
+
+  // Módulos despachados por fecha real (eje X = fecha formateada)
+  const fechaMap={};
+  d.forEach(x=>{
+    const d2=parseDate(x.fecha);
+    if(!d2||isNaN(d2)) return;
+    // Use full date as label
+    const lbl=d2.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});
+    fechaMap[lbl]=(fechaMap[lbl]||{count:0,ts:d2.getTime()});
+    fechaMap[lbl].count++;
+  });
+  // Sort by timestamp
+  const fechasSorted=Object.entries(fechaMap).sort((a,b)=>a[1].ts-b[1].ts);
+  barChart('ch-desp-fecha', fechasSorted.map(x=>x[0]),[{
+    label:'Módulos despachados', data:fechasSorted.map(x=>x[1].count),
+    backgroundColor:'rgba(63,185,80,.8)', borderRadius:6,
+  }]);
+
+  // Por torre y tipo
+  const torrTipoMap={};
+  d.forEach(x=>{const k=x.torre||'?',t=x.tipo||'?';if(!torrTipoMap[k])torrTipoMap[k]={};torrTipoMap[k][t]=(torrTipoMap[k][t]||0)+1;});
+  const tKeys=Object.keys(torrTipoMap);
+  const tipos=[...new Set(d.map(x=>x.tipo).filter(Boolean))];
+  groupedBar('ch-desp-torre',tKeys,tipos.map((tipo,i)=>({
+    label:tipo, data:tKeys.map(t=>torrTipoMap[t][tipo]||0),
+    backgroundColor:['rgba(88,166,255,.8)','rgba(63,185,80,.8)','rgba(227,144,62,.8)'][i%3], borderRadius:5
+  })));
+}
+</script>
+</body>
+</html>
