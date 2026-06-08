@@ -547,32 +547,45 @@ document.getElementById('file-input').addEventListener('change',function(e){
 // ═══════════════════════════════════════════════
 // AUTO-LOAD desde data/ del repo
 // ═══════════════════════════════════════════════
+function showAutoStatus(msg, isErr){
+  let el=document.getElementById('auto-load-msg');
+  if(!el){
+    el=document.createElement('div');
+    el.id='auto-load-msg';
+    el.style.cssText='position:fixed;bottom:16px;right:16px;padding:10px 16px;border-radius:8px;font-size:.82rem;font-weight:600;z-index:9999;max-width:320px;';
+    document.body.appendChild(el);
+  }
+  el.textContent=msg;
+  el.style.background=isErr?'rgba(248,81,73,.9)':'rgba(30,35,55,.97)';
+  el.style.color=isErr?'#fff':'#e8eaf0';
+  el.style.border=isErr?'1px solid #f85149':'1px solid #4f8ef7';
+  if(!isErr) setTimeout(()=>{if(el.parentNode)el.remove();},3000);
+}
+
 async function autoLoadFromRepo(){
-  const st=document.getElementById('load-status');
-  const nm=document.getElementById('file-name');
-  st.textContent='⏳ Cargando datos...'; st.className='status-loading';
+  showAutoStatus('⏳ Cargando datos…');
   try{
     const resp=await fetch('data/LA%20CHACRA.xlsm');
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    if(!resp.ok) throw new Error('HTTP '+resp.status+' — archivo no encontrado en data/');
     const buf=await resp.arrayBuffer();
+    showAutoStatus('⏳ Procesando Excel…');
     const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true,dense:true});
     DATA=parseAll(wb);
-    nm.textContent='LA CHACRA.xlsm';
     document.getElementById('prompt').style.display='none';
+    try{ document.getElementById('file-name').textContent='LA CHACRA.xlsm'; }catch(e){}
+    try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
     renderAll();
-    document.querySelector('.tab[data-tab="resumen"]').click();
-    st.textContent='✅ Cargado'; st.className='status-ok';
+    try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
+    showAutoStatus('✅ Datos cargados');
     try{
       localStorage.setItem('tp_dashboard_data',JSON.stringify(DATA));
       localStorage.setItem('tp_dashboard_meta',JSON.stringify({name:'LA CHACRA.xlsm',date:new Date().toISOString()}));
     }catch(e){}
   }catch(err){
-    st.textContent='❌ '+err.message; st.className='status-loading';
-    nm.textContent='Error al cargar';
+    showAutoStatus('❌ '+err.message, true);
     console.error('Auto-load fallido:',err);
   }
 }
-// Llamar cuando XLSX ya esté disponible
 if(typeof XLSX!=='undefined'){
   autoLoadFromRepo();
 }else{
@@ -1332,20 +1345,4 @@ function renderCompras(){
       const dp=x.difPct!=null?x.difPct*100:null;
       const dpColor=dp==null?'':dp<0?'var(--red)':'var(--green)';
       return`<tr>
-        <td>${fmtDate(x.fechaGuia)}</td>
-        <td>${x.gd||'—'}</td>
-        <td>${(x.desc2||x.desc||'—').substring(0,35)}</td>
-        <td class="num">${fmt(x.cant)}</td>
-        <td class="num">${fmtM(x.valorUN)}</td>
-        <td class="num">${fmtM(x.valorTotal)}</td>
-        <td class="num">${fmtM(x.valorPpto)}</td>
-        <td class="num" style="color:${dtColor}">${fmtM(dt)}</td>
-        <td class="num" style="color:${dpColor}">${dp!=null?dp.toFixed(2)+'%':'—'}</td>
-      </tr>`;
-    }).join('');
-  };
-  document.getElementById('gd-search').oninput=renderGD;
-  ms.onchange=renderGD; renderGD();
-}
-
-// ══════════════�
+     
