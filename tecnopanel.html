@@ -10,8 +10,6 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;font-size:14px}
-
-/* ── Top bar ── */
 #topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:0;flex-shrink:0;height:54px}
 .logo-area{display:flex;align-items:center;margin-right:28px;white-space:nowrap}
 .tb-nav{display:flex;gap:0;align-items:stretch;flex:1}
@@ -21,15 +19,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tb-right{display:flex;align-items:center;gap:12px;margin-left:auto}
 .upload-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none;transition:all .15s}
 .upload-btn:hover{color:var(--text);border-color:var(--accent)}
-.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-
-/* ── Content area ── */
 #content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
 .sheet{display:none;flex:1;flex-direction:column;height:100%}
 .sheet.active{display:flex}
 iframe{border:none;width:100%;flex:1;min-height:0}
-
-/* ── Biblioteca ── */
 #sheet-biblioteca{padding:28px;overflow-y:auto}
 .bib-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
 .bib-header h2{font-size:1.15rem;font-weight:700}
@@ -50,35 +43,28 @@ iframe{border:none;width:100%;flex:1;min-height:0}
 .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text)}
 .btn-danger{background:rgba(247,95,95,.15);color:var(--red);border:1px solid rgba(247,95,95,.2)}.btn-danger:hover{opacity:.8}
 .tip{font-size:.78rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;gap:10px;align-items:flex-start}
-.tip-icon{font-size:1.1rem;flex-shrink:0}
-
-/* ── Password modal ── */
+/* Password modal */
 #pwd-modal{display:none;position:fixed;inset:0;background:rgba(15,17,23,.85);z-index:1000;align-items:center;justify-content:center}
 #pwd-modal.visible{display:flex}
 .pwd-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px 32px;width:320px;display:flex;flex-direction:column;gap:14px}
-.pwd-title{font-size:1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.pwd-title{font-size:1rem;font-weight:700}
 .pwd-sub{font-size:.8rem;color:var(--muted)}
-.pwd-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:.92rem;outline:none;width:100%;transition:border-color .15s}
+.pwd-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:.92rem;outline:none;width:100%}
 .pwd-input:focus{border-color:var(--accent)}
 .pwd-error{font-size:.78rem;color:var(--red);display:none}
 .pwd-actions{display:flex;gap:8px;justify-content:flex-end}
-
-/* ── Auto-load overlay ── */
-#autoload-overlay{
-  display:none;position:fixed;inset:0;background:rgba(15,17,23,.92);
-  z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;
-}
-#autoload-overlay.visible{display:flex}
+/* Auto-load overlay */
+#al-overlay{display:none;position:fixed;inset:0;background:rgba(15,17,23,.92);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#al-overlay.visible{display:flex}
 .al-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.al-title{font-size:1rem;font-weight:700;color:var(--text)}
+.al-title{font-size:1rem;font-weight:700}
 .al-msg{font-size:.82rem;color:var(--muted);max-width:340px;text-align:center}
-.al-error{background:rgba(247,95,95,.12);border:1px solid rgba(247,95,95,.25);border-radius:var(--r);padding:12px 18px;color:var(--red);font-size:.82rem;max-width:400px;text-align:center;display:none}
+.al-err{background:rgba(247,95,95,.12);border:1px solid rgba(247,95,95,.25);border-radius:var(--r);padding:12px 18px;color:var(--red);font-size:.82rem;max-width:400px;text-align:center;display:none}
 </style>
 </head>
 <body>
 
-<!-- Password modal -->
 <div id="pwd-modal">
   <div class="pwd-box">
     <div class="pwd-title">&#128274; Acceso restringido</div>
@@ -92,12 +78,11 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   </div>
 </div>
 
-<!-- Auto-load overlay -->
-<div id="autoload-overlay">
-  <div class="al-spinner"></div>
-  <div class="al-title">Cargando datos…</div>
-  <div class="al-msg" id="al-msg">Descargando archivos Excel del repositorio</div>
-  <div class="al-error" id="al-error"></div>
+<div id="al-overlay">
+  <div class="al-spinner" id="al-spinner"></div>
+  <div class="al-title" id="al-title">Cargando datos...</div>
+  <div class="al-msg" id="al-msg">Descargando archivos del repositorio</div>
+  <div class="al-err" id="al-err"></div>
 </div>
 
 <div id="topbar">
@@ -105,74 +90,176 @@ iframe{border:none;width:100%;flex:1;min-height:0}
     <span style="font-size:26px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:26px;font-weight:900;color:#D42B1E;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:11px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup>
   </div>
   <nav class="tb-nav">
-    <div class="tb-tab active" onclick="showSheet('dashboard')">&#127968; Dashboard</div>
-    <div class="tb-tab" onclick="showSheet('produccion')">&#128200; Producción</div>
-    <div class="tb-tab" onclick="requireAdmin(function(){showSheet('biblioteca');},true)">&#128193; Biblioteca</div>
+    <div class="tb-tab active" data-sheet="dashboard" onclick="showSheet(this,'dashboard')">&#127968; Dashboard</div>
+    <div class="tb-tab" data-sheet="produccion" onclick="showSheet(this,'produccion')">&#128200; Produccion</div>
+    <div class="tb-tab" data-sheet="biblioteca" onclick="requireAdmin(this,'biblioteca')">&#128193; Biblioteca</div>
   </nav>
   <div class="tb-right">
-    <button class="upload-btn" onclick="requireAdmin(function(){autoLoad(true);})" id="btn-refresh" title="Descargar datos actualizados del repositorio">&#8635; Actualizar datos</button>
-    <button class="upload-btn" onclick="requireAdmin(function(){window.open('upload.html','_blank');})">&#8679; Subir archivo</button>
+    <button class="upload-btn" onclick="requireAdmin(null,'refresh')">&#8635; Actualizar datos</button>
+    <button class="upload-btn" onclick="requireAdmin(null,'upload')">&#8679; Subir archivo</button>
   </div>
 </div>
 
 <div id="content">
-
-  <!-- Dashboard -->
   <div class="sheet active" id="sheet-dashboard">
-    <iframe id="frame-dashboard" src="dashboard.html" title="Dashboard principal"></iframe>
+    <iframe id="frame-dashboard" src="dashboard.html" title="Dashboard"></iframe>
   </div>
-
-  <!-- Producción -->
   <div class="sheet" id="sheet-produccion">
-    <iframe id="frame-produccion" src="" title="Dashboard de producción"></iframe>
+    <iframe id="frame-produccion" src="" title="Produccion"></iframe>
   </div>
-
-  <!-- Biblioteca -->
   <div class="sheet" id="sheet-biblioteca">
     <div class="bib-header">
       <h2>&#128193; Biblioteca de Archivos</h2>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-ghost" onclick="autoLoad(true)">&#8635; Actualizar desde repo</button>
+        <button class="btn btn-ghost" onclick="doAutoLoad(true)">&#8635; Actualizar desde repo</button>
         <button class="btn btn-primary" onclick="window.open('upload.html','_blank')">&#8679; Subir archivo manual</button>
       </div>
     </div>
-
     <div class="section-title">Archivos activos</div>
     <div class="bib-cards" id="bib-cards"></div>
-
     <div class="tip">
-      <span class="tip-icon">&#128161;</span>
-      <span>Los datos se cargan automáticamente desde el repositorio al abrir la página. Para actualizar: reemplazá los Excel en la carpeta <strong>data/</strong> del repositorio y hacé clic en <strong>Actualizar datos</strong>. También podés subir un archivo manual desde la página de carga.</span>
+      <span style="font-size:1.1rem">&#128161;</span>
+      <span>Los datos se cargan automaticamente desde el repositorio. Para actualizar: reemplaza los Excel en la carpeta <strong>data/</strong> del repositorio y hace clic en <strong>Actualizar datos</strong>.</span>
     </div>
   </div>
-
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════
-// PASSWORD GUARD
-// ══════════════════════════════════════════════════════
-var ADMIN_HASH = '7f4e2b8c1a9d6e3f5b0c2a8d4e7f1b3c'; // salted hash placeholder
-var _pendingAction = null;
-var _tabTarget = null;
+// ── PASSWORD ──────────────────────────────────────────
+var PWD = 'Metal.4855';
+var _pwdAction = null;
 
-function requireAdmin(action, isTab){
-  if(sessionStorage.getItem('tp_admin')==='1'){
-    if(isTab) _activateTab(action); else action();
+function requireAdmin(el, action) {
+  if (sessionStorage.getItem('tp_admin') === '1') {
+    doAction(el, action);
     return;
   }
-  _pendingAction = action;
-  _tabTarget = !!isTab;
-  document.getElementById('pwd-error').style.display='none';
-  document.getElementById('pwd-input').value='';
+  _pwdAction = { el: el, action: action };
+  document.getElementById('pwd-error').style.display = 'none';
+  document.getElementById('pwd-input').value = '';
   document.getElementById('pwd-modal').classList.add('visible');
-  setTimeout(function(){ document.getElementById('pwd-input').focus(); },80);
+  setTimeout(function(){ document.getElementById('pwd-input').focus(); }, 80);
 }
 
-function checkPwd(){
-  var val = document.getElementById('pwd-input').value;
-  if(val === 'Metal.4855'){
-    sessionStorage.setItem('tp_admin','1');
+function checkPwd() {
+  if (document.getElementById('pwd-input').value === PWD) {
+    sessionStorage.setItem('tp_admin', '1');
     closePwd();
-    if(_pendingAction){
-      if(_tabTarget) _activateTab(_pendingAction); else _pendingActio
+    if (_pwdAction) {
+      doAction(_pwdAction.el, _pwdAction.action);
+      _pwdAction = null;
+    }
+  } else {
+    document.getElementById('pwd-error').style.display = 'block';
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-input').focus();
+  }
+}
+
+function closePwd() {
+  document.getElementById('pwd-modal').classList.remove('visible');
+  _pwdAction = null;
+}
+
+function doAction(el, action) {
+  if (action === 'refresh') { doAutoLoad(true); }
+  else if (action === 'upload') { window.open('upload.html', '_blank'); }
+  else if (action === 'biblioteca') { activateSheet(el, 'biblioteca'); }
+}
+
+document.addEventListener('keydown', function(e) {
+  var modal = document.getElementById('pwd-modal');
+  if (!modal.classList.contains('visible')) return;
+  if (e.key === 'Enter') checkPwd();
+  if (e.key === 'Escape') closePwd();
+});
+
+// ── NAVIGATION ────────────────────────────────────────
+var prodLoaded = false;
+
+function showSheet(el, name) { activateSheet(el, name); }
+
+function activateSheet(el, name) {
+  document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('active'); });
+  if (el) el.classList.add('active');
+  else document.querySelectorAll('.tb-tab').forEach(function(t){ if(t.getAttribute('data-sheet')===name) t.classList.add('active'); });
+  document.querySelectorAll('.sheet').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('sheet-'+name).classList.add('active');
+  if (name==='produccion' && !prodLoaded) { document.getElementById('frame-produccion').src='produccion.html'; prodLoaded=true; }
+  if (name==='biblioteca') renderBib();
+}
+
+// ── AUTO-LOAD ─────────────────────────────────────────
+var AL_FILES = ['data/AVANCE POR MODULO.xlsx','data/LA CHACRA.xlsm'];
+function N(v){return(v==null||v===''||isNaN(+v))?null:+v;}
+function pd(v){if(!v)return null;if(v instanceof Date)return new Date(v);if(typeof v==='number')return new Date((v-25569)*86400000);var d=new Date(v);return isNaN(d)?null:d;}
+function sr(wb,name){var ws=wb.Sheets[name];if(!ws)return[];return XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true,dateNF:'yyyy-mm-dd'});}
+function fd(v){if(!v)return null;if(typeof v==='number')return new Date((v-25569)*86400000).toISOString().slice(0,10);if(v instanceof Date)return v.toISOString().slice(0,10);if(typeof v==='string'&&v.match(/^\d{4}-\d{2}-\d{2}/))return v.slice(0,10);return null;}
+
+function parseDash(wb){
+  var d={};
+  d.curva=sr(wb,'CURVA').slice(1).filter(function(r){return r[0];}).map(function(r){return{fecha:r[0],teorico:N(r[1]),diario:N(r[2]),activos:N(r[3]),iniciados:N(r[4]),terminados:N(r[5]),real:N(r[6]),mes:r[8],anio:N(r[9])};});
+  d.avplan=sr(wb,'AV_PLAN').slice(1).filter(function(r){return r[0];}).map(function(r){return{fecha:r[0],initPlan:N(r[1]),planAcum:N(r[2]),initReal:N(r[3]),realAcum:N(r[4]),termPlan:N(r[5]),termPlanAcum:N(r[6]),termReal:N(r[7]),termRealAcum:N(r[8]),mes:r[9],semana:N(r[10]),avance:N(r[11]),termino:N(r[12])};});
+  d.modulos=sr(wb,'AVANCE').slice(1).filter(function(r){return r[0];}).map(function(r){return{torre:r[0],modulo:r[1],serie:r[2],tipo:r[3],avance:N(r[4]),initTeorico:r[5],initReal:r[6],ultReg:r[7],termPlan:r[8],diasSinMov:r[9],termReal:r[10],aportOG:N(r[11]),og:N(r[12]),aportSan:N(r[18]),san:N(r[19]),aportElec:N(r[26]),elec:N(r[27]),aportTerm:N(r[33]),term:N(r[34]),estado:r[56],gapInicio:N(r[57]),gapEstadoInicio:r[58],gapEstadoTermino:r[59]};});
+  d.detalleGD=sr(wb,'DETALLE GD').slice(1).filter(function(r){return r[0]&&r[13]!=null;}).map(function(r){var f=pd(r[0]);return{fechaGuia:r[0],anioGuia:f?f.getFullYear():null,mes:N(r[3]),codigo:r[5],desc:r[6],um:r[7],cant:N(r[8]),cantRec:N(r[10]),valorUN:N(r[11]),valorItem:N(r[12]),valorTotal:N(r[13]),valorPpto:N(r[14]),difUN:N(r[15]),difTotal:N(r[16]),difPct:N(r[17]),gd:r[19],montoGD:N(r[20]),oc:r[21],presupuesto:N(r[22]),totalPpto:N(r[23]),tipoProd:r[27],desc2:r[29]};});
+  d.productos=sr(wb,'PRODUCTOS').slice(1).filter(function(r){return r[0]&&r[1];}).map(function(r){return{codigo:r[0],desc:r[1],descCorta:r[2],grupo:r[3],subgrupo:r[4],ppto:N(r[5]),um:r[6],pptoActual:N(r[7]),critico:r[10],cantMod:N(r[11]),pptoMod:N(r[12]),pptoTorre:N(r[13]),pptoTotal:N(r[14]),cantTotal:N(r[15]),cantComprada:N(r[16]),dev:N(r[17]!=null?r[17]:0),cantRec:N(r[18]),avTeorico:N(r[19]),precioCompra:N(r[20]),precioUN:N(r[21]),proyCompra:N(r[22]),variacion:N(r[23]),pptoFaltante:N(r[24]),pctAvPedidos:N(r[25]),saldoCompra:N(r[26])};});
+  d.stock=sr(wb,'REG STOCK').slice(1).filter(function(r){return r[1];}).map(function(r){return{fecha:r[0],codigo:r[1],material:r[2],um:r[3],totalSol:N(r[4]),cantMod:N(r[5]),stockFisico:N(r[6]),desc:r[7],solicitadoTF:N(r[8]),consumo:N(r[9]),cubPpto:N(r[10]),consumoMod:N(r[11]),alcanceMod:N(r[12]),alcanceFisico:N(r[13]),perdida:N(r[14]!=null?r[14]:0),valorUN:N(r[15]),valorPerdida:N(r[16]!=null?r[16]:0),valorStock:N(r[17]),modConstruidos:N(r[21])};});
+  d.despachos=sr(wb,'GD_MODULOS').slice(1).filter(function(r){return r[0];}).map(function(r){return{fecha:r[0],gd:N(r[1]),serie:N(r[2]),cant:N(r[3]),monto:N(r[4]),modulo:r[5],torre:r[6],tipo:r[7]};});
+  d.homeAvance=(function(){var rows=sr(wb,'HOME AVANCE');var hi=rows.findIndex(function(r){return r.indexOf('MESES')>=0;});if(hi<0)return[];var bi=rows[hi].indexOf('MESES');return rows.slice(hi+1,hi+13).filter(function(r){return r[bi];}).map(function(r){return{mes:r[bi],avEcon:r[bi+5]!=null?+r[bi+5]:null,avEconProy:r[bi+7]!=null?+r[bi+7]:null};});})();
+  return d;
+}
+
+function parseProd(ws){
+  var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+  if(!rows||rows.length<2)return[];
+  var out=[];
+  for(var i=1;i<rows.length;i++){var r=rows[i];if(!r[0])continue;out.push({torre:r[0]||null,modulo:r[1]||null,tipo:r[3]||null,avance:r[4]!=null?+r[4]:null,initTeo:fd(r[5]),initReal:fd(r[6]),ultReg:fd(r[7]),termPlan:fd(r[8]),diasSinMov:r[9]!=null?+r[9]:null,termReal:fd(r[10]),aporteOG:r[11]!=null?+r[11]:null,og:r[12]!=null?+r[12]:null,piso:r[13]!=null?+r[13]:null,tabiques:r[14]!=null?+r[14]:null,muros:r[15]!=null?+r[15]:null,cielo:r[16]!=null?+r[16]:null,balcon:r[17]!=null?+r[17]:null,aporteSan:r[18]!=null?+r[18]:null,san:r[19]!=null?+r[19]:null,redAlcant:r[20]!=null?+r[20]:null,redAgua:r[21]!=null?+r[21]:null,ventil:r[22]!=null?+r[22]:null,tina:r[23]!=null?+r[23]:null,wc:r[24]!=null?+r[24]:null,lavamanos:r[25]!=null?+r[25]:null,aporteElec:r[26]!=null?+r[26]:null,elec:r[27]!=null?+r[27]:null,canaliz:r[28]!=null?+r[28]:null,cableado:r[29]!=null?+r[29]:null,artefactos:r[30]!=null?+r[30]:null,tablero:r[31]!=null?+r[31]:null,cajaPAU:r[32]!=null?+r[32]:null,aporteTerm:r[33]!=null?+r[33]:null,term:r[34]!=null?+r[34]:null,vinilico:r[35]!=null?+r[35]:null,osbCub:r[36]!=null?+r[36]:null,baranda:r[37]!=null?+r[37]:null,osbExt:r[38]!=null?+r[38]:null,smartPanel:r[39]!=null?+r[39]:null,pintExt:r[40]!=null?+r[40]:null,zocalos:r[41]!=null?+r[41]:null,molduras:r[42]!=null?+r[42]:null,pilastreo:r[43]!=null?+r[43]:null,celosias:r[44]!=null?+r[44]:null,ventanas:r[45]!=null?+r[45]:null,puertasAcc:r[46]!=null?+r[46]:null,cerraduras:r[47]!=null?+r[47]:null,revSeca:r[48]!=null?+r[48]:null,revHumeda:r[49]!=null?+r[49]:null,membrana:r[50]!=null?+r[50]:null,limpieza:r[51]!=null?+r[51]:null,puertasDorm:r[52]!=null?+r[52]:null,revBano:r[53]!=null?+r[53]:null,muebleLav:r[54]!=null?+r[54]:null,impermeab:r[55]!=null?+r[55]:null,estadoMod:r[56]||null,diasRetraso:r[95]!=null?+r[95]:0,partidasPend:r[96]||null,catPend:r[97]||null,nPendientes:r[98]!=null?+r[98]:0});}
+  return out;
+}
+
+function saveBib(tipo,name,size,rows){var lib=[];try{lib=JSON.parse(localStorage.getItem('tp_biblioteca')||'[]');}catch(e){}lib=lib.filter(function(x){return x.type!==tipo;});lib.unshift({type:tipo,name:name,date:new Date().toISOString(),size:size,rows:rows});localStorage.setItem('tp_biblioteca',JSON.stringify(lib.slice(0,20)));}
+
+async function doAutoLoad(force) {
+  var hasDash=!!localStorage.getItem('tp_dashboard_data'), hasProd=!!localStorage.getItem('tp_produccion_data');
+  if (!force && hasDash && hasProd) return;
+  var ov=document.getElementById('al-overlay');
+  document.getElementById('al-spinner').style.display='';
+  document.getElementById('al-title').textContent='Cargando datos...';
+  document.getElementById('al-err').style.display='none';
+  ov.classList.add('visible');
+  var loaded=0, errs=[];
+  for (var i=0;i<AL_FILES.length;i++) {
+    var url=AL_FILES[i];
+    document.getElementById('al-msg').textContent='Descargando '+url.split('/').pop()+'...';
+    try {
+      var resp=await fetch(url+'?t='+Date.now());
+      if(!resp.ok){errs.push(url.split('/').pop()+' ('+resp.status+')');continue;}
+      var buf=await resp.arrayBuffer();
+      document.getElementById('al-msg').textContent='Procesando '+url.split('/').pop()+'...';
+      var wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true,dense:true});
+      var sh=wb.SheetNames;
+      if(sh.indexOf('BD_AVANCE')>=0){var p=parseProd(wb.Sheets['BD_AVANCE']);if(p.length){localStorage.setItem('tp_produccion_data',JSON.stringify(p));localStorage.setItem('tp_produccion_meta',JSON.stringify({name:url.split('/').pop(),date:new Date().toISOString(),size:buf.byteLength,auto:true}));saveBib('produccion',url.split('/').pop(),buf.byteLength,p.length);loaded++;}}
+      if(sh.indexOf('CURVA')>=0&&sh.indexOf('AV_PLAN')>=0){var d=parseDash(wb);if(d.modulos&&d.modulos.length){localStorage.setItem('tp_dashboard_data',JSON.stringify(d));localStorage.setItem('tp_dashboard_meta',JSON.stringify({name:url.split('/').pop(),date:new Date().toISOString(),size:buf.byteLength,auto:true}));saveBib('dashboard',url.split('/').pop(),buf.byteLength,d.modulos.length);loaded++;}}
+    } catch(e){errs.push(url.split('/').pop()+': '+e.message);}
+  }
+  ov.classList.remove('visible');
+  if(loaded>0){document.getElementById('frame-dashboard').src='dashboard.html';if(prodLoaded)document.getElementById('frame-produccion').src='produccion.html';}
+  else if(errs.length){document.getElementById('al-spinner').style.display='none';document.getElementById('al-title').textContent='Sin datos';var er=document.getElementById('al-err');er.textContent='No se cargaron los archivos. Usá "Subir archivo". ('+errs.join(', ')+')';er.style.display='block';ov.classList.add('visible');if(!document.getElementById('al-close')){var b=document.createElement('button');b.id='al-close';b.className='btn btn-ghost';b.style.marginTop='8px';b.textContent='Cerrar';b.onclick=function(){ov.classList.remove('visible');};ov.appendChild(b);}}
+}
+
+// ── BIBLIOTECA ────────────────────────────────────────
+function fmtSz(b){if(!b)return '—';if(b<1048576)return (b/1024).toFixed(0)+' KB';return (b/1048576).toFixed(1)+' MB';}
+function fmtDt(s){if(!s)return '—';return new Date(s).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}
+function renderBib(){
+  var lib=[];try{lib=JSON.parse(localStorage.getItem('tp_biblioteca')||'[]');}catch(e){}
+  var types=[{key:'dashboard',label:'Dashboard',cls:'bc-dash'},{key:'produccion',label:'Produccion',cls:'bc-prod'}];
+  document.getElementById('bib-cards').innerHTML=types.map(function(t){
+    var e=lib.find(function(x){return x.type===t.key;});
+    var st=e?'<span class="bc-status ok">&#9679; Activo</span>':'<span class="bc-status empty">&#9679; Sin datos</span>';
+    var body=e?'<div class="bc-name">'+e.name+'</div><div class="bc-meta">'+fmtSz(e.size)+(e.rows?' &middot; '+e.rows.toLocaleString('es-CL')+' reg':'')+'  &middot; '+fmtDt(e.date)+'</div><div class="bc-actions"><button class="btn btn-ghost" onclick="reloadFrame(\''+t.key+'\')">&#8635; Recargar</button><button class="btn btn-danger" onclick="delEntry(\''+t.key+'\')">&#128465;</button></div>':'<div class="bc-name" style="color:var(--muted);font-weight:400">Sin archivo</div><div class="bc-meta" style="margin-bottom:16px">Hace clic en Actualizar datos</div><div class="bc-actions"><button class="btn btn-ghost" onclick="doAutoLoad(true)">&#8635; Cargar</button></div>';
+    return '<div class="bib-card"><div class="bc-head"><span class="bc-type '+t.cls+'">'+t.label+'</span>'+st+'</div>'+body+'</div>';
+  }).join('');
+}
+function delEntry(tipo){if(!confirm('Eliminar datos de '+tipo+'?'))return;localStorage.removeItem('tp_'+tipo+'_data');localStorage.removeItem('tp_'+tipo+'_meta');var lib=[];try{lib=JSON.parse(localStorage.getItem('tp_biblioteca')||'[]');}catch(e){}localStorage.setItem('tp_biblioteca',JSON.stringify(lib.filter(function(x){return x.type!==tipo;})));renderBib();reloadFrame(tipo);}
+function reloadFrame(tipo){var f=document.getElementById(tipo==='produccion'?'frame-produccion':'frame-dashboard');if(f)f.src=f.src;}
+window.addEventListener('storage',function(e){if(e.key==='tp_biblioteca'&&document.getElementById('sheet-biblioteca').classList.contains('active'))renderBib();if(e.key==='tp_dash
