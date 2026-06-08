@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tecno Panel — Producción</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
@@ -715,6 +716,104 @@ document.querySelector(".tab[data-tab=\"partidas\"]").addEventListener("click", 
 document.querySelector(".tab[data-tab=\"alertas\"]").addEventListener("click", function(){ renderAlertas(); }, {once:true});
 document.querySelector(".tab[data-tab=\"detalle\"]").addEventListener("click", function(){ renderDetalle(); }, {once:true});
 addToggles();
+
+// ── Auto-load from repo ───────────────────────────────────────────
+function showAutoStatus(msg, isErr){
+  var el = document.getElementById('prod-auto-msg');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'prod-auto-msg';
+    el.style.cssText = 'position:fixed;bottom:16px;right:16px;padding:10px 16px;border-radius:8px;font-size:.82rem;font-weight:600;z-index:9999;max-width:320px;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = isErr ? 'rgba(248,81,73,.9)' : 'rgba(30,35,55,.97)';
+  el.style.color = isErr ? '#fff' : '#e8eaf0';
+  el.style.border = isErr ? '1px solid #f85149' : '1px solid #4f8ef7';
+  if(!isErr) setTimeout(function(){ if(el.parentNode) el.remove(); }, 3000);
+}
+
+function fmtDateProd(v){
+  if(v == null) return null;
+  if(v instanceof Date) return v.toISOString().slice(0,10);
+  if(typeof v === 'number'){
+    var d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return d.toISOString().slice(0,10);
+  }
+  return String(v).slice(0,10) || null;
+}
+
+async function autoLoadProd(){
+  if(typeof XLSX === 'undefined') return;
+  showAutoStatus('⏳ Cargando producción…');
+  try {
+    var resp = await fetch('data/avance.xlsx');
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    var buf = await resp.arrayBuffer();
+    showAutoStatus('⏳ Procesando…');
+    var wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:true, dense:true});
+    var ws = wb.Sheets['BD_AVANCE'];
+    if(!ws) throw new Error('Hoja BD_AVANCE no encontrada');
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+    var parsed = [];
+    for(var i = 1; i < rows.length; i++){
+      var r = rows[i];
+      if(!r[0]) continue;
+      parsed.push({
+        torre:r[0]||null, modulo:r[1]||null, tipo:r[3]||null,
+        avance:r[4]!=null?+r[4]:null,
+        initTeo:fmtDateProd(r[5]), initReal:fmtDateProd(r[6]),
+        ultReg:fmtDateProd(r[7]), termPlan:fmtDateProd(r[8]),
+        diasSinMov:r[9]!=null?+r[9]:null, termReal:fmtDateProd(r[10]),
+        aporteOG:r[11]!=null?+r[11]:null, og:r[12]!=null?+r[12]:null,
+        piso:r[13]!=null?+r[13]:null, tabiques:r[14]!=null?+r[14]:null,
+        muros:r[15]!=null?+r[15]:null, cielo:r[16]!=null?+r[16]:null,
+        balcon:r[17]!=null?+r[17]:null,
+        aporteSan:r[18]!=null?+r[18]:null, san:r[19]!=null?+r[19]:null,
+        redAlcant:r[20]!=null?+r[20]:null, redAgua:r[21]!=null?+r[21]:null,
+        ventil:r[22]!=null?+r[22]:null, tina:r[23]!=null?+r[23]:null,
+        wc:r[24]!=null?+r[24]:null, lavamanos:r[25]!=null?+r[25]:null,
+        aporteElec:r[26]!=null?+r[26]:null, elec:r[27]!=null?+r[27]:null,
+        canaliz:r[28]!=null?+r[28]:null, cableado:r[29]!=null?+r[29]:null,
+        artefactos:r[30]!=null?+r[30]:null, tablero:r[31]!=null?+r[31]:null,
+        cajaPAU:r[32]!=null?+r[32]:null,
+        aporteTerm:r[33]!=null?+r[33]:null, term:r[34]!=null?+r[34]:null,
+        vinilico:r[35]!=null?+r[35]:null, osbCub:r[36]!=null?+r[36]:null,
+        baranda:r[37]!=null?+r[37]:null, osbExt:r[38]!=null?+r[38]:null,
+        smartPanel:r[39]!=null?+r[39]:null, pintExt:r[40]!=null?+r[40]:null,
+        zocalos:r[41]!=null?+r[41]:null, molduras:r[42]!=null?+r[42]:null,
+        pilastreo:r[43]!=null?+r[43]:null, celosias:r[44]!=null?+r[44]:null,
+        ventanas:r[45]!=null?+r[45]:null, puertasAcc:r[46]!=null?+r[46]:null,
+        cerraduras:r[47]!=null?+r[47]:null, revSeca:r[48]!=null?+r[48]:null,
+        revHumeda:r[49]!=null?+r[49]:null, membrana:r[50]!=null?+r[50]:null,
+        limpieza:r[51]!=null?+r[51]:null, puertasDorm:r[52]!=null?+r[52]:null,
+        revBano:r[53]!=null?+r[53]:null, muebleLav:r[54]!=null?+r[54]:null,
+        impermeab:r[55]!=null?+r[55]:null, estadoMod:r[56]||null,
+        diasRetraso:r[95]!=null?+r[95]:0,
+        partidasPend:r[96]||null, catPend:r[97]||null,
+        nPendientes:r[98]!=null?+r[98]:0
+      });
+    }
+    if(!parsed.length) throw new Error('Sin datos en BD_AVANCE');
+    DATA = parsed;
+    try { localStorage.setItem('tp_produccion_data', JSON.stringify(parsed)); } catch(e){}
+    // Re-render
+    renderResumen();
+    var activeTab = document.querySelector('.tab.active');
+    if(activeTab) activeTab.click();
+    showAutoStatus('✅ Producción actualizada (' + parsed.length + ' módulos)');
+  } catch(err) {
+    showAutoStatus('❌ ' + err.message, true);
+    console.error('autoLoadProd:', err);
+  }
+}
+
+if(typeof XLSX !== 'undefined'){
+  autoLoadProd();
+} else {
+  var xlsxScript = document.querySelector('script[src*="xlsx"]');
+  if(xlsxScript) xlsxScript.addEventListener('load', autoLoadProd);
+}
 </script>
 </body>
 </html>
