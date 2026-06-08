@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tecno Panel</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -50,9 +51,29 @@ iframe{border:none;width:100%;flex:1;min-height:0}
 .btn-danger{background:rgba(247,95,95,.15);color:var(--red);border:1px solid rgba(247,95,95,.2)}.btn-danger:hover{opacity:.8}
 .tip{font-size:.78rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:flex;gap:10px;align-items:flex-start}
 .tip-icon{font-size:1.1rem;flex-shrink:0}
+
+/* ── Auto-load overlay ── */
+#autoload-overlay{
+  display:none;position:fixed;inset:0;background:rgba(15,17,23,.92);
+  z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+#autoload-overlay.visible{display:flex}
+.al-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.al-title{font-size:1rem;font-weight:700;color:var(--text)}
+.al-msg{font-size:.82rem;color:var(--muted);max-width:340px;text-align:center}
+.al-error{background:rgba(247,95,95,.12);border:1px solid rgba(247,95,95,.25);border-radius:var(--r);padding:12px 18px;color:var(--red);font-size:.82rem;max-width:400px;text-align:center;display:none}
 </style>
 </head>
 <body>
+
+<!-- Auto-load overlay -->
+<div id="autoload-overlay">
+  <div class="al-spinner"></div>
+  <div class="al-title">Cargando datos…</div>
+  <div class="al-msg" id="al-msg">Descargando archivos Excel del repositorio</div>
+  <div class="al-error" id="al-error"></div>
+</div>
 
 <div id="topbar">
   <div class="logo-area">
@@ -64,6 +85,7 @@ iframe{border:none;width:100%;flex:1;min-height:0}
     <div class="tb-tab" onclick="showSheet('biblioteca')">&#128193; Biblioteca</div>
   </nav>
   <div class="tb-right">
+    <button class="upload-btn" onclick="autoLoad(true)" id="btn-refresh" title="Descargar datos actualizados del repositorio">&#8635; Actualizar datos</button>
     <a href="upload.html" class="upload-btn" target="_blank">&#8679; Subir archivo</a>
   </div>
 </div>
@@ -77,142 +99,264 @@ iframe{border:none;width:100%;flex:1;min-height:0}
 
   <!-- Producción -->
   <div class="sheet" id="sheet-produccion">
-    <iframe id="frame-produccion" src="produccion.html" title="Dashboard de producción"></iframe>
+    <iframe id="frame-produccion" src="" title="Dashboard de producción"></iframe>
   </div>
 
   <!-- Biblioteca -->
   <div class="sheet" id="sheet-biblioteca">
     <div class="bib-header">
       <h2>&#128193; Biblioteca de Archivos</h2>
-      <a href="upload.html" class="btn btn-primary" target="_blank">&#8679; Subir nuevo archivo</a>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="autoLoad(true)">&#8635; Actualizar desde repo</button>
+        <a href="upload.html" class="btn btn-primary" target="_blank">&#8679; Subir archivo manual</a>
+      </div>
     </div>
 
     <div class="section-title">Archivos activos</div>
-    <div class="bib-cards" id="bib-cards">
-      <!-- Rendered by JS -->
-    </div>
+    <div class="bib-cards" id="bib-cards"></div>
 
     <div class="tip">
       <span class="tip-icon">&#128161;</span>
-      <span>Los archivos se guardan en el navegador. Para actualizar los dashboards con datos nuevos, sube un Excel actualizado desde <a href="upload.html" target="_blank" style="color:var(--accent)">la página de carga</a>. Los cambios se aplican automáticamente al recargar cada dashboard.</span>
+      <span>Los datos se cargan automáticamente desde el repositorio al abrir la página. Para actualizar: reemplazá los Excel en la carpeta <strong>data/</strong> del repositorio y hacé clic en <strong>Actualizar datos</strong>. También podés subir un archivo manual desde la página de carga.</span>
     </div>
   </div>
 
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function N(v){ return (v==null||v===''||isNaN(+v))?null:+v; }
+
+function parseDate(v){
+  if(!v) return null;
+  if(v instanceof Date) return new Date(v);
+  if(typeof v==='number') return new Date((v-25569)*86400000);
+  var d=new Date(v); return isNaN(d)?null:d;
+}
+
+function sheetRows(wb,name){
+  var ws=wb.Sheets[name]; if(!ws) return [];
+  return XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true,dateNF:'yyyy-mm-dd'});
+}
+
+// ── Dashboard parser (AVANCE POR MODULO.xlsx) ──
+function parseDashboard(wb){
+  var d={};
+  d.curva=sheetRows(wb,'CURVA').slice(1).filter(function(r){return r[0];}).map(function(r){return({fecha:r[0],teorico:N(r[1]),diario:N(r[2]),activos:N(r[3]),iniciados:N(r[4]),terminados:N(r[5]),real:N(r[6]),mes:r[8],anio:N(r[9])});});
+  d.avplan=sheetRows(wb,'AV_PLAN').slice(1).filter(function(r){return r[0];}).map(function(r){return({fecha:r[0],initPlan:N(r[1]),planAcum:N(r[2]),initReal:N(r[3]),realAcum:N(r[4]),termPlan:N(r[5]),termPlanAcum:N(r[6]),termReal:N(r[7]),termRealAcum:N(r[8]),mes:r[9],semana:N(r[10]),avance:N(r[11]),termino:N(r[12])});});
+  d.modulos=sheetRows(wb,'AVANCE').slice(1).filter(function(r){return r[0];}).map(function(r){return({torre:r[0],modulo:r[1],serie:r[2],tipo:r[3],avance:N(r[4]),initTeorico:r[5],initReal:r[6],ultReg:r[7],termPlan:r[8],diasSinMov:r[9],termReal:r[10],aportOG:N(r[11]),og:N(r[12]),aportSan:N(r[18]),san:N(r[19]),aportElec:N(r[26]),elec:N(r[27]),aportTerm:N(r[33]),term:N(r[34]),estado:r[56],gapInicio:N(r[57]),gapEstadoInicio:r[58],gapEstadoTermino:r[59]});});
+  d.detalleGD=sheetRows(wb,'DETALLE GD').slice(1).filter(function(r){return r[0]&&r[13]!=null;}).map(function(r){var fd=parseDate(r[0]);return({fechaGuia:r[0],anioGuia:fd?fd.getFullYear():null,mes:N(r[3]),codigo:r[5],desc:r[6],um:r[7],cant:N(r[8]),cantRec:N(r[10]),valorUN:N(r[11]),valorItem:N(r[12]),valorTotal:N(r[13]),valorPpto:N(r[14]),difUN:N(r[15]),difTotal:N(r[16]),difPct:N(r[17]),gd:r[19],montoGD:N(r[20]),oc:r[21],presupuesto:N(r[22]),totalPpto:N(r[23]),tipoProd:r[27],desc2:r[29]});});
+  d.productos=sheetRows(wb,'PRODUCTOS').slice(1).filter(function(r){return r[0]&&r[1];}).map(function(r){return({codigo:r[0],desc:r[1],descCorta:r[2],grupo:r[3],subgrupo:r[4],ppto:N(r[5]),um:r[6],pptoActual:N(r[7]),critico:r[10],cantMod:N(r[11]),pptoMod:N(r[12]),pptoTorre:N(r[13]),pptoTotal:N(r[14]),cantTotal:N(r[15]),cantComprada:N(r[16]),dev:N(r[17]!=null?r[17]:0),cantRec:N(r[18]),avTeorico:N(r[19]),precioCompra:N(r[20]),precioUN:N(r[21]),proyCompra:N(r[22]),variacion:N(r[23]),pptoFaltante:N(r[24]),pctAvPedidos:N(r[25]),saldoCompra:N(r[26])});});
+  d.stock=sheetRows(wb,'REG STOCK').slice(1).filter(function(r){return r[1];}).map(function(r){return({fecha:r[0],codigo:r[1],material:r[2],um:r[3],totalSol:N(r[4]),cantMod:N(r[5]),stockFisico:N(r[6]),desc:r[7],solicitadoTF:N(r[8]),consumo:N(r[9]),cubPpto:N(r[10]),consumoMod:N(r[11]),alcanceMod:N(r[12]),alcanceFisico:N(r[13]),perdida:N(r[14]!=null?r[14]:0),valorUN:N(r[15]),valorPerdida:N(r[16]!=null?r[16]:0),valorStock:N(r[17]),modConstruidos:N(r[21])});});
+  d.despachos=sheetRows(wb,'GD_MODULOS').slice(1).filter(function(r){return r[0];}).map(function(r){return({fecha:r[0],gd:N(r[1]),serie:N(r[2]),cant:N(r[3]),monto:N(r[4]),modulo:r[5],torre:r[6],tipo:r[7]});});
+  d.homeAvance=(function(){
+    var rows=sheetRows(wb,'HOME AVANCE');
+    var hi=rows.findIndex(function(r){return r.indexOf('MESES')>=0;});
+    if(hi<0) return [];
+    var bIdx=rows[hi].indexOf('MESES');
+    return rows.slice(hi+1,hi+13).filter(function(r){return r[bIdx];}).map(function(r){return({mes:r[bIdx],avEcon:r[bIdx+5]!=null?+r[bIdx+5]:null,avEconProy:r[bIdx+7]!=null?+r[bIdx+7]:null});});
+  })();
+  return d;
+}
+
+// ── Producción parser (LA CHACRA.xlsm) ──
+function fmtDate(v){
+  if(!v) return null;
+  if(typeof v==='number'){var d=new Date((v-25569)*86400000);return d.toISOString().slice(0,10);}
+  if(v instanceof Date) return v.toISOString().slice(0,10);
+  if(typeof v==='string'&&v.match(/^\d{4}-\d{2}-\d{2}/)) return v.slice(0,10);
+  return null;
+}
+
+function parseProduccion(ws){
+  var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+  if(!rows||rows.length<2) return [];
+  var out=[];
+  for(var i=1;i<rows.length;i++){
+    var r=rows[i];
+    if(!r[0]) continue;
+    out.push({torre:r[0]||null,modulo:r[1]||null,tipo:r[3]||null,avance:r[4]!=null?+r[4]:null,initTeo:fmtDate(r[5]),initReal:fmtDate(r[6]),ultReg:fmtDate(r[7]),termPlan:fmtDate(r[8]),diasSinMov:r[9]!=null?+r[9]:null,termReal:fmtDate(r[10]),aporteOG:r[11]!=null?+r[11]:null,og:r[12]!=null?+r[12]:null,piso:r[13]!=null?+r[13]:null,tabiques:r[14]!=null?+r[14]:null,muros:r[15]!=null?+r[15]:null,cielo:r[16]!=null?+r[16]:null,balcon:r[17]!=null?+r[17]:null,aporteSan:r[18]!=null?+r[18]:null,san:r[19]!=null?+r[19]:null,redAlcant:r[20]!=null?+r[20]:null,redAgua:r[21]!=null?+r[21]:null,ventil:r[22]!=null?+r[22]:null,tina:r[23]!=null?+r[23]:null,wc:r[24]!=null?+r[24]:null,lavamanos:r[25]!=null?+r[25]:null,aporteElec:r[26]!=null?+r[26]:null,elec:r[27]!=null?+r[27]:null,canaliz:r[28]!=null?+r[28]:null,cableado:r[29]!=null?+r[29]:null,artefactos:r[30]!=null?+r[30]:null,tablero:r[31]!=null?+r[31]:null,cajaPAU:r[32]!=null?+r[32]:null,aporteTerm:r[33]!=null?+r[33]:null,term:r[34]!=null?+r[34]:null,vinilico:r[35]!=null?+r[35]:null,osbCub:r[36]!=null?+r[36]:null,baranda:r[37]!=null?+r[37]:null,osbExt:r[38]!=null?+r[38]:null,smartPanel:r[39]!=null?+r[39]:null,pintExt:r[40]!=null?+r[40]:null,zocalos:r[41]!=null?+r[41]:null,molduras:r[42]!=null?+r[42]:null,pilastreo:r[43]!=null?+r[43]:null,celosias:r[44]!=null?+r[44]:null,ventanas:r[45]!=null?+r[45]:null,puertasAcc:r[46]!=null?+r[46]:null,cerraduras:r[47]!=null?+r[47]:null,revSeca:r[48]!=null?+r[48]:null,revHumeda:r[49]!=null?+r[49]:null,membrana:r[50]!=null?+r[50]:null,limpieza:r[51]!=null?+r[51]:null,puertasDorm:r[52]!=null?+r[52]:null,revBano:r[53]!=null?+r[53]:null,muebleLav:r[54]!=null?+r[54]:null,impermeab:r[55]!=null?+r[55]:null,estadoMod:r[56]||null,diasRetraso:r[95]!=null?+r[95]:0,partidasPend:r[96]||null,catPend:r[97]||null,nPendientes:r[98]!=null?+r[98]:0});
+  }
+  return out;
+}
+
+// ══════════════════════════════════════════════════════
+// AUTO-LOAD
+// ══════════════════════════════════════════════════════
+var AL_FILES = [
+  { url: 'data/AVANCE POR MODULO.xlsx', label: 'AVANCE POR MODULO.xlsx' },
+  { url: 'data/LA CHACRA.xlsm',         label: 'LA CHACRA.xlsm'         }
+];
+
+function setAlMsg(txt){ document.getElementById('al-msg').textContent = txt; }
+function showOverlay(v){ document.getElementById('autoload-overlay').classList.toggle('visible',v); }
+function showAlError(msg){
+  var el=document.getElementById('al-error');
+  el.style.display=msg?'block':'none';
+  if(msg) el.textContent=msg;
+}
+
+async function autoLoad(force){
+  var hasDash = !!localStorage.getItem('tp_dashboard_data');
+  var hasProd = !!localStorage.getItem('tp_produccion_data');
+  if(!force && hasDash && hasProd) return; // already loaded
+
+  showOverlay(true);
+  showAlError('');
+  var loaded = 0, errors = [];
+
+  for(var i=0;i<AL_FILES.length;i++){
+    var f = AL_FILES[i];
+    setAlMsg('Descargando ' + f.label + '…');
+    try {
+      var resp = await fetch(f.url + '?t=' + Date.now());
+      if(!resp.ok){ errors.push(f.label + ' (HTTP ' + resp.status + ')'); continue; }
+      var buf = await resp.arrayBuffer();
+      setAlMsg('Procesando ' + f.label + '…');
+      var wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:true, dense:true});
+      var sheets = wb.SheetNames;
+
+      if(sheets.indexOf('BD_AVANCE') >= 0){
+        // Producción
+        var prod = parseProduccion(wb.Sheets['BD_AVANCE']);
+        if(prod.length){
+          localStorage.setItem('tp_produccion_data', JSON.stringify(prod));
+          localStorage.setItem('tp_produccion_meta', JSON.stringify({name:f.label,date:new Date().toISOString(),size:buf.byteLength,autoLoaded:true}));
+          updateBiblioteca('produccion', f.label, buf.byteLength, prod.length);
+          loaded++;
+        }
+      }
+
+      if(sheets.indexOf('CURVA') >= 0 && sheets.indexOf('AV_PLAN') >= 0){
+        // Dashboard
+        var dash = parseDashboard(wb);
+        if(dash.modulos && dash.modulos.length){
+          localStorage.setItem('tp_dashboard_data', JSON.stringify(dash));
+          localStorage.setItem('tp_dashboard_meta', JSON.stringify({name:f.label,date:new Date().toISOString(),size:buf.byteLength,autoLoaded:true}));
+          updateBiblioteca('dashboard', f.label, buf.byteLength, dash.modulos.length);
+          loaded++;
+        }
+      }
+    } catch(e){
+      errors.push(f.label + ': ' + e.message);
+    }
+  }
+
+  showOverlay(false);
+
+  if(errors.length && loaded === 0){
+    // Both failed — probably files not uploaded to data/ yet
+    showAlError('No se pudieron cargar los archivos automáticamente. Subí el Excel manualmente desde "Subir archivo".\n\nDetalle: ' + errors.join(' | '));
+    showOverlay(true);
+    document.querySelector('.al-spinner').style.display='none';
+    document.querySelector('.al-title').textContent='Sin datos';
+    // Add close button
+    if(!document.getElementById('al-close-btn')){
+      var btn=document.createElement('button');
+      btn.id='al-close-btn';
+      btn.className='btn btn-ghost';
+      btn.style.marginTop='8px';
+      btn.textContent='Cerrar';
+      btn.onclick=function(){showOverlay(false);document.querySelector('.al-spinner').style.display='';document.querySelector('.al-title').textContent='Cargando datos…';};
+      document.getElementById('autoload-overlay').appendChild(btn);
+    }
+  } else if(loaded > 0){
+    // Reload iframes with fresh data
+    var fd=document.getElementById('frame-dashboard');
+    fd.src='dashboard.html';
+    if(framesLoaded.produccion){
+      var fp=document.getElementById('frame-produccion');
+      fp.src='produccion.html';
+    }
+  }
+}
+
+function updateBiblioteca(tipo, name, size, rows){
+  var lib=[];
+  try{ lib=JSON.parse(localStorage.getItem('tp_biblioteca')||'[]'); }catch(e){}
+  lib=lib.filter(function(x){return x.type!==tipo;});
+  lib.unshift({type:tipo,name:name,date:new Date().toISOString(),size:size,rows:rows});
+  localStorage.setItem('tp_biblioteca',JSON.stringify(lib.slice(0,20)));
+}
+
+// ══════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════
 var activeSheet = 'dashboard';
 var framesLoaded = {dashboard: true, produccion: false};
 
 function showSheet(name){
-  // Tabs
   document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('active'); });
   event.target.classList.add('active');
-
-  // Sheets
   document.querySelectorAll('.sheet').forEach(function(s){ s.classList.remove('active'); });
   document.getElementById('sheet-' + name).classList.add('active');
 
-  // Lazy-load iframes
   if(name === 'produccion' && !framesLoaded.produccion){
     document.getElementById('frame-produccion').src = 'produccion.html';
     framesLoaded.produccion = true;
   }
-
-  if(name === 'biblioteca'){
-    renderBib();
-  }
-
+  if(name === 'biblioteca') renderBib();
   activeSheet = name;
 }
 
-// ─── Biblioteca renderer ───
+// ── Biblioteca renderer ──
 function fmtSize(bytes){
   if(!bytes) return '—';
   if(bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
   return (bytes/1024/1024).toFixed(1) + ' MB';
 }
-function fmtDate(iso){
+function fmtFecha(iso){
   if(!iso) return '—';
   return new Date(iso).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 
 function renderBib(){
-  var lib = [];
-  try { lib = JSON.parse(localStorage.getItem('tp_biblioteca')||'[]'); } catch(e){}
-
-  var types = [{key:'dashboard', label:'Dashboard Principal', cls:'bc-dash'},
-               {key:'produccion', label:'Producción — Avance por Módulo', cls:'bc-prod'}];
-
-  var html = types.map(function(t){
-    var entry = lib.find(function(x){ return x.type === t.key; });
-    var hasData = !!entry;
-
-    var statusHtml = hasData
-      ? '<span class="bc-status ok">&#9679; Activo</span>'
-      : '<span class="bc-status empty">&#9679; Sin datos</span>';
-
-    var bodyHtml = hasData
-      ? '<div class="bc-name">' + entry.name + '</div>' +
-        '<div class="bc-meta">' + fmtSize(entry.size) +
-        (entry.rows ? ' &middot; ' + entry.rows.toLocaleString('es-CL') + ' registros' : '') +
-        ' &middot; Cargado ' + fmtDate(entry.date) + '</div>' +
-        '<div class="bc-actions">' +
-          '<button class="btn btn-ghost" onclick="reloadFrame(\'' + t.key + '\')">&#8635; Recargar dashboard</button>' +
-          '<button class="btn btn-danger" onclick="deleteEntry(\'' + t.key + '\')">&#128465;</button>' +
-        '</div>'
-      : '<div class="bc-name" style="color:var(--muted);font-weight:400">Sin archivo cargado</div>' +
-        '<div class="bc-meta" style="margin-bottom:16px">Los dashboards usan datos embebidos por defecto</div>' +
-        '<div class="bc-actions">' +
-          '<a href="upload.html" class="btn btn-ghost" target="_blank">&#8679; Subir archivo</a>' +
-        '</div>';
-
-    return '<div class="bib-card">' +
-      '<div class="bc-head">' +
-        '<span class="bc-type ' + t.cls + '">' + t.label + '</span>' +
-        statusHtml +
-      '</div>' + bodyHtml +
-      '</div>';
+  var lib=[];
+  try{ lib=JSON.parse(localStorage.getItem('tp_biblioteca')||'[]'); }catch(e){}
+  var types=[{key:'dashboard',label:'Dashboard Principal',cls:'bc-dash'},{key:'produccion',label:'Producción — Avance por Módulo',cls:'bc-prod'}];
+  var html=types.map(function(t){
+    var entry=lib.find(function(x){return x.type===t.key;});
+    var hasData=!!entry;
+    var statusHtml=hasData?'<span class="bc-status ok">&#9679; Activo</span>':'<span class="bc-status empty">&#9679; Sin datos</span>';
+    var bodyHtml=hasData
+      ?'<div class="bc-name">'+entry.name+'</div><div class="bc-meta">'+fmtSize(entry.size)+(entry.rows?' &middot; '+entry.rows.toLocaleString('es-CL')+' registros':'')+' &middot; Actualizado '+fmtFecha(entry.date)+'</div><div class="bc-actions"><button class="btn btn-ghost" onclick="reloadFrame(\''+t.key+'\')">&#8635; Recargar</button><button class="btn btn-danger" onclick="deleteEntry(\''+t.key+'\')">&#128465;</button></div>'
+      :'<div class="bc-name" style="color:var(--muted);font-weight:400">Sin archivo cargado</div><div class="bc-meta" style="margin-bottom:16px">Hacé clic en "Actualizar datos" para cargar desde el repositorio</div><div class="bc-actions"><button class="btn btn-ghost" onclick="autoLoad(true)">&#8635; Cargar desde repo</button></div>';
+    return '<div class="bib-card"><div class="bc-head"><span class="bc-type '+t.cls+'">'+t.label+'</span>'+statusHtml+'</div>'+bodyHtml+'</div>';
   }).join('');
-
-  document.getElementById('bib-cards').innerHTML = html;
+  document.getElementById('bib-cards').innerHTML=html;
 }
 
 function deleteEntry(tipo){
-  if(!confirm('¿Eliminar este archivo de la biblioteca? Los dashboards volverán a usar los datos embebidos.')) return;
-  localStorage.removeItem('tp_' + tipo + '_data');
-  localStorage.removeItem('tp_' + tipo + '_meta');
-  var lib = [];
-  try { lib = JSON.parse(localStorage.getItem('tp_biblioteca')||'[]'); } catch(e){}
-  lib = lib.filter(function(x){ return x.type !== tipo; });
-  localStorage.setItem('tp_biblioteca', JSON.stringify(lib));
+  if(!confirm('¿Eliminar este archivo de la biblioteca?')) return;
+  localStorage.removeItem('tp_'+tipo+'_data');
+  localStorage.removeItem('tp_'+tipo+'_meta');
+  var lib=[];
+  try{ lib=JSON.parse(localStorage.getItem('tp_biblioteca')||'[]'); }catch(e){}
+  lib=lib.filter(function(x){return x.type!==tipo;});
+  localStorage.setItem('tp_biblioteca',JSON.stringify(lib));
   renderBib();
-  // Reload the iframe to apply the change
   reloadFrame(tipo);
 }
 
 function reloadFrame(tipo){
-  var frameId = tipo === 'produccion' ? 'frame-produccion' : 'frame-dashboard';
-  var frame = document.getElementById(frameId);
-  if(frame) frame.src = frame.src;
+  var frameId=tipo==='produccion'?'frame-produccion':'frame-dashboard';
+  var frame=document.getElementById(frameId);
+  if(frame) frame.src=frame.src;
 }
 
-// Listen for storage events (when upload.html saves new data in another tab)
-window.addEventListener('storage', function(e){
-  if(e.key === 'tp_biblioteca'){
-    if(activeSheet === 'biblioteca') renderBib();
-  }
-  if(e.key === 'tp_dashboard_data'){
-    var f = document.getElementById('frame-dashboard');
-    if(f) f.src = f.src; // reload with new data
-  }
-  if(e.key === 'tp_produccion_data'){
-    var f = document.getElementById('frame-produccion');
-    if(f && framesLoaded.produccion) f.src = f.src;
-  }
+window.addEventListener('storage',function(e){
+  if(e.key==='tp_biblioteca'){ if(activeSheet==='biblioteca') renderBib(); }
+  if(e.key==='tp_dashboard_data'){ var f=document.getElementById('frame-dashboard'); if(f) f.src=f.src; }
+  if(e.key==='tp_produccion_data'){ var f=document.getElementById('frame-produccion'); if(f&&framesLoaded.produccion) f.src=f.src; }
 });
 
-renderBib();
+// ── Init ──
+document.addEventListener('DOMContentLoaded', function(){
+  autoLoad(false);
+  renderBib();
+});
 </script>
 </body>
 </html>
