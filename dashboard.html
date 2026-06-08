@@ -545,6 +545,35 @@ document.getElementById('file-input').addEventListener('change',function(e){
 });
 
 // ═══════════════════════════════════════════════
+// AUTO-LOAD desde data/ del repo
+// ═══════════════════════════════════════════════
+async function autoLoadFromRepo(){
+  const st=document.getElementById('load-status');
+  const nm=document.getElementById('file-name');
+  st.textContent='⏳ Cargando datos...'; st.className='status-loading';
+  try{
+    const resp=await fetch('data/LA%20CHACRA.xlsm');
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const buf=await resp.arrayBuffer();
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true,dense:true});
+    DATA=parseAll(wb);
+    nm.textContent='LA CHACRA.xlsm';
+    document.getElementById('prompt').style.display='none';
+    renderAll();
+    document.querySelector('.tab[data-tab="resumen"]').click();
+    st.textContent='✅ Cargado'; st.className='status-ok';
+    try{
+      localStorage.setItem('tp_dashboard_data',JSON.stringify(DATA));
+      localStorage.setItem('tp_dashboard_meta',JSON.stringify({name:'LA CHACRA.xlsm',date:new Date().toISOString()}));
+    }catch(e){}
+  }catch(err){
+    st.textContent=''; nm.textContent='Sin archivo cargado';
+    console.warn('Auto-load fallido:',err);
+  }
+}
+autoLoadFromRepo();
+
+// ═══════════════════════════════════════════════
 // PARSE
 // ═══════════════════════════════════════════════
 function sheetRows(wb,name){
@@ -1315,28 +1344,4 @@ function renderCompras(){
 
 // ═══════════════════════════════════════════════
 // PRODUCTOS
-// ═══════════════════════════════════════════════
-let PROD_ALL=[];
-function renderProductos(){
-  const p=DATA.productos||[]; PROD_ALL=p;
-  const criticos=p.filter(x=>x.critico==='PRODUCTO CRITICO');
-  const conAv=p.filter(x=>x.avTeorico!=null);
-  const sobre100=conAv.filter(x=>(x.avTeorico||0)>100).length;
-  const bajo50=conAv.filter(x=>(x.avTeorico||0)<50).length;
-
-  document.getElementById('kpi-productos').innerHTML=kpiHTML([
-    {lbl:'Total productos',    val:fmt(p.length),        cls:'c-blue'},
-    {lbl:'Productos críticos', val:fmt(criticos.length), cls:'c-orange'},
-    {lbl:'Av. teórico >100%',  val:fmt(sobre100),        cls:'c-red',    sub:'exceso consumo'},
-    {lbl:'Av. teórico <50%',   val:fmt(bajo50),          cls:'c-yellow', sub:'en riesgo'},
-  ]);
-
-  const critConAv=criticos.filter(x=>x.avTeorico!=null).sort((a,b)=>b.avTeorico-a.avTeorico);
-  barChart('ch-av-teorico',critConAv.map(x=>(x.descCorta||x.desc||'').substring(0,22)),[{
-    label:'% Avance Teórico',
-    data:critConAv.map(x=>+(x.avTeorico||0).toFixed(2)),
-    backgroundColor:critConAv.map(x=>(x.avTeorico||0)>100?'rgba(248,81,73,.8)':(x.avTeorico||0)>=80?'rgba(63,185,80,.8)':(x.avTeorico||0)>=50?'rgba(227,144,62,.75)':'rgba(248,81,73,.5)'),
-    borderRadius:4
-  }],{horizontal:true,xPct:true,pct:true});
-
-  const critPed=criticos.filter(x=>x.pctAvPedidos!=null).sort((a,b)=>(b.pctAvPedidos||0)-(a.pctAvPedidos||0)).slic
+// ════════════════════════════════════�
