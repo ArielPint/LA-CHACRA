@@ -567,11 +567,17 @@ async function autoLoadFromRepo(){
       localStorage.setItem('tp_dashboard_meta',JSON.stringify({name:'LA CHACRA.xlsm',date:new Date().toISOString()}));
     }catch(e){}
   }catch(err){
-    st.textContent=''; nm.textContent='Sin archivo cargado';
-    console.warn('Auto-load fallido:',err);
+    st.textContent='❌ '+err.message; st.className='status-loading';
+    nm.textContent='Error al cargar';
+    console.error('Auto-load fallido:',err);
   }
 }
-autoLoadFromRepo();
+// Llamar cuando XLSX ya esté disponible
+if(typeof XLSX!=='undefined'){
+  autoLoadFromRepo();
+}else{
+  document.querySelector('script[src*="xlsx"]').addEventListener('load', autoLoadFromRepo);
+}
 
 // ═══════════════════════════════════════════════
 // PARSE
@@ -1342,6 +1348,4 @@ function renderCompras(){
   ms.onchange=renderGD; renderGD();
 }
 
-// ═══════════════════════════════════════════════
-// PRODUCTOS
-// ════════════════════════════════════�
+// ══════════════�
