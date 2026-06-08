@@ -1343,6 +1343,7 @@ function renderCompras(){
       const dt=x.difTotal;
       const dtColor=dt==null?'':dt<0?'var(--red)':'var(--green)';  // neg=más caro=rojo
       const dp=x.difPct!=null?x.difPct*100:null;
+      const dpColor=dp==null?'':dp<0?'var(--red)':'var(--green)';
       return`<tr>
         <td>${fmtDate(x.fechaGuia)}</td>
         <td>${x.gd||'—'}</td>
