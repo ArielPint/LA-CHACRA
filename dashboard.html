@@ -1218,7 +1218,8 @@ function renderModulos(){
 
   // M² charts por semana
   (function(){
-    const curva=DATA.curva||[];
+    const today=new Date(); today.setHours(23,59,59,999);
+    const curva=(DATA.curva||[]).filter(r=>{const d=parseDate(r.fecha);return d&&!isNaN(d)&&d<=today;});
     killChart('ch-m2-mod'); killChart('ch-m2-dia');
     if(!curva.length) return;
     const weekMap={};
@@ -1565,9 +1566,4 @@ function renderDespachos(){
   const tipos=[...new Set(d.map(x=>x.tipo).filter(Boolean))];
   groupedBar('ch-desp-torre',tKeys,tipos.map((tipo,i)=>({
     label:tipo, data:tKeys.map(t=>torrTipoMap[t][tipo]||0),
-    backgroundColor:['rgba(88,166,255,.8)','rgba(63,185,80,.8)','rgba(227,144,62,.8)'][i%3], borderRadius:5
-  })));
-}
-</script>
-</body>
-</html>
+    backgroun
