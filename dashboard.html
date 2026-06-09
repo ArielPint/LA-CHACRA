@@ -1601,6 +1601,7 @@ function renderDespFiltered(){
 }
 
 function renderDespachos(){
+  const todayTs=new Date(); todayTs.setHours(23,59,59,999);
   const d=DATA.despachos||[];
   const proy=DATA.proyeccion||[];
   const totalMonto=d.reduce((s,x)=>s+(x.monto||0),0);
@@ -1640,7 +1641,6 @@ function renderDespachos(){
     if(dt<=todayTs) proyMes[k].acumHoy=Math.max(proyMes[k].acumHoy, x.modulosAcumulados||0);
   });
 
-  const todayTs=new Date(); todayTs.setHours(23,59,59,999);
   const curMesKey=mesKey(todayTs);
   const allMesKeys=[...new Set([...Object.keys(realMes),...Object.keys(proyMes)])]
     .filter(k=>(realMes[k]||proyMes[k]).ts<=new Date(todayTs.getFullYear(),todayTs.getMonth()+1,0).getTime())
