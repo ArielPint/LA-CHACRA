@@ -631,7 +631,7 @@ function parseAll(wb){
     aportSan:N(r[18]),san:N(r[19]),
     aportElec:N(r[26]),elec:N(r[27]),
     aportTerm:N(r[33]),term:N(r[34]),
-    estado:r[56],gapInicio:N(r[57]),gapEstadoInicio:r[58],gapEstadoTermino:r[59]
+    estado:r[57],gapInicio:N(r[58]),gapEstadoInicio:r[59],gapEstadoTermino:r[60]
   }));
 
   d.detalleGD=sheetRows(wb,'DETALLE GD').slice(1).filter(r=>r[0]&&r[13]!=null).map(r=>{
