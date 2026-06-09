@@ -1705,17 +1705,22 @@ function renderDespachos(){
   );
 
   // ── TABLA RESUMEN MENSUAL ────────────────────────────────────────────────
-  let acumReal=0;
+  let acumReal=0, acumPend=0, prevAcumProy=0;
   const tblRows=filteredMesKeys.map(k=>{
     const rr=realMes[k]; const pp=proyMes[k];
     const desp=rr?.count||0;
-    const proyTotal=pp?.sum||0;
-    // Use acumHoy (up to today) instead of end-of-month acum for pending calc
     const acumProy=pp?.acum||0;
-    const acumPrHoy=pp?.acumHoy||0;
     acumReal+=desp;
-    const pendiente=Math.max(0, acumPrHoy-acumReal);
-    return {lbl:(rr||pp).lbl, proyTotal, desp, acumProy, acumReal, pendiente};
+
+    // For current month: projected only up to today (not full month)
+    // For past months: full month projection
+    const isCurrentMes=(k===curMesKey);
+    const mesAcumProy=isCurrentMes?(pp?.acumHoy||0):acumProy;
+    const proyMes_only=mesAcumProy-prevAcumProy; // projected for this month only
+    prevAcumProy=mesAcumProy;
+
+    acumPend+=proyMes_only-desp; // carry forward: add this month's deficit/surplus
+    return {lbl:(rr||pp).lbl, proyMes_only, desp, acumProy, acumReal, pendiente:Math.max(0,acumPend)};
   });
 
   document.getElementById('tbl-desp-resumen').innerHTML=`
@@ -1730,7 +1735,7 @@ function renderDespachos(){
       </tr></thead>
       <tbody style="color:var(--text)">${tblRows.map(r=>`<tr>
         <td style="padding:5px 8px">${r.lbl}</td>
-        <td style="text-align:right;padding:5px 8px">${fmt(r.proyTotal)}</td>
+        <td style="text-align:right;padding:5px 8px">${fmt(r.proyMes_only)}</td>
         <td style="text-align:right;padding:5px 8px;color:var(--green)">${fmt(r.desp)}</td>
         <td style="text-align:right;padding:5px 8px;color:${r.pendiente>0?'var(--red)':'var(--green)'}">${fmt(r.pendiente)}</td>
         <td style="text-align:right;padding:5px 8px;color:var(--muted)">${fmt(r.acumProy)}</td>
