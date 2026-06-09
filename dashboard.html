@@ -271,6 +271,12 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-dia"></canvas></div>
     </div>
   </div>
+  <div style="padding:0 0 8px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="color:var(--muted);font-size:.82rem">Filtrar meses:</span>
+    <div id="desp-mes-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <button onclick="despFilterAll(true)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Todos</button>
+    <button onclick="despFilterAll(false)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Ninguno</button>
+  </div>
   <div class="grid-1">
     <div class="card">
       <h3>Resumen mensual — Despachos</h3>
@@ -1577,6 +1583,23 @@ function renderStock(){
 // ═══════════════════════════════════════════════
 // DESPACHOS
 // ═══════════════════════════════════════════════
+let _despMesFilter=null; // null = all, Set of mesKeys = filtered
+
+function despFilterAll(val){
+  document.querySelectorAll('#desp-mes-filter input[type=checkbox]').forEach(cb=>cb.checked=val);
+  _despMesFilter=val?null:new Set();
+  renderDespFiltered();
+}
+
+function renderDespFiltered(){
+  const cbs=[...document.querySelectorAll('#desp-mes-filter input[type=checkbox]')];
+  if(!cbs.length){renderDespachos();return;}
+  const checked=new Set(cbs.filter(c=>c.checked).map(c=>c.value));
+  const all=checked.size===cbs.length;
+  _despMesFilter=all?null:checked;
+  renderDespachos();
+}
+
 function renderDespachos(){
   const d=DATA.despachos||[];
   const proy=DATA.proyeccion||[];
@@ -1610,9 +1633,11 @@ function renderDespachos(){
   proy.forEach(x=>{
     const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
     const k=mesKey(dt);
-    if(!proyMes[k]) proyMes[k]={lbl:mesLbl(dt),sum:0,ts:dt.getTime(),acum:0};
+    if(!proyMes[k]) proyMes[k]={lbl:mesLbl(dt),sum:0,ts:dt.getTime(),acum:0,acumHoy:0};
     proyMes[k].sum+=(x.modulosDia||0);
     proyMes[k].acum=Math.max(proyMes[k].acum, x.modulosAcumulados||0);
+    // acumHoy: acumulado solo hasta hoy (para mes actual)
+    if(dt<=todayTs) proyMes[k].acumHoy=Math.max(proyMes[k].acumHoy, x.modulosAcumulados||0);
   });
 
   const todayTs=new Date(); todayTs.setHours(23,59,59,999);
@@ -1620,13 +1645,26 @@ function renderDespachos(){
   const allMesKeys=[...new Set([...Object.keys(realMes),...Object.keys(proyMes)])]
     .filter(k=>(realMes[k]||proyMes[k]).ts<=new Date(todayTs.getFullYear(),todayTs.getMonth()+1,0).getTime())
     .sort((a,b)=>(realMes[a]||proyMes[a]).ts-(realMes[b]||proyMes[b]).ts);
-  const mesLabels=allMesKeys.map(k=>(realMes[k]||proyMes[k]).lbl);
+
+  // Build/refresh month filter checkboxes (only on first render or when data changes)
+  const filterDiv=document.getElementById('desp-mes-filter');
+  if(filterDiv&&filterDiv.children.length!==allMesKeys.length){
+    filterDiv.innerHTML=allMesKeys.map(k=>{
+      const lbl=(realMes[k]||proyMes[k]).lbl;
+      return `<label style="display:flex;align-items:center;gap:3px;font-size:.78rem;color:var(--text);cursor:pointer;padding:2px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:4px">
+        <input type="checkbox" value="${k}" checked onchange="renderDespFiltered()" style="cursor:pointer">${lbl}</label>`;
+    }).join('');
+  }
+
+  // Apply active filter
+  const filteredMesKeys=_despMesFilter?allMesKeys.filter(k=>_despMesFilter.has(k)):allMesKeys;
+  const mesLabels=filteredMesKeys.map(k=>(realMes[k]||proyMes[k]).lbl);
 
   lineChart('ch-desp-mes', mesLabels, [
-    {label:'Despachado', data:allMesKeys.map(k=>realMes[k]?.count||0),
+    {label:'Despachado', data:filteredMesKeys.map(k=>realMes[k]?.count||0),
       borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.15)',
       tension:0.35, pointRadius:4, fill:false},
-    {label:'Proyectado', data:allMesKeys.map(k=>proyMes[k]?.sum||0),
+    {label:'Proyectado', data:filteredMesKeys.map(k=>proyMes[k]?.sum||0),
       borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)',
       tension:0.35, pointRadius:4, fill:false}
   ], {legend:true});
@@ -1651,8 +1689,14 @@ function renderDespachos(){
   });
 
   const todayMidnight=new Date(todayTs.getFullYear(),todayTs.getMonth(),todayTs.getDate()).getTime();
+  // Build set of timestamps for selected months to filter daily data
+  const filteredMesSet=new Set(filteredMesKeys.map(k=>{const [y,m]=k.split('_').map(Number);return y+'_'+m;}));
   const allDiaKeys=[...new Set([...Object.keys(realDia),...Object.keys(proyDia)])]
-    .map(Number).filter(k=>k<=todayMidnight).sort((a,b)=>a-b);
+    .map(Number).filter(k=>{
+      if(k>todayMidnight) return false;
+      const dt=new Date(k); const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+      return filteredMesSet.has(mk);
+    }).sort((a,b)=>a-b);
   const diaLabels=allDiaKeys.map(k=>(realDia[k]||proyDia[k]).lbl);
 
   mixedChart('ch-desp-dia', diaLabels,
@@ -1664,13 +1708,15 @@ function renderDespachos(){
 
   // ── TABLA RESUMEN MENSUAL ────────────────────────────────────────────────
   let acumReal=0;
-  const tblRows=allMesKeys.map(k=>{
+  const tblRows=filteredMesKeys.map(k=>{
     const rr=realMes[k]; const pp=proyMes[k];
     const desp=rr?.count||0;
     const proyTotal=pp?.sum||0;
+    // Use acumHoy (up to today) instead of end-of-month acum for pending calc
     const acumProy=pp?.acum||0;
+    const acumPrHoy=pp?.acumHoy||0;
     acumReal+=desp;
-    const pendiente=Math.max(0, acumProy-acumReal);
+    const pendiente=Math.max(0, acumPrHoy-acumReal);
     return {lbl:(rr||pp).lbl, proyTotal, desp, acumProy, acumReal, pendiente};
   });
 
