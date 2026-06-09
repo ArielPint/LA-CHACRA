@@ -1657,13 +1657,14 @@ function renderDespachos(){
 
   // Apply active filter
   const filteredMesKeys=_despMesFilter?allMesKeys.filter(k=>_despMesFilter.has(k)):allMesKeys;
-  const mesLabels=filteredMesKeys.map(k=>(realMes[k]||proyMes[k]).lbl);
+  // Chart 1 always shows full project (not affected by month filter)
+  const mesLabels=allMesKeys.map(k=>(realMes[k]||proyMes[k]).lbl);
 
   lineChart('ch-desp-mes', mesLabels, [
-    {label:'Despachado', data:filteredMesKeys.map(k=>realMes[k]?.count||0),
+    {label:'Despachado', data:allMesKeys.map(k=>realMes[k]?.count||0),
       borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.15)',
       tension:0.35, pointRadius:4, fill:false},
-    {label:'Proyectado', data:filteredMesKeys.map(k=>proyMes[k]?.sum||0),
+    {label:'Proyectado', data:allMesKeys.map(k=>proyMes[k]?.sum||0),
       borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)',
       tension:0.35, pointRadius:4, fill:false}
   ], {legend:true});
