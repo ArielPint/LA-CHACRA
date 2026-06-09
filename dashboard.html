@@ -565,7 +565,7 @@ function showAutoStatus(msg, isErr){
 async function autoLoadFromRepo(){
   showAutoStatus('⏳ Cargando datos…');
   try{
-    const resp=await fetch('data/lachacra.xlsm');
+    const resp=await fetch('data/LACHACRA.xlsm');
     if(!resp.ok) throw new Error('HTTP '+resp.status+' — archivo no encontrado en data/');
     const buf=await resp.arrayBuffer();
     showAutoStatus('⏳ Procesando Excel…');
