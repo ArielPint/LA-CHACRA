@@ -1185,11 +1185,20 @@ function renderModulos(){
   const avProm=m.length?(m.reduce((s,x)=>s+(x.avance??0),0)/m.length*100):0;
 
   const totalIniciados=terminados+enProceso;
+
+  // Despachados y listos pendientes de despacho
+  const despachados=DATA.despachos||[];
+  const modsDespachados=new Set(despachados.map(x=>x.modulo).filter(Boolean));
+  const nDespachados=modsDespachados.size;
+  const listosPendDesp=m.filter(x=>x.termReal&&!modsDespachados.has(x.modulo)).length;
+
   document.getElementById('kpi-modulos').innerHTML=kpiHTML([
-    {lbl:'% Avance promedio', val:fmtPr(avProm),         cls:'c-purple'},
-    {lbl:'Terminados',        val:fmt(terminados),        cls:'c-green', sub:fmtPr(terminados/m.length*100)+' del total'},
-    {lbl:'En proceso',        val:fmt(enProceso),         cls:'c-orange'},
-    {lbl:'Total iniciados',   val:fmt(totalIniciados),    cls:'c-blue', sub:fmtPr(totalIniciados/m.length*100)+' del total'},
+    {lbl:'% Avance promedio',       val:fmtPr(avProm),         cls:'c-purple'},
+    {lbl:'Terminados',              val:fmt(terminados),        cls:'c-green', sub:fmtPr(terminados/m.length*100)+' del total'},
+    {lbl:'En proceso',              val:fmt(enProceso),         cls:'c-orange'},
+    {lbl:'Total iniciados',         val:fmt(totalIniciados),    cls:'c-blue', sub:fmtPr(totalIniciados/m.length*100)+' del total'},
+    {lbl:'Despachados',             val:fmt(nDespachados),      cls:'c-green'},
+    {lbl:'Listos — pend. despacho', val:fmt(listosPendDesp),   cls:'c-yellow'},
   ]);
 
   // Distribución 10% buckets – todos los rangos (mismo estilo que Resumen)
