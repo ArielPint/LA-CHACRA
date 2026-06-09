@@ -261,8 +261,20 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="kpi-row" id="kpi-despachos"></div>
   <div class="grid-1">
     <div class="card">
-      <h3>Módulos despachados por fecha</h3>
-      <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-fecha"></canvas></div>
+      <h3>Módulos despachados por mes vs proyectado</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-mes"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Módulos despachados por día vs proyectado</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-dia"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Resumen mensual — Despachos</h3>
+      <div id="tbl-desp-resumen" style="overflow-x:auto;max-height:340px;overflow-y:auto"></div>
     </div>
   </div>
   <div class="grid-1">
@@ -462,6 +474,36 @@ function lineChart(id, labels, datasets, opts={}){
         y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',
             callback:opts.pct?v=>v.toFixed(2)+'%':undefined},
           border:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+
+// Mixed chart: bar + line on same axis
+function mixedChart(id, labels, barDatasets, lineDatasets, opts={}){
+  killChart(id);
+  const ctx=document.getElementById(id)?.getContext('2d'); if(!ctx) return;
+  const datasets=[
+    ...barDatasets.map(ds=>({...ds,type:'bar',order:2})),
+    ...lineDatasets.map(ds=>({...ds,type:'line',tension:0.35,pointRadius:3,pointHoverRadius:5,
+      borderWidth:2,fill:false,order:1,datalabels:{display:false}}))
+  ];
+  CHARTS[id]=new Chart(ctx,{
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:20}},
+      plugins:{
+        legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y??0)}},
+        datalabels:{display:false}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',maxRotation:45,minRotation:0,font:{size:10},maxTicksLimit:18},
+          border:{color:'rgba(255,255,255,0.04)'}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},
+          border:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}
       }
     }
   });
@@ -670,11 +712,16 @@ function parseAll(wb){
     modConstruidos:N(r[21])
   }));
 
-  // GD_MODULOS: nueva columna al inicio → FECHA DESPACHO ahora en r[1], resto +1
+  // GD_MODULOS: col A=FECHA GD, B=FECHA DESPACHO, C=GD, D=SERIE, E=CANT, F=MONTO, G=MODULO, H=TORRE, I=TIPO, J=ACUMULADO
+  //             cols M-Q: proyección diaria (FECHA, MES, MÓDULOS DÍA, MÓDULOS ASIGNADOS, MÓDULOS ACUMULADOS)
   d.despachos=sheetRows(wb,'GD_MODULOS').slice(1).filter(r=>r[1]).map(r=>({
     fecha:r[1],gd:N(r[2]),serie:N(r[3]),
     cant:N(r[4]),monto:N(r[5]),
-    modulo:r[6],torre:r[7],tipo:r[8]
+    modulo:r[6],torre:r[7],tipo:r[8],acumulado:N(r[9])
+  }));
+  d.proyeccion=sheetRows(wb,'GD_MODULOS').slice(1).filter(r=>r[12]!=null&&r[14]!=null).map(r=>({
+    fecha:r[12],mes:r[13],
+    modulosDia:N(r[14]),modulosAcumulados:N(r[16])
   }));
 
 
@@ -1527,10 +1574,12 @@ function renderStock(){
 }
 
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 // DESPACHOS
 // ═══════════════════════════════════════════════
 function renderDespachos(){
   const d=DATA.despachos||[];
+  const proy=DATA.proyeccion||[];
   const totalMonto=d.reduce((s,x)=>s+(x.monto||0),0);
   const nMods=new Set(d.map(x=>x.modulo).filter(Boolean)).size;
   const modsTerminados=(DATA.modulos||[]).filter(x=>x.termReal).length;
@@ -1543,24 +1592,101 @@ function renderDespachos(){
     {lbl:'Módulos terminados',  val:fmt(modsTerminados),  cls:'c-purple', sub:'total avance real'},
   ]);
 
-  // Módulos despachados por fecha real (eje X = fecha formateada)
-  const fechaMap={};
-  d.forEach(x=>{
-    const d2=parseDate(x.fecha);
-    if(!d2||isNaN(d2)) return;
-    // Use full date as label
-    const lbl=d2.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});
-    fechaMap[lbl]=(fechaMap[lbl]||{count:0,ts:d2.getTime()});
-    fechaMap[lbl].count++;
-  });
-  // Sort by timestamp
-  const fechasSorted=Object.entries(fechaMap).sort((a,b)=>a[1].ts-b[1].ts);
-  barChart('ch-desp-fecha', fechasSorted.map(x=>x[0]),[{
-    label:'Módulos despachados', data:fechasSorted.map(x=>x[1].count),
-    backgroundColor:'rgba(63,185,80,.8)', borderRadius:6,
-  }]);
+  // ── CHART 1: Mensual ────────────────────────────────────────────────────
+  const MES_NAMES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mesKey=dt=>dt.getFullYear()+'_'+(dt.getMonth()+1);
+  const mesLbl=dt=>MES_NAMES[dt.getMonth()]+' '+dt.getFullYear();
 
-  // Por torre y tipo
+  const realMes={};
+  d.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const k=mesKey(dt);
+    if(!realMes[k]) realMes[k]={lbl:mesLbl(dt),count:0,ts:dt.getTime()};
+    realMes[k].count++;
+  });
+
+  const proyMes={};
+  proy.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const k=mesKey(dt);
+    if(!proyMes[k]) proyMes[k]={lbl:mesLbl(dt),sum:0,ts:dt.getTime(),acum:0};
+    proyMes[k].sum+=(x.modulosDia||0);
+    proyMes[k].acum=Math.max(proyMes[k].acum, x.modulosAcumulados||0);
+  });
+
+  const allMesKeys=[...new Set([...Object.keys(realMes),...Object.keys(proyMes)])]
+    .sort((a,b)=>(realMes[a]||proyMes[a]).ts-(realMes[b]||proyMes[b]).ts);
+  const mesLabels=allMesKeys.map(k=>(realMes[k]||proyMes[k]).lbl);
+
+  mixedChart('ch-desp-mes', mesLabels,
+    [{label:'Despachado', data:allMesKeys.map(k=>realMes[k]?.count||0),
+      backgroundColor:'rgba(63,185,80,.75)', borderRadius:4}],
+    [{label:'Proyectado', data:allMesKeys.map(k=>proyMes[k]?.sum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)'}]
+  );
+
+  // ── CHART 2: Diario ─────────────────────────────────────────────────────
+  const realDia={};
+  d.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const ts=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()).getTime();
+    const lbl=dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    if(!realDia[ts]) realDia[ts]={lbl,count:0};
+    realDia[ts].count++;
+  });
+
+  const proyDia={};
+  proy.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const ts=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()).getTime();
+    const lbl=dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    proyDia[ts]={lbl,val:x.modulosDia||0};
+  });
+
+  const allDiaKeys=[...new Set([...Object.keys(realDia),...Object.keys(proyDia)])]
+    .map(Number).sort((a,b)=>a-b);
+  const diaLabels=allDiaKeys.map(k=>(realDia[k]||proyDia[k]).lbl);
+
+  mixedChart('ch-desp-dia', diaLabels,
+    [{label:'Despachado', data:allDiaKeys.map(k=>realDia[k]?.count||0),
+      backgroundColor:'rgba(63,185,80,.75)', borderRadius:3}],
+    [{label:'Proyectado', data:allDiaKeys.map(k=>proyDia[k]?.val||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)'}]
+  );
+
+  // ── TABLA RESUMEN MENSUAL ────────────────────────────────────────────────
+  let acumReal=0;
+  const tblRows=allMesKeys.map(k=>{
+    const rr=realMes[k]; const pp=proyMes[k];
+    const desp=rr?.count||0;
+    const proyTotal=pp?.sum||0;
+    const acumProy=pp?.acum||0;
+    acumReal+=desp;
+    const pendiente=Math.max(0, acumProy-acumReal);
+    return {lbl:(rr||pp).lbl, proyTotal, desp, acumProy, acumReal, pendiente};
+  });
+
+  document.getElementById('tbl-desp-resumen').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:6px 8px">Mes</th>
+        <th style="text-align:right;padding:6px 8px">Proy. mes</th>
+        <th style="text-align:right;padding:6px 8px">Despachado</th>
+        <th style="text-align:right;padding:6px 8px">Pendiente acum.</th>
+        <th style="text-align:right;padding:6px 8px">Acum. proy.</th>
+        <th style="text-align:right;padding:6px 8px">Acum. real</th>
+      </tr></thead>
+      <tbody style="color:var(--text)">${tblRows.map(r=>`<tr>
+        <td style="padding:5px 8px">${r.lbl}</td>
+        <td style="text-align:right;padding:5px 8px">${fmt(r.proyTotal)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--green)">${fmt(r.desp)}</td>
+        <td style="text-align:right;padding:5px 8px;color:${r.pendiente>0?'var(--red)':'var(--green)'}">${fmt(r.pendiente)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--muted)">${fmt(r.acumProy)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--accent)">${fmt(r.acumReal)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+
+  // ── CHART TORRE/TIPO ────────────────────────────────────────────────────
   const torrTipoMap={};
   d.forEach(x=>{const k=x.torre||'?',t=x.tipo||'?';if(!torrTipoMap[k])torrTipoMap[k]={};torrTipoMap[k][t]=(torrTipoMap[k][t]||0)+1;});
   const tKeys=Object.keys(torrTipoMap);
