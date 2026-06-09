@@ -1567,4 +1567,9 @@ function renderDespachos(){
   const tipos=[...new Set(d.map(x=>x.tipo).filter(Boolean))];
   groupedBar('ch-desp-torre',tKeys,tipos.map((tipo,i)=>({
     label:tipo, data:tKeys.map(t=>torrTipoMap[t][tipo]||0),
-    backgroun
+    backgroundColor:['rgba(88,166,255,.8)','rgba(63,185,80,.8)','rgba(227,144,62,.8)'][i%3], borderRadius:5
+  })));
+}
+</script>
+</body>
+</html>
