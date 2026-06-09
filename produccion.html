@@ -127,6 +127,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="filter-bar">
     <label>Torre:</label><select id="a-torre"></select>
     <label>Tipo:</label><select id="a-tipo"></select>
+    <label>Categoría:</label><select id="a-cat"></select>
   </div>
   <div class="kpi-row" id="kpi-alertas"></div>
   <div class="card"><h3>Módulos con mayor retraso</h3><div class="tbl-wrap"><table id="tbl-retraso"><thead></thead><tbody></tbody></table></div></div>
@@ -502,13 +503,17 @@ function renderAlertas(){
   // Populate filters (only first time)
   var aTorre = document.getElementById("a-torre");
   var aTipo  = document.getElementById("a-tipo");
+  var aCat   = document.getElementById("a-cat");
   if(!aTorre.options.length){
     var torres = ["Todas"].concat(Array.from(new Set(m.map(function(x){return x.torre;}))).sort());
     var tipos  = ["Todos"].concat(Array.from(new Set(m.map(function(x){return x.tipo||"";}).filter(Boolean))));
+    var cats   = ["Todas"].concat(Array.from(new Set(m.map(function(x){return x.catPend||"";}).filter(Boolean))).sort());
     aTorre.innerHTML = torres.map(function(t){return "<option>"+t+"</option>";}).join("");
     aTipo.innerHTML  = tipos.map(function(t){return "<option>"+t+"</option>";}).join("");
+    aCat.innerHTML   = cats.map(function(c){return "<option>"+c+"</option>";}).join("");
     aTorre.addEventListener("change", drawAlertas);
     aTipo.addEventListener("change", drawAlertas);
+    aCat.addEventListener("change", drawAlertas);
   }
   drawAlertas();
   makeSortable("tbl-retraso");
@@ -519,9 +524,11 @@ function renderAlertas(){
 function drawAlertas(){
   var tor = document.getElementById("a-torre").value;
   var tip = document.getElementById("a-tipo").value;
+  var cat = document.getElementById("a-cat").value;
   var m = DATA.filter(function(x){
     if(tor !== "Todas" && x.torre !== tor) return false;
     if(tip !== "Todos" && x.tipo  !== tip) return false;
+    if(cat !== "Todas" && x.catPend !== cat) return false;
     return true;
   });
 
