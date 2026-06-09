@@ -565,8 +565,10 @@ function showAutoStatus(msg, isErr){
 async function autoLoadFromRepo(){
   showAutoStatus('⏳ Cargando datos…');
   try{
-    const resp=await fetch('data/LACHACRA.xlsm');
-    if(!resp.ok) throw new Error('HTTP '+resp.status+' — archivo no encontrado en data/');
+    // Try both casing variants (GitHub Pages is case-sensitive)
+    let resp=await fetch('data/lachacra.xlsm');
+    if(!resp.ok) resp=await fetch('data/LACHACRA.xlsm');
+    if(!resp.ok) throw new Error('HTTP '+resp.status+' — archivo no encontrado. URL: '+resp.url);
     const buf=await resp.arrayBuffer();
     showAutoStatus('⏳ Procesando Excel…');
     const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true,dense:true});
