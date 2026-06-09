@@ -1601,9 +1601,10 @@ function renderDespachos(){
   d.forEach(x=>{
     const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
     const k=mesKey(dt);
-    if(!realMes[k]) realMes[k]={lbl:mesLbl(dt),count:0,ts:dt.getTime()};
-    realMes[k].count++;
+    if(!realMes[k]) realMes[k]={lbl:mesLbl(dt),mods:new Set(),ts:dt.getTime()};
+    if(x.modulo) realMes[k].mods.add(x.modulo);
   });
+  Object.values(realMes).forEach(v=>v.count=v.mods.size);
 
   const proyMes={};
   proy.forEach(x=>{
@@ -1621,12 +1622,14 @@ function renderDespachos(){
     .sort((a,b)=>(realMes[a]||proyMes[a]).ts-(realMes[b]||proyMes[b]).ts);
   const mesLabels=allMesKeys.map(k=>(realMes[k]||proyMes[k]).lbl);
 
-  mixedChart('ch-desp-mes', mesLabels,
-    [{label:'Despachado', data:allMesKeys.map(k=>realMes[k]?.count||0),
-      backgroundColor:'rgba(63,185,80,.75)', borderRadius:4}],
-    [{label:'Proyectado', data:allMesKeys.map(k=>proyMes[k]?.sum||0),
-      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)'}]
-  );
+  lineChart('ch-desp-mes', mesLabels, [
+    {label:'Despachado', data:allMesKeys.map(k=>realMes[k]?.count||0),
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.15)',
+      tension:0.35, pointRadius:4, fill:false},
+    {label:'Proyectado', data:allMesKeys.map(k=>proyMes[k]?.sum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)',
+      tension:0.35, pointRadius:4, fill:false}
+  ], {legend:true});
 
   // ── CHART 2: Diario ─────────────────────────────────────────────────────
   const realDia={};
@@ -1634,9 +1637,10 @@ function renderDespachos(){
     const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
     const ts=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()).getTime();
     const lbl=dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
-    if(!realDia[ts]) realDia[ts]={lbl,count:0};
-    realDia[ts].count++;
+    if(!realDia[ts]) realDia[ts]={lbl,mods:new Set()};
+    if(x.modulo) realDia[ts].mods.add(x.modulo);
   });
+  Object.values(realDia).forEach(v=>v.count=v.mods.size);
 
   const proyDia={};
   proy.forEach(x=>{
