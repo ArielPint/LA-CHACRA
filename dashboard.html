@@ -935,7 +935,11 @@ function renderResumen(){
   (function(){
     const curva=DATA.curva||[];
     const m2ByMes={};
-    curva.forEach(r=>{ if(r.mes!=null&&r.anio!=null) m2ByMes[`${r.mes}-${r.anio}`]=r; });
+    curva.forEach(r=>{
+      const fd=parseDate(r.fecha); if(!fd||isNaN(fd)) return;
+      const key=`${fd.getMonth()+1}-${fd.getFullYear()}`;
+      if(!m2ByMes[key]||fd>parseDate(m2ByMes[key].fecha)) m2ByMes[key]=r;
+    });
     const m2Ord=MESES_ORDER.filter(m=>m2ByMes[`${m.n}-${m.y}`]);
     killChart('ch-m2-res');
     const ctx=document.getElementById('ch-m2-res')?.getContext('2d');
@@ -1227,7 +1231,7 @@ function renderModulos(){
       weekMap[wk].planDia+=(r.m2PlanDiario||0);
     });
     const wKeys=Object.keys(weekMap).sort();
-    const wLabels=wKeys.map(weekLabel);
+    const wLabels=wKeys.map(k=>weekLabel(+k));
     const ctx1=document.getElementById('ch-m2-mod')?.getContext('2d');
     if(ctx1) CHARTS['ch-m2-mod']=new Chart(ctx1,{
       type:'bar',
