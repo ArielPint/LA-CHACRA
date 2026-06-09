@@ -789,9 +789,9 @@ async function autoLoadProd(){
         limpieza:r[51]!=null?+r[51]:null, puertasDorm:r[52]!=null?+r[52]:null,
         revBano:r[53]!=null?+r[53]:null, muebleLav:r[54]!=null?+r[54]:null,
         impermeab:r[55]!=null?+r[55]:null, estadoMod:r[56]||null,
-        diasRetraso:r[95]!=null?+r[95]:0,
-        partidasPend:r[96]||null, catPend:r[97]||null,
-        nPendientes:r[98]!=null?+r[98]:0
+        diasRetraso:r[96]!=null?+r[96]:0,
+        partidasPend:r[97]||null, catPend:r[98]||null,
+        nPendientes:r[99]!=null?+r[99]:0
       });
     }
     if(!parsed.length) throw new Error('Sin datos en BD_AVANCE');
