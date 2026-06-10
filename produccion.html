@@ -140,6 +140,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="card">
     <h3>M&#243;dulos pendientes por partida espec&#237;fica</h3>
     <div class="filter-bar" style="margin-bottom:12px">
+      <label>Torre:</label><select id="ap-torre"></select>
       <label>Partida:</label><select id="ap-partida"></select>
       <span id="ap-count" style="font-size:.8rem;color:var(--muted);margin-left:8px"></span>
     </div>
@@ -666,76 +667,94 @@ function drawAlertas(){
 // ════════════════════════════════════════════
 // TABLA PENDIENTES POR PARTIDA ESPECÍFICA
 // ════════════════════════════════════════════
+// Peso real de cada partida (valor almacenado en Excel cuando está OK)
+// weight = porcentaje / 100
 var AP_PARTIDAS = [
-  {label:"Piso",                 field:"piso"},
-  {label:"Tabiques",             field:"tabiques"},
-  {label:"Muros",                field:"muros"},
-  {label:"Cielo",                field:"cielo"},
-  {label:"Balcón",               field:"balcon"},
-  {label:"Red Alcantarillado",   field:"redAlcant"},
-  {label:"Red de Agua",          field:"redAgua"},
-  {label:"Ventilaciones",        field:"ventil"},
-  {label:"Tina",                 field:"tina"},
-  {label:"WC",                   field:"wc"},
-  {label:"Lavamanos/Lavaplatos", field:"lavamanos"},
-  {label:"Canalización",         field:"canaliz"},
-  {label:"Cableado",             field:"cableado"},
-  {label:"Artefactos",           field:"artefactos"},
-  {label:"Tablero",              field:"tablero"},
-  {label:"Caja PAU",             field:"cajaPAU"},
-  {label:"Vinílico",             field:"vinilico"},
-  {label:"OSB Cubierta",         field:"osbCub"},
-  {label:"Baranda Balcón",       field:"baranda"},
-  {label:"OSB Exterior",         field:"osbExt"},
-  {label:"Smart Panel",          field:"smartPanel"},
-  {label:"Pintura Exterior",     field:"pintExt"},
-  {label:"Zócalos Logia",        field:"zocalos"},
-  {label:"Molduras",             field:"molduras"},
-  {label:"Pilastreo",            field:"pilastreo"},
-  {label:"Celosías",             field:"celosias"},
-  {label:"Ventanas",             field:"ventanas"},
-  {label:"Puertas Acc/Logia/Baño",field:"puertasAcc"},
-  {label:"Cerraduras",           field:"cerraduras"},
-  {label:"Rev. Int. Zona Seca",  field:"revSeca"},
-  {label:"Rev. Int. Zonas Húmedas",field:"revHumeda"},
-  {label:"Membrana Cielo",       field:"membrana"},
-  {label:"Limpieza Final",       field:"limpieza"},
-  {label:"Puertas Dormitorio",   field:"puertasDorm"},
-  {label:"Rev. Int. Baño",       field:"revBano"},
-  {label:"Mueble Lavaplatos",    field:"muebleLav"},
-  {label:"Impermeabilización",   field:"impermeab"},
+  {label:"Piso",                   field:"piso",        weight:1.09091},
+  {label:"Tabiques",               field:"tabiques",    weight:0.72727},
+  {label:"Muros",                  field:"muros",       weight:1.00000},
+  {label:"Cielo",                  field:"cielo",       weight:0.72727},
+  {label:"Balcón",                 field:"balcon",      weight:0.36364},
+  {label:"Red Alcantarillado",     field:"redAlcant",   weight:0.22222},
+  {label:"Red de Agua",            field:"redAgua",     weight:0.22222},
+  {label:"Ventilaciones",          field:"ventil",      weight:0.11111},
+  {label:"Tina",                   field:"tina",        weight:0.11111},
+  {label:"WC",                     field:"wc",          weight:0.11111},
+  {label:"Lavamanos/Lavaplatos",   field:"lavamanos",   weight:0.22222},
+  {label:"Canalización",           field:"canaliz",     weight:0.06977},
+  {label:"Cableado",               field:"cableado",    weight:0.06977},
+  {label:"Artefactos",             field:"artefactos",  weight:0.02326},
+  {label:"Tablero",                field:"tablero",     weight:0.04651},
+  {label:"Caja PAU",               field:"cajaPAU",     weight:0.04651},
+  {label:"Vinílico",               field:"vinilico",    weight:0.05405},
+  {label:"OSB Cubierta",           field:"osbCub",      weight:0.05405},
+  {label:"Baranda Balcón",         field:"baranda",     weight:0.02703},
+  {label:"OSB Exterior",           field:"osbExt",      weight:0.08108},
+  {label:"Smart Panel",            field:"smartPanel",  weight:0.08108},
+  {label:"Pintura Exterior",       field:"pintExt",     weight:0.06757},
+  {label:"Zócalos Logia",          field:"zocalos",     weight:0.05405},
+  {label:"Molduras",               field:"molduras",    weight:0.01351},
+  {label:"Pilastreo",              field:"pilastreo",   weight:0.04054},
+  {label:"Celosías",               field:"celosias",    weight:0.01351},
+  {label:"Ventanas",               field:"ventanas",    weight:0.08108},
+  {label:"Puertas Acc/Logia/Baño", field:"puertasAcc",  weight:0.05405},
+  {label:"Cerraduras",             field:"cerraduras",  weight:0.02703},
+  {label:"Rev. Int. Zona Seca",    field:"revSeca",     weight:0.05405},
+  {label:"Rev. Int. Zonas Húmedas",field:"revHumeda",   weight:0.05405},
+  {label:"Membrana Cielo",         field:"membrana",    weight:0.02703},
+  {label:"Limpieza Final",         field:"limpieza",    weight:0.04054},
+  {label:"Puertas Dormitorio",     field:"puertasDorm", weight:0.05405},
+  {label:"Rev. Int. Baño",         field:"revBano",     weight:0.08108},
+  {label:"Mueble Lavaplatos",      field:"muebleLav",   weight:0.01351},
+  {label:"Impermeabilización",     field:"impermeab",   weight:0.02703},
 ];
 
 function drawPartidaPend(){
-  var sel = document.getElementById("ap-partida");
-  var idx = sel.selectedIndex;
-  var p = AP_PARTIDAS[idx] || AP_PARTIDAS[0];
-  var rows = DATA.filter(function(x){ return x.initReal && !x.termReal && (x[p.field]==null || x[p.field] < 1); });
+  var sel  = document.getElementById("ap-partida");
+  var torSel = document.getElementById("ap-torre").value;
+  var idx  = sel.selectedIndex;
+  var p    = AP_PARTIDAS[idx] || AP_PARTIDAS[0];
+  var rows = DATA.filter(function(x){
+    if(!x.initReal) return false;
+    if(torSel !== "Todas" && x.torre !== torSel) return false;
+    // Pendiente = valor nulo/cero O menor al peso esperado
+    return x[p.field] == null || x[p.field] < p.weight * 0.999;
+  });
   document.getElementById("ap-count").textContent = rows.length + " módulo" + (rows.length!==1?"s":"") + " pendientes";
   var tbl = document.getElementById("tbl-ap");
-  tbl.querySelector("thead").innerHTML = thRow(["Torre","Módulo","Tipo","Avance global",p.label+" %","Término Plan","Estado"]);
+  tbl.querySelector("thead").innerHTML = thRow(["Torre","Módulo","Tipo","Avance global",p.label,"Término Plan","Estado"]);
   tbl.querySelector("tbody").innerHTML = rows.slice().sort(function(a,b){
     return (a.torre||"").localeCompare(b.torre||"") || (a.modulo||"").localeCompare(b.modulo||"");
   }).map(function(x){
     var pval = x[p.field];
-    var pct  = pval!=null ? fP(pval*100) : "—";
-    var color = pval==null||pval===0 ? "var(--red)" : pval<0.5 ? "var(--orange)" : "var(--yellow)";
+    var done = pval != null && pval >= p.weight * 0.999;
+    var badge = done
+      ? '<span class="badge b-green">OK</span>'
+      : pval != null && pval > 0
+        ? '<span class="badge b-orange">Parcial</span>'
+        : '<span class="badge b-red">Pendiente</span>';
     return '<tr><td>'+x.torre+'</td><td>'+x.modulo+'</td><td>'+(x.tipo||"—")+'</td>'+
            '<td>'+pb(x.avance)+'</td>'+
-           '<td class="num" style="color:'+color+';font-weight:600">'+pct+'</td>'+
+           '<td>'+badge+'</td>'+
            '<td>'+fD(x.termPlan)+'</td><td>'+(x.estadoMod||"—")+'</td></tr>';
   }).join("");
   makeSortable("tbl-ap");
 }
 
 function initPartidaSelect(){
-  var sel = document.getElementById("ap-partida");
-  if(sel.options.length) return;
-  sel.innerHTML = AP_PARTIDAS.map(function(p,i){ return '<option value="'+i+'">'+p.label+'</option>'; }).join("");
-  // Default: VENTANAS
-  var ventIdx = AP_PARTIDAS.findIndex(function(p){return p.field==="ventanas";});
-  if(ventIdx>=0) sel.selectedIndex = ventIdx;
-  sel.addEventListener("change", drawPartidaPend);
+  var sel  = document.getElementById("ap-partida");
+  var torSel = document.getElementById("ap-torre");
+  if(!sel.options.length){
+    sel.innerHTML = AP_PARTIDAS.map(function(p,i){ return '<option value="'+i+'">'+p.label+'</option>'; }).join("");
+    var ventIdx = AP_PARTIDAS.findIndex(function(p){return p.field==="ventanas";});
+    if(ventIdx>=0) sel.selectedIndex = ventIdx;
+    sel.addEventListener("change", drawPartidaPend);
+  }
+  if(!torSel.options.length){
+    var torres = ["Todas"].concat(Array.from(new Set(DATA.map(function(x){return x.torre;}))).sort());
+    torSel.innerHTML = torres.map(function(t){return "<option>"+t+"</option>";}).join("");
+    torSel.addEventListener("change", drawPartidaPend);
+  }
 }
 
 // ════════════════════════════════════════════
