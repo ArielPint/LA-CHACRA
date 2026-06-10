@@ -264,15 +264,18 @@
 let LOC = {};
 let M   = {};
 
+// SheetJS sheet_to_json produce índices RELATIVOS al !ref de la hoja (O3:BV176).
+// Offset fila: ref empieza en row 3  → r = excel_row - 3
+// Offset col:  ref empieza en col 15 (O) → c = excel_col - 15
 function assignLoc(r, c) {
-  if (r >= 100 && c >= 24) return { loc: 'galpon',         sector: null           };
-  if (r >= 100 && c <  24) return { loc: 'costado-bodega', sector: null           };
-  if (r <  30  && c >= 50) return { loc: 'patio',          sector: 'carpa-chica'  };
-  if (r <  30             ) return { loc: 'patio',          sector: 'carpa-grande' };
-  if (c >= 50)             return { loc: 'carpa-chica',    sector: null           };
-  if (c <  35)             return { loc: 'carpa-grande',   sector: 'sur'          };
-  if (c <  44)             return { loc: 'carpa-grande',   sector: 'norte'        };
-  return                          { loc: 'patio',          sector: 'carpa-grande' };
+  if (r >= 100 && c >= 10) return { loc: 'galpon',         sector: null           };  // c=12,14,16
+  if (r >= 100            ) return { loc: 'costado-bodega', sector: null           };  // c=0,4
+  if (r <  30  && c >= 36) return { loc: 'patio',          sector: 'carpa-chica'  };  // c=38-54
+  if (r <  30             ) return { loc: 'patio',          sector: 'carpa-grande' };  // c=12-30
+  if (c >= 36)             return { loc: 'carpa-chica',    sector: null           };  // c=38-56
+  if (c <  20)             return { loc: 'carpa-grande',   sector: 'sur'          };  // c=12,14,18
+  if (c <  32)             return { loc: 'carpa-grande',   sector: 'norte'        };  // c=22,24,28
+  return                          { loc: 'patio',          sector: 'carpa-grande' };  // c=32 (M-00032)
 }
 
 async function loadUbicaciones() {
