@@ -109,6 +109,7 @@ tbody tr:hover td{background:var(--surface2)}
 </div>
 <div class="page" id="page-partidas">
   <div class="kpi-row" id="kpi-partidas"></div>
+  <div class="card" id="card-tiempos-exec" style="display:none"><h3>Tiempo promedio de ejecuci&#243;n por categor&#237;a</h3><div id="tiempos-exec-content"></div></div>
   <div class="card"><h3>Avance por partida &#8212; promedio en m&#243;dulos iniciados</h3><div style="position:relative;height:520px"><canvas id="ch-part-bar"></canvas></div></div>
   <div class="grid-2">
     <div class="card"><h3>Avance por categor&#237;a</h3><div style="position:relative;height:250px"><canvas id="ch-cat"></canvas></div></div>
@@ -174,6 +175,7 @@ function fD(s){
 function avg(a){ return a.length ? a.reduce(function(s,v){return s+v;}, 0) / a.length : 0; }
 function pc(p){ return p>=1?"var(--green)":p>=.75?"var(--accent)":p>=.5?"var(--yellow)":"var(--red)"; }
 var CH = {};
+var TIEMPOS_DATA = null;
 function kc(id){ if(CH[id]){ CH[id].destroy(); delete CH[id]; } }
 function kpi(items){
   return items.map(function(k){
@@ -426,6 +428,71 @@ function renderTorres(){
 }
 
 // ════════════════════════════════════════════
+// TIEMPOS DE EJECUCIÓN
+// ════════════════════════════════════════════
+function parseTiempos(wb){
+  var ws = wb.Sheets[wb.SheetNames[0]];
+  var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+  var catRanges = [
+    {name:'Obra Gruesa',   start:4,  end:13,  color:'rgba(88,166,255,1)'},
+    {name:'Sanitarios',    start:14, end:25,  color:'rgba(63,185,80,1)'},
+    {name:'Eléctrico',     start:26, end:35,  color:'rgba(247,167,79,1)'},
+    {name:'Terminaciones', start:36, end:77,  color:'rgba(188,140,255,1)'},
+  ];
+  return catRanges.map(function(cat){
+    var durations = [];
+    for(var i = 3; i < rows.length; i++){
+      var row = rows[i];
+      if(!row || row[0]==null) continue;
+      var fechasOK = [];
+      for(var c = cat.start; c <= cat.end; c += 2){
+        var estado = row[c];
+        var fecha  = row[c+1];
+        if(typeof estado==='string' && estado.trim()==='OK' && fecha instanceof Date && !isNaN(fecha.getTime())){
+          fechasOK.push(fecha.getTime());
+        }
+      }
+      if(fechasOK.length >= 1){
+        var span = fechasOK.length >= 2
+          ? (Math.max.apply(null,fechasOK) - Math.min.apply(null,fechasOK)) / 86400000
+          : 0;
+        durations.push(span);
+      }
+    }
+    var n = durations.length;
+    var avg = n ? durations.reduce(function(a,b){return a+b;},0)/n : 0;
+    var minD = n ? Math.min.apply(null,durations) : 0;
+    var maxD = n ? Math.max.apply(null,durations) : 0;
+    return {name:cat.name, color:cat.color, avg:avg, min:minD, max:maxD, n:n};
+  });
+}
+
+function renderTiempos(){
+  var card = document.getElementById('card-tiempos-exec');
+  if(!card) return;
+  if(!TIEMPOS_DATA){ card.style.display='none'; return; }
+  card.style.display='';
+  var maxAvg = Math.max.apply(null, TIEMPOS_DATA.map(function(d){return d.avg;}));
+  var colorBg = ['rgba(88,166,255,.15)','rgba(63,185,80,.15)','rgba(247,167,79,.15)','rgba(188,140,255,.15)'];
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">';
+  TIEMPOS_DATA.forEach(function(d, idx){
+    var pct = maxAvg > 0 ? (d.avg / maxAvg * 100).toFixed(0) : 0;
+    html += '<div style="background:'+colorBg[idx]+';border:1px solid var(--border);border-radius:8px;padding:16px">';
+    html += '<div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">'+d.name+'</div>';
+    html += '<div style="font-size:1.8rem;font-weight:700;color:'+d.color+';line-height:1">'+d.avg.toFixed(1)+'<span style="font-size:.85rem;font-weight:400;color:var(--muted);margin-left:4px">días prom.</span></div>';
+    html += '<div style="background:var(--surface2);border-radius:99px;height:5px;overflow:hidden;margin:10px 0 8px">';
+    html += '<div style="height:100%;border-radius:99px;background:'+d.color+';width:'+pct+'%"></div></div>';
+    html += '<div style="font-size:.72rem;color:var(--muted);display:flex;justify-content:space-between">';
+    html += '<span>Mín <strong style="color:var(--text)">'+d.min.toFixed(0)+'d</strong></span>';
+    html += '<span>Máx <strong style="color:var(--text)">'+d.max.toFixed(0)+'d</strong></span>';
+    html += '<span><strong style="color:var(--text)">'+d.n+'</strong> mód. completados</span>';
+    html += '</div></div>';
+  });
+  html += '</div>';
+  document.getElementById('tiempos-exec-content').innerHTML = html;
+}
+
+// ════════════════════════════════════════════
 // PARTIDAS
 // ════════════════════════════════════════════
 function renderPartidas(){
@@ -493,6 +560,7 @@ function renderPartidas(){
     pp2c.addEventListener("change", function(){ makePendChart("ch-pend2","pp2-torre","pp2-cat"); });
   }
   makePendChart("ch-pend2","pp2-torre","pp2-cat");
+  renderTiempos();
 }
 
 // ════════════════════════════════════════════
@@ -742,11 +810,7 @@ function showAutoStatus(msg, isErr){
 
 function fmtDateProd(v){
   if(v == null) return null;
-  if(v instanceof Date) return v.toISOString().slice(0,10);
-  if(typeof v === 'number'){
-    var d = new Date(Math.round((v - 25569) * 86400 * 1000));
-    return d.toISOString().slice(0,10);
-  }
+  if(v instanceof Date) return String(v).slice(0,10) || null;
   return String(v).slice(0,10) || null;
 }
 
@@ -804,6 +868,17 @@ async function autoLoadProd(){
     if(!parsed.length) throw new Error('Sin datos en BD_AVANCE');
     DATA = parsed;
     try { localStorage.setItem('tp_produccion_data', JSON.stringify(parsed)); } catch(e){}
+    // Load tiempos.xlsx for execution time stats
+    try {
+      var tResp = await fetch('data/tiempos.xlsx');
+      if(tResp.ok){
+        var tBuf = await tResp.arrayBuffer();
+        var tWb = XLSX.read(new Uint8Array(tBuf), {type:'array', cellDates:true, dense:true});
+        TIEMPOS_DATA = parseTiempos(tWb);
+      }
+    } catch(te){
+      console.warn('tiempos.xlsx no disponible:', te.message);
+    }
     // Re-render
     renderResumen();
     var activeTab = document.querySelector('.tab.active');
