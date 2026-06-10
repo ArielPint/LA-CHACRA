@@ -142,6 +142,7 @@
   .linea-label { display: grid; grid-template-columns: repeat(3, 88px); gap: 5px; }
   .linea-box   { border: 2px solid #888; border-radius: 4px; text-align: center; padding: 7px 4px; font-weight: 700; font-size: 0.95rem; color: #333; background: #f8f8f8; }
 </style>
+<script src="xlsx.min.js"></script>
 </head>
 <body>
 
@@ -242,116 +243,128 @@
 
 <script>
 // ============================================================
-//  DATA
+//  DATOS DINÁMICOS — posiciones desde ubicaciones.xlsx,
+//  avance/tipo/fecha desde avance.xlsx
 // ============================================================
-const M = {
-  // ---- GALPÓN ----
-  'M-00080': { avance:80,  status:'SECO',   loc:'galpon',        fecha:'2026-05-26' },
-  'M-00073': { avance:78,  status:'SECO',   loc:'galpon',        fecha:'2026-05-25' },
-  'M-00088': { avance:80,  status:'SECO',   loc:'galpon',        fecha:'2026-05-29' },
-  'M-00077': { avance:76,  status:'SECO',   loc:'galpon',        fecha:'2026-05-26' },
-  'M-00076': { avance:60,  status:'SECO',   loc:'galpon',        fecha:'2026-05-27' },
-  'M-00087': { avance:43,  status:'HUMEDO', loc:'galpon',        fecha:'2026-05-29' },
-  'M-00081': { avance:39,  status:'SECO',   loc:'galpon',        fecha:'2026-05-29' },
-  'M-00082': { avance:41,  status:'HUMEDO', loc:'galpon',        fecha:'2026-05-29' },
-  'M-00083': { avance:39,  status:'HUMEDO', loc:'galpon',        fecha:'2026-06-01' },
-  'M-00084': { avance:39,  status:'SECO',   loc:'galpon',        fecha:'2026-05-29' },
-  'M-00085': { avance:39,  status:'SECO',   loc:'galpon',        fecha:'2026-05-29' },
-  'M-00096': { avance:39,  status:'SECO',   loc:'galpon',        fecha:'2026-06-04' },
-  'M-00086': { avance:39,  status:'HUMEDO', loc:'galpon',        fecha:'2026-06-03' },
-  'M-00095': { avance:39,  status:'HUMEDO', loc:'galpon',        fecha:'2026-06-04' },
+let LOC = {};   // moduleId → {loc, sector, xls_row, xls_col}
+let M   = {};   // moduleId → {loc, sector, avance, status, fecha}
 
-  // ---- CARPA GRANDE · SECTOR SUR (azul) ----
-  'M-00050': { avance:80,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-04-24' },
-  'M-00053': { avance:95,  status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-04-27' },
-  'M-00079': { avance:63,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-05-20' },
-  'M-00063': { avance:70,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-05-05' },
-  'M-00023': { avance:98,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-03-12' },
-  'M-00057': { avance:94,  status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-05-06' },
-  'M-00054': { avance:74,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-04-29' },
-  'M-00064': { avance:94,  status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-05-07' },
-  'M-00058': { avance:66,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-05-05' },
-  'M-00033': { avance:96,  status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-04-06' },
-  'M-00088b': { avance:80, status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-05-29', display:'M-00088' },
-  'M-00080b': { avance:80, status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-05-26', display:'M-00080' },
+// ----------------------------------------------------------
+// Asigna ubicación según posición en la hoja UBICACIONES
+// ----------------------------------------------------------
+function assignLoc(r, c) {
+  if (r >= 100)            return { loc: 'galpon',        sector: null   };
+  if (r < 30)              return { loc: 'patio',         sector: null   };
+  if (c >= 50)             return { loc: 'carpa-chica',   sector: null   };
+  if (c < 35)              return { loc: 'carpa-grande',  sector: 'sur'  };
+  if (c >= 35 && c < 44)   return { loc: 'carpa-grande',  sector: 'norte'};
+  // col 44-49: zona de transición → patio
+  return                          { loc: 'patio',         sector: null   };
+}
 
-  // ---- CARPA GRANDE · SECTOR NORTE (naranja) ----
-  'M-00046': { avance:84,  status:'HUMEDO', loc:'carpa-grande', sector:'norte', fecha:'2026-04-14' },
-  'M-00042': { avance:74,  status:'HUMEDO', loc:'carpa-grande', sector:'norte', fecha:'2026-04-17' },
-  'M-00045': { avance:96,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-20' },
-  'M-00052': { avance:95,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-22' },
-  'M-00041': { avance:97,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-12' },
-  'M-00056': { avance:97,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-22' },
-  'M-00044': { avance:97,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-15' },
-  'M-00066': { avance:69,  status:'HUMEDO', loc:'carpa-grande', sector:'norte', fecha:'2026-05-12' },
-  'M-00032': { avance:100, status:'SECO',   loc:'patio',                        fecha:'2026-03-30' },
-  'M-00061': { avance:92,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-08' },
-  'M-00071': { avance:67,  status:'HUMEDO', loc:'carpa-grande', sector:'norte', fecha:'2026-05-14' },
-  'M-00060': { avance:92,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-07' },
-  'M-00068': { avance:89,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-14' },
-  'M-00072': { avance:89,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-12' },
-  'M-00069': { avance:86,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-14' },
-  'M-00037': { avance:96,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-11' },
+// ----------------------------------------------------------
+// Carga ubicaciones.xlsx y construye LOC
+// ----------------------------------------------------------
+async function loadUbicaciones() {
+  try {
+    const resp = await fetch('data/ubicaciones.xlsx');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const wb  = XLSX.read(new Uint8Array(buf), { type: 'array', dense: true });
+    const ws  = wb.Sheets['UBICACIONES'];
+    if (!ws) throw new Error('Hoja UBICACIONES no encontrada');
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+    LOC = {};
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r] || [];
+      for (let c = 0; c < row.length; c++) {
+        const v = row[c];
+        if (v && typeof v === 'string' && /^M-\d+/.test(v.trim())) {
+          const id = v.trim();
+          LOC[id] = Object.assign({ xls_row: r, xls_col: c }, assignLoc(r, c));
+        }
+      }
+    }
+    console.log('Ubicaciones OK:', Object.keys(LOC).length, 'módulos');
+  } catch (e) {
+    console.warn('ubicaciones.xlsx no disponible:', e.message);
+  }
+}
 
-  // ---- CARPA CHICA ----
-  'M-00078': { avance:57,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-16' },
-  'M-00075': { avance:58,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-18' },
-  'M-00062': { avance:59,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-07' },
-  'M-00039': { avance:86,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-07' },
-  'M-00034': { avance:98,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-07' },
-  'M-00049': { avance:91,  status:'SECO',   loc:'carpa-chica', fecha:'2026-04-22' },
-  'M-00047': { avance:85,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-15' },
-  'M-00043': { avance:78,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-15' },
-  'M-00038': { avance:96,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-11' },
-  'M-00074': { avance:59,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-19' },
-  'M-00070': { avance:59,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-16' },
-  'M-00036': { avance:98,  status:'SECO',   loc:'carpa-chica', fecha:'2026-04-10' },
-  'M-00035': { avance:98,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-10' },
-  'M-00040': { avance:97,  status:'SECO',   loc:'carpa-chica', fecha:'2026-04-07' },
+// ----------------------------------------------------------
+// Carga avance.xlsx y construye M (mezcla con LOC)
+// ----------------------------------------------------------
+async function loadAvanceData() {
+  await loadUbicaciones();
 
-  // ---- PATIO DE ACOPIO ----
-  'M-00031': { avance:97,  status:'HUMEDO', loc:'patio', fecha:'2026-04-02' },
-  'M-00051': { avance:86,  status:'HUMEDO', loc:'patio', fecha:'2026-04-28' },
-  'M-00059': { avance:75,  status:'HUMEDO', loc:'patio', fecha:'2026-05-04' },
-  'M-00007': { avance:100, status:'HUMEDO', loc:'patio', fecha:'2026-03-24' },
-  'M-00055': { avance:80,  status:'HUMEDO', loc:'patio', fecha:'2026-04-24' },
-  'M-00015': { avance:100, status:'HUMEDO', loc:'patio', fecha:'2026-02-19' },
-  'M-00016': { avance:100, status:'SECO',   loc:'patio', fecha:'2026-02-23' },
-  'M-00048': { avance:95,  status:'SECO',   loc:'patio', fecha:'2026-04-14' },
-  'M-00008': { avance:100, status:'SECO',   loc:'patio', fecha:'2026-03-25' },
-  'M-00024': { avance:100, status:'SECO',   loc:'patio', fecha:'2026-03-05' },
-};
+  // Inicializar M con valores vacíos desde LOC
+  for (const id of Object.keys(LOC)) {
+    M[id] = Object.assign({}, LOC[id], { avance: 0, status: 'SECO', fecha: null });
+  }
+
+  try {
+    const resp = await fetch('data/avance.xlsx');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf  = await resp.arrayBuffer();
+    const wb   = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true, dense: true });
+    const ws   = wb.Sheets['BD_AVANCE'];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+
+    const av = {};
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r[1]) continue;
+      av[String(r[1]).trim()] = {
+        avance: r[4] != null ? Math.round(+r[4] * 100) : 0,
+        tipo:   (r[3] || 'SECO').toString().trim().toUpperCase(),
+        fecha:  r[6] instanceof Date ? r[6].toISOString().slice(0, 10) : null,
+      };
+    }
+
+    for (const id of Object.keys(LOC)) {
+      const d = av[id] || {};
+      M[id] = Object.assign({}, LOC[id], {
+        avance: d.avance != null ? d.avance : 0,
+        status: d.tipo   || 'SECO',
+        fecha:  d.fecha  || null,
+      });
+    }
+    document.querySelector('header .subtitle').textContent =
+      'Estado y progreso por ubicación · Datos desde avance.xlsx';
+  } catch (e) {
+    console.warn('avance.xlsx no disponible:', e.message);
+  }
+}
 
 // ============================================================
 //  HELPERS
 // ============================================================
-function pbClass(p){ return p<50?'pb-low': p<85?'pb-mid':'pb-high'; }
+function pbClass(p) { return p < 50 ? 'pb-low' : p < 85 ? 'pb-mid' : 'pb-high'; }
 
-// Días transcurridos desde la fecha de inicio hasta hoy (solo número)
-function daysElapsed(fecha){
-  if(!fecha) return '—';
-  const start = new Date(fecha);
-  const today = new Date();
+function daysElapsed(fecha) {
+  if (!fecha) return '—';
+  const start = new Date(fecha), today = new Date();
   today.setHours(0,0,0,0); start.setHours(0,0,0,0);
   const d = Math.floor((today - start) / 86400000);
   return d >= 0 ? d : '—';
 }
 
-// Escala responsiva: 1.0 en 1280px, 1.5 en 1920px
 let SCALE = 1;
-function updateScale(){ SCALE = Math.min(Math.max(window.innerWidth / 1280, 0.6), 1.6); }
-function px(n){ return Math.round(n * SCALE) + 'px'; }
+function updateScale() { SCALE = Math.min(Math.max(window.innerWidth / 1280, 0.6), 1.6); }
+function px(n) { return Math.round(n * SCALE) + 'px'; }
 
-function card(id, data, w, h){
+function card(id, data, w, h) {
   w = w || px(86); h = h || px(85);
-  const displayId = (data && data.display) ? data.display : id;
-  if(!data) return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
+  if (!data) return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
   const p = data.avance, cls = pbClass(p);
-  const sc = data.status==='HUMEDO'?'status-humedo':'status-seco';
-  return `<div class="module-card" style="min-width:${w};min-height:${h};font-size:${px(10)};" title="${displayId} · ${p}% · ${data.status}">
+  const sc = data.status === 'HUMEDO' ? 'status-humedo' : 'status-seco';
+  return `<div class="module-card" style="min-width:${w};min-height:${h};font-size:${px(10)};" title="${id} · ${p}% · ${data.status}">
     <div class="card-header">
-      <div class="module-name">${displayId}</div>
-      <div class="module-days">${daysElapsed(data.fecha)}</div>
+      <div class="module-name">${id}</div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="module-days">${daysElapsed(data.fecha)}</div>
+        <div style="font-size:0.65em;color:#666;line-height:1;margin-top:1px;">días</div>
+      </div>
     </div>
     <div>
       <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${p}%">${p}%</div></div>
@@ -360,56 +373,15 @@ function card(id, data, w, h){
   </div>`;
 }
 
-function emptyCard(w='86px',h='85px'){
-  return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
+function stats(ids) {
+  const list   = ids.map(id => M[id]).filter(Boolean);
+  const total  = list.length;
+  const humedo = list.filter(d => d.status === 'HUMEDO').length;
+  const avg    = total ? Math.round(list.reduce((s, d) => s + d.avance, 0) / total) : 0;
+  return { total, humedo, seco: total - humedo, avg };
 }
 
-function grid(cells, cols, w='86px', h='85px'){
-  const ncols = typeof cols === 'number' ? cols : cells.reduce((m,r)=>Math.max(m,r.length),0);
-  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:5px;">`;
-  for(const row of cells){
-    for(let c=0; c<ncols; c++){
-      const id = row[c] || null;
-      html += card(id, id ? M[id] : null, w, h);
-    }
-  }
-  return html+'</div>';
-}
-
-function stats(locIds){
-  const list = locIds.map(id=>M[id]).filter(Boolean);
-  const total = list.length;
-  const humedo = list.filter(d=>d.status==='HUMEDO').length;
-  const seco   = total - humedo;
-  const avg    = total ? Math.round(list.reduce((s,d)=>s+d.avance,0)/total) : 0;
-  return {total,humedo,seco,avg};
-}
-
-// Celda con posición y span explícitos en el grid CSS
-function mkCell(id, col, row, rowSpan, w='86px', h='85px'){
-  const d = id ? M[id] : null;
-  const displayId = (d && d.display) ? d.display : id;
-  const hTall = `${2*parseInt(h)+5}px`;
-  const cellH  = rowSpan > 1 ? hTall : h;
-  const rowVal = rowSpan > 1 ? `${row} / ${row + rowSpan}` : `${row}`;
-  const style  = `grid-column:${col};grid-row:${rowVal};min-width:${w};min-height:${cellH};`;
-  if(!d) return `<div class="module-card empty" style="${style}"></div>`;
-  const p = d.avance, cls = pbClass(p);
-  const sc = d.status==='HUMEDO' ? 'status-humedo' : 'status-seco';
-  const fullStyle = style + `font-size:${px(10)};`;
-  return `<div class="module-card" style="${fullStyle}" title="${displayId} · ${p}% · ${d.status}">
-    <div class="card-header">
-      <div class="module-name">${displayId}</div>
-      <div class="module-days">${daysElapsed(d.fecha)}</div>
-    </div>
-    <div>
-      <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${p}%">${p}%</div></div>
-      <div class="module-status ${sc}">${d.status}</div>
-    </div>
-  </div>`;
-}
-
-function renderStats(containerId, ids){
+function renderStats(containerId, ids) {
   const s = stats(ids);
   document.getElementById(containerId).innerHTML =
     `<div class="stat-pill">Total: <strong>${s.total}</strong></div>
@@ -419,44 +391,55 @@ function renderStats(containerId, ids){
 }
 
 // ============================================================
+//  GRID BUILDER — usa posiciones (xls_row, xls_col) del xlsx
+// ============================================================
+function getSectionModules(loc, sector) {
+  return Object.entries(LOC)
+    .filter(([, d]) => d.loc === loc && (sector == null || d.sector === sector))
+    .sort(([, a], [, b]) => a.xls_row !== b.xls_row ? a.xls_row - b.xls_row : a.xls_col - b.xls_col)
+    .map(([id, d]) => ({ id, row: d.xls_row, col: d.xls_col }));
+}
+
+function buildSectionGrid(modules) {
+  if (!modules.length) return [];
+  const uRows = [...new Set(modules.map(m => m.row))].sort((a, b) => a - b);
+  const uCols = [...new Set(modules.map(m => m.col))].sort((a, b) => a - b);
+  const map   = {};
+  modules.forEach(m => { map[`${m.row},${m.col}`] = m.id; });
+  return uRows.map(r => uCols.map(c => map[`${r},${c}`] || null));
+}
+
+function renderGrid(g, w, h) {
+  const ncols = g.length ? g[0].length : 1;
+  const gap = '5px';
+  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:${gap};">`;
+  for (const row of g)
+    for (const id of row)
+      html += card(id, id ? M[id] : null, w, h);
+  return html + '</div>';
+}
+
+// ============================================================
 //  RESUMEN
 // ============================================================
-function buildResumen(){
+function buildResumen() {
   const locations = [
-    {
-      id:'galpon', name:'Galpón', icon:'📦', tab:'galpon',
-      cls:'border-galpon', color:'#8e44ad',
-      ids: ['M-00080','M-00073','M-00088','M-00077','M-00076','M-00087',
-            'M-00081','M-00082','M-00083','M-00084','M-00085','M-00096',
-            'M-00086','M-00095']
-    },
-    {
-      id:'carpa-grande', name:'Carpa Grande', icon:'🏗️', tab:'carpa-grande',
-      cls:'border-carpa-grande', color:'#2980b9',
-      ids: ['M-00050','M-00053','M-00079','M-00063','M-00023','M-00057',
-            'M-00054','M-00064','M-00058','M-00033','M-00088b','M-00080b',
-            'M-00046','M-00042','M-00045','M-00052','M-00041','M-00056',
-            'M-00044','M-00066','M-00061','M-00071','M-00060',
-            'M-00068','M-00072','M-00069','M-00037']
-    },
-    {
-      id:'carpa-chica', name:'Carpa Chica', icon:'🏕️', tab:'carpa-chica',
-      cls:'border-carpa-chica', color:'#16a085',
-      ids: ['M-00078','M-00075','M-00062','M-00039','M-00034',
-            'M-00049','M-00047','M-00043','M-00038',
-            'M-00074','M-00070','M-00036','M-00035','M-00040']
-    },
-    {
-      id:'patio', name:'Patio de Acopio', icon:'🌳', tab:'patio',
-      cls:'border-patio', color:'#e63946',
-      ids: ['M-00031','M-00051','M-00059','M-00007',
-            'M-00055','M-00015','M-00016','M-00048',
-            'M-00008','M-00024','M-00032']
-    }
+    { id: 'galpon',       name: 'Galpón',         icon: '📦', tab: 'galpon',
+      cls: 'border-galpon',       color: '#8e44ad',
+      ids: getSectionModules('galpon', null).map(m => m.id) },
+    { id: 'carpa-grande', name: 'Carpa Grande',   icon: '🏗️', tab: 'carpa-grande',
+      cls: 'border-carpa-grande', color: '#2980b9',
+      ids: [...getSectionModules('carpa-grande','sur'),
+            ...getSectionModules('carpa-grande','norte')].map(m => m.id) },
+    { id: 'carpa-chica',  name: 'Carpa Chica',    icon: '🏕️', tab: 'carpa-chica',
+      cls: 'border-carpa-chica',  color: '#16a085',
+      ids: getSectionModules('carpa-chica', null).map(m => m.id) },
+    { id: 'patio',        name: 'Patio de Acopio',icon: '🌳', tab: 'patio',
+      cls: 'border-patio',        color: '#e63946',
+      ids: getSectionModules('patio', null).map(m => m.id) },
   ];
 
-  // Total bar
-  const allIds = locations.flatMap(l=>l.ids);
+  const allIds = locations.flatMap(l => l.ids);
   const st = stats(allIds);
   document.getElementById('summary-total-bar').innerHTML = `
     <div class="total-item"><div class="total-num">${st.total}</div><div class="total-lbl">Módulos totales</div></div>
@@ -470,9 +453,8 @@ function buildResumen(){
       </div>
     </div>`;
 
-  // Cards
   let html = '';
-  for(const loc of locations){
+  for (const loc of locations) {
     const s = stats(loc.ids);
     html += `<div class="summary-card ${loc.cls}" onclick="switchToTab('${loc.tab}')">
       <div class="sc-icon">${loc.icon}</div>
@@ -490,175 +472,103 @@ function buildResumen(){
 // ============================================================
 //  GALPÓN
 // ============================================================
-function buildGalpon(){
-  const rows = [
-    ['M-00080','M-00073','M-00088'],
-    ['M-00077','M-00076','M-00087'],
-    ['M-00081','M-00082','M-00083'],
-    ['M-00084','M-00085','M-00096'],
-    ['M-00086','M-00095', null],
-    [null, null, null],
-  ];
+function buildGalpon() {
+  const mods = getSectionModules('galpon', null);
+  const g    = buildSectionGrid(mods);
+  const ncols = g.length ? g[0].length : 3;
   let html = '';
-  for(const row of rows)
-    for(const id of row)
-      html += card(id, id?M[id]:null);
+  for (const row of g)
+    for (const id of row)
+      html += card(id, id ? M[id] : null);
   document.getElementById('galpon-grid').innerHTML = html;
-  document.getElementById('galpon-grid').style.gridTemplateColumns = `repeat(3,${px(86)})`;
-  renderStats('stats-galpon',['M-00080','M-00073','M-00088','M-00077','M-00076','M-00087',
-    'M-00081','M-00082','M-00083','M-00084','M-00085','M-00096','M-00086','M-00095']);
+  document.getElementById('galpon-grid').style.gridTemplateColumns = `repeat(${ncols},${px(86)})`;
+  // Update linea-label cols to match
+  const ll = document.querySelector('.linea-label');
+  if (ll) ll.style.gridTemplateColumns = `repeat(${ncols},${px(86)})`;
+  renderStats('stats-galpon', mods.map(m => m.id));
 }
 
 // ============================================================
 //  CARPA GRANDE
-//  Los 4 módulos de la columna izquierda son ALTOS (span 2 filas).
-//  w=86px, gap=5px → hTall = 2×85+5 = 175px
-//  Usamos posicionamiento explícito (grid-column / grid-row).
 // ============================================================
-function buildCarpaGrande(){
-  const w = px(86), h = px(85), gap = '5px';
-  // mkCell es global — definida arriba
+function buildCarpaGrande() {
+  const surMods = getSectionModules('carpa-grande', 'sur');
+  const norMods = getSectionModules('carpa-grande', 'norte');
+  const surGrid = buildSectionGrid(surMods);
+  const norGrid = buildSectionGrid(norMods);
+  const w = px(86), gap = '5px';
 
-  // ── SECTOR SUR — 3 columnas, 8 filas ──
-  // Col 1 y Col 3 son siempre ALTOS (span 2 filas).
-  // Col 2 tiene 2 módulos normales por bloque (fila 1 y fila 2).
-  // [c1_tall, c2_r1, c3_tall, c2_r2]
-  const surBlocks = [
-    ['M-00050', null,       null,        null       ],
-    ['M-00053', null,       'M-00079',   'M-00063'  ],
-    ['M-00023', 'M-00057',  'M-00054',   'M-00064'  ],
-    ['M-00058', 'M-00033',  'M-00088b',  'M-00080b' ],
-  ];
-  let surHtml = `<div style="display:grid;grid-template-columns:${w} ${w} ${w};gap:${gap};">`;
-  surBlocks.forEach(([tall1, c2r1, tall3, c2r2], i) => {
-    const r = i * 2 + 1;
-    surHtml += mkCell(tall1, 1, r, 2);   // col1, span 2 filas
-    surHtml += mkCell(c2r1,  2, r, 1);   // col2, fila 1 del bloque
-    surHtml += mkCell(tall3, 3, r, 2);   // col3, span 2 filas
-    surHtml += mkCell(c2r2,  2, r+1, 1); // col2, fila 2 del bloque
-  });
+  const surNCols = surGrid.length ? surGrid[0].length : 3;
+  let surHtml = `<div style="display:grid;grid-template-columns:repeat(${surNCols},${w});gap:${gap};">`;
+  for (const row of surGrid)
+    for (const id of row)
+      surHtml += card(id, id ? M[id] : null, w);
   surHtml += '</div>';
   document.getElementById('cg-sur').innerHTML = surHtml;
 
-  // ── SECTOR NORTE — 3 columnas, 8 filas (M-00032 movido a Patio) ──
-  // Col 1 y Col 3 son siempre ALTOS (span 2 filas).
-  // [c1_tall, c2_r1, c3_tall, c2_r2]
-  const norteBlocks = [
-    ['M-00046', 'M-00042',  'M-00045',  'M-00052'  ],
-    ['M-00041', 'M-00056',  'M-00044',  'M-00066'  ],
-    ['M-00061', 'M-00071',  'M-00060',  'M-00068'  ],
-    ['M-00072', 'M-00069',  'M-00037',  null       ],
-  ];
-  let norteHtml = `<div style="display:grid;grid-template-columns:${w} ${w} ${w};gap:${gap};">`;
-  norteBlocks.forEach(([tall1, c2r1, tall3, c2r2], i) => {
-    const r = i * 2 + 1;
-    norteHtml += mkCell(tall1, 1, r, 2);
-    norteHtml += mkCell(c2r1,  2, r, 1);
-    norteHtml += mkCell(tall3, 3, r, 2);
-    norteHtml += mkCell(c2r2,  2, r+1, 1);
-  });
-  norteHtml += '</div>';
-  document.getElementById('cg-norte').innerHTML = norteHtml;
+  const norNCols = norGrid.length ? norGrid[0].length : 3;
+  let norHtml = `<div style="display:grid;grid-template-columns:repeat(${norNCols},${w});gap:${gap};">`;
+  for (const row of norGrid)
+    for (const id of row)
+      norHtml += card(id, id ? M[id] : null, w);
+  norHtml += '</div>';
+  document.getElementById('cg-norte').innerHTML = norHtml;
 
-  // stats (M-00032 ya no está en Norte)
-  const allCG = ['M-00050','M-00053','M-00079','M-00063','M-00023','M-00057','M-00054',
-    'M-00064','M-00058','M-00033','M-00088b','M-00080b',
-    'M-00046','M-00042','M-00045','M-00052','M-00041','M-00056','M-00044',
-    'M-00066','M-00061','M-00071','M-00060','M-00068','M-00072','M-00069','M-00037'];
-  renderStats('stats-carpa-grande', allCG);
+  renderStats('stats-carpa-grande', [...surMods, ...norMods].map(m => m.id));
 }
 
 // ============================================================
 //  CARPA CHICA
-//  Top / Bot → ANCHOS (2 cuadros, 221px c/u).
-//  Fila media   → ancho normal (108px).
-//  Layout: 3 filas flex.
-//  La fila media arranca alineada con M-00062 (3er módulo superior).
 // ============================================================
-function buildCarpaChica(){
-  const wWide = px(221), wNorm = px(108), h = px(88), gap = '5px';
-  // Offset: alínea el primer módulo medio bajo M-00062 (3er módulo superior)
-  const midLeft = px(452); // 2 × (221 + 5)
-
-  const mkMod = (id, w) => {
-    if(!id) return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
-    const d = M[id];
-    const p = d.avance, cls = pbClass(p);
-    const sc = d.status==='HUMEDO' ? 'status-humedo' : 'status-seco';
-    return `<div class="module-card" style="min-width:${w};min-height:${h};font-size:${px(10)};" title="${id} · ${p}% · ${d.status}">
-      <div class="card-header">
-        <div class="module-name">${id}</div>
-        <div class="module-days">${daysElapsed(d.fecha)}</div>
-      </div>
-      <div>
-        <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${p}%">${p}%</div></div>
-        <div class="module-status ${sc}">${d.status}</div>
-      </div>
-    </div>`;
-  };
-
-  const rowFlex = `display:flex;gap:${gap};`;
+function buildCarpaChica() {
+  const mods = getSectionModules('carpa-chica', null);
+  const g    = buildSectionGrid(mods);
+  const w = px(108), h = px(88), gap = '5px';
   let html = '';
-
-  // Fila superior — módulos anchos
-  const top = ['M-00078','M-00075','M-00062','M-00039','M-00034'];
-  html += `<div style="${rowFlex}">`;
-  top.forEach(id => { html += mkMod(id, wWide); });
-  html += '</div>';
-
-  // Fila media — módulos normales, alineados bajo el 3er módulo superior
-  const mid = ['M-00049','M-00047','M-00043','M-00038'];
-  html += `<div style="${rowFlex}margin-top:${gap};padding-left:${midLeft};">`;
-  mid.forEach(id => { html += mkMod(id, wNorm); });
-  html += '</div>';
-
-  // Fila inferior — módulos anchos
-  const bot = ['M-00074','M-00070','M-00036','M-00035','M-00040'];
-  html += `<div style="${rowFlex}margin-top:${gap};">`;
-  bot.forEach(id => { html += mkMod(id, wWide); });
-  html += '</div>';
-
+  for (const row of g) {
+    html += `<div style="display:flex;flex-wrap:wrap;gap:${gap};margin-bottom:${gap};">`;
+    for (const id of row)
+      html += card(id, id ? M[id] : null, w, h);
+    html += '</div>';
+  }
   document.getElementById('carpa-chica-grid').innerHTML = html;
-  renderStats('stats-carpa-chica',['M-00078','M-00075','M-00062','M-00039','M-00034',
-    'M-00049','M-00047','M-00043','M-00038','M-00074','M-00070','M-00036','M-00035','M-00040']);
+  renderStats('stats-carpa-chica', mods.map(m => m.id));
 }
 
 // ============================================================
-//  PATIO DE ACOPIO — incluye M-00032 (movido desde Carpa Grande)
+//  PATIO DE ACOPIO
 // ============================================================
-function buildPatio(){
-  const rows = [
-    ['M-00031','M-00051','M-00059','M-00007','M-00055','M-00015','M-00016','M-00048'],
-    [null,      null,     null,     null,    null,     'M-00008','M-00024','M-00032'],
-  ];
-  document.getElementById('patio-grid').innerHTML = grid(rows, 8, px(112), px(90));
-  renderStats('stats-patio',['M-00031','M-00051','M-00059','M-00007',
-    'M-00055','M-00015','M-00016','M-00048','M-00008','M-00024','M-00032']);
+function buildPatio() {
+  const mods = getSectionModules('patio', null);
+  const g    = buildSectionGrid(mods);
+  document.getElementById('patio-grid').innerHTML = renderGrid(g, px(112), px(90));
+  renderStats('stats-patio', mods.map(m => m.id));
 }
 
 // ============================================================
 //  TAB SWITCHING
 // ============================================================
-function switchTab(tab, btn){
-  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  if(btn) btn.classList.add('active');
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
-function switchToTab(tab){
-  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
+function switchToTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
   const btn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
-  if(btn) btn.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 // ============================================================
 //  INIT
 // ============================================================
-function init(){
+async function init() {
   updateScale();
+  await loadAvanceData();
   buildResumen();
   buildGalpon();
   buildCarpaGrande();
@@ -667,7 +577,6 @@ function init(){
 }
 init();
 
-// Re-render al cambiar tamaño de ventana (con debounce)
 let _resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(_resizeTimer);
