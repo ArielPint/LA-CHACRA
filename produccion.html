@@ -129,6 +129,7 @@ tbody tr:hover td{background:var(--surface2)}
     <label>Torre:</label><select id="a-torre"></select>
     <label>Tipo:</label><select id="a-tipo"></select>
     <label>Categoría:</label><select id="a-cat"></select>
+    <label>Partida:</label><select id="a-part"></select>
   </div>
   <div class="kpi-row" id="kpi-alertas"></div>
   <div class="card"><h3>Módulos con mayor retraso</h3><div class="tbl-wrap"><table id="tbl-retraso"><thead></thead><tbody></tbody></table></div></div>
@@ -566,12 +567,22 @@ function renderPartidas(){
 // ════════════════════════════════════════════
 // ALERTAS
 // ════════════════════════════════════════════
+function updatePartidaOpts(){
+  var m = DATA;
+  var cat = document.getElementById("a-cat").value;
+  var base = cat !== "Todas" ? m.filter(function(x){return x.catPend===cat;}) : m;
+  var parts = ["Todas"].concat(Array.from(new Set(base.map(function(x){return x.partidasPend||"";}).filter(Boolean))).sort());
+  var aPart = document.getElementById("a-part");
+  aPart.innerHTML = parts.map(function(p){return "<option>"+p+"</option>";}).join("");
+}
+
 function renderAlertas(){
   var m = DATA;
   // Populate filters (only first time)
   var aTorre = document.getElementById("a-torre");
   var aTipo  = document.getElementById("a-tipo");
   var aCat   = document.getElementById("a-cat");
+  var aPart  = document.getElementById("a-part");
   if(!aTorre.options.length){
     var torres = ["Todas"].concat(Array.from(new Set(m.map(function(x){return x.torre;}))).sort());
     var tipos  = ["Todos"].concat(Array.from(new Set(m.map(function(x){return x.tipo||"";}).filter(Boolean))));
@@ -579,9 +590,11 @@ function renderAlertas(){
     aTorre.innerHTML = torres.map(function(t){return "<option>"+t+"</option>";}).join("");
     aTipo.innerHTML  = tipos.map(function(t){return "<option>"+t+"</option>";}).join("");
     aCat.innerHTML   = cats.map(function(c){return "<option>"+c+"</option>";}).join("");
+    updatePartidaOpts();
     aTorre.addEventListener("change", drawAlertas);
     aTipo.addEventListener("change", drawAlertas);
-    aCat.addEventListener("change", drawAlertas);
+    aCat.addEventListener("change", function(){ updatePartidaOpts(); drawAlertas(); });
+    aPart.addEventListener("change", drawAlertas);
   }
   drawAlertas();
   makeSortable("tbl-retraso");
@@ -590,13 +603,15 @@ function renderAlertas(){
 }
 
 function drawAlertas(){
-  var tor = document.getElementById("a-torre").value;
-  var tip = document.getElementById("a-tipo").value;
-  var cat = document.getElementById("a-cat").value;
+  var tor  = document.getElementById("a-torre").value;
+  var tip  = document.getElementById("a-tipo").value;
+  var cat  = document.getElementById("a-cat").value;
+  var part = document.getElementById("a-part").value;
   var m = DATA.filter(function(x){
-    if(tor !== "Todas" && x.torre !== tor) return false;
-    if(tip !== "Todos" && x.tipo  !== tip) return false;
-    if(cat !== "Todas" && x.catPend !== cat) return false;
+    if(tor  !== "Todas" && x.torre       !== tor)  return false;
+    if(tip  !== "Todos" && x.tipo        !== tip)  return false;
+    if(cat  !== "Todas" && x.catPend     !== cat)  return false;
+    if(part !== "Todas" && x.partidasPend !== part) return false;
     return true;
   });
 
