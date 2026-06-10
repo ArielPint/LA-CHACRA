@@ -172,7 +172,7 @@
 <!-- ======================== GALPÓN ======================== -->
 <div id="tab-galpon" class="tab-content">
   <div class="loc-title">Ubicación 1 — Galpón</div>
-  <div class="loc-desc">Galpón principal y costado bodega</div>
+  <div class="loc-desc">Galpón principal</div>
   <div class="legend">
     <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
     <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
@@ -190,10 +190,6 @@
           <div class="linea-box">L1</div>
         </div>
       </div>
-    </div>
-    <div class="section-wrap">
-      <div class="section-title" style="color:#7f8c8d;">▣ Costado Bodega</div>
-      <div id="costado-bodega-grid"></div>
     </div>
   </div>
 </div>
@@ -238,7 +234,7 @@
 <!-- ======================== PATIO DE ACOPIO ======================== -->
 <div id="tab-patio" class="tab-content">
   <div class="loc-title">Ubicación 4 — Patio de Acopio</div>
-  <div class="loc-desc">Módulos en patio exterior · Sector Carpa Grande y Sector Carpa Chica</div>
+  <div class="loc-desc">Módulos en patio exterior · Costado Bodega, Sector Carpa Grande y Sector Carpa Chica</div>
   <div class="legend">
     <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
     <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
@@ -246,6 +242,10 @@
   </div>
   <div id="stats-patio" class="stats-bar"></div>
   <div class="multi-wrap">
+    <div class="section-wrap">
+      <div class="section-title" style="color:#7f8c8d;">▣ Costado Bodega</div>
+      <div id="costado-bodega-grid"></div>
+    </div>
     <div class="section-wrap">
       <div class="section-title" style="color:#2980b9;">▣ Sector Carpa Grande</div>
       <div id="patio-cg"></div>
@@ -449,10 +449,10 @@ function renderGrid(g, w, h) {
 //  RESUMEN
 // ============================================================
 function buildResumen() {
-  const galponIds = [...getSectionModules('galpon',null), ...getSectionModules('costado-bodega',null)].map(m=>m.id);
+  const galponIds = getSectionModules('galpon',null).map(m=>m.id);
   const cgIds     = [...getSectionModules('carpa-grande','sur'), ...getSectionModules('carpa-grande','norte')].map(m=>m.id);
   const ccIds     = getSectionModules('carpa-chica',null).map(m=>m.id);
-  const patioIds  = [...getSectionModules('patio','carpa-grande'), ...getSectionModules('patio','carpa-chica')].map(m=>m.id);
+  const patioIds  = [...getSectionModules('costado-bodega',null), ...getSectionModules('patio','carpa-grande'), ...getSectionModules('patio','carpa-chica')].map(m=>m.id);
 
   const locations = [
     { id:'galpon',       name:'Galpón',         icon:'📦', tab:'galpon',       cls:'border-galpon',       color:'#8e44ad', ids:galponIds  },
@@ -505,12 +505,7 @@ function buildGalpon() {
   const ll = document.querySelector('.linea-label');
   if (ll) ll.style.gridTemplateColumns = `repeat(${ncols},${px(86)})`;
 
-  const cbMods = getSectionModules('costado-bodega', null);
-  const cbGrid = buildSectionGrid(cbMods);
-  const cbEl   = document.getElementById('costado-bodega-grid');
-  if (cbEl) cbEl.innerHTML = renderGrid(cbGrid, px(86), px(85));
-
-  renderStats('stats-galpon', [...mods, ...cbMods].map(m=>m.id));
+  renderStats('stats-galpon', mods.map(m=>m.id));
 }
 
 // ============================================================
@@ -643,13 +638,17 @@ function buildCarpaChica() {
 //  PATIO DE ACOPIO
 // ============================================================
 function buildPatio() {
+  const cbMods = getSectionModules('costado-bodega', null);
+  const cbEl   = document.getElementById('costado-bodega-grid');
+  if (cbEl) cbEl.innerHTML = renderGrid(buildSectionGrid(cbMods), px(86), px(85));
+
   const cgMods = getSectionModules('patio','carpa-grande');
   const ccMods = getSectionModules('patio','carpa-chica');
   const cgEl   = document.getElementById('patio-cg');
   const ccEl   = document.getElementById('patio-cc');
   if (cgEl) cgEl.innerHTML = renderGrid(buildSectionGrid(cgMods), px(112), px(90));
   if (ccEl) ccEl.innerHTML = renderGrid(buildSectionGrid(ccMods), px(112), px(90));
-  renderStats('stats-patio', [...cgMods, ...ccMods].map(m=>m.id));
+  renderStats('stats-patio', [...cbMods, ...cgMods, ...ccMods].map(m=>m.id));
 }
 
 // ============================================================
