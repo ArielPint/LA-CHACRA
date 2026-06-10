@@ -137,6 +137,14 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="card"><h3>Sin movimiento ≥ 7 días</h3><div class="tbl-wrap"><table id="tbl-sinmov"><thead></thead><tbody></tbody></table></div></div>
     <div class="card"><h3>Término planificado vencido</h3><div class="tbl-wrap"><table id="tbl-venc"><thead></thead><tbody></tbody></table></div></div>
   </div>
+  <div class="card">
+    <h3>M&#243;dulos pendientes por partida espec&#237;fica</h3>
+    <div class="filter-bar" style="margin-bottom:12px">
+      <label>Partida:</label><select id="ap-partida"></select>
+      <span id="ap-count" style="font-size:.8rem;color:var(--muted);margin-left:8px"></span>
+    </div>
+    <div class="tbl-wrap"><table id="tbl-ap" class="sortable"><thead></thead><tbody></tbody></table></div>
+  </div>
 </div>
 <div class="page" id="page-detalle">
   <div class="filter-bar">
@@ -651,6 +659,83 @@ function drawAlertas(){
            '<td class="num" style="color:var(--red);font-weight:700">+'+dv+'d</td>'+
            '<td>'+(x.estadoMod||"—")+'</td></tr>';
   }).join("");
+  initPartidaSelect();
+  drawPartidaPend();
+}
+
+// ════════════════════════════════════════════
+// TABLA PENDIENTES POR PARTIDA ESPECÍFICA
+// ════════════════════════════════════════════
+var AP_PARTIDAS = [
+  {label:"Piso",                 field:"piso"},
+  {label:"Tabiques",             field:"tabiques"},
+  {label:"Muros",                field:"muros"},
+  {label:"Cielo",                field:"cielo"},
+  {label:"Balcón",               field:"balcon"},
+  {label:"Red Alcantarillado",   field:"redAlcant"},
+  {label:"Red de Agua",          field:"redAgua"},
+  {label:"Ventilaciones",        field:"ventil"},
+  {label:"Tina",                 field:"tina"},
+  {label:"WC",                   field:"wc"},
+  {label:"Lavamanos/Lavaplatos", field:"lavamanos"},
+  {label:"Canalización",         field:"canaliz"},
+  {label:"Cableado",             field:"cableado"},
+  {label:"Artefactos",           field:"artefactos"},
+  {label:"Tablero",              field:"tablero"},
+  {label:"Caja PAU",             field:"cajaPAU"},
+  {label:"Vinílico",             field:"vinilico"},
+  {label:"OSB Cubierta",         field:"osbCub"},
+  {label:"Baranda Balcón",       field:"baranda"},
+  {label:"OSB Exterior",         field:"osbExt"},
+  {label:"Smart Panel",          field:"smartPanel"},
+  {label:"Pintura Exterior",     field:"pintExt"},
+  {label:"Zócalos Logia",        field:"zocalos"},
+  {label:"Molduras",             field:"molduras"},
+  {label:"Pilastreo",            field:"pilastreo"},
+  {label:"Celosías",             field:"celosias"},
+  {label:"Ventanas",             field:"ventanas"},
+  {label:"Puertas Acc/Logia/Baño",field:"puertasAcc"},
+  {label:"Cerraduras",           field:"cerraduras"},
+  {label:"Rev. Int. Zona Seca",  field:"revSeca"},
+  {label:"Rev. Int. Zonas Húmedas",field:"revHumeda"},
+  {label:"Membrana Cielo",       field:"membrana"},
+  {label:"Limpieza Final",       field:"limpieza"},
+  {label:"Puertas Dormitorio",   field:"puertasDorm"},
+  {label:"Rev. Int. Baño",       field:"revBano"},
+  {label:"Mueble Lavaplatos",    field:"muebleLav"},
+  {label:"Impermeabilización",   field:"impermeab"},
+];
+
+function drawPartidaPend(){
+  var sel = document.getElementById("ap-partida");
+  var idx = sel.selectedIndex;
+  var p = AP_PARTIDAS[idx] || AP_PARTIDAS[0];
+  var rows = DATA.filter(function(x){ return x.initReal && !x.termReal && (x[p.field]==null || x[p.field] < 1); });
+  document.getElementById("ap-count").textContent = rows.length + " módulo" + (rows.length!==1?"s":"") + " pendientes";
+  var tbl = document.getElementById("tbl-ap");
+  tbl.querySelector("thead").innerHTML = thRow(["Torre","Módulo","Tipo","Avance global",p.label+" %","Término Plan","Estado"]);
+  tbl.querySelector("tbody").innerHTML = rows.slice().sort(function(a,b){
+    return (a.torre||"").localeCompare(b.torre||"") || (a.modulo||"").localeCompare(b.modulo||"");
+  }).map(function(x){
+    var pval = x[p.field];
+    var pct  = pval!=null ? fP(pval*100) : "—";
+    var color = pval==null||pval===0 ? "var(--red)" : pval<0.5 ? "var(--orange)" : "var(--yellow)";
+    return '<tr><td>'+x.torre+'</td><td>'+x.modulo+'</td><td>'+(x.tipo||"—")+'</td>'+
+           '<td>'+pb(x.avance)+'</td>'+
+           '<td class="num" style="color:'+color+';font-weight:600">'+pct+'</td>'+
+           '<td>'+fD(x.termPlan)+'</td><td>'+(x.estadoMod||"—")+'</td></tr>';
+  }).join("");
+  makeSortable("tbl-ap");
+}
+
+function initPartidaSelect(){
+  var sel = document.getElementById("ap-partida");
+  if(sel.options.length) return;
+  sel.innerHTML = AP_PARTIDAS.map(function(p,i){ return '<option value="'+i+'">'+p.label+'</option>'; }).join("");
+  // Default: VENTANAS
+  var ventIdx = AP_PARTIDAS.findIndex(function(p){return p.field==="ventanas";});
+  if(ventIdx>=0) sel.selectedIndex = ventIdx;
+  sel.addEventListener("change", drawPartidaPend);
 }
 
 // ════════════════════════════════════════════
