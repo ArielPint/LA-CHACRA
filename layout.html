@@ -264,25 +264,17 @@
 let LOC = {};
 let M   = {};
 
-// ----------------------------------------------------------
-// Asigna ubicación según posición en la hoja UBICACIONES
-// ----------------------------------------------------------
 function assignLoc(r, c) {
-  // Zona galpón (filas altas)
   if (r >= 100 && c >= 24) return { loc: 'galpon',         sector: null           };
   if (r >= 100 && c <  24) return { loc: 'costado-bodega', sector: null           };
-  // Patio de acopio (filas bajas, fuera de carpas)
-  if (r < 30   && c >= 50) return { loc: 'patio',          sector: 'carpa-chica'  };
-  if (r < 30              ) return { loc: 'patio',          sector: 'carpa-grande' };
-  // Zona de producción (filas medias, rows 30-99)
+  if (r <  30  && c >= 50) return { loc: 'patio',          sector: 'carpa-chica'  };
+  if (r <  30             ) return { loc: 'patio',          sector: 'carpa-grande' };
   if (c >= 50)             return { loc: 'carpa-chica',    sector: null           };
   if (c <  35)             return { loc: 'carpa-grande',   sector: 'sur'          };
-  return                          { loc: 'carpa-grande',   sector: 'norte'        };
+  if (c <  44)             return { loc: 'carpa-grande',   sector: 'norte'        };
+  return                          { loc: 'patio',          sector: 'carpa-grande' };
 }
 
-// ----------------------------------------------------------
-// Carga ubicaciones.xlsx → LOC
-// ----------------------------------------------------------
 async function loadUbicaciones() {
   try {
     const resp = await fetch('data/ubicaciones.xlsx');
@@ -297,20 +289,13 @@ async function loadUbicaciones() {
       const row = rows[r] || [];
       for (let c = 0; c < row.length; c++) {
         const v = row[c];
-        if (v && typeof v === 'string' && /^M-\d+/.test(v.trim())) {
-          const id = v.trim();
-          LOC[id] = Object.assign({ xls_row: r, xls_col: c }, assignLoc(r, c));
-        }
+        if (v && typeof v === 'string' && /^M-\d+/.test(v.trim()))
+          LOC[v.trim()] = Object.assign({ xls_row: r, xls_col: c }, assignLoc(r, c));
       }
     }
-  } catch (e) {
-    console.warn('ubicaciones.xlsx no disponible:', e.message);
-  }
+  } catch (e) { console.warn('ubicaciones.xlsx:', e.message); }
 }
 
-// ----------------------------------------------------------
-// Carga avance.xlsx → M
-// ----------------------------------------------------------
 async function loadAvanceData() {
   await loadUbicaciones();
   for (const id of Object.keys(LOC))
@@ -342,9 +327,7 @@ async function loadAvanceData() {
     }
     document.querySelector('header .subtitle').textContent =
       'Estado y progreso por ubicación · Datos desde avance.xlsx';
-  } catch (e) {
-    console.warn('avance.xlsx no disponible:', e.message);
-  }
+  } catch (e) { console.warn('avance.xlsx:', e.message); }
 }
 
 // ============================================================
@@ -365,22 +348,50 @@ function updateScale() { SCALE = Math.min(Math.max(window.innerWidth / 1280, 0.6
 function px(n) { return Math.round(n * SCALE) + 'px'; }
 function pxN(n) { return Math.round(n * SCALE); }
 
-function card(id, data, w, h) {
-  w = w || px(86); h = h || px(85);
-  if (!data) return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
-  const p = data.avance, cls = pbClass(p);
-  const sc = data.status === 'HUMEDO' ? 'status-humedo' : 'status-seco';
-  return `<div class="module-card" style="min-width:${w};min-height:${h};font-size:${px(10)};" title="${id} · ${p}% · ${data.status}">
+function cardInner(id, p, status, fecha, w, h) {
+  const cls = pbClass(p);
+  const sc  = status === 'HUMEDO' ? 'status-humedo' : 'status-seco';
+  return `<div class="module-card" style="min-width:${w};min-height:${h};font-size:${px(10)};" title="${id} · ${p}% · ${status}">
     <div class="card-header">
       <div class="module-name">${id}</div>
       <div style="text-align:right;flex-shrink:0;">
-        <div class="module-days">${daysElapsed(data.fecha)}</div>
+        <div class="module-days">${daysElapsed(fecha)}</div>
         <div style="font-size:0.65em;color:#666;line-height:1;margin-top:1px;">días</div>
       </div>
     </div>
     <div>
       <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${p}%">${p}%</div></div>
-      <div class="module-status ${sc}">${data.status}</div>
+      <div class="module-status ${sc}">${status}</div>
+    </div>
+  </div>`;
+}
+
+function card(id, data, w, h) {
+  w = w || px(86); h = h || px(85);
+  if (!data) return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
+  return cardInner(id, data.avance, data.status, data.fecha, w, h);
+}
+
+// Celda con grid-column/row para layout de celdas altas
+function mkCell(id, col, row, rowSpan, w, h) {
+  w = w || px(86); h = h || px(85);
+  const hTall  = `${2 * parseInt(h) + 5}px`;
+  const cellH  = rowSpan > 1 ? hTall : h;
+  const rowVal = rowSpan > 1 ? `${row} / ${row + rowSpan}` : `${row}`;
+  const style  = `grid-column:${col};grid-row:${rowVal};min-width:${w};min-height:${cellH};`;
+  if (!id || !M[id]) return `<div class="module-card empty" style="${style}"></div>`;
+  const d = M[id];
+  return `<div class="module-card" style="${style}font-size:${px(10)};" title="${id} · ${d.avance}% · ${d.status}">
+    <div class="card-header">
+      <div class="module-name">${id}</div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="module-days">${daysElapsed(d.fecha)}</div>
+        <div style="font-size:0.65em;color:#666;line-height:1;margin-top:1px;">días</div>
+      </div>
+    </div>
+    <div>
+      <div class="progress-wrap"><div class="progress-bar ${pbClass(d.avance)}" style="width:${d.avance}%">${d.avance}%</div></div>
+      <div class="module-status ${d.status==='HUMEDO'?'status-humedo':'status-seco'}">${d.status}</div>
     </div>
   </div>`;
 }
@@ -403,7 +414,7 @@ function renderStats(containerId, ids) {
 }
 
 // ============================================================
-//  GRID BUILDER (genérico, rank-based)
+//  GRID HELPERS
 // ============================================================
 function getSectionModules(loc, sector) {
   return Object.entries(LOC)
@@ -412,7 +423,6 @@ function getSectionModules(loc, sector) {
     .map(([id, d]) => ({ id, row: d.xls_row, col: d.xls_col }));
 }
 
-// Construye grilla 2D usando rank (no valor bruto) → sin columnas vacías
 function buildSectionGrid(modules) {
   if (!modules.length) return [];
   const uRows = [...new Set(modules.map(m => m.row))].sort((a, b) => a - b);
@@ -424,8 +434,8 @@ function buildSectionGrid(modules) {
 
 function renderGrid(g, w, h) {
   if (!g.length) return '';
-  const ncols = g[0].length, gap = '5px';
-  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:${gap};">`;
+  const ncols = g[0].length;
+  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:5px;">`;
   for (const row of g)
     for (const id of row)
       html += card(id, id ? M[id] : null, w, h);
@@ -436,27 +446,19 @@ function renderGrid(g, w, h) {
 //  RESUMEN
 // ============================================================
 function buildResumen() {
-  const galponIds  = [...getSectionModules('galpon', null),
-                      ...getSectionModules('costado-bodega', null)].map(m => m.id);
-  const cgIds      = [...getSectionModules('carpa-grande','sur'),
-                      ...getSectionModules('carpa-grande','norte')].map(m => m.id);
-  const ccIds      = getSectionModules('carpa-chica', null).map(m => m.id);
-  const patioIds   = [...getSectionModules('patio','carpa-grande'),
-                      ...getSectionModules('patio','carpa-chica')].map(m => m.id);
+  const galponIds = [...getSectionModules('galpon',null), ...getSectionModules('costado-bodega',null)].map(m=>m.id);
+  const cgIds     = [...getSectionModules('carpa-grande','sur'), ...getSectionModules('carpa-grande','norte')].map(m=>m.id);
+  const ccIds     = getSectionModules('carpa-chica',null).map(m=>m.id);
+  const patioIds  = [...getSectionModules('patio','carpa-grande'), ...getSectionModules('patio','carpa-chica')].map(m=>m.id);
 
   const locations = [
-    { id:'galpon',       name:'Galpón',          icon:'📦', tab:'galpon',
-      cls:'border-galpon',       color:'#8e44ad', ids: galponIds },
-    { id:'carpa-grande', name:'Carpa Grande',    icon:'🏗️', tab:'carpa-grande',
-      cls:'border-carpa-grande', color:'#2980b9', ids: cgIds },
-    { id:'carpa-chica',  name:'Carpa Chica',     icon:'🏕️', tab:'carpa-chica',
-      cls:'border-carpa-chica',  color:'#16a085', ids: ccIds },
-    { id:'patio',        name:'Patio de Acopio', icon:'🌳', tab:'patio',
-      cls:'border-patio',        color:'#e63946', ids: patioIds },
+    { id:'galpon',       name:'Galpón',         icon:'📦', tab:'galpon',       cls:'border-galpon',       color:'#8e44ad', ids:galponIds  },
+    { id:'carpa-grande', name:'Carpa Grande',   icon:'🏗️', tab:'carpa-grande', cls:'border-carpa-grande', color:'#2980b9', ids:cgIds      },
+    { id:'carpa-chica',  name:'Carpa Chica',    icon:'🏕️', tab:'carpa-chica',  cls:'border-carpa-chica',  color:'#16a085', ids:ccIds      },
+    { id:'patio',        name:'Patio de Acopio',icon:'🌳', tab:'patio',        cls:'border-patio',        color:'#e63946', ids:patioIds   },
   ];
 
-  const allIds = locations.flatMap(l => l.ids);
-  const st = stats(allIds);
+  const st = stats(locations.flatMap(l=>l.ids));
   document.getElementById('summary-total-bar').innerHTML = `
     <div class="total-item"><div class="total-num">${st.total}</div><div class="total-lbl">Módulos totales</div></div>
     <div class="total-item"><div class="total-num" style="color:#2ecc71">${st.humedo}</div><div class="total-lbl">Húmedos</div></div>
@@ -473,8 +475,7 @@ function buildResumen() {
   for (const loc of locations) {
     const s = stats(loc.ids);
     html += `<div class="summary-card ${loc.cls}" onclick="switchToTab('${loc.tab}')">
-      <div class="sc-icon">${loc.icon}</div>
-      <div class="sc-name">${loc.name}</div>
+      <div class="sc-icon">${loc.icon}</div><div class="sc-name">${loc.name}</div>
       <div class="sc-row"><span>Módulos</span><strong>${s.total}</strong></div>
       <div class="sc-row"><span style="color:#27ae60">Húmedo</span><strong>${s.humedo}</strong></div>
       <div class="sc-row"><span style="color:#2980b9">Seco</span><strong>${s.seco}</strong></div>
@@ -489,7 +490,6 @@ function buildResumen() {
 //  GALPÓN + COSTADO BODEGA
 // ============================================================
 function buildGalpon() {
-  // Galpón principal
   const mods  = getSectionModules('galpon', null);
   const g     = buildSectionGrid(mods);
   const ncols = g.length ? g[0].length : 3;
@@ -502,42 +502,79 @@ function buildGalpon() {
   const ll = document.querySelector('.linea-label');
   if (ll) ll.style.gridTemplateColumns = `repeat(${ncols},${px(86)})`;
 
-  // Costado bodega
   const cbMods = getSectionModules('costado-bodega', null);
   const cbGrid = buildSectionGrid(cbMods);
   const cbEl   = document.getElementById('costado-bodega-grid');
   if (cbEl) cbEl.innerHTML = renderGrid(cbGrid, px(86), px(85));
 
-  const allGalpon = [...mods, ...cbMods].map(m => m.id);
-  renderStats('stats-galpon', allGalpon);
+  renderStats('stats-galpon', [...mods, ...cbMods].map(m=>m.id));
 }
 
 // ============================================================
-//  CARPA GRANDE — grilla uniforme por sector
+//  CARPA GRANDE — celdas altas dinámicas desde xlsx
+//
+//  Estructura: 3 columnas.  Col izq (c[0]) y col der (c[2]) = ALTAS
+//  (span 2 filas).  Col central (c[1]) = dos módulos normales por bloque.
+//
+//  Los bloques se definen por los módulos de la columna izquierda;
+//  la columna central se divide entre "primera mitad" y "segunda mitad"
+//  del intervalo de filas xlsx de cada bloque.
 // ============================================================
+function buildCarpaGrandeSector(mods) {
+  if (!mods.length) return '';
+
+  const uCols = [...new Set(mods.map(m => m.col))].sort((a, b) => a - b);
+  const col1  = uCols[0];                                     // tall izquierda
+  const col2  = uCols.length >= 2 ? uCols[1] : null;         // normal centro
+  const col3  = uCols.length >= 3 ? uCols[uCols.length-1] : null; // tall derecha
+
+  const c1Mods = mods.filter(m => m.col === col1).sort((a,b) => a.row - b.row);
+  const c2Mods = col2 ? mods.filter(m => m.col === col2).sort((a,b) => a.row - b.row) : [];
+  const c3Mods = col3 ? mods.filter(m => m.col === col3).sort((a,b) => a.row - b.row) : [];
+
+  // Paso promedio en col1 para estimar el límite del último bloque
+  const c1Step = c1Mods.length > 1
+    ? Math.round((c1Mods[c1Mods.length-1].row - c1Mods[0].row) / (c1Mods.length - 1))
+    : 10;
+
+  const ncols = col3 ? 3 : (col2 ? 2 : 1);
+  const w = px(86), h = px(85), gap = '5px';
+  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:${gap};">`;
+
+  c1Mods.forEach((c1m, i) => {
+    const nextRow = i + 1 < c1Mods.length ? c1Mods[i + 1].row : c1m.row + c1Step;
+    const mid     = c1m.row + (nextRow - c1m.row) / 2;
+    const gridRow = i * 2 + 1;
+
+    // Col central: primeros módulos hasta mid → fila 1; después mid → fila 2
+    const c2r1 = c2Mods.find(m => m.row >= c1m.row && m.row <= mid);
+    const c2r2 = c2Mods.find(m => m.row >  mid     && m.row <  nextRow);
+
+    // Col derecha: el primer módulo en este rango
+    const c3m  = c3Mods.find(m => m.row >= c1m.row && m.row < nextRow);
+
+    html += mkCell(c1m.id,         1, gridRow,     2, w, h);
+    html += mkCell(c2r1?.id||null, 2, gridRow,     1, w, h);
+    if (col3) html += mkCell(c3m?.id||null, 3, gridRow, 2, w, h);
+    html += mkCell(c2r2?.id||null, 2, gridRow + 1, 1, w, h);
+  });
+
+  html += '</div>';
+  return html;
+}
+
 function buildCarpaGrande() {
   const surMods = getSectionModules('carpa-grande', 'sur');
   const norMods = getSectionModules('carpa-grande', 'norte');
-  const w = px(86), gap = '5px';
-
-  function renderSector(mods) {
-    const g = buildSectionGrid(mods);
-    const ncols = g.length ? g[0].length : 3;
-    let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:${gap};">`;
-    for (const row of g)
-      for (const id of row)
-        html += card(id, id ? M[id] : null, w);
-    return html + '</div>';
-  }
-
-  document.getElementById('cg-sur').innerHTML   = renderSector(surMods);
-  document.getElementById('cg-norte').innerHTML = renderSector(norMods);
-  renderStats('stats-carpa-grande', [...surMods, ...norMods].map(m => m.id));
+  document.getElementById('cg-sur').innerHTML   = buildCarpaGrandeSector(surMods);
+  document.getElementById('cg-norte').innerHTML = buildCarpaGrandeSector(norMods);
+  renderStats('stats-carpa-grande', [...surMods, ...norMods].map(m=>m.id));
 }
 
 // ============================================================
-//  CARPA CHICA — filas anchas (paso 4) + fila media angosta
-//  con offset calculado desde la posición de col en xlsx
+//  CARPA CHICA
+//  Filas anchas (paso de col ≥ 4) → tarjetas anchas.
+//  Filas angostas (paso 2) → tarjetas angostas con offset calculado.
 // ============================================================
 function buildCarpaChica() {
   const mods = getSectionModules('carpa-chica', null);
@@ -547,93 +584,84 @@ function buildCarpaChica() {
   const map   = {};
   mods.forEach(m => { map[`${m.row},${m.col}`] = m.id; });
 
-  // Detectar el paso ancho (máximo entre cols de la misma fila → normalmente 4)
-  const rowColSets = uRows.map(r => mods.filter(m => m.row === r).map(m => m.col).sort((a, b) => a - b));
+  // Paso máximo entre cols de cualquier fila → "paso ancho"
+  const rowColSets = uRows.map(r => mods.filter(m=>m.row===r).map(m=>m.col).sort((a,b)=>a-b));
   const wideStep   = Math.max(...rowColSets.map(cols => {
     if (cols.length < 2) return 2;
     let mx = 0;
-    for (let i = 1; i < cols.length; i++) mx = Math.max(mx, cols[i] - cols[i - 1]);
+    for (let i=1;i<cols.length;i++) mx = Math.max(mx, cols[i]-cols[i-1]);
     return mx;
-  }));  // → 4
+  }));
 
-  const minCol = Math.min(...mods.map(m => m.col));
-  const maxCol = Math.max(...mods.map(m => m.col));
-
-  // Columnas anchas (paso 4): 52, 56, 60, 64, 68
+  const minCol = Math.min(...mods.map(m=>m.col));
+  const maxCol = Math.max(...mods.map(m=>m.col));
   const wideCols = [];
   for (let c = minCol; c <= maxCol; c += wideStep) wideCols.push(c);
 
-  const wW   = pxN(200);   // ancho módulo fila ancha (px sin escala necesaria — ya escalado)
-  const nW   = pxN(108);   // ancho módulo fila angosta
-  const hPx  = pxN(88);
-  const gap  = 5;
-  const wUnit = wW + 'px', nUnit = nW + 'px', h = hPx + 'px';
-
+  const wW  = pxN(200);
+  const nW  = pxN(108);
+  const hPx = pxN(88);
+  const gap = 5;
   let html = '';
 
   for (const r of uRows) {
-    const rowCols = mods.filter(m => m.row === r).map(m => m.col).sort((a, b) => a - b);
+    const rowCols = mods.filter(m=>m.row===r).map(m=>m.col).sort((a,b)=>a-b);
     const rowStep = rowCols.length > 1
-      ? Math.min(...rowCols.slice(1).map((c, i) => c - rowCols[i]))
+      ? Math.min(...rowCols.slice(1).map((c,i)=>c-rowCols[i]))
       : wideStep;
 
     if (rowStep >= wideStep) {
-      // Fila ancha: una tarjeta por cada columna-ancha
+      // Fila ancha: una tarjeta por columna-ancha
       html += `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;">`;
       for (const c of wideCols) {
         const id = map[`${r},${c}`] || null;
-        html += card(id, id ? M[id] : null, wUnit, h);
+        html += card(id, id?M[id]:null, wW+'px', hPx+'px');
       }
       html += '</div>';
     } else {
-      // Fila angosta con offset: alinear bajo la columna ancha más cercana por la izquierda
-      const startCol   = rowCols[0];
-      const nearIdx    = wideCols.filter(c => c <= startCol).length - 1;
-      const offsetPx   = (nearIdx >= 0 ? nearIdx * (wW + gap) : 0) + 'px';
+      // Fila angosta con offset
+      const startCol = rowCols[0];
+      const nearIdx  = wideCols.filter(c=>c<=startCol).length - 1;
+      const offsetPx = (nearIdx >= 0 ? nearIdx * (wW + gap) : 0) + 'px';
       html += `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;padding-left:${offsetPx};">`;
       for (const c of rowCols) {
         const id = map[`${r},${c}`] || null;
-        html += card(id, id ? M[id] : null, nUnit, h);
+        html += card(id, id?M[id]:null, nW+'px', hPx+'px');
       }
       html += '</div>';
     }
   }
 
   document.getElementById('carpa-chica-grid').innerHTML = html;
-  renderStats('stats-carpa-chica', mods.map(m => m.id));
+  renderStats('stats-carpa-chica', mods.map(m=>m.id));
 }
 
 // ============================================================
-//  PATIO DE ACOPIO — Sector Carpa Grande + Sector Carpa Chica
+//  PATIO DE ACOPIO
 // ============================================================
 function buildPatio() {
-  const cgMods = getSectionModules('patio', 'carpa-grande');
-  const ccMods = getSectionModules('patio', 'carpa-chica');
-  const cgGrid = buildSectionGrid(cgMods);
-  const ccGrid = buildSectionGrid(ccMods);
-
-  const cgEl = document.getElementById('patio-cg');
-  const ccEl = document.getElementById('patio-cc');
-  if (cgEl) cgEl.innerHTML = renderGrid(cgGrid, px(112), px(90));
-  if (ccEl) ccEl.innerHTML = renderGrid(ccGrid, px(112), px(90));
-
-  renderStats('stats-patio', [...cgMods, ...ccMods].map(m => m.id));
+  const cgMods = getSectionModules('patio','carpa-grande');
+  const ccMods = getSectionModules('patio','carpa-chica');
+  const cgEl   = document.getElementById('patio-cg');
+  const ccEl   = document.getElementById('patio-cc');
+  if (cgEl) cgEl.innerHTML = renderGrid(buildSectionGrid(cgMods), px(112), px(90));
+  if (ccEl) ccEl.innerHTML = renderGrid(buildSectionGrid(ccMods), px(112), px(90));
+  renderStats('stats-patio', [...cgMods, ...ccMods].map(m=>m.id));
 }
 
 // ============================================================
-//  TAB SWITCHING
+//  TABS
 // ============================================================
 function switchTab(tab, btn) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
   if (btn) btn.classList.add('active');
 }
-
 function switchToTab(tab) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
   const btn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
   if (btn) btn.classList.add('active');
 }
@@ -652,11 +680,8 @@ async function init() {
 }
 init();
 
-let _resizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(_resizeTimer);
-  _resizeTimer = setTimeout(init, 150);
-});
+let _rt;
+window.addEventListener('resize', () => { clearTimeout(_rt); _rt = setTimeout(init, 150); });
 </script>
 </body>
 </html>
