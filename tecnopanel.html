@@ -33,6 +33,7 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   <nav class="tb-nav">
     <div class="tb-tab active" onclick="showSheet(this,'dashboard')">&#127968; Dashboard</div>
     <div class="tb-tab" onclick="showSheet(this,'produccion')">&#128200; Produccion</div>
+    <div class="tb-tab" onclick="showSheet(this,'layout')">&#128205; Layout</div>
   </nav>
   <div class="tb-right">
     <button class="upload-btn" onclick="recargar()">&#8635; Actualizar datos</button>
@@ -46,10 +47,14 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   <div class="sheet" id="sheet-produccion">
     <iframe id="frame-produccion" src="" title="Produccion"></iframe>
   </div>
+  <div class="sheet" id="sheet-layout">
+    <iframe id="frame-layout" src="" title="Layout"></iframe>
+  </div>
 </div>
 
 <script>
 var prodLoaded = false;
+var layoutLoaded = false;
 
 function showSheet(el, name) {
   document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('active'); });
@@ -59,6 +64,10 @@ function showSheet(el, name) {
   if (name === 'produccion' && !prodLoaded) {
     document.getElementById('frame-produccion').src = 'produccion.html';
     prodLoaded = true;
+  }
+  if (name === 'layout' && !layoutLoaded) {
+    document.getElementById('frame-layout').src = 'layout.html';
+    layoutLoaded = true;
   }
 }
 

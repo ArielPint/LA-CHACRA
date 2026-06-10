@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Módulos — Planta Productiva</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #222; }
+
+  header {
+    background: #1a2c4e;
+    color: white;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  header h1 { font-size: 1.25rem; font-weight: 700; }
+  header .subtitle { font-size: 0.8rem; opacity: 0.65; margin-top: 2px; }
+
+  .tabs {
+    display: flex;
+    background: #1a2c4e;
+    padding: 0 24px;
+    gap: 2px;
+    border-bottom: 3px solid #e63946;
+  }
+  .tab-btn {
+    padding: 11px 20px;
+    border: none;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    font-size: 0.86rem;
+    font-weight: 500;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+  .tab-btn.active { background: white; color: #1a2c4e; font-weight: 700; }
+
+  .tab-content { display: none; padding: 26px 32px; }
+  .tab-content.active { display: block; }
+
+  .loc-title { font-size: 1.05rem; font-weight: 700; color: #1a2c4e; margin-bottom: 4px; }
+  .loc-desc  { font-size: 0.8rem; color: #666; margin-bottom: 18px; }
+
+  /* Legend */
+  .legend { display: flex; gap: 18px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #555; }
+  .legend-dot { width: 13px; height: 13px; border-radius: 3px; }
+  .dot-humedo { background: #2ecc71; }
+  .dot-seco   { background: #3498db; }
+  .dot-empty  { background: #eee; border: 1px dashed #bbb; }
+
+  /* Module card — font-size se setea inline desde JS para escalar con px() */
+  .module-card {
+    border: 2px solid #cc0000;
+    border-radius: 4px;
+    background: white;
+    padding: 4px 6px 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .module-card.empty {
+    border: 2px dashed #ccc;
+    background: #fafafa;
+  }
+  .card-header   { display: flex; justify-content: space-between; align-items: flex-start; gap: 3px; }
+  .module-name   { color: #cc0000; font-weight: 800; font-size: 0.82em; letter-spacing: 0.2px; line-height: 1.2; }
+  .module-days   { color: #333; font-weight: 800; font-size: 1.3em; line-height: 1.1; white-space: nowrap; flex-shrink: 0; }
+  .module-status { font-weight: 700; font-size: 0.82em; margin-top: 2px; }
+  .status-humedo { color: #27ae60; }
+  .status-seco   { color: #2980b9; }
+
+  .progress-wrap { background: #eee; border-radius: 3px; height: 10px; margin: 3px 0; overflow: hidden; border: 1px solid #ddd; }
+  .progress-bar  { height: 100%; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7em; font-weight: 700; white-space: nowrap; }
+  .pb-low  { background: #e74c3c; }
+  .pb-mid  { background: #f39c12; }
+  .pb-high { background: #2ecc71; }
+
+  /* Stats pill */
+  .stats-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat-pill { background: white; border: 1px solid #ddd; border-radius: 16px; padding: 5px 13px; font-size: 0.78rem; color: #444; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .stat-pill strong { color: #1a2c4e; }
+
+  /* Section wrapper */
+  .section-wrap { border: 2px solid #888; border-radius: 6px; padding: 14px 16px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: inline-block; }
+  .section-title { font-size: 0.78rem; font-weight: 700; color: #555; margin-bottom: 10px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Multi-section layout */
+  .multi-wrap { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+
+  /* =====================
+     SUMMARY TAB
+  ===================== */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 28px; }
+  .summary-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.09);
+    border-left: 5px solid #1a2c4e;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .summary-card:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,0.13); }
+  .summary-card.border-galpon      { border-left-color: #8e44ad; }
+  .summary-card.border-carpa-grande{ border-left-color: #2980b9; }
+  .summary-card.border-carpa-chica { border-left-color: #16a085; }
+  .summary-card.border-patio       { border-left-color: #e63946; }
+
+  .sc-icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .sc-name { font-size: 1rem; font-weight: 700; color: #1a2c4e; margin-bottom: 12px; }
+  .sc-row  { display: flex; justify-content: space-between; font-size: 0.8rem; color: #555; margin-bottom: 5px; }
+  .sc-row strong { color: #222; }
+  .sc-bar-wrap { background: #eee; border-radius: 6px; height: 10px; margin-top: 10px; overflow: hidden; }
+  .sc-bar      { height: 100%; border-radius: 6px; transition: width 0.5s; }
+  .sc-pct      { font-size: 0.72rem; color: #888; text-align: right; margin-top: 3px; }
+
+  .summary-total {
+    background: #1a2c4e;
+    color: white;
+    border-radius: 10px;
+    padding: 18px 24px;
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .total-item { text-align: center; }
+  .total-num  { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+  .total-lbl  { font-size: 0.75rem; opacity: 0.7; margin-top: 4px; }
+
+  /* Galpón */
+  .galpon-grid { display: grid; gap: 5px; margin-bottom: 8px; }
+  .linea-label { display: grid; grid-template-columns: repeat(3, 88px); gap: 5px; }
+  .linea-box   { border: 2px solid #888; border-radius: 4px; text-align: center; padding: 7px 4px; font-weight: 700; font-size: 0.95rem; color: #333; background: #f8f8f8; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏭 Mapa de Módulos — Planta Productiva</h1>
+    <div class="subtitle">Estado y progreso por ubicación · Actualizado desde archivo base</div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active"   onclick="switchTab('resumen',this)">📊 Resumen</button>
+  <button class="tab-btn"          onclick="switchTab('galpon',this)">📦 Galpón</button>
+  <button class="tab-btn"          onclick="switchTab('carpa-grande',this)">🏗️ Carpa Grande</button>
+  <button class="tab-btn"          onclick="switchTab('carpa-chica',this)">🏕️ Carpa Chica</button>
+  <button class="tab-btn"          onclick="switchTab('patio',this)">🌳 Patio de Acopio</button>
+</div>
+
+<!-- ======================== RESUMEN ======================== -->
+<div id="tab-resumen" class="tab-content active">
+  <div class="loc-title">Resumen General</div>
+  <div class="loc-desc">Vista consolidada de todos los módulos de la planta productiva</div>
+  <div id="summary-total-bar" class="summary-total"></div>
+  <div id="summary-grid" class="summary-grid"></div>
+</div>
+
+<!-- ======================== GALPÓN ======================== -->
+<div id="tab-galpon" class="tab-content">
+  <div class="loc-title">Ubicación 1 — Galpón</div>
+  <div class="loc-desc">Módulos almacenados en galpón principal · 3 columnas × 5 filas + accesos L1/L2/L3</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="stats-galpon" class="stats-bar"></div>
+  <div class="section-wrap">
+    <div class="galpon-grid" id="galpon-grid"></div>
+    <div class="linea-label">
+      <div class="linea-box">L3</div>
+      <div class="linea-box">L2</div>
+      <div class="linea-box">L1</div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== CARPA GRANDE ======================== -->
+<div id="tab-carpa-grande" class="tab-content">
+  <div class="loc-title">Ubicación 2 — Carpa Grande</div>
+  <div class="loc-desc">Módulos en proceso dentro de Carpa Grande · Sector Sur y Sector Norte</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="stats-carpa-grande" class="stats-bar"></div>
+  <div class="multi-wrap">
+    <div class="section-wrap">
+      <div class="section-title" style="color:#2980b9;">▣ Sector Sur</div>
+      <div id="cg-sur"></div>
+    </div>
+    <div class="section-wrap">
+      <div class="section-title" style="color:#e67e22;">▣ Sector Norte</div>
+      <div id="cg-norte"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== CARPA CHICA ======================== -->
+<div id="tab-carpa-chica" class="tab-content">
+  <div class="loc-title">Ubicación 3 — Carpa Chica</div>
+  <div class="loc-desc">Módulos en Carpa Chica · Layout horizontal en 3 filas</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="stats-carpa-chica" class="stats-bar"></div>
+  <div class="section-wrap">
+    <div id="carpa-chica-grid"></div>
+  </div>
+</div>
+
+<!-- ======================== PATIO DE ACOPIO ======================== -->
+<div id="tab-patio" class="tab-content">
+  <div class="loc-title">Ubicación 4 — Patio de Acopio</div>
+  <div class="loc-desc">Módulos en patio exterior · Dos filas de módulos de gran escala</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="stats-patio" class="stats-bar"></div>
+  <div class="section-wrap">
+    <div id="patio-grid"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  DATA
+// ============================================================
+const M = {
+  // ---- GALPÓN ----
+  'M-00080': { avance:80,  status:'SECO',   loc:'galpon',        fecha:'2026-05-26' },
+  'M-00073': { avance:78,  status:'SECO',   loc:'galpon',        fecha:'2026-05-25' },
+  'M-00088': { avance:80,  status:'SECO',   loc:'galpon',        fecha:'2026-05-29' },
+  'M-00077': { avance:76,  status:'SECO',   loc:'galpon',        fecha:'2026-05-26' },
+  'M-00076': { avance:60,  status:'SECO',   loc:'galpon',        fecha:'2026-05-27' },
+  'M-00087': { avance:43,  status:'HUMEDO', loc:'galpon',        fecha:'2026-05-29' },
+  'M-00081': { avance:39,  status:'SECO',   loc:'galpon',        fecha:'2026-05-29' },
+  'M-00082': { avance:41,  status:'HUMEDO', loc:'galpon',        fecha:'2026-05-29' },
+  'M-00083': { avance:39,  status:'HUMEDO', loc:'galpon',        fecha:'2026-06-01' },
+  'M-00084': { avance:39,  status:'SECO',   loc:'galpon',        fecha:'2026-05-29' },
+  'M-00085': { avance:39,  status:'SECO',   loc:'galpon',        fecha:'2026-05-29' },
+  'M-00096': { avance:39,  status:'SECO',   loc:'galpon',        fecha:'2026-06-04' },
+  'M-00086': { avance:39,  status:'HUMEDO', loc:'galpon',        fecha:'2026-06-03' },
+  'M-00095': { avance:39,  status:'HUMEDO', loc:'galpon',        fecha:'2026-06-04' },
+
+  // ---- CARPA GRANDE · SECTOR SUR (azul) ----
+  'M-00050': { avance:80,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-04-24' },
+  'M-00053': { avance:95,  status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-04-27' },
+  'M-00079': { avance:63,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-05-20' },
+  'M-00063': { avance:70,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-05-05' },
+  'M-00023': { avance:98,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-03-12' },
+  'M-00057': { avance:94,  status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-05-06' },
+  'M-00054': { avance:74,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-04-29' },
+  'M-00064': { avance:94,  status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-05-07' },
+  'M-00058': { avance:66,  status:'HUMEDO', loc:'carpa-grande', sector:'sur',   fecha:'2026-05-05' },
+  'M-00033': { avance:96,  status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-04-06' },
+  'M-00088b': { avance:80, status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-05-29', display:'M-00088' },
+  'M-00080b': { avance:80, status:'SECO',   loc:'carpa-grande', sector:'sur',   fecha:'2026-05-26', display:'M-00080' },
+
+  // ---- CARPA GRANDE · SECTOR NORTE (naranja) ----
+  'M-00046': { avance:84,  status:'HUMEDO', loc:'carpa-grande', sector:'norte', fecha:'2026-04-14' },
+  'M-00042': { avance:74,  status:'HUMEDO', loc:'carpa-grande', sector:'norte', fecha:'2026-04-17' },
+  'M-00045': { avance:96,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-20' },
+  'M-00052': { avance:95,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-22' },
+  'M-00041': { avance:97,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-12' },
+  'M-00056': { avance:97,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-22' },
+  'M-00044': { avance:97,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-15' },
+  'M-00066': { avance:69,  status:'HUMEDO', loc:'carpa-grande', sector:'norte', fecha:'2026-05-12' },
+  'M-00032': { avance:100, status:'SECO',   loc:'patio',                        fecha:'2026-03-30' },
+  'M-00061': { avance:92,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-08' },
+  'M-00071': { avance:67,  status:'HUMEDO', loc:'carpa-grande', sector:'norte', fecha:'2026-05-14' },
+  'M-00060': { avance:92,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-07' },
+  'M-00068': { avance:89,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-14' },
+  'M-00072': { avance:89,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-12' },
+  'M-00069': { avance:86,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-05-14' },
+  'M-00037': { avance:96,  status:'SECO',   loc:'carpa-grande', sector:'norte', fecha:'2026-04-11' },
+
+  // ---- CARPA CHICA ----
+  'M-00078': { avance:57,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-16' },
+  'M-00075': { avance:58,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-18' },
+  'M-00062': { avance:59,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-07' },
+  'M-00039': { avance:86,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-07' },
+  'M-00034': { avance:98,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-07' },
+  'M-00049': { avance:91,  status:'SECO',   loc:'carpa-chica', fecha:'2026-04-22' },
+  'M-00047': { avance:85,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-15' },
+  'M-00043': { avance:78,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-15' },
+  'M-00038': { avance:96,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-11' },
+  'M-00074': { avance:59,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-19' },
+  'M-00070': { avance:59,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-05-16' },
+  'M-00036': { avance:98,  status:'SECO',   loc:'carpa-chica', fecha:'2026-04-10' },
+  'M-00035': { avance:98,  status:'HUMEDO', loc:'carpa-chica', fecha:'2026-04-10' },
+  'M-00040': { avance:97,  status:'SECO',   loc:'carpa-chica', fecha:'2026-04-07' },
+
+  // ---- PATIO DE ACOPIO ----
+  'M-00031': { avance:97,  status:'HUMEDO', loc:'patio', fecha:'2026-04-02' },
+  'M-00051': { avance:86,  status:'HUMEDO', loc:'patio', fecha:'2026-04-28' },
+  'M-00059': { avance:75,  status:'HUMEDO', loc:'patio', fecha:'2026-05-04' },
+  'M-00007': { avance:100, status:'HUMEDO', loc:'patio', fecha:'2026-03-24' },
+  'M-00055': { avance:80,  status:'HUMEDO', loc:'patio', fecha:'2026-04-24' },
+  'M-00015': { avance:100, status:'HUMEDO', loc:'patio', fecha:'2026-02-19' },
+  'M-00016': { avance:100, status:'SECO',   loc:'patio', fecha:'2026-02-23' },
+  'M-00048': { avance:95,  status:'SECO',   loc:'patio', fecha:'2026-04-14' },
+  'M-00008': { avance:100, status:'SECO',   loc:'patio', fecha:'2026-03-25' },
+  'M-00024': { avance:100, status:'SECO',   loc:'patio', fecha:'2026-03-05' },
+};
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function pbClass(p){ return p<50?'pb-low': p<85?'pb-mid':'pb-high'; }
+
+// Días transcurridos desde la fecha de inicio hasta hoy (solo número)
+function daysElapsed(fecha){
+  if(!fecha) return '—';
+  const start = new Date(fecha);
+  const today = new Date();
+  today.setHours(0,0,0,0); start.setHours(0,0,0,0);
+  const d = Math.floor((today - start) / 86400000);
+  return d >= 0 ? d : '—';
+}
+
+// Escala responsiva: 1.0 en 1280px, 1.5 en 1920px
+let SCALE = 1;
+function updateScale(){ SCALE = Math.min(Math.max(window.innerWidth / 1280, 0.6), 1.6); }
+function px(n){ return Math.round(n * SCALE) + 'px'; }
+
+function card(id, data, w, h){
+  w = w || px(86); h = h || px(85);
+  const displayId = (data && data.display) ? data.display : id;
+  if(!data) return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
+  const p = data.avance, cls = pbClass(p);
+  const sc = data.status==='HUMEDO'?'status-humedo':'status-seco';
+  return `<div class="module-card" style="min-width:${w};min-height:${h};font-size:${px(10)};" title="${displayId} · ${p}% · ${data.status}">
+    <div class="card-header">
+      <div class="module-name">${displayId}</div>
+      <div class="module-days">${daysElapsed(data.fecha)}</div>
+    </div>
+    <div>
+      <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${p}%">${p}%</div></div>
+      <div class="module-status ${sc}">${data.status}</div>
+    </div>
+  </div>`;
+}
+
+function emptyCard(w='86px',h='85px'){
+  return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
+}
+
+function grid(cells, cols, w='86px', h='85px'){
+  const ncols = typeof cols === 'number' ? cols : cells.reduce((m,r)=>Math.max(m,r.length),0);
+  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:5px;">`;
+  for(const row of cells){
+    for(let c=0; c<ncols; c++){
+      const id = row[c] || null;
+      html += card(id, id ? M[id] : null, w, h);
+    }
+  }
+  return html+'</div>';
+}
+
+function stats(locIds){
+  const list = locIds.map(id=>M[id]).filter(Boolean);
+  const total = list.length;
+  const humedo = list.filter(d=>d.status==='HUMEDO').length;
+  const seco   = total - humedo;
+  const avg    = total ? Math.round(list.reduce((s,d)=>s+d.avance,0)/total) : 0;
+  return {total,humedo,seco,avg};
+}
+
+// Celda con posición y span explícitos en el grid CSS
+function mkCell(id, col, row, rowSpan, w='86px', h='85px'){
+  const d = id ? M[id] : null;
+  const displayId = (d && d.display) ? d.display : id;
+  const hTall = `${2*parseInt(h)+5}px`;
+  const cellH  = rowSpan > 1 ? hTall : h;
+  const rowVal = rowSpan > 1 ? `${row} / ${row + rowSpan}` : `${row}`;
+  const style  = `grid-column:${col};grid-row:${rowVal};min-width:${w};min-height:${cellH};`;
+  if(!d) return `<div class="module-card empty" style="${style}"></div>`;
+  const p = d.avance, cls = pbClass(p);
+  const sc = d.status==='HUMEDO' ? 'status-humedo' : 'status-seco';
+  const fullStyle = style + `font-size:${px(10)};`;
+  return `<div class="module-card" style="${fullStyle}" title="${displayId} · ${p}% · ${d.status}">
+    <div class="card-header">
+      <div class="module-name">${displayId}</div>
+      <div class="module-days">${daysElapsed(d.fecha)}</div>
+    </div>
+    <div>
+      <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${p}%">${p}%</div></div>
+      <div class="module-status ${sc}">${d.status}</div>
+    </div>
+  </div>`;
+}
+
+function renderStats(containerId, ids){
+  const s = stats(ids);
+  document.getElementById(containerId).innerHTML =
+    `<div class="stat-pill">Total: <strong>${s.total}</strong></div>
+     <div class="stat-pill">Húmedo: <strong style="color:#27ae60">${s.humedo}</strong></div>
+     <div class="stat-pill">Seco: <strong style="color:#2980b9">${s.seco}</strong></div>
+     <div class="stat-pill">Avance prom.: <strong>${s.avg}%</strong></div>`;
+}
+
+// ============================================================
+//  RESUMEN
+// ============================================================
+function buildResumen(){
+  const locations = [
+    {
+      id:'galpon', name:'Galpón', icon:'📦', tab:'galpon',
+      cls:'border-galpon', color:'#8e44ad',
+      ids: ['M-00080','M-00073','M-00088','M-00077','M-00076','M-00087',
+            'M-00081','M-00082','M-00083','M-00084','M-00085','M-00096',
+            'M-00086','M-00095']
+    },
+    {
+      id:'carpa-grande', name:'Carpa Grande', icon:'🏗️', tab:'carpa-grande',
+      cls:'border-carpa-grande', color:'#2980b9',
+      ids: ['M-00050','M-00053','M-00079','M-00063','M-00023','M-00057',
+            'M-00054','M-00064','M-00058','M-00033','M-00088b','M-00080b',
+            'M-00046','M-00042','M-00045','M-00052','M-00041','M-00056',
+            'M-00044','M-00066','M-00061','M-00071','M-00060',
+            'M-00068','M-00072','M-00069','M-00037']
+    },
+    {
+      id:'carpa-chica', name:'Carpa Chica', icon:'🏕️', tab:'carpa-chica',
+      cls:'border-carpa-chica', color:'#16a085',
+      ids: ['M-00078','M-00075','M-00062','M-00039','M-00034',
+            'M-00049','M-00047','M-00043','M-00038',
+            'M-00074','M-00070','M-00036','M-00035','M-00040']
+    },
+    {
+      id:'patio', name:'Patio de Acopio', icon:'🌳', tab:'patio',
+      cls:'border-patio', color:'#e63946',
+      ids: ['M-00031','M-00051','M-00059','M-00007',
+            'M-00055','M-00015','M-00016','M-00048',
+            'M-00008','M-00024','M-00032']
+    }
+  ];
+
+  // Total bar
+  const allIds = locations.flatMap(l=>l.ids);
+  const st = stats(allIds);
+  document.getElementById('summary-total-bar').innerHTML = `
+    <div class="total-item"><div class="total-num">${st.total}</div><div class="total-lbl">Módulos totales</div></div>
+    <div class="total-item"><div class="total-num" style="color:#2ecc71">${st.humedo}</div><div class="total-lbl">Húmedos</div></div>
+    <div class="total-item"><div class="total-num" style="color:#74b9ff">${st.seco}</div><div class="total-lbl">Secos</div></div>
+    <div class="total-item"><div class="total-num">${st.avg}%</div><div class="total-lbl">Avance promedio</div></div>
+    <div style="flex:1;min-width:160px;">
+      <div style="font-size:.75rem;opacity:.7;margin-bottom:5px;">Avance global</div>
+      <div style="background:rgba(255,255,255,0.15);border-radius:6px;height:12px;overflow:hidden;">
+        <div style="width:${st.avg}%;height:100%;background:#2ecc71;border-radius:6px;"></div>
+      </div>
+    </div>`;
+
+  // Cards
+  let html = '';
+  for(const loc of locations){
+    const s = stats(loc.ids);
+    html += `<div class="summary-card ${loc.cls}" onclick="switchToTab('${loc.tab}')">
+      <div class="sc-icon">${loc.icon}</div>
+      <div class="sc-name">${loc.name}</div>
+      <div class="sc-row"><span>Módulos</span><strong>${s.total}</strong></div>
+      <div class="sc-row"><span style="color:#27ae60">Húmedo</span><strong>${s.humedo}</strong></div>
+      <div class="sc-row"><span style="color:#2980b9">Seco</span><strong>${s.seco}</strong></div>
+      <div class="sc-bar-wrap"><div class="sc-bar" style="width:${s.avg}%;background:${loc.color};"></div></div>
+      <div class="sc-pct">Avance promedio: <strong>${s.avg}%</strong></div>
+    </div>`;
+  }
+  document.getElementById('summary-grid').innerHTML = html;
+}
+
+// ============================================================
+//  GALPÓN
+// ============================================================
+function buildGalpon(){
+  const rows = [
+    ['M-00080','M-00073','M-00088'],
+    ['M-00077','M-00076','M-00087'],
+    ['M-00081','M-00082','M-00083'],
+    ['M-00084','M-00085','M-00096'],
+    ['M-00086','M-00095', null],
+    [null, null, null],
+  ];
+  let html = '';
+  for(const row of rows)
+    for(const id of row)
+      html += card(id, id?M[id]:null);
+  document.getElementById('galpon-grid').innerHTML = html;
+  document.getElementById('galpon-grid').style.gridTemplateColumns = `repeat(3,${px(86)})`;
+  renderStats('stats-galpon',['M-00080','M-00073','M-00088','M-00077','M-00076','M-00087',
+    'M-00081','M-00082','M-00083','M-00084','M-00085','M-00096','M-00086','M-00095']);
+}
+
+// ============================================================
+//  CARPA GRANDE
+//  Los 4 módulos de la columna izquierda son ALTOS (span 2 filas).
+//  w=86px, gap=5px → hTall = 2×85+5 = 175px
+//  Usamos posicionamiento explícito (grid-column / grid-row).
+// ============================================================
+function buildCarpaGrande(){
+  const w = px(86), h = px(85), gap = '5px';
+  // mkCell es global — definida arriba
+
+  // ── SECTOR SUR — 3 columnas, 8 filas ──
+  // Col 1 y Col 3 son siempre ALTOS (span 2 filas).
+  // Col 2 tiene 2 módulos normales por bloque (fila 1 y fila 2).
+  // [c1_tall, c2_r1, c3_tall, c2_r2]
+  const surBlocks = [
+    ['M-00050', null,       null,        null       ],
+    ['M-00053', null,       'M-00079',   'M-00063'  ],
+    ['M-00023', 'M-00057',  'M-00054',   'M-00064'  ],
+    ['M-00058', 'M-00033',  'M-00088b',  'M-00080b' ],
+  ];
+  let surHtml = `<div style="display:grid;grid-template-columns:${w} ${w} ${w};gap:${gap};">`;
+  surBlocks.forEach(([tall1, c2r1, tall3, c2r2], i) => {
+    const r = i * 2 + 1;
+    surHtml += mkCell(tall1, 1, r, 2);   // col1, span 2 filas
+    surHtml += mkCell(c2r1,  2, r, 1);   // col2, fila 1 del bloque
+    surHtml += mkCell(tall3, 3, r, 2);   // col3, span 2 filas
+    surHtml += mkCell(c2r2,  2, r+1, 1); // col2, fila 2 del bloque
+  });
+  surHtml += '</div>';
+  document.getElementById('cg-sur').innerHTML = surHtml;
+
+  // ── SECTOR NORTE — 3 columnas, 8 filas (M-00032 movido a Patio) ──
+  // Col 1 y Col 3 son siempre ALTOS (span 2 filas).
+  // [c1_tall, c2_r1, c3_tall, c2_r2]
+  const norteBlocks = [
+    ['M-00046', 'M-00042',  'M-00045',  'M-00052'  ],
+    ['M-00041', 'M-00056',  'M-00044',  'M-00066'  ],
+    ['M-00061', 'M-00071',  'M-00060',  'M-00068'  ],
+    ['M-00072', 'M-00069',  'M-00037',  null       ],
+  ];
+  let norteHtml = `<div style="display:grid;grid-template-columns:${w} ${w} ${w};gap:${gap};">`;
+  norteBlocks.forEach(([tall1, c2r1, tall3, c2r2], i) => {
+    const r = i * 2 + 1;
+    norteHtml += mkCell(tall1, 1, r, 2);
+    norteHtml += mkCell(c2r1,  2, r, 1);
+    norteHtml += mkCell(tall3, 3, r, 2);
+    norteHtml += mkCell(c2r2,  2, r+1, 1);
+  });
+  norteHtml += '</div>';
+  document.getElementById('cg-norte').innerHTML = norteHtml;
+
+  // stats (M-00032 ya no está en Norte)
+  const allCG = ['M-00050','M-00053','M-00079','M-00063','M-00023','M-00057','M-00054',
+    'M-00064','M-00058','M-00033','M-00088b','M-00080b',
+    'M-00046','M-00042','M-00045','M-00052','M-00041','M-00056','M-00044',
+    'M-00066','M-00061','M-00071','M-00060','M-00068','M-00072','M-00069','M-00037'];
+  renderStats('stats-carpa-grande', allCG);
+}
+
+// ============================================================
+//  CARPA CHICA
+//  Top / Bot → ANCHOS (2 cuadros, 221px c/u).
+//  Fila media   → ancho normal (108px).
+//  Layout: 3 filas flex.
+//  La fila media arranca alineada con M-00062 (3er módulo superior).
+// ============================================================
+function buildCarpaChica(){
+  const wWide = px(221), wNorm = px(108), h = px(88), gap = '5px';
+  // Offset: alínea el primer módulo medio bajo M-00062 (3er módulo superior)
+  const midLeft = px(452); // 2 × (221 + 5)
+
+  const mkMod = (id, w) => {
+    if(!id) return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
+    const d = M[id];
+    const p = d.avance, cls = pbClass(p);
+    const sc = d.status==='HUMEDO' ? 'status-humedo' : 'status-seco';
+    return `<div class="module-card" style="min-width:${w};min-height:${h};font-size:${px(10)};" title="${id} · ${p}% · ${d.status}">
+      <div class="card-header">
+        <div class="module-name">${id}</div>
+        <div class="module-days">${daysElapsed(d.fecha)}</div>
+      </div>
+      <div>
+        <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${p}%">${p}%</div></div>
+        <div class="module-status ${sc}">${d.status}</div>
+      </div>
+    </div>`;
+  };
+
+  const rowFlex = `display:flex;gap:${gap};`;
+  let html = '';
+
+  // Fila superior — módulos anchos
+  const top = ['M-00078','M-00075','M-00062','M-00039','M-00034'];
+  html += `<div style="${rowFlex}">`;
+  top.forEach(id => { html += mkMod(id, wWide); });
+  html += '</div>';
+
+  // Fila media — módulos normales, alineados bajo el 3er módulo superior
+  const mid = ['M-00049','M-00047','M-00043','M-00038'];
+  html += `<div style="${rowFlex}margin-top:${gap};padding-left:${midLeft};">`;
+  mid.forEach(id => { html += mkMod(id, wNorm); });
+  html += '</div>';
+
+  // Fila inferior — módulos anchos
+  const bot = ['M-00074','M-00070','M-00036','M-00035','M-00040'];
+  html += `<div style="${rowFlex}margin-top:${gap};">`;
+  bot.forEach(id => { html += mkMod(id, wWide); });
+  html += '</div>';
+
+  document.getElementById('carpa-chica-grid').innerHTML = html;
+  renderStats('stats-carpa-chica',['M-00078','M-00075','M-00062','M-00039','M-00034',
+    'M-00049','M-00047','M-00043','M-00038','M-00074','M-00070','M-00036','M-00035','M-00040']);
+}
+
+// ============================================================
+//  PATIO DE ACOPIO — incluye M-00032 (movido desde Carpa Grande)
+// ============================================================
+function buildPatio(){
+  const rows = [
+    ['M-00031','M-00051','M-00059','M-00007','M-00055','M-00015','M-00016','M-00048'],
+    [null,      null,     null,     null,    null,     'M-00008','M-00024','M-00032'],
+  ];
+  document.getElementById('patio-grid').innerHTML = grid(rows, 8, px(112), px(90));
+  renderStats('stats-patio',['M-00031','M-00051','M-00059','M-00007',
+    'M-00055','M-00015','M-00016','M-00048','M-00008','M-00024','M-00032']);
+}
+
+// ============================================================
+//  TAB SWITCHING
+// ============================================================
+function switchTab(tab, btn){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+function switchToTab(tab){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  const btn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
+  if(btn) btn.classList.add('active');
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+function init(){
+  updateScale();
+  buildResumen();
+  buildGalpon();
+  buildCarpaGrande();
+  buildCarpaChica();
+  buildPatio();
+}
+init();
+
+// Re-render al cambiar tamaño de ventana (con debounce)
+let _resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(init, 150);
+});
+</script>
+</body>
+</html>
