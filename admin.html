@@ -137,6 +137,29 @@
   .role-card ul li { margin-bottom: 2px; }
   .role-card ul li::before { content: '• '; }
 
+  /* ── Timestamp ── */
+  .ts { font-size: 0.72rem; color: var(--gray); white-space: nowrap; }
+  .ts strong { display: block; color: #111; font-size: 0.78rem; font-weight: 600; }
+
+  /* ── Row flash after save ── */
+  @keyframes rowFlash {
+    0%   { background: #d1fae5; }
+    60%  { background: #d1fae5; }
+    100% { background: transparent; }
+  }
+  tr.just-saved td { animation: rowFlash 2.2s ease forwards; }
+
+  /* ── Save confirmation badge ── */
+  .save-confirm {
+    display: none; align-items: center; gap: 6px;
+    background: #d1fae5; border: 1px solid #6ee7b7;
+    color: #065f46; border-radius: 7px;
+    padding: 10px 16px; font-size: 0.83rem; font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .save-confirm.show { display: flex; }
+  .save-confirm svg { flex-shrink: 0; }
+
   /* ── Toast ── */
   .toast { position: fixed; bottom: 24px; right: 24px; background: #111; color: white; padding: 10px 18px; border-radius: 8px; font-size: 0.83rem; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); transform: translateY(70px); opacity: 0; transition: transform 0.25s, opacity 0.25s; z-index: 2000; }
   .toast.show { transform: translateY(0); opacity: 1; }
@@ -165,6 +188,12 @@
     <div>Usuario inicial: <strong>admin</strong> / <strong>admin123</strong> — cámbiala desde Editar. Los permisos se guardan en el navegador (localStorage).</div>
   </div>
 
+  <!-- Banner de confirmación de guardado -->
+  <div class="save-confirm" id="saveConfirmBanner">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+    <span id="saveConfirmText">Cambios guardados correctamente</span>
+  </div>
+
   <!-- Tabla de usuarios -->
   <div class="card">
     <div class="card-header">
@@ -184,11 +213,12 @@
             <th>Páginas con acceso</th>
             <th>Modo</th>
             <th>Estado</th>
+            <th>Última modificación</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="usersTableBody">
-          <tr><td colspan="7" class="empty-state">Cargando...</td></tr>
+          <tr><td colspan="8" class="empty-state">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -294,14 +324,30 @@
 const session = AUTH.requireAdmin('tecnopanel.html');
 if (session) document.getElementById('headerUser').textContent = session.name + ' · Admin';
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+function fmtDate(ts) {
+  if (!ts) return '<span class="ts">—</span>';
+  const d    = new Date(ts);
+  const now  = Date.now();
+  const diff = Math.floor((now - ts) / 1000);
+  let rel;
+  if (diff < 60)          rel = 'hace un momento';
+  else if (diff < 3600)   rel = 'hace ' + Math.floor(diff / 60) + ' min';
+  else if (diff < 86400)  rel = 'hace ' + Math.floor(diff / 3600) + ' h';
+  else                    rel = 'hace ' + Math.floor(diff / 86400) + ' día(s)';
+  const hhmm = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  const ddmm = d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  return `<span class="ts"><strong>${rel}</strong>${ddmm} ${hhmm}</span>`;
+}
+
 // ── Render tabla ──────────────────────────────────────────────────────────
-function renderTable() {
+function renderTable(highlightId) {
   const users = AUTH.getUsers();
   document.getElementById('userCount').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
   const tbody = document.getElementById('usersTableBody');
 
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Sin usuarios.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Sin usuarios.</td></tr>';
     return;
   }
 
@@ -310,7 +356,6 @@ function renderTable() {
     const modoBadge = u.permissions.readonly ? '<span class="badge badge-viewer">Solo lectura</span>' : '<span class="badge badge-on">Edición</span>';
     const activoBadge = u.active ? '<span class="badge badge-on">Activo</span>' : '<span class="badge badge-off">Inactivo</span>';
 
-    // Pages with access
     const pages = AUTH.getPages();
     const pageChips = Object.keys(pages).map(pid => {
       const pg = u.permissions.pages && u.permissions.pages[pid];
@@ -321,13 +366,15 @@ function renderTable() {
     }).join('');
 
     const isSelf = u.username === session.username;
-    return `<tr>
+    const flash  = highlightId === u.id ? ' class="just-saved"' : '';
+    return `<tr data-uid="${u.id}"${flash}>
       <td><strong>${u.name}</strong>${isSelf ? ' <span style="font-size:0.68rem;color:#aaa">(tú)</span>' : ''}</td>
       <td style="font-family:monospace;color:#666;font-size:0.8rem">${u.username}</td>
       <td>${roleBadge}</td>
       <td>${pageChips || '<span style="color:#bbb;font-size:0.75rem">Sin acceso</span>'}</td>
       <td>${modoBadge}</td>
       <td>${activoBadge}</td>
+      <td>${fmtDate(u.updatedAt || u.createdAt)}</td>
       <td><div class="btn-group">
         <button class="btn btn-edit btn-sm" onclick="editUser('${u.id}')">Editar</button>
         ${!isSelf ? `<button class="btn btn-danger btn-sm" onclick="confirmDelete('${u.id}','${u.name}')">Eliminar</button>` : ''}
@@ -469,15 +516,17 @@ async function saveUser() {
 
   btn.disabled = true; btn.textContent = 'Guardando...';
   try {
+    let savedUser;
     if (id) {
-      await AUTH.updateUser(id, { username: user, name, role, customPages: pages, readonly: ro, active: act, password: pass || undefined });
+      savedUser = await AUTH.updateUser(id, { username: user, name, role, customPages: pages, readonly: ro, active: act, password: pass || undefined });
       showToast('Usuario actualizado', 'success');
     } else {
-      await AUTH.createUser({ username: user, password: pass, name, role, customPages: pages, readonly: ro });
+      savedUser = await AUTH.createUser({ username: user, password: pass, name, role, customPages: pages, readonly: ro });
       showToast('Usuario creado', 'success');
     }
     closeModal();
-    renderTable();
+    renderTable(savedUser.id);
+    showSaveConfirm(savedUser.name, savedUser.updatedAt || savedUser.createdAt);
   } catch (err) {
     showToast(err.message || 'Error al guardar', 'error');
   } finally {
@@ -493,6 +542,21 @@ function confirmDelete(id, name) {
 }
 
 function doLogout() { AUTH.logout(); window.location.href = 'login.html'; }
+
+// ── Confirmación de guardado ───────────────────────────────────────────────
+let confirmTimer;
+function showSaveConfirm(userName, ts) {
+  const banner = document.getElementById('saveConfirmBanner');
+  const text   = document.getElementById('saveConfirmText');
+  const d = new Date(ts);
+  const hhmm = d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const ddmm = d.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  text.innerHTML = `✓ Cambios de <strong>${userName}</strong> guardados en localStorage · ${ddmm} ${hhmm}`;
+  banner.classList.add('show');
+  banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  clearTimeout(confirmTimer);
+  confirmTimer = setTimeout(() => banner.classList.remove('show'), 7000);
+}
 
 // ── Toast ──────────────────────────────────────────────────────────────────
 let toastTimer;

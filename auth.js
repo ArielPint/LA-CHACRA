@@ -144,12 +144,14 @@ const AUTH = (() => {
     const roleDef = DEFAULT_ROLES[role] || DEFAULT_ROLES.viewer;
     const hash = await hashPassword(password);
     const user = {
-      id:       crypto.randomUUID(),
-      username: username.trim().toLowerCase(),
-      password: hash,
+      id:        crypto.randomUUID(),
+      username:  username.trim().toLowerCase(),
+      password:  hash,
       role,
-      name:     name || username,
-      active:   true,
+      name:      name || username,
+      active:    true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
       permissions: {
         pages:    customPages || roleDef.pages(),
         readonly: readonly !== undefined ? readonly : roleDef.readonly
@@ -180,6 +182,7 @@ const AUTH = (() => {
     if (readonly    !== undefined) u.permissions.readonly = readonly;
     if (active      !== undefined) u.active = active;
     if (password)                  u.password = await hashPassword(password);
+    u.updatedAt = Date.now();
 
     saveUsers(users);
     return u;
