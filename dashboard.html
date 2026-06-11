@@ -562,10 +562,15 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
 (function(){
   var s = AUTH.requireAuth('login.html');
   if (!s) return;
-  var badge = document.getElementById('dash-user-badge');
-  if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
-  var adminBtn = document.getElementById('dash-admin-btn');
-  if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
+  if (window.self !== window.top) {
+    var _aa = document.querySelector('.auth-area');
+    if (_aa) _aa.style.display = 'none';
+  } else {
+    var badge = document.getElementById('dash-user-badge');
+    if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
+    var adminBtn = document.getElementById('dash-admin-btn');
+    if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
+  }
 
   // Ocultar tabs sin permiso
   var DASH_TABS = ['resumen','curva','modulos','compras','productos','stock','despachos'];

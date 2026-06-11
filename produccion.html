@@ -270,10 +270,15 @@ function barH(id, labels, data, colors){
 (function(){
   var s = AUTH.requireAuth('login.html');
   if (!s) return;
-  var badge = document.getElementById('prod-user-badge');
-  if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
-  var adminBtn = document.getElementById('prod-admin-btn');
-  if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
+  if (window.self !== window.top) {
+    var _hr = document.querySelector('.header-right');
+    if (_hr) _hr.style.display = 'none';
+  } else {
+    var badge = document.getElementById('prod-user-badge');
+    if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
+    var adminBtn = document.getElementById('prod-admin-btn');
+    if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
+  }
 
   // Ocultar tabs sin permiso
   var PROD_TABS = ['resumen','torres','partidas','alertas','detalle'];

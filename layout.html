@@ -483,14 +483,20 @@
   const s = AUTH.requireAuth('login.html');
   if (!s) return;
 
-  // Info de usuario en header
-  const userEl = document.getElementById('headerUserInfo');
-  if (userEl) userEl.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role]?.label || s.role);
+  // Si estamos dentro de tecnopanel (iframe), ocultar UI de auth local
+  if (window.self !== window.top) {
+    const hr = document.querySelector('.header-right');
+    if (hr) hr.style.display = 'none';
+  } else {
+    // Info de usuario en header (solo cuando es página independiente)
+    const userEl = document.getElementById('headerUserInfo');
+    if (userEl) userEl.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role]?.label || s.role);
 
-  // Botón admin solo para administradores
-  if (AUTH.isAdmin()) {
-    const adminBtn = document.getElementById('btnAdmin');
-    if (adminBtn) adminBtn.style.display = 'inline-block';
+    // Botón admin solo para administradores
+    if (AUTH.isAdmin()) {
+      const adminBtn = document.getElementById('btnAdmin');
+      if (adminBtn) adminBtn.style.display = 'inline-block';
+    }
   }
 
   // Mapa tabId → tab-btn y tab-content
