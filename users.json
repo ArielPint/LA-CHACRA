@@ -1,0 +1,20 @@
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "username": "admin",
+    "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "role": "admin",
+    "name": "Administrador",
+    "active": true,
+    "createdAt": 1749600000000,
+    "updatedAt": 1749600000000,
+    "permissions": {
+      "pages": {
+        "dashboard": { "access": true, "tabs": ["resumen","curva","modulos","compras","productos","stock","despachos"] },
+        "produccion": { "access": true, "tabs": ["resumen","torres","partidas","alertas","detalle"] },
+        "layout":     { "access": true, "tabs": ["resumen","galpon","carpa-grande","carpa-chica","patio","planta"] }
+      },
+      "readonly": false
+    }
+  }
+]

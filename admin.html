@@ -174,6 +174,19 @@
   .sync-textarea { width: 100%; height: 96px; font-size: 0.7rem; font-family: monospace; border: 2px solid var(--border); border-radius: 7px; padding: 8px; resize: none; outline: none; background: #fafafa; transition: border-color 0.2s; }
   .sync-textarea:focus { border-color: var(--green); background: white; }
   .sync-textarea[readonly] { color: #444; cursor: text; }
+
+  /* ── GitHub config card ── */
+  .gh-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .gh-status.ok      { background: #d1fae5; color: #065f46; }
+  .gh-status.missing { background: #fef3c7; color: #92400e; }
+  .gh-status.error   { background: #fee2e2; color: #991b1b; }
+  .token-input-wrap { display: flex; gap: 8px; margin-top: 10px; }
+  .token-input-wrap input { flex: 1; padding: 8px 11px; border: 2px solid var(--border); border-radius: 7px; font-size: 0.85rem; outline: none; font-family: monospace; background: #fafafa; transition: border-color .2s; }
+  .token-input-wrap input:focus { border-color: var(--green); background: white; }
+  .gh-steps { margin-top: 12px; font-size: 0.76rem; color: var(--gray); line-height: 1.7; }
+  .gh-steps a { color: var(--blue); }
+  .gh-warn { background: #fef9c3; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #78350f; margin-bottom: 16px; display: none; }
+  .gh-warn.show { display: block; }
 </style>
 </head>
 <body>
@@ -194,7 +207,42 @@
 
   <div class="info-box">
     <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-    <div>Usuario inicial: <strong>admin</strong> / <strong>admin123</strong> — cámbiala desde Editar. Los permisos se guardan en el navegador (localStorage).</div>
+    <div>Usuario inicial: <strong>admin</strong> / <strong>admin123</strong> — cámbiala desde Editar. Los usuarios se guardan en GitHub y son compartidos por todos los equipos.</div>
+  </div>
+
+  <!-- Aviso token no configurado -->
+  <div class="gh-warn" id="ghWarn">
+    ⚠️ <strong>Token de GitHub no configurado.</strong> Sin él no podrás guardar cambios. Configúralo en la sección de abajo.
+  </div>
+
+  <!-- Configuración GitHub -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2>Conexión con GitHub</h2>
+        <span>Necesario para que los cambios se sincronicen con todos los equipos</span>
+      </div>
+      <span class="gh-status missing" id="ghStatusBadge">⚠ Sin configurar</span>
+    </div>
+    <div class="card-body" style="padding:18px 22px">
+      <p style="font-size:0.82rem;color:#444;margin-bottom:4px">
+        Los usuarios se guardan en <code style="background:#f3f4f6;padding:1px 5px;border-radius:3px">users.json</code> del repositorio GitHub.
+        Al guardar aquí, todos los equipos ven los cambios en su próximo login.
+      </p>
+      <div class="token-input-wrap">
+        <input type="password" id="ghTokenInput" placeholder="github_pat_..." autocomplete="off">
+        <button class="btn btn-primary" onclick="saveToken()">Guardar token</button>
+        <button class="btn btn-edit" onclick="testToken()">Verificar</button>
+        <button class="btn btn-danger btn-sm" onclick="clearToken()" style="align-self:center" title="Eliminar token">✕</button>
+      </div>
+      <div class="gh-steps">
+        <strong>Cómo obtener el token:</strong><br>
+        1. Ve a <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub → Settings → Fine-grained tokens</a><br>
+        2. Repository access: <strong>ArielPint/LA-CHACRA</strong><br>
+        3. Permissions → Contents: <strong>Read and write</strong><br>
+        4. Genera el token y pégalo aquí. Solo necesitas hacerlo una vez en este equipo.
+      </div>
+    </div>
   </div>
 
   <!-- Banner de confirmación de guardado -->
@@ -384,8 +432,10 @@ function fmtDate(ts) {
 }
 
 // ── Render tabla ──────────────────────────────────────────────────────────
-function renderTable(highlightId) {
-  const users = AUTH.getUsers();
+async function renderTable(highlightId) {
+  const tbody = document.getElementById('usersTableBody');
+  tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando usuarios...</td></tr>';
+  const users = await AUTH.getUsers();
   document.getElementById('userCount').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
   const tbody = document.getElementById('usersTableBody');
 
@@ -577,11 +627,15 @@ async function saveUser() {
   }
 }
 
-function confirmDelete(id, name) {
+async function confirmDelete(id, name) {
   if (!confirm(`¿Eliminar a "${name}"? Esta acción no se puede deshacer.`)) return;
-  AUTH.deleteUser(id);
-  showToast('Usuario eliminado', 'success');
-  renderTable();
+  try {
+    await AUTH.deleteUser(id);
+    showToast('Usuario eliminado', 'success');
+    renderTable();
+  } catch(err) {
+    showToast(err.message || 'Error al eliminar', 'error');
+  }
 }
 
 function doLogout() { AUTH.logout(); window.location.href = 'login.html'; }
@@ -612,8 +666,8 @@ function showToast(msg, type = '') {
 }
 
 // ── Exportar / Importar ───────────────────────────────────────────────────
-function doExport() {
-  const json = AUTH.exportUsers();
+async function doExport() {
+  const json = await AUTH.exportUsers();
   const area = document.getElementById('exportArea');
   const btn  = document.getElementById('copyBtn');
   area.value = json;
@@ -636,10 +690,9 @@ function copyExport() {
   }
 }
 
-function doImport() {
+async function doImport() {
   const text = document.getElementById('importArea').value.trim();
   if (!text) { showToast('Pega el código primero', 'error'); return; }
-  // Validar sin escribir
   let arr;
   try {
     arr = JSON.parse(text);
@@ -649,13 +702,73 @@ function doImport() {
     showToast('Código inválido: ' + (e.message || 'error de formato'), 'error');
     return;
   }
-  if (!confirm(`¿Importar ${arr.length} usuario(s)? Los usuarios actuales en este navegador serán reemplazados.`)) return;
-  AUTH.importUsers(text);
-  document.getElementById('importArea').value = '';
-  showToast(`${arr.length} usuario(s) importados correctamente`, 'success');
-  renderTable();
+  if (!confirm(`¿Importar ${arr.length} usuario(s)? Los usuarios actuales serán reemplazados.`)) return;
+  try {
+    await AUTH.importUsers(text);
+    document.getElementById('importArea').value = '';
+    showToast(`${arr.length} usuario(s) importados correctamente`, 'success');
+    renderTable();
+  } catch(e) {
+    showToast(e.message || 'Error al importar', 'error');
+  }
 }
 
+// ── Token GitHub ──────────────────────────────────────────────────────────
+function updateTokenUI() {
+  const hasToken = AUTH.hasGithubToken();
+  const badge = document.getElementById('ghStatusBadge');
+  const warn  = document.getElementById('ghWarn');
+  if (hasToken) {
+    badge.className = 'gh-status ok';
+    badge.textContent = '✓ Token configurado';
+    warn.classList.remove('show');
+    // Mostrar los primeros 8 chars del token enmascarado
+    const t = AUTH.getGithubToken();
+    document.getElementById('ghTokenInput').placeholder = t.substring(0,12) + '…' + t.slice(-4);
+  } else {
+    badge.className = 'gh-status missing';
+    badge.textContent = '⚠ Sin configurar';
+    warn.classList.add('show');
+    document.getElementById('ghTokenInput').placeholder = 'github_pat_...';
+  }
+}
+
+async function saveToken() {
+  const val = document.getElementById('ghTokenInput').value.trim();
+  if (!val) { showToast('Ingresa el token primero', 'error'); return; }
+  AUTH.setGithubToken(val);
+  document.getElementById('ghTokenInput').value = '';
+  updateTokenUI();
+  showToast('Token guardado en este equipo', 'success');
+}
+
+async function testToken() {
+  const val = document.getElementById('ghTokenInput').value.trim() || AUTH.getGithubToken();
+  if (!val) { showToast('Ingresa el token primero', 'error'); return; }
+  const badge = document.getElementById('ghStatusBadge');
+  badge.className = 'gh-status missing';
+  badge.textContent = '⏳ Verificando...';
+  try {
+    await AUTH.testGithubToken(val);
+    badge.className = 'gh-status ok';
+    badge.textContent = '✓ Token válido';
+    showToast('Token verificado correctamente', 'success');
+  } catch(e) {
+    badge.className = 'gh-status error';
+    badge.textContent = '✗ ' + (e.message || 'Token inválido');
+    showToast(e.message || 'Token inválido', 'error');
+  }
+}
+
+function clearToken() {
+  if (!confirm('¿Eliminar el token guardado en este equipo?')) return;
+  AUTH.setGithubToken(null);
+  document.getElementById('ghTokenInput').value = '';
+  updateTokenUI();
+  showToast('Token eliminado', 'success');
+}
+
+updateTokenUI();
 renderTable();
 </script>
 </body>
