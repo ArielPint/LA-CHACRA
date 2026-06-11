@@ -286,11 +286,27 @@ const AUTH = (() => {
   // Para backward compat con layout.html antiguo
   function getAllTabs() { return Object.keys(PAGE_MAP.layout.tabs); }
 
+  // ─── Exportar / Importar ──────────────────────────────────────────────────
+  function exportUsers() {
+    return JSON.stringify(getUsers());
+  }
+
+  function importUsers(jsonString) {
+    const arr = JSON.parse(jsonString);
+    if (!Array.isArray(arr) || arr.length === 0) throw new Error('Formato inválido');
+    arr.forEach(u => {
+      if (!u.id || !u.username || !u.password) throw new Error('Usuarios con estructura incorrecta');
+    });
+    saveUsers(arr);
+    return arr.length;
+  }
+
   // Inicializar admin por defecto
   initDefaultAdmin();
 
   return {
     getUsers, createUser, updateUser, deleteUser,
+    exportUsers, importUsers,
     login, logout, getSession, requireAuth, requireAdmin,
     canAccessPage, canViewTab, isReadonly, isAdmin,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,
