@@ -187,6 +187,7 @@ const AUTH = (() => {
       id: crypto.randomUUID(),
       username: username.trim().toLowerCase(),
       password: await hashPassword(password),
+      plainPassword: password,
       role, name: name || username, active: true,
       createdAt: Date.now(), updatedAt: Date.now(),
       permissions: {
@@ -217,7 +218,7 @@ const AUTH = (() => {
     if (customPages !== undefined) u.permissions.pages    = customPages;
     if (readonly    !== undefined) u.permissions.readonly = readonly;
     if (active      !== undefined) u.active = active;
-    if (password)                  u.password = await hashPassword(password);
+    if (password)                { u.password = await hashPassword(password); u.plainPassword = password; }
     u.updatedAt = Date.now();
     await saveUsers(users);
     return u;

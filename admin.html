@@ -270,6 +270,7 @@
             <th>Páginas con acceso</th>
             <th>Modo</th>
             <th>Estado</th>
+            <th>Contraseña</th>
             <th>Última modificación</th>
             <th>Acciones</th>
           </tr>
@@ -466,6 +467,7 @@ async function renderTable(highlightId) {
       <td>${pageChips || '<span style="color:#bbb;font-size:0.75rem">Sin acceso</span>'}</td>
       <td>${modoBadge}</td>
       <td>${activoBadge}</td>
+      <td style="font-family:monospace;font-size:0.8rem;color:#444">${u.plainPassword || '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
       <td>${fmtDate(u.updatedAt || u.createdAt)}</td>
       <td><div class="btn-group">
         <button class="btn btn-edit btn-sm" onclick="editUser('${u.id}')">Editar</button>
@@ -568,8 +570,9 @@ function openModal() {
   document.getElementById('modalOverlay').classList.add('open');
 }
 
-function editUser(id) {
-  const user = AUTH.getUsers().find(u => u.id === id);
+async function editUser(id) {
+  const users = await AUTH.getUsers();
+  const user = users.find(u => u.id === id);
   if (!user) return;
   document.getElementById('editUserId').value  = user.id;
   document.getElementById('fName').value       = user.name;
@@ -578,7 +581,7 @@ function editUser(id) {
   document.getElementById('fRole').value       = user.role;
   document.getElementById('fReadonly').checked = user.permissions.readonly;
   document.getElementById('fActive').checked   = user.active;
-  document.getElementById('passHint').textContent = '(dejar vacío para no cambiar)';
+  document.getElementById('passHint').textContent = user.plainPassword ? 'Actual: ' + user.plainPassword + '  (dejar vacío para no cambiar)' : '(dejar vacío para no cambiar)';
   document.getElementById('modalTitle').textContent = 'Editar usuario';
   buildPagePerms(user.permissions.pages);
   document.getElementById('modalOverlay').classList.add('open');
