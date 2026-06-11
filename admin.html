@@ -437,7 +437,6 @@ async function renderTable(highlightId) {
   tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando usuarios...</td></tr>';
   const users = await AUTH.getUsers();
   document.getElementById('userCount').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
-  const tbody = document.getElementById('usersTableBody');
 
   if (users.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Sin usuarios.</td></tr>';
