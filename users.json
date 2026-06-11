@@ -135,5 +135,54 @@
       },
       "readonly": true
     }
+  },
+  {
+    "id": "55575ab8-63a8-4d2c-86e7-6b020558208f",
+    "username": "fetchegaray",
+    "password": "ea14b35aa297b61e95e0692c4ba04b71d38ed6dcfb49de4e37fb4ae39ffa2bbf",
+    "plainPassword": "Felipe",
+    "role": "operador",
+    "name": "Felipe Etchegaray",
+    "active": true,
+    "createdAt": 1781217627565,
+    "updatedAt": 1781217627565,
+    "permissions": {
+      "pages": {
+        "dashboard": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "curva",
+            "modulos",
+            "compras",
+            "productos",
+            "stock",
+            "despachos"
+          ]
+        },
+        "produccion": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "torres",
+            "partidas",
+            "alertas",
+            "detalle"
+          ]
+        },
+        "layout": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "galpon",
+            "carpa-grande",
+            "carpa-chica",
+            "patio",
+            "planta"
+          ]
+        }
+      },
+      "readonly": false
+    }
   }
 ]
