@@ -736,10 +736,16 @@ function updateTokenUI() {
 async function saveToken() {
   const val = document.getElementById('ghTokenInput').value.trim();
   if (!val) { showToast('Ingresa el token primero', 'error'); return; }
-  AUTH.setGithubToken(val);
-  document.getElementById('ghTokenInput').value = '';
-  updateTokenUI();
-  showToast('Token guardado en este equipo', 'success');
+  try {
+    localStorage.setItem('lachacra_gh_token', val);
+    const check = localStorage.getItem('lachacra_gh_token');
+    if (!check) { showToast('Error: localStorage no disponible en este navegador', 'error'); return; }
+    document.getElementById('ghTokenInput').value = '';
+    updateTokenUI();
+    showToast('Token guardado en este equipo ✓', 'success');
+  } catch(e) {
+    showToast('Error al guardar: ' + (e.message || e), 'error');
+  }
 }
 
 async function testToken() {
