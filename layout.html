@@ -95,6 +95,18 @@
   /* Multi-section layout */
   .multi-wrap { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
 
+  /* Individual detail tabs — sections fill full available width */
+  #tab-galpon .section-wrap,
+  #tab-carpa-grande .section-wrap,
+  #tab-carpa-chica .section-wrap,
+  #tab-patio .section-wrap { display: block; }
+  #tab-galpon .multi-wrap,
+  #tab-carpa-grande .multi-wrap,
+  #tab-patio .multi-wrap { align-items: stretch; }
+  #tab-galpon .multi-wrap > *,
+  #tab-carpa-grande .multi-wrap > *,
+  #tab-patio .multi-wrap > * { flex: 1; min-width: 0; }
+
   /* =====================
      SUMMARY TAB
   ===================== */
@@ -139,7 +151,9 @@
 
   /* Galpón */
   .galpon-grid { display: grid; gap: 5px; margin-bottom: 8px; }
-  .linea-label { display: grid; grid-template-columns: repeat(3, 88px); gap: 5px; }
+  .linea-label { display: grid; gap: 5px; }
+  #galpon-linea-label { width: 100%; }
+  #vp-linea-label { grid-template-columns: repeat(3, 88px); }
   .linea-box   { border: 2px solid #888; border-radius: 4px; text-align: center; padding: 7px 4px; font-weight: 700; font-size: 0.95rem; color: #333; background: #f8f8f8; }
 
   /* Vista Planta Completa */
@@ -298,7 +312,7 @@
       <div class="section-wrap">
         <div class="section-title">▣ Galpón Principal</div>
         <div class="galpon-grid" id="galpon-grid"></div>
-        <div class="linea-label">
+        <div class="linea-label" id="galpon-linea-label">
           <div class="linea-box">L3</div>
           <div class="linea-box">L2</div>
           <div class="linea-box">L1</div>
@@ -541,9 +555,11 @@ function px(n) { return Math.round(n * SCALE) + 'px'; }
 function pxN(n) { return Math.round(n * SCALE); }
 
 function cardInner(id, p, status, fecha, w, h) {
-  const cls = pbClass(p);
-  const sc  = status === 'HUMEDO' ? 'status-humedo' : 'status-seco';
-  return `<div class="module-card" style="min-width:${w};min-height:${h};font-size:${px(10)};" title="${id} · ${p}% · ${status}">
+  const cls    = pbClass(p);
+  const sc     = status === 'HUMEDO' ? 'status-humedo' : 'status-seco';
+  const wStyle = w ? `min-width:${w};` : 'min-width:0;';
+  const hStyle = h ? `min-height:${h};` : 'min-height:80px;';
+  return `<div class="module-card" style="${wStyle}${hStyle}font-size:${px(10)};" title="${id} · ${p}% · ${status}">
     <div class="card-header">
       <div class="module-name">${id}</div>
       <div style="text-align:right;flex-shrink:0;">
@@ -559,18 +575,21 @@ function cardInner(id, p, status, fecha, w, h) {
 }
 
 function card(id, data, w, h) {
-  w = w || px(86); h = h || px(85);
-  if (!data) return `<div class="module-card empty" style="min-width:${w};min-height:${h};"></div>`;
+  const wStyle = w ? `min-width:${w};` : 'min-width:0;';
+  const hStyle = h ? `min-height:${h};` : 'min-height:80px;';
+  if (!data) return `<div class="module-card empty" style="${wStyle}${hStyle}"></div>`;
   return cardInner(id, data.avance, data.status, data.fecha, w, h);
 }
 
 // Celda con grid-column/row para layout de celdas altas
 function mkCell(id, col, row, rowSpan, w, h) {
+  const fill   = !w;
   w = w || px(86); h = h || px(85);
   const hTall  = `${2 * parseInt(h) + 5}px`;
   const cellH  = rowSpan > 1 ? hTall : h;
   const rowVal = rowSpan > 1 ? `${row} / ${row + rowSpan}` : `${row}`;
-  const style  = `grid-column:${col};grid-row:${rowVal};min-width:${w};min-height:${cellH};`;
+  const wStyle = fill ? 'min-width:0;' : `min-width:${w};`;
+  const style  = `grid-column:${col};grid-row:${rowVal};${wStyle}min-height:${cellH};`;
   if (!id || !M[id]) return `<div class="module-card empty" style="${style}"></div>`;
   const d = M[id];
   return `<div class="module-card" style="${style}font-size:${px(10)};" title="${id} · ${d.avance}% · ${d.status}">
@@ -626,11 +645,16 @@ function buildSectionGrid(modules) {
 
 function renderGrid(g, w, h) {
   if (!g.length) return '';
-  const ncols = g[0].length;
-  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:5px;">`;
+  const ncols  = g[0].length;
+  const fill   = !w;
+  const colDef = fill ? '1fr' : w;
+  const wAttr  = fill ? 'width:100%;' : '';
+  // In fill mode, use a proportional height if none provided
+  const effH   = h || (fill ? `${Math.max(90, Math.min(180, Math.round(pxN(100))))}px` : null);
+  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${colDef});gap:5px;${wAttr}">`;
   for (const row of g)
     for (const id of row)
-      html += card(id, id ? M[id] : null, w, h);
+      html += card(id, id ? M[id] : null, fill ? null : w, effH);
   return html + '</div>';
 }
 
@@ -767,14 +791,20 @@ function buildGalpon() {
   const mods  = getSectionModules('galpon', null);
   const g     = buildSectionGrid(mods);
   const ncols = g.length ? g[0].length : 3;
+  // Compute card height proportional to fill-mode card width
+  const avail = window.innerWidth - 64 - 36; // tab-content pad + section-wrap overhead
+  const cw    = Math.max(70, Math.floor((avail - 5*(ncols-1)) / ncols));
+  const h     = Math.max(90, Math.min(200, Math.round(cw * 0.75))) + 'px';
   let html = '';
   for (const row of g)
     for (const id of row)
-      html += card(id, id ? M[id] : null);
-  document.getElementById('galpon-grid').innerHTML = html;
-  document.getElementById('galpon-grid').style.gridTemplateColumns = `repeat(${ncols},${px(86)})`;
-  const ll = document.querySelector('.linea-label');
-  if (ll) ll.style.gridTemplateColumns = `repeat(${ncols},${px(86)})`;
+      html += card(id, id ? M[id] : null, null, h); // null w → 1fr grid, explicit h
+  const el = document.getElementById('galpon-grid');
+  el.innerHTML = html;
+  el.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
+  el.style.width = '100%';
+  const ll = document.getElementById('galpon-linea-label');
+  if (ll) ll.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
 
   renderStats('stats-galpon', mods.map(m=>m.id));
 }
@@ -789,43 +819,54 @@ function buildGalpon() {
 //  la columna central se divide entre "primera mitad" y "segunda mitad"
 //  del intervalo de filas xlsx de cada bloque.
 // ============================================================
-function buildCarpaGrandeSector(mods) {
+function buildCarpaGrandeSector(mods, compact) {
   if (!mods.length) return '';
 
   const uCols = [...new Set(mods.map(m => m.col))].sort((a, b) => a - b);
-  const col1  = uCols[0];                                     // tall izquierda
-  const col2  = uCols.length >= 2 ? uCols[1] : null;         // normal centro
+  const col1  = uCols[0];                                          // tall izquierda
+  const col2  = uCols.length >= 2 ? uCols[1] : null;              // normal centro
   const col3  = uCols.length >= 3 ? uCols[uCols.length-1] : null; // tall derecha
 
   const c1Mods = mods.filter(m => m.col === col1).sort((a,b) => a.row - b.row);
   const c2Mods = col2 ? mods.filter(m => m.col === col2).sort((a,b) => a.row - b.row) : [];
   const c3Mods = col3 ? mods.filter(m => m.col === col3).sort((a,b) => a.row - b.row) : [];
 
-  // Paso promedio en col1 para estimar el límite del último bloque
   const c1Step = c1Mods.length > 1
     ? Math.round((c1Mods[c1Mods.length-1].row - c1Mods[0].row) / (c1Mods.length - 1))
     : 10;
 
   const ncols = col3 ? 3 : (col2 ? 2 : 1);
-  const w = px(86), h = px(85), gap = '5px';
-  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${w});gap:${gap};">`;
+
+  // compact = Vista Completa (fixed px sizes); !compact = individual tab (fill)
+  let w, h, colDef, widthAttr;
+  if (compact) {
+    w = px(86); h = px(85); colDef = w; widthAttr = '';
+  } else {
+    // 2 sectors side by side → each gets ~half the available width
+    const avail = window.innerWidth - 64 - 2*36 - 24; // tab-pad + 2×section-wrap + gap
+    const cw    = Math.max(60, Math.floor((Math.floor(avail/2) - 5*(ncols-1)) / ncols));
+    w = cw + 'px'; h = Math.round(cw * 0.85) + 'px';
+    colDef = '1fr'; widthAttr = 'width:100%;';
+  }
+
+  const gap = '5px';
+  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${colDef});gap:${gap};${widthAttr}">`;
 
   c1Mods.forEach((c1m, i) => {
     const nextRow = i + 1 < c1Mods.length ? c1Mods[i + 1].row : c1m.row + c1Step;
     const mid     = c1m.row + (nextRow - c1m.row) / 2;
     const gridRow = i * 2 + 1;
 
-    // Col central: primeros módulos hasta mid → fila 1; después mid → fila 2
     const c2r1 = c2Mods.find(m => m.row >= c1m.row && m.row <= mid);
     const c2r2 = c2Mods.find(m => m.row >  mid     && m.row <  nextRow);
-
-    // Col derecha: el primer módulo en este rango
     const c3m  = c3Mods.find(m => m.row >= c1m.row && m.row < nextRow);
 
-    html += mkCell(c1m.id,         1, gridRow,     2, w, h);
-    html += mkCell(c2r1?.id||null, 2, gridRow,     1, w, h);
-    if (col3) html += mkCell(c3m?.id||null, 3, gridRow, 2, w, h);
-    html += mkCell(c2r2?.id||null, 2, gridRow + 1, 1, w, h);
+    // In fill mode pass null for w so mkCell uses min-width:0 (grid controls width)
+    const cW = compact ? w : null;
+    html += mkCell(c1m.id,         1, gridRow,     2, cW, h);
+    html += mkCell(c2r1?.id||null, 2, gridRow,     1, cW, h);
+    if (col3) html += mkCell(c3m?.id||null, 3, gridRow, 2, cW, h);
+    html += mkCell(c2r2?.id||null, 2, gridRow + 1, 1, cW, h);
   });
 
   html += '</div>';
@@ -845,7 +886,7 @@ function buildCarpaGrande() {
 //  Filas anchas (paso de col ≥ 4) → tarjetas anchas.
 //  Filas angostas (paso 2) → tarjetas angostas con offset calculado.
 // ============================================================
-function buildCarpaChicaInto(targetId) {
+function buildCarpaChicaInto(targetId, compact) {
   const mods = getSectionModules('carpa-chica', null);
   const el   = document.getElementById(targetId);
   if (!el) return;
@@ -869,9 +910,18 @@ function buildCarpaChicaInto(targetId) {
   const wideCols = [];
   for (let c = minCol; c <= maxCol; c += wideStep) wideCols.push(c);
 
-  const wW  = pxN(200);
-  const nW  = pxN(108);
-  const hPx = pxN(88);
+  let wW, nW, hPx;
+  if (compact) {
+    wW  = pxN(200);
+    nW  = pxN(108);
+    hPx = pxN(88);
+  } else {
+    // Full-width: 5 wide cards across the section (tab-content padding 64px + section-wrap 36px)
+    const avail = window.innerWidth - 64 - 36;
+    wW  = Math.max(80, Math.floor((avail - 4*5) / wideCols.length));
+    nW  = Math.round(wW * 108 / 200);
+    hPx = Math.round(wW * 88  / 200);
+  }
   const gap = 5;
   let html = '';
 
@@ -917,14 +967,14 @@ function buildCarpaChica() {
 function buildPatio() {
   const cbMods = getSectionModules('costado-bodega', null);
   const cbEl   = document.getElementById('costado-bodega-grid');
-  if (cbEl) cbEl.innerHTML = renderGrid(buildSectionGrid(cbMods), px(86), px(85));
+  if (cbEl) cbEl.innerHTML = renderGrid(buildSectionGrid(cbMods)); // null w → 1fr fill
 
   const cgMods = getSectionModules('patio','carpa-grande');
   const ccMods = getSectionModules('patio','carpa-chica');
   const cgEl   = document.getElementById('patio-cg');
   const ccEl   = document.getElementById('patio-cc');
-  if (cgEl) cgEl.innerHTML = renderGrid(buildSectionGrid(cgMods), px(112), px(90));
-  if (ccEl) ccEl.innerHTML = renderGrid(buildSectionGrid(ccMods), px(112), px(90));
+  if (cgEl) cgEl.innerHTML = renderGrid(buildSectionGrid(cgMods)); // null w → 1fr fill
+  if (ccEl) ccEl.innerHTML = renderGrid(buildSectionGrid(ccMods)); // null w → 1fr fill
   renderStats('stats-patio', [...cbMods, ...cgMods, ...ccMods].map(m=>m.id));
 }
 
@@ -939,7 +989,7 @@ function buildVistaPlanta() {
   let galponHtml = '';
   for (const row of galponGrid)
     for (const id of row)
-      galponHtml += card(id, id ? M[id] : null);
+      galponHtml += card(id, id ? M[id] : null, px(86), px(85)); // compact sizes for Vista Completa
   const vpGalpon = document.getElementById('vp-galpon-grid');
   if (vpGalpon) {
     vpGalpon.innerHTML = galponHtml;
@@ -953,11 +1003,11 @@ function buildVistaPlanta() {
   const norMods = getSectionModules('carpa-grande', 'norte');
   const vpSur   = document.getElementById('vp-cg-sur');
   const vpNorte = document.getElementById('vp-cg-norte');
-  if (vpSur)   vpSur.innerHTML   = buildCarpaGrandeSector(surMods);
-  if (vpNorte) vpNorte.innerHTML = buildCarpaGrandeSector(norMods);
+  if (vpSur)   vpSur.innerHTML   = buildCarpaGrandeSector(surMods, true);  // compact
+  if (vpNorte) vpNorte.innerHTML = buildCarpaGrandeSector(norMods, true);  // compact
 
   // ── Carpa Chica ──
-  buildCarpaChicaInto('vp-carpa-chica-grid');
+  buildCarpaChicaInto('vp-carpa-chica-grid', true); // compact
 
   // ── Patio de Acopio ──
   const cbMods  = getSectionModules('costado-bodega', null);
