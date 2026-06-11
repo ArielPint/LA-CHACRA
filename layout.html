@@ -101,11 +101,20 @@
   #tab-carpa-chica .section-wrap,
   #tab-patio .section-wrap { display: block; }
   #tab-galpon .multi-wrap,
-  #tab-carpa-grande .multi-wrap,
-  #tab-patio .multi-wrap { align-items: stretch; }
+  #tab-carpa-grande .multi-wrap { align-items: stretch; }
   #tab-galpon .multi-wrap > *,
-  #tab-carpa-grande .multi-wrap > *,
-  #tab-patio .multi-wrap > * { flex: 1; min-width: 0; }
+  #tab-carpa-grande .multi-wrap > * { flex: 1; min-width: 0; }
+  /* Patio: sectores apilados verticalmente */
+  #tab-patio .multi-wrap { flex-direction: column; gap: 20px; }
+  #tab-patio .multi-wrap > * { width: 100%; }
+
+  /* Font sizes: más grandes en pestañas de detalle */
+  .module-card { font-size: 10px; }
+  #tab-galpon   .module-card,
+  #tab-carpa-grande .module-card { font-size: clamp(11px, 1.15vw, 17px); }
+  #tab-carpa-chica .module-card,
+  #tab-patio   .module-card { font-size: clamp(10px, 1.0vw, 15px); }
+  #tab-planta  .module-card { font-size: 10px; }
 
   /* =====================
      SUMMARY TAB
@@ -559,7 +568,7 @@ function cardInner(id, p, status, fecha, w, h) {
   const sc     = status === 'HUMEDO' ? 'status-humedo' : 'status-seco';
   const wStyle = w ? `min-width:${w};` : 'min-width:0;';
   const hStyle = h ? `min-height:${h};` : 'min-height:80px;';
-  return `<div class="module-card" style="${wStyle}${hStyle}font-size:${px(10)};" title="${id} · ${p}% · ${status}">
+  return `<div class="module-card" style="${wStyle}${hStyle}" title="${id} · ${p}% · ${status}">
     <div class="card-header">
       <div class="module-name">${id}</div>
       <div style="text-align:right;flex-shrink:0;">
@@ -592,7 +601,7 @@ function mkCell(id, col, row, rowSpan, w, h) {
   const style  = `grid-column:${col};grid-row:${rowVal};${wStyle}min-height:${cellH};`;
   if (!id || !M[id]) return `<div class="module-card empty" style="${style}"></div>`;
   const d = M[id];
-  return `<div class="module-card" style="${style}font-size:${px(10)};" title="${id} · ${d.avance}% · ${d.status}">
+  return `<div class="module-card" style="${style}" title="${id} · ${d.avance}% · ${d.status}">
     <div class="card-header">
       <div class="module-name">${id}</div>
       <div style="text-align:right;flex-shrink:0;">
@@ -916,11 +925,31 @@ function buildCarpaChicaInto(targetId, compact) {
     nW  = pxN(108);
     hPx = pxN(88);
   } else {
-    // Full-width: 5 wide cards across the section (tab-content padding 64px + section-wrap 36px)
+    // Full-width: tab-content padding 64px + section-wrap padding+border 36px
     const avail = window.innerWidth - 64 - 36;
-    wW  = Math.max(80, Math.floor((avail - 4*5) / wideCols.length));
+    const nWide = wideCols.length;
+    const gap5  = 5;
+    wW  = Math.max(80, Math.floor((avail - (nWide-1)*gap5) / nWide));
     nW  = Math.round(wW * 108 / 200);
     hPx = Math.round(wW * 88  / 200);
+
+    // Ensure narrow rows don't overflow: find worst-case offset and shrink nW if needed
+    let maxOffset = 0;
+    let maxNarrowCards = 4;
+    for (const rr of uRows) {
+      const rc   = mods.filter(m=>m.row===rr).map(m=>m.col).sort((a,b)=>a-b);
+      const step = rc.length > 1 ? Math.min(...rc.slice(1).map((c,i)=>c-rc[i])) : wideStep;
+      if (step < wideStep) {
+        const nearIdx = Math.max(0, wideCols.filter(c=>c<=rc[0]).length - 1);
+        const offset  = nearIdx * (wW + gap5);
+        if (offset > maxOffset) { maxOffset = offset; maxNarrowCards = rc.length; }
+      }
+    }
+    if (maxOffset > 0) {
+      const remaining = avail - maxOffset;
+      const maxFit    = Math.floor((remaining - (maxNarrowCards-1)*gap5) / maxNarrowCards);
+      nW = Math.max(60, Math.min(nW, maxFit));
+    }
   }
   const gap = 5;
   let html = '';
