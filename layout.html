@@ -142,6 +142,25 @@
   .linea-label { display: grid; grid-template-columns: repeat(3, 88px); gap: 5px; }
   .linea-box   { border: 2px solid #888; border-radius: 4px; text-align: center; padding: 7px 4px; font-weight: 700; font-size: 0.95rem; color: #333; background: #f8f8f8; }
 
+  /* Vista Planta Completa */
+  .planta-wrap { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  .planta-group {
+    background: white;
+    border-radius: 8px;
+    padding: 16px 18px;
+    border: 2px solid #e0e4ed;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
+  .planta-group-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #1a2c4e;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f0f2f5;
+    letter-spacing: 0.2px;
+  }
+
   /* Buscador de módulos */
   .search-section { margin-top: 28px; }
   .search-section h3 { font-size: 0.95rem; font-weight: 700; color: #1a2c4e; margin-bottom: 12px; }
@@ -224,6 +243,7 @@
   <button class="tab-btn"          onclick="switchTab('carpa-grande',this)">🏗️ Carpa Grande</button>
   <button class="tab-btn"          onclick="switchTab('carpa-chica',this)">🏕️ Carpa Chica</button>
   <button class="tab-btn"          onclick="switchTab('patio',this)">🌳 Patio de Acopio</button>
+  <button class="tab-btn"          onclick="switchTab('planta',this)">🗺️ Vista Completa</button>
 </div>
 
 <!-- ======================== RESUMEN ======================== -->
@@ -332,6 +352,77 @@
       <div class="section-title" style="color:#16a085;">▣ Sector Carpa Chica</div>
       <div id="patio-cc"></div>
     </div>
+  </div>
+</div>
+
+<!-- ======================== VISTA COMPLETA ======================== -->
+<div id="tab-planta" class="tab-content">
+  <div class="loc-title">Vista Completa — Planta Productiva</div>
+  <div class="loc-desc">Todas las ubicaciones en una sola vista</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="stats-planta" class="stats-bar"></div>
+  <div class="planta-wrap">
+
+    <!-- GALPÓN -->
+    <div class="planta-group">
+      <div class="planta-group-title">📦 Galpón</div>
+      <div class="section-wrap">
+        <div class="section-title">▣ Galpón Principal</div>
+        <div class="galpon-grid" id="vp-galpon-grid"></div>
+        <div class="linea-label" id="vp-linea-label">
+          <div class="linea-box">L3</div>
+          <div class="linea-box">L2</div>
+          <div class="linea-box">L1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARPA GRANDE -->
+    <div class="planta-group">
+      <div class="planta-group-title">🏗️ Carpa Grande</div>
+      <div class="multi-wrap">
+        <div class="section-wrap">
+          <div class="section-title" style="color:#2980b9;">▣ Sector Sur</div>
+          <div id="vp-cg-sur"></div>
+        </div>
+        <div class="section-wrap">
+          <div class="section-title" style="color:#e67e22;">▣ Sector Norte</div>
+          <div id="vp-cg-norte"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARPA CHICA -->
+    <div class="planta-group">
+      <div class="planta-group-title">🏕️ Carpa Chica</div>
+      <div class="section-wrap">
+        <div id="vp-carpa-chica-grid"></div>
+      </div>
+    </div>
+
+    <!-- PATIO DE ACOPIO -->
+    <div class="planta-group">
+      <div class="planta-group-title">🌳 Patio de Acopio</div>
+      <div class="multi-wrap">
+        <div class="section-wrap">
+          <div class="section-title" style="color:#7f8c8d;">▣ Costado Bodega</div>
+          <div id="vp-costado-bodega"></div>
+        </div>
+        <div class="section-wrap">
+          <div class="section-title" style="color:#2980b9;">▣ Sector Carpa Grande</div>
+          <div id="vp-patio-cg"></div>
+        </div>
+        <div class="section-wrap">
+          <div class="section-title" style="color:#16a085;">▣ Sector Carpa Chica</div>
+          <div id="vp-patio-cc"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -738,9 +829,11 @@ function buildCarpaGrande() {
 //  Filas anchas (paso de col ≥ 4) → tarjetas anchas.
 //  Filas angostas (paso 2) → tarjetas angostas con offset calculado.
 // ============================================================
-function buildCarpaChica() {
+function buildCarpaChicaInto(targetId) {
   const mods = getSectionModules('carpa-chica', null);
-  if (!mods.length) { document.getElementById('carpa-chica-grid').innerHTML = ''; return; }
+  const el   = document.getElementById(targetId);
+  if (!el) return;
+  if (!mods.length) { el.innerHTML = ''; return; }
 
   const uRows = [...new Set(mods.map(m => m.row))].sort((a, b) => a - b);
   const map   = {};
@@ -794,8 +887,12 @@ function buildCarpaChica() {
     }
   }
 
-  document.getElementById('carpa-chica-grid').innerHTML = html;
-  renderStats('stats-carpa-chica', mods.map(m=>m.id));
+  el.innerHTML = html;
+}
+
+function buildCarpaChica() {
+  buildCarpaChicaInto('carpa-chica-grid');
+  renderStats('stats-carpa-chica', getSectionModules('carpa-chica', null).map(m=>m.id));
 }
 
 // ============================================================
@@ -813,6 +910,57 @@ function buildPatio() {
   if (cgEl) cgEl.innerHTML = renderGrid(buildSectionGrid(cgMods), px(112), px(90));
   if (ccEl) ccEl.innerHTML = renderGrid(buildSectionGrid(ccMods), px(112), px(90));
   renderStats('stats-patio', [...cbMods, ...cgMods, ...ccMods].map(m=>m.id));
+}
+
+// ============================================================
+//  VISTA COMPLETA — todas las ubicaciones juntas
+// ============================================================
+function buildVistaPlanta() {
+  // ── Galpón ──
+  const galponMods  = getSectionModules('galpon', null);
+  const galponGrid  = buildSectionGrid(galponMods);
+  const galponNcols = galponGrid.length ? galponGrid[0].length : 3;
+  let galponHtml = '';
+  for (const row of galponGrid)
+    for (const id of row)
+      galponHtml += card(id, id ? M[id] : null);
+  const vpGalpon = document.getElementById('vp-galpon-grid');
+  if (vpGalpon) {
+    vpGalpon.innerHTML = galponHtml;
+    vpGalpon.style.gridTemplateColumns = `repeat(${galponNcols},${px(86)})`;
+  }
+  const vpLL = document.getElementById('vp-linea-label');
+  if (vpLL) vpLL.style.gridTemplateColumns = `repeat(${galponNcols},${px(86)})`;
+
+  // ── Carpa Grande ──
+  const surMods = getSectionModules('carpa-grande', 'sur');
+  const norMods = getSectionModules('carpa-grande', 'norte');
+  const vpSur   = document.getElementById('vp-cg-sur');
+  const vpNorte = document.getElementById('vp-cg-norte');
+  if (vpSur)   vpSur.innerHTML   = buildCarpaGrandeSector(surMods);
+  if (vpNorte) vpNorte.innerHTML = buildCarpaGrandeSector(norMods);
+
+  // ── Carpa Chica ──
+  buildCarpaChicaInto('vp-carpa-chica-grid');
+
+  // ── Patio de Acopio ──
+  const cbMods  = getSectionModules('costado-bodega', null);
+  const pgcMods = getSectionModules('patio', 'carpa-grande');
+  const pccMods = getSectionModules('patio', 'carpa-chica');
+  const vpCB    = document.getElementById('vp-costado-bodega');
+  const vpPGC   = document.getElementById('vp-patio-cg');
+  const vpPCC   = document.getElementById('vp-patio-cc');
+  if (vpCB)  vpCB.innerHTML  = renderGrid(buildSectionGrid(cbMods),  px(86),  px(85));
+  if (vpPGC) vpPGC.innerHTML = renderGrid(buildSectionGrid(pgcMods), px(112), px(90));
+  if (vpPCC) vpPCC.innerHTML = renderGrid(buildSectionGrid(pccMods), px(112), px(90));
+
+  // ── Stats globales ──
+  const allIds = [
+    ...galponMods, ...surMods, ...norMods,
+    ...getSectionModules('carpa-chica', null),
+    ...cbMods, ...pgcMods, ...pccMods,
+  ].map(m => m.id);
+  renderStats('stats-planta', allIds);
 }
 
 // ============================================================
@@ -843,6 +991,7 @@ async function init() {
   buildCarpaGrande();
   buildCarpaChica();
   buildPatio();
+  buildVistaPlanta();
 }
 init();
 
