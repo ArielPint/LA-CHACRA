@@ -10,9 +10,87 @@
     "updatedAt": 1749600000000,
     "permissions": {
       "pages": {
-        "dashboard": { "access": true, "tabs": ["resumen","curva","modulos","compras","productos","stock","despachos"] },
-        "produccion": { "access": true, "tabs": ["resumen","torres","partidas","alertas","detalle"] },
-        "layout":     { "access": true, "tabs": ["resumen","galpon","carpa-grande","carpa-chica","patio","planta"] }
+        "dashboard": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "curva",
+            "modulos",
+            "compras",
+            "productos",
+            "stock",
+            "despachos"
+          ]
+        },
+        "produccion": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "torres",
+            "partidas",
+            "alertas",
+            "detalle"
+          ]
+        },
+        "layout": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "galpon",
+            "carpa-grande",
+            "carpa-chica",
+            "patio",
+            "planta"
+          ]
+        }
+      },
+      "readonly": false
+    }
+  },
+  {
+    "id": "636febe4-c524-4acd-bf27-b8beb6d5e1d5",
+    "username": "dampuero",
+    "password": "178fa0a97f17f79831c4d14d66893f064687849026b5222fc4d170db356e007f",
+    "role": "operador",
+    "name": "Daniela Ampuero",
+    "active": true,
+    "createdAt": 1781216928692,
+    "updatedAt": 1781216928692,
+    "permissions": {
+      "pages": {
+        "dashboard": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "curva",
+            "modulos",
+            "compras",
+            "productos",
+            "stock",
+            "despachos"
+          ]
+        },
+        "produccion": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "torres",
+            "partidas",
+            "alertas",
+            "detalle"
+          ]
+        },
+        "layout": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "galpon",
+            "carpa-grande",
+            "carpa-chica",
+            "patio",
+            "planta"
+          ]
+        }
       },
       "readonly": false
     }
