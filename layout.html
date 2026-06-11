@@ -505,7 +505,7 @@
 
   // Ocultar tabs sin permiso
   Object.entries(TAB_MAP).forEach(([tabId]) => {
-    if (!AUTH.canViewTab(tabId)) {
+    if (!AUTH.canViewTab('layout', tabId)) {
       // Ocultar botón de la pestaña
       document.querySelectorAll('.tab-btn').forEach(btn => {
         if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tabId + "'")) {
@@ -519,8 +519,8 @@
   });
 
   // Si la pestaña activa por defecto está oculta, activar la primera visible
-  const firstVisible = AUTH.getAllTabs().find(t => AUTH.canViewTab(t));
-  if (firstVisible && !AUTH.canViewTab('resumen')) {
+  const firstVisible = AUTH.getAllTabs().find(t => AUTH.canViewTab('layout', t));
+  if (firstVisible && !AUTH.canViewTab('layout', 'resumen')) {
     // Quitar active del resumen
     const defaultContent = document.getElementById('tab-resumen');
     const defaultBtn = document.querySelector('.tab-btn.active');

@@ -7,6 +7,7 @@
 <script src="xlsx.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="auth.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -14,6 +15,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;gap:12px}
 .logo{display:flex;align-items:center;white-space:nowrap}
 .upload-area{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.auth-area{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.auth-user-badge{font-size:.72rem;background:rgba(255,255,255,0.08);padding:3px 9px;border-radius:20px;color:var(--muted);white-space:nowrap}
+.auth-btn{font-size:.72rem;padding:4px 11px;background:rgba(255,255,255,0.1);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s}
+.auth-btn:hover{color:var(--text);border-color:var(--accent)}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:6px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:opacity .15s}
 .btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{opacity:.85}
 #file-input{display:none}
@@ -92,6 +97,11 @@ tbody tr:hover td{background:var(--surface2)}
     <span id="load-status"></span>
     <label class="btn btn-primary" for="file-input">📂 Cargar Excel</label>
     <input type="file" id="file-input" accept=".xlsx,.xlsm,.xls">
+  </div>
+  <div class="auth-area">
+    <span class="auth-user-badge" id="dash-user-badge"></span>
+    <a href="admin.html" class="auth-btn" id="dash-admin-btn" style="display:none">⚙️ Admin</a>
+    <button class="auth-btn" onclick="AUTH.logout();window.top.location.href='login.html'">Salir</button>
   </div>
 </header>
 
@@ -548,6 +558,41 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
 // ═══════════════════════════════════════════════
 // TABS
 // ═══════════════════════════════════════════════
+// ── auth ─────────────────────────────────────
+(function(){
+  var s = AUTH.requireAuth('login.html');
+  if (!s) return;
+  var badge = document.getElementById('dash-user-badge');
+  if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
+  var adminBtn = document.getElementById('dash-admin-btn');
+  if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
+
+  // Ocultar tabs sin permiso
+  var DASH_TABS = ['resumen','curva','modulos','compras','productos','stock','despachos'];
+  DASH_TABS.forEach(function(tabId){
+    if (!AUTH.canViewTab('dashboard', tabId)){
+      var btn = document.querySelector('.tab[data-tab="' + tabId + '"]');
+      var page = document.getElementById('page-' + tabId);
+      if (btn)  btn.style.display = 'none';
+      if (page) page.style.display = 'none';
+    }
+  });
+  // Activar primera pestaña visible si resumen está oculta
+  if (!AUTH.canViewTab('dashboard','resumen')){
+    var firstTab = DASH_TABS.find(function(t){ return AUTH.canViewTab('dashboard', t); });
+    if (firstTab){
+      var defBtn  = document.querySelector('.tab.active');
+      var defPage = document.getElementById('page-resumen');
+      if (defBtn)  defBtn.classList.remove('active');
+      if (defPage) defPage.classList.remove('active');
+      var newBtn  = document.querySelector('.tab[data-tab="' + firstTab + '"]');
+      var newPage = document.getElementById('page-' + firstTab);
+      if (newBtn)  newBtn.classList.add('active');
+      if (newPage) newPage.classList.add('active');
+    }
+  }
+})();
+
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click',()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));

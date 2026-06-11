@@ -6,12 +6,16 @@
 <title>Tecno Panel — Producción</title>
 <script src="xlsx.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="auth.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:14px}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
-.header-right{font-size:.75rem;color:var(--muted);text-align:right}
+.header-right{font-size:.75rem;color:var(--muted);text-align:right;display:flex;align-items:center;gap:10px}
+.auth-user-badge{font-size:.72rem;background:rgba(255,255,255,0.08);padding:3px 9px;border-radius:20px;white-space:nowrap}
+.auth-btn{font-size:.72rem;padding:4px 11px;background:rgba(255,255,255,0.1);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s}
+.auth-btn:hover{color:var(--text);border-color:var(--accent)}
 nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:2px;overflow-x:auto}
 .tab{padding:10px 18px;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
 .tab:hover{color:var(--text)}.tab.active{color:var(--brand);border-bottom-color:var(--brand)}
@@ -81,7 +85,11 @@ tbody tr:hover td{background:var(--surface2)}
 <body>
 <header>
   <div class="logo"><div><span style="font-size:30px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:30px;font-weight:900;color:#D42B1E;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:12px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup></div><div style="font-size:10px;color:#7a7f99;margin-top:3px;letter-spacing:.3px">Producci&#243;n &#8212; Avance por M&#243;dulo</div></div>
-  <div class="header-right">704 m&#243;dulos &middot; 22 torres<br><span style="color:var(--muted)">Datos al 07/06/2026</span></div>
+  <div class="header-right">
+    <span class="auth-user-badge" id="prod-user-badge"></span>
+    <a href="admin.html" class="auth-btn" id="prod-admin-btn" style="display:none">⚙️ Admin</a>
+    <button class="auth-btn" onclick="AUTH.logout();window.top.location.href='login.html'">Salir</button>
+  </div>
 </header>
 <nav>
   <div class="tab active" data-tab="resumen">&#128202; Resumen</div>
@@ -257,6 +265,41 @@ function barH(id, labels, data, colors){
     }
   });
 }
+
+// ── auth ─────────────────────────────────────
+(function(){
+  var s = AUTH.requireAuth('login.html');
+  if (!s) return;
+  var badge = document.getElementById('prod-user-badge');
+  if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
+  var adminBtn = document.getElementById('prod-admin-btn');
+  if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
+
+  // Ocultar tabs sin permiso
+  var PROD_TABS = ['resumen','torres','partidas','alertas','detalle'];
+  PROD_TABS.forEach(function(tabId){
+    if (!AUTH.canViewTab('produccion', tabId)){
+      var btn = document.querySelector('.tab[data-tab="' + tabId + '"]');
+      var page = document.getElementById('page-' + tabId);
+      if (btn)  btn.style.display = 'none';
+      if (page) page.style.display = 'none';
+    }
+  });
+  // Activar primera pestaña visible si resumen está oculta
+  if (!AUTH.canViewTab('produccion','resumen')){
+    var firstTab = PROD_TABS.find(function(t){ return AUTH.canViewTab('produccion', t); });
+    if (firstTab){
+      var defBtn  = document.querySelector('.tab.active');
+      var defPage = document.getElementById('page-resumen');
+      if (defBtn)  defBtn.classList.remove('active');
+      if (defPage) defPage.classList.remove('active');
+      var newBtn  = document.querySelector('.tab[data-tab="' + firstTab + '"]');
+      var newPage = document.getElementById('page-' + firstTab);
+      if (newBtn)  newBtn.classList.add('active');
+      if (newPage) newPage.classList.add('active');
+    }
+  }
+})();
 
 // ── tabs ─────────────────────────────────────
 document.querySelectorAll(".tab").forEach(function(t){

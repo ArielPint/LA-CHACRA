@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tecno Panel</title>
+<script src="auth.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -15,9 +16,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tb-tab{padding:0 20px;font-size:.87rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;transition:all .15s;height:54px;white-space:nowrap}
 .tb-tab:hover{color:var(--text)}
 .tb-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
-.tb-right{display:flex;align-items:center;gap:12px;margin-left:auto}
+.tb-right{display:flex;align-items:center;gap:10px;margin-left:auto}
 .upload-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none;transition:all .15s}
 .upload-btn:hover{color:var(--text);border-color:var(--accent)}
+.auth-badge{font-size:.72rem;background:rgba(255,255,255,0.08);padding:3px 9px;border-radius:20px;color:var(--muted);white-space:nowrap}
+.auth-sm-btn{font-size:.72rem;padding:4px 10px;background:rgba(255,255,255,0.08);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s;white-space:nowrap}
+.auth-sm-btn:hover{color:var(--text);border-color:var(--accent)}
 #content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
 .sheet{display:none;flex:1;flex-direction:column;height:100%}
 .sheet.active{display:flex}
@@ -37,6 +41,9 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   </nav>
   <div class="tb-right">
     <button class="upload-btn" onclick="recargar()">&#8635; Actualizar datos</button>
+    <span class="auth-badge" id="tp-user-badge"></span>
+    <a href="admin.html" class="auth-sm-btn" id="tp-admin-btn" style="display:none">⚙️ Admin</a>
+    <button class="auth-sm-btn" onclick="doLogout()">Salir</button>
   </div>
 </div>
 
@@ -53,6 +60,56 @@ iframe{border:none;width:100%;flex:1;min-height:0}
 </div>
 
 <script>
+// ── Auth guard ────────────────────────────────────────────────────────────
+(function(){
+  var s = AUTH.requireAuth('login.html');
+  if (!s) return;
+
+  // User badge
+  var badge = document.getElementById('tp-user-badge');
+  if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
+
+  // Admin button
+  if (AUTH.isAdmin()) {
+    var adminBtn = document.getElementById('tp-admin-btn');
+    if (adminBtn) adminBtn.style.display = 'inline-block';
+  }
+
+  // Ocultar páginas sin acceso en la barra de navegación
+  var PAGE_TAB_MAP = {
+    'dashboard':  'dashboard',
+    'produccion': 'produccion',
+    'layout':     'layout'
+  };
+  var firstVisible = null;
+  document.querySelectorAll('.tb-tab[onclick]').forEach(function(btn){
+    var match = btn.getAttribute('onclick').match(/'(\w+)'/);
+    if (!match) return;
+    var pageId = match[1];
+    if (!AUTH.canAccessPage(pageId)) {
+      btn.style.display = 'none';
+    } else if (!firstVisible) {
+      firstVisible = pageId;
+    }
+  });
+  // Si la pestaña activa (dashboard) está oculta, ir a la primera visible
+  if (firstVisible && !AUTH.canAccessPage('dashboard')) {
+    var defBtn = document.querySelector('.tb-tab.active');
+    if (defBtn) defBtn.classList.remove('active');
+    var newBtn = document.querySelector('.tb-tab[onclick*="' + firstVisible + '"]');
+    if (newBtn) newBtn.classList.add('active');
+    // Activar sheet
+    document.querySelectorAll('.sheet').forEach(function(s){ s.classList.remove('active'); });
+    var sheet = document.getElementById('sheet-' + firstVisible);
+    if (sheet) sheet.classList.add('active');
+  }
+})();
+
+function doLogout(){
+  AUTH.logout();
+  window.location.href = 'login.html';
+}
+
 var prodLoaded = false;
 var layoutLoaded = false;
 
