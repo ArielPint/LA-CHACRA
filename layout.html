@@ -160,6 +160,22 @@
     border-bottom: 2px solid #f0f2f5;
     letter-spacing: 0.2px;
   }
+  .planta-group-title a {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+  .planta-group-title a:hover { color: #e63946; }
+  .planta-group-title a::after {
+    content: '↗';
+    font-size: 0.75rem;
+    opacity: 0.4;
+    transition: opacity 0.15s;
+  }
+  .planta-group-title a:hover::after { opacity: 1; }
 
   /* Buscador de módulos */
   .search-section { margin-top: 28px; }
@@ -239,11 +255,11 @@
 
 <div class="tabs">
   <button class="tab-btn active"   onclick="switchTab('resumen',this)">📊 Resumen</button>
+  <button class="tab-btn"          onclick="switchTab('planta',this)">🗺️ Vista Completa</button>
   <button class="tab-btn"          onclick="switchTab('galpon',this)">📦 Galpón</button>
   <button class="tab-btn"          onclick="switchTab('carpa-grande',this)">🏗️ Carpa Grande</button>
   <button class="tab-btn"          onclick="switchTab('carpa-chica',this)">🏕️ Carpa Chica</button>
   <button class="tab-btn"          onclick="switchTab('patio',this)">🌳 Patio de Acopio</button>
-  <button class="tab-btn"          onclick="switchTab('planta',this)">🗺️ Vista Completa</button>
 </div>
 
 <!-- ======================== RESUMEN ======================== -->
@@ -369,7 +385,7 @@
 
     <!-- GALPÓN -->
     <div class="planta-group">
-      <div class="planta-group-title">📦 Galpón</div>
+      <div class="planta-group-title"><a href="#" onclick="switchToTab('galpon');return false;">📦 Galpón</a></div>
       <div class="section-wrap">
         <div class="section-title">▣ Galpón Principal</div>
         <div class="galpon-grid" id="vp-galpon-grid"></div>
@@ -383,7 +399,7 @@
 
     <!-- CARPA GRANDE -->
     <div class="planta-group">
-      <div class="planta-group-title">🏗️ Carpa Grande</div>
+      <div class="planta-group-title"><a href="#" onclick="switchToTab('carpa-grande');return false;">🏗️ Carpa Grande</a></div>
       <div class="multi-wrap">
         <div class="section-wrap">
           <div class="section-title" style="color:#2980b9;">▣ Sector Sur</div>
@@ -398,7 +414,7 @@
 
     <!-- CARPA CHICA -->
     <div class="planta-group">
-      <div class="planta-group-title">🏕️ Carpa Chica</div>
+      <div class="planta-group-title"><a href="#" onclick="switchToTab('carpa-chica');return false;">🏕️ Carpa Chica</a></div>
       <div class="section-wrap">
         <div id="vp-carpa-chica-grid"></div>
       </div>
@@ -406,7 +422,7 @@
 
     <!-- PATIO DE ACOPIO -->
     <div class="planta-group">
-      <div class="planta-group-title">🌳 Patio de Acopio</div>
+      <div class="planta-group-title"><a href="#" onclick="switchToTab('patio');return false;">🌳 Patio de Acopio</a></div>
       <div class="multi-wrap">
         <div class="section-wrap">
           <div class="section-title" style="color:#7f8c8d;">▣ Costado Bodega</div>
