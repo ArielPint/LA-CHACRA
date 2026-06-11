@@ -55,7 +55,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781216928692,
+    "updatedAt": 1781217326030,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -93,6 +93,7 @@
         }
       },
       "readonly": false
-    }
+    },
+    "plainPassword": "da.123"
   }
 ]
