@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Chacra · Admin de Permisos</title>
+<script src="auth.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green:   #2d4a2d;
+    --green2:  #3a5c3a;
+    --green3:  #e8f0e8;
+    --red:     #c0392b;
+    --red2:    #fff0f0;
+    --blue:    #2563eb;
+    --blue2:   #eff6ff;
+    --gray:    #6b7280;
+    --border:  #e5e7eb;
+    --bg:      #f3f4f6;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: #111;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--green);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 56px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.3px; }
+  header .sub { font-size: 0.75rem; opacity: 0.7; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .user-badge {
+    font-size: 0.8rem; opacity: 0.85;
+    background: rgba(255,255,255,0.15);
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .btn-header {
+    font-size: 0.8rem; padding: 6px 14px;
+    background: rgba(255,255,255,0.18); color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px; cursor: pointer; transition: background 0.2s;
+    text-decoration: none; display: inline-block;
+  }
+  .btn-header:hover { background: rgba(255,255,255,0.28); }
+
+  /* ── Layout ── */
+  .page { max-width: 960px; margin: 32px auto; padding: 0 24px; }
+
+  /* ── Cards ── */
+  .card {
+    background: white; border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    margin-bottom: 24px; overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+  }
+  .card-header h2 { font-size: 1rem; font-weight: 700; color: #111; }
+  .card-header span { font-size: 0.78rem; color: var(--gray); }
+  .card-body { padding: 20px 24px; }
+
+  /* ── Tabla de usuarios ── */
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--gray); padding: 0 12px 10px; border-bottom: 1px solid var(--border);
+  }
+  td { padding: 12px; font-size: 0.88rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  .badge {
+    display: inline-block; padding: 2px 9px; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 600;
+  }
+  .badge-admin    { background: #fef3c7; color: #92400e; }
+  .badge-operador { background: var(--blue2); color: var(--blue); }
+  .badge-viewer   { background: #f3f4f6; color: #555; }
+  .badge-on  { background: #d1fae5; color: #065f46; }
+  .badge-off { background: #fee2e2; color: #991b1b; }
+
+  .tabs-list { font-size: 0.75rem; color: var(--gray); }
+  .tab-chip {
+    display: inline-block; background: var(--green3); color: var(--green);
+    font-size: 0.68rem; font-weight: 600; padding: 1px 6px;
+    border-radius: 4px; margin: 1px 2px;
+  }
+
+  /* ── Botones ── */
+  .btn {
+    padding: 6px 14px; border-radius: 6px; border: none;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-primary:hover { background: var(--green2); }
+  .btn-danger  { background: var(--red2); color: var(--red); border: 1px solid #f5c6c6; }
+  .btn-danger:hover { background: #ffe0e0; }
+  .btn-edit    { background: var(--blue2); color: var(--blue); border: 1px solid #bfdbfe; }
+  .btn-edit:hover { background: #dbeafe; }
+  .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+  .btn-group { display: flex; gap: 6px; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: 14px;
+    width: 100%; max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: white; z-index: 1;
+  }
+  .modal-header h3 { font-size: 1rem; font-weight: 700; }
+  .modal-close {
+    background: none; border: none; font-size: 1.3rem;
+    color: var(--gray); cursor: pointer; line-height: 1;
+  }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding: 16px 24px; border-top: 1px solid var(--border);
+    position: sticky; bottom: 0; background: white;
+  }
+
+  /* ── Formulario modal ── */
+  .form-row { margin-bottom: 16px; }
+  .form-label {
+    display: block; font-size: 0.75rem; font-weight: 700;
+    color: #444; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .form-input, .form-select {
+    width: 100%; padding: 9px 12px;
+    border: 2px solid var(--border); border-radius: 7px;
+    font-size: 0.9rem; color: #111; outline: none;
+    transition: border-color 0.2s; background: #fafafa;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--green); background: white; }
+  .form-hint { font-size: 0.73rem; color: var(--gray); margin-top: 4px; }
+
+  .tabs-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px;
+  }
+  .tab-check {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 10px; border: 2px solid var(--border);
+    border-radius: 7px; cursor: pointer; font-size: 0.82rem;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .tab-check:has(input:checked) {
+    border-color: var(--green); background: var(--green3);
+  }
+  .tab-check input { accent-color: var(--green); }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 0.88rem; }
+  .toggle-label small { display: block; font-size: 0.73rem; color: var(--gray); margin-top: 1px; }
+
+  /* Toggle switch */
+  .switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; background: #ccc;
+    border-radius: 22px; cursor: pointer; transition: background 0.2s;
+  }
+  .slider::before {
+    content: ''; position: absolute;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: white; left: 3px; top: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .slider { background: var(--green); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: #111; color: white; padding: 12px 20px;
+    border-radius: 9px; font-size: 0.85rem; font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    transform: translateY(80px); opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    z-index: 2000;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: #065f46; }
+  .toast.error   { background: #991b1b; }
+
+  /* ── Info card ── */
+  .info-box {
+    background: var(--blue2); border: 1px solid #bfdbfe;
+    border-radius: 8px; padding: 12px 16px;
+    font-size: 0.82rem; color: #1e40af; margin-bottom: 20px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .info-box svg { flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Roles reference ── */
+  .roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .role-card {
+    border: 1px solid var(--border); border-radius: 8px; padding: 14px;
+  }
+  .role-card h4 { font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
+  .role-card ul { list-style: none; font-size: 0.78rem; color: var(--gray); }
+  .role-card ul li::before { content: '• '; }
+  .role-card ul li { margin-bottom: 3px; }
+
+  .empty-state { text-align: center; padding: 32px; color: var(--gray); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div>
+    <h1>La Chacra · Administración</h1>
+    <div class="sub">Gestión de usuarios y permisos</div>
+  </div>
+  <div class="header-right">
+    <span class="user-badge" id="headerUser"></span>
+    <a href="layout.html" class="btn-header">← Dashboard</a>
+    <button class="btn-header" onclick="doLogout()">Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- Info -->
+  <div class="info-box">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <div>Los permisos se almacenan localmente en el navegador (localStorage). El usuario por defecto es <strong>admin</strong> con contraseña <strong>admin123</strong> — cámbiala después de iniciar sesión.</div>
+  </div>
+
+  <!-- Tabla de usuarios -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2>Usuarios</h2>
+        <span id="userCount">0 usuarios</span>
+      </div>
+      <button class="btn btn-primary" onclick="openModal()">+ Nuevo usuario</button>
+    </div>
+    <div class="card-body" style="padding:0">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Pestañas</th>
+            <th>Modo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr><td colspan="7" class="empty-state">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Referencia de roles -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Referencia de Roles</h2>
+      <span>Permisos por defecto al asignar un rol</span>
+    </div>
+    <div class="card-body">
+      <div class="roles-grid">
+        <div class="role-card">
+          <h4>🔑 Administrador</h4>
+          <ul>
+            <li>Acceso a todas las pestañas</li>
+            <li>Puede editar datos</li>
+            <li>Accede al panel admin</li>
+          </ul>
+        </div>
+        <div class="role-card">
+          <h4>⚙️ Operador</h4>
+          <ul>
+            <li>Acceso a Resumen + sectores</li>
+            <li>Puede editar datos</li>
+            <li>Sin acceso al panel admin</li>
+          </ul>
+        </div>
+        <div class="role-card">
+          <h4>👁️ Solo Lectura</h4>
+          <ul>
+            <li>Acceso a todas las pestañas</li>
+            <li>No puede editar datos</li>
+            <li>Sin acceso al panel admin</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Modal nuevo/editar usuario ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Nuevo usuario</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editUserId">
+
+      <div class="form-row">
+        <label class="form-label">Nombre completo</label>
+        <input type="text" class="form-input" id="fName" placeholder="Ej: Juan Pérez">
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Usuario (login)</label>
+        <input type="text" class="form-input" id="fUsername" placeholder="ej: jperez" autocomplete="off">
+        <p class="form-hint">Solo letras, números y guiones. Sin espacios.</p>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Contraseña <span id="passHint" style="font-weight:400;text-transform:none;color:#888"></span></label>
+        <input type="password" class="form-input" id="fPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Rol</label>
+        <select class="form-select" id="fRole" onchange="onRoleChange()">
+          <option value="viewer">👁️ Solo Lectura (viewer)</option>
+          <option value="operador">⚙️ Operador</option>
+          <option value="admin">🔑 Administrador</option>
+        </select>
+        <p class="form-hint">El rol define los permisos por defecto. Puedes personalizar abajo.</p>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Pestañas visibles</label>
+        <div class="tabs-grid" id="tabsGrid"></div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Opciones</label>
+        <div>
+          <div class="toggle-row">
+            <div class="toggle-label">
+              Solo lectura
+              <small>El usuario no podrá modificar datos</small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="fReadonly">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-label">
+              Usuario activo
+              <small>Los usuarios inactivos no pueden iniciar sesión</small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="fActive" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()" style="background:#f3f4f6;color:#444">Cancelar</button>
+      <button class="btn btn-primary" id="btnSave" onclick="saveUser()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Guard: solo admin ──────────────────────────────────────────────────────
+const session = AUTH.requireAdmin('layout.html');
+if (session) {
+  document.getElementById('headerUser').textContent = session.name + ' · Admin';
+}
+
+// ── Render tabla ──────────────────────────────────────────────────────────
+function renderTable() {
+  const users = AUTH.getUsers();
+  const tbody = document.getElementById('usersTableBody');
+  document.getElementById('userCount').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
+
+  if (users.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay usuarios aún.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = users.map(u => {
+    const roleBadge = {
+      admin:    '<span class="badge badge-admin">Admin</span>',
+      operador: '<span class="badge badge-operador">Operador</span>',
+      viewer:   '<span class="badge badge-viewer">Viewer</span>'
+    }[u.role] || '';
+
+    const tabChips = (u.permissions.tabs || [])
+      .map(t => `<span class="tab-chip">${AUTH.getTabLabel(t)}</span>`)
+      .join('');
+
+    const modoBadge = u.permissions.readonly
+      ? '<span class="badge badge-viewer">Solo lectura</span>'
+      : '<span class="badge badge-on">Edición</span>';
+
+    const activoBadge = u.active
+      ? '<span class="badge badge-on">Activo</span>'
+      : '<span class="badge badge-off">Inactivo</span>';
+
+    const isCurrentAdmin = u.username === session.username;
+
+    return `<tr>
+      <td><strong>${u.name}</strong>${isCurrentAdmin ? ' <span style="font-size:0.7rem;color:#888">(tú)</span>' : ''}</td>
+      <td style="color:#666;font-family:monospace">${u.username}</td>
+      <td>${roleBadge}</td>
+      <td>${tabChips || '<span style="color:#bbb;font-size:0.78rem">Ninguna</span>'}</td>
+      <td>${modoBadge}</td>
+      <td>${activoBadge}</td>
+      <td>
+        <div class="btn-group">
+          <button class="btn btn-edit btn-sm" onclick="editUser('${u.id}')">Editar</button>
+          ${!isCurrentAdmin ? `<button class="btn btn-danger btn-sm" onclick="confirmDelete('${u.id}', '${u.name}')">Eliminar</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Tabs grid ──────────────────────────────────────────────────────────────
+function buildTabsGrid(selectedTabs) {
+  const allTabs = AUTH.getAllTabs();
+  document.getElementById('tabsGrid').innerHTML = allTabs.map(t =>
+    `<label class="tab-check">
+      <input type="checkbox" value="${t}" ${selectedTabs.includes(t) ? 'checked' : ''}>
+      ${AUTH.getTabLabel(t)}
+    </label>`
+  ).join('');
+}
+
+function getSelectedTabs() {
+  return [...document.querySelectorAll('#tabsGrid input:checked')].map(cb => cb.value);
+}
+
+function onRoleChange() {
+  const role   = document.getElementById('fRole').value;
+  const roles  = AUTH.getRoles();
+  const rPerms = roles[role];
+  if (rPerms) {
+    buildTabsGrid(rPerms.tabs.includes('all')
+      ? AUTH.getAllTabs()
+      : rPerms.tabs);
+    document.getElementById('fReadonly').checked = rPerms.readonly;
+  }
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function openModal(userId) {
+  document.getElementById('editUserId').value = '';
+  document.getElementById('fName').value      = '';
+  document.getElementById('fUsername').value  = '';
+  document.getElementById('fPassword').value  = '';
+  document.getElementById('fRole').value      = 'viewer';
+  document.getElementById('fActive').checked  = true;
+  document.getElementById('passHint').textContent = '';
+  document.getElementById('modalTitle').textContent = 'Nuevo usuario';
+  onRoleChange();
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function editUser(id) {
+  const user = AUTH.getUsers().find(u => u.id === id);
+  if (!user) return;
+
+  document.getElementById('editUserId').value  = user.id;
+  document.getElementById('fName').value       = user.name;
+  document.getElementById('fUsername').value   = user.username;
+  document.getElementById('fPassword').value   = '';
+  document.getElementById('fRole').value       = user.role;
+  document.getElementById('fReadonly').checked = user.permissions.readonly;
+  document.getElementById('fActive').checked   = user.active;
+  document.getElementById('passHint').textContent = '(dejar vacío para no cambiar)';
+  document.getElementById('modalTitle').textContent = 'Editar usuario';
+  buildTabsGrid(user.permissions.tabs || []);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// Cerrar con ESC o click fuera
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ── Guardar ────────────────────────────────────────────────────────────────
+async function saveUser() {
+  const btn  = document.getElementById('btnSave');
+  const id   = document.getElementById('editUserId').value;
+  const name = document.getElementById('fName').value.trim();
+  const user = document.getElementById('fUsername').value.trim();
+  const pass = document.getElementById('fPassword').value;
+  const role = document.getElementById('fRole').value;
+  const ro   = document.getElementById('fReadonly').checked;
+  const act  = document.getElementById('fActive').checked;
+  const tabs = getSelectedTabs();
+
+  if (!name || !user) { showToast('Nombre y usuario son requeridos', 'error'); return; }
+  if (!id && pass.length < 6) { showToast('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+  if (tabs.length === 0) { showToast('Selecciona al menos una pestaña', 'error'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  try {
+    if (id) {
+      await AUTH.updateUser(id, { username: user, name, role, customTabs: tabs, readonly: ro, active: act, password: pass || undefined });
+      showToast('Usuario actualizado', 'success');
+    } else {
+      await AUTH.createUser({ username: user, password: pass, name, role, customTabs: tabs, readonly: ro });
+      showToast('Usuario creado', 'success');
+    }
+    closeModal();
+    renderTable();
+  } catch (err) {
+    showToast(err.message || 'Error al guardar', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar';
+  }
+}
+
+// ── Eliminar ───────────────────────────────────────────────────────────────
+function confirmDelete(id, name) {
+  if (!confirm(`¿Eliminar al usuario "${name}"? Esta acción no se puede deshacer.`)) return;
+  AUTH.deleteUser(id);
+  showToast('Usuario eliminado', 'success');
+  renderTable();
+}
+
+// ── Logout ─────────────────────────────────────────────────────────────────
+function doLogout() {
+  AUTH.logout();
+  window.location.href = 'login.html';
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderTable();
+</script>
+</body>
+</html>

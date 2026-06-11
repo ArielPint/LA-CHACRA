@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mapa de Módulos — Planta Productiva</title>
+<script src="auth.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -20,6 +21,10 @@
   }
   header h1 { font-size: 1.25rem; font-weight: 700; }
   header .subtitle { font-size: 0.8rem; opacity: 0.65; margin-top: 2px; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .header-user { font-size: 0.78rem; opacity: 0.8; background: rgba(255,255,255,0.12); padding: 4px 10px; border-radius: 20px; }
+  .btn-header-sm { font-size: 0.76rem; padding: 5px 12px; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+  .btn-header-sm:hover { background: rgba(255,255,255,0.25); }
 
   .tabs {
     display: flex;
@@ -274,6 +279,11 @@
     <h1>🏭 Mapa de Módulos — Planta Productiva</h1>
     <div class="subtitle">Estado y progreso por ubicación · Actualizado desde archivo base</div>
   </div>
+  <div class="header-right">
+    <span class="header-user" id="headerUserInfo"></span>
+    <a href="admin.html" class="btn-header-sm" id="btnAdmin" style="display:none">⚙️ Admin</a>
+    <button class="btn-header-sm" onclick="doLogout()">Salir</button>
+  </div>
 </header>
 
 <div class="tabs">
@@ -466,6 +476,72 @@
 </div>
 
 <script>
+// ============================================================
+//  AUTENTICACIÓN
+// ============================================================
+(function() {
+  const s = AUTH.requireAuth('login.html');
+  if (!s) return;
+
+  // Info de usuario en header
+  const userEl = document.getElementById('headerUserInfo');
+  if (userEl) userEl.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role]?.label || s.role);
+
+  // Botón admin solo para administradores
+  if (AUTH.isAdmin()) {
+    const adminBtn = document.getElementById('btnAdmin');
+    if (adminBtn) adminBtn.style.display = 'inline-block';
+  }
+
+  // Mapa tabId → tab-btn y tab-content
+  const TAB_MAP = {
+    'resumen':      'resumen',
+    'galpon':       'galpon',
+    'carpa-grande': 'carpa-grande',
+    'carpa-chica':  'carpa-chica',
+    'patio':        'patio',
+    'planta':       'planta'
+  };
+
+  // Ocultar tabs sin permiso
+  Object.entries(TAB_MAP).forEach(([tabId]) => {
+    if (!AUTH.canViewTab(tabId)) {
+      // Ocultar botón de la pestaña
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tabId + "'")) {
+          btn.style.display = 'none';
+        }
+      });
+      // Ocultar contenido
+      const content = document.getElementById('tab-' + tabId);
+      if (content) content.style.display = 'none';
+    }
+  });
+
+  // Si la pestaña activa por defecto está oculta, activar la primera visible
+  const firstVisible = AUTH.getAllTabs().find(t => AUTH.canViewTab(t));
+  if (firstVisible && !AUTH.canViewTab('resumen')) {
+    // Quitar active del resumen
+    const defaultContent = document.getElementById('tab-resumen');
+    const defaultBtn = document.querySelector('.tab-btn.active');
+    if (defaultContent) { defaultContent.classList.remove('active'); defaultContent.style.display = 'none'; }
+    if (defaultBtn)     defaultBtn.classList.remove('active');
+    // Activar primera pestaña permitida
+    const el = document.getElementById('tab-' + firstVisible);
+    if (el) { el.classList.add('active'); el.style.display = 'block'; }
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + firstVisible + "'")) {
+        btn.classList.add('active');
+      }
+    });
+  }
+})();
+
+function doLogout() {
+  AUTH.logout();
+  window.location.href = 'login.html';
+}
+
 // ============================================================
 //  DATOS DINÁMICOS
 // ============================================================
