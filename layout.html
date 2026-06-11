@@ -141,6 +141,71 @@
   .galpon-grid { display: grid; gap: 5px; margin-bottom: 8px; }
   .linea-label { display: grid; grid-template-columns: repeat(3, 88px); gap: 5px; }
   .linea-box   { border: 2px solid #888; border-radius: 4px; text-align: center; padding: 7px 4px; font-weight: 700; font-size: 0.95rem; color: #333; background: #f8f8f8; }
+
+  /* Buscador de módulos */
+  .search-section { margin-top: 28px; }
+  .search-section h3 { font-size: 0.95rem; font-weight: 700; color: #1a2c4e; margin-bottom: 12px; }
+  .search-box-wrap { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .search-input {
+    padding: 10px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    width: 280px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: #1a2c4e; }
+  .search-hint { font-size: 0.78rem; color: #999; }
+
+  .search-table-wrap { overflow-x: auto; }
+  .search-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .search-table th {
+    background: #1a2c4e;
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .search-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+  }
+  .search-table tr:last-child td { border-bottom: none; }
+  .search-table tr:hover td { background: #f8f9ff; }
+  .search-table .col-id { font-weight: 700; color: #cc0000; }
+  .search-table .col-loc { color: #555; }
+  .search-table .col-dias { font-weight: 700; text-align: center; }
+  .search-table .col-avance { text-align: center; }
+  .search-table .col-pend { color: #e67e22; }
+  .search-table .pend-none { color: #27ae60; font-style: italic; }
+  .search-mini-bar { display: flex; align-items: center; gap: 8px; }
+  .search-bar-bg { background: #eee; border-radius: 4px; height: 8px; width: 80px; overflow: hidden; flex-shrink: 0; }
+  .search-bar-fill { height: 100%; border-radius: 4px; }
+  .search-no-results { text-align: center; color: #aaa; padding: 28px; font-style: italic; }
+  .search-status-chip {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.72rem; font-weight: 700;
+  }
+  .chip-humedo { background: #d5f5e3; color: #1e8449; }
+  .chip-seco   { background: #d6eaf8; color: #1a5276; }
+  .pend-tag {
+    display: inline-block; background: #fef9e7; border: 1px solid #f9e79f;
+    color: #7d6608; border-radius: 4px; padding: 1px 6px; font-size: 0.73rem;
+    margin: 1px 2px 1px 0; white-space: nowrap;
+  }
+  .pend-cat { font-weight: 700; }
 </style>
 <script src="xlsx.min.js"></script>
 </head>
@@ -167,6 +232,19 @@
   <div class="loc-desc">Vista consolidada de todos los módulos de la planta productiva</div>
   <div id="summary-total-bar" class="summary-total"></div>
   <div id="summary-grid" class="summary-grid"></div>
+
+  <div class="search-section">
+    <h3>🔍 Buscar módulo</h3>
+    <div class="search-box-wrap">
+      <input type="text" id="module-search" class="search-input"
+             placeholder="Ej: 45 o M-00045"
+             oninput="searchModules(this.value)">
+      <span class="search-hint">Ingresa el número o nombre del módulo</span>
+    </div>
+    <div class="search-table-wrap">
+      <div id="search-results"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ======================== GALPÓN ======================== -->
@@ -315,17 +393,21 @@ async function loadAvanceData() {
       const r = rows[i];
       if (!r[1]) continue;
       av[String(r[1]).trim()] = {
-        avance: r[4] != null ? Math.round(+r[4] * 100) : 0,
-        tipo:   (r[3] || 'SECO').toString().trim().toUpperCase(),
-        fecha:  r[6] instanceof Date ? r[6].toISOString().slice(0, 10) : null,
+        avance:      r[4]  != null ? Math.round(+r[4] * 100) : 0,
+        tipo:        (r[3] || 'SECO').toString().trim().toUpperCase(),
+        fecha:       r[6]  instanceof Date ? r[6].toISOString().slice(0, 10) : null,
+        pendientes:  r[97] != null ? String(r[97]).trim() : null,   // detalle partidas
+        nPendientes: r[99] != null ? +r[99] : 0,                    // cantidad
       };
     }
     for (const id of Object.keys(LOC)) {
       const d = av[id] || {};
       M[id] = Object.assign({}, LOC[id], {
-        avance: d.avance != null ? d.avance : 0,
-        status: d.tipo   || 'SECO',
-        fecha:  d.fecha  || null,
+        avance:      d.avance      != null ? d.avance : 0,
+        status:      d.tipo        || 'SECO',
+        fecha:       d.fecha       || null,
+        pendientes:  d.pendientes  || null,
+        nPendientes: d.nPendientes || 0,
       });
     }
     document.querySelector('header .subtitle').textContent =
@@ -487,6 +569,88 @@ function buildResumen() {
     </div>`;
   }
   document.getElementById('summary-grid').innerHTML = html;
+}
+
+// ============================================================
+//  BUSCADOR DE MÓDULOS
+// ============================================================
+function locName(m) {
+  const map = {
+    'galpon':         '📦 Galpón',
+    'costado-bodega': '🏭 Patio · Costado Bodega',
+    'carpa-grande':   m.sector === 'sur' ? '🏗️ Carpa Grande · Sur' : '🏗️ Carpa Grande · Norte',
+    'carpa-chica':    '🏕️ Carpa Chica',
+    'patio':          m.sector === 'carpa-chica' ? '🌳 Patio · Carpa Chica' : '🌳 Patio · Carpa Grande',
+  };
+  return map[m.loc] || m.loc;
+}
+
+function renderPendientes(txt, n) {
+  if (!n || !txt) return '<span class="pend-none">Sin pendientes</span>';
+  // txt = "ELÉCTRICO: ARTEFACTOS | TERMINACIONES: PILASTREO, LIMPIEZA FINAL"
+  const parts = txt.split('|').map(s => s.trim()).filter(Boolean);
+  return parts.map(p => {
+    const [cat, items] = p.split(':').map(s => s.trim());
+    const label = items ? `<span class="pend-cat">${cat}:</span> ${items}` : `<span class="pend-cat">${cat}</span>`;
+    return `<span class="pend-tag">${label}</span>`;
+  }).join('');
+}
+
+function searchModules(q) {
+  const el = document.getElementById('search-results');
+  if (!q || !q.trim()) { el.innerHTML = ''; return; }
+
+  const norm = q.trim().toLowerCase();
+  const matches = Object.entries(M).filter(([id]) => {
+    const idLow  = id.toLowerCase();
+    const numStr = id.replace(/\D/g, '');  // "00045" de "M-00045"
+    return idLow.includes(norm) || numStr.includes(norm) || numStr.replace(/^0+/,'').includes(norm);
+  }).sort(([a],[b]) => a.localeCompare(b));
+
+  if (!matches.length) {
+    el.innerHTML = `<div class="search-no-results">No se encontraron módulos con "${q}"</div>`;
+    return;
+  }
+
+  let rows = '';
+  for (const [id, d] of matches) {
+    const dias    = daysElapsed(d.fecha);
+    const pct     = d.avance;
+    const pbCls   = pct < 50 ? '#e74c3c' : pct < 85 ? '#f39c12' : '#2ecc71';
+    const chip    = d.status === 'HUMEDO'
+      ? '<span class="search-status-chip chip-humedo">HÚMEDO</span>'
+      : '<span class="search-status-chip chip-seco">SECO</span>';
+    const loc     = locName(d);
+    const pendHtml = renderPendientes(d.pendientes, d.nPendientes);
+    rows += `<tr>
+      <td class="col-id">${id}</td>
+      <td class="col-loc">${loc}</td>
+      <td class="col-avance">
+        <div class="search-mini-bar">
+          <div class="search-bar-bg"><div class="search-bar-fill" style="width:${pct}%;background:${pbCls};"></div></div>
+          <strong>${pct}%</strong>
+        </div>
+      </td>
+      <td>${chip}</td>
+      <td class="col-dias">${dias === '—' ? '—' : dias + ' días'}</td>
+      <td class="col-pend">${pendHtml}</td>
+    </tr>`;
+  }
+
+  el.innerHTML = `<table class="search-table">
+    <thead>
+      <tr>
+        <th>Módulo</th>
+        <th>Ubicación</th>
+        <th>Avance</th>
+        <th>Tipo</th>
+        <th>Días</th>
+        <th>Partidas pendientes</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div style="font-size:0.75rem;color:#aaa;margin-top:6px;text-align:right;">${matches.length} resultado${matches.length !== 1 ? 's' : ''}</div>`;
 }
 
 // ============================================================
