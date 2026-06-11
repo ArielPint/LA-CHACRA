@@ -106,7 +106,7 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781217531184,
+    "updatedAt": 1781217894259,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -118,9 +118,7 @@
           "tabs": [
             "resumen",
             "torres",
-            "partidas",
-            "alertas",
-            "detalle"
+            "alertas"
           ]
         },
         "layout": {
