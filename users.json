@@ -2,12 +2,12 @@
   {
     "id": "00000000-0000-0000-0000-000000000001",
     "username": "admin",
-    "password": "353844af6299e78eef3b1712b97d1917e9e4ee0601222b437b0fd650aeccb407",
+    "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
     "role": "admin",
     "name": "Administrador",
     "active": true,
     "createdAt": 1749600000000,
-    "updatedAt": 1781217357397,
+    "updatedAt": 1749600000000,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -45,8 +45,7 @@
         }
       },
       "readonly": false
-    },
-    "plainPassword": "Admin.4855"
+    }
   },
   {
     "id": "636febe4-c524-4acd-bf27-b8beb6d5e1d5",
@@ -56,7 +55,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781217326030,
+    "updatedAt": 1781216928692,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -94,7 +93,47 @@
         }
       },
       "readonly": false
-    },
-    "plainPassword": "da.123"
+    }
+  },
+  {
+    "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
+    "username": "esegel",
+    "password": "4d65c3c3c3dde0a7cd43d6e3ee9dc68232a2144b5316b6cca255c4ca840cb966",
+    "plainPassword": "es.123",
+    "role": "viewer",
+    "name": "Esteban Seguel",
+    "active": true,
+    "createdAt": 1781217531184,
+    "updatedAt": 1781217531184,
+    "permissions": {
+      "pages": {
+        "dashboard": {
+          "access": false,
+          "tabs": []
+        },
+        "produccion": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "torres",
+            "partidas",
+            "alertas",
+            "detalle"
+          ]
+        },
+        "layout": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "galpon",
+            "carpa-grande",
+            "carpa-chica",
+            "patio",
+            "planta"
+          ]
+        }
+      },
+      "readonly": true
+    }
   }
 ]
