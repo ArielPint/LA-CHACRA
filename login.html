@@ -150,11 +150,22 @@
 </div>
 
 <script>
+  // Calcula la URL de destino según los permisos de páginas del usuario
+  function resolveRedirect(session) {
+    const pageMap = { dashboard: 'dashboard.html', produccion: 'produccion.html', layout: 'layout.html' };
+    const accessible = Object.keys(pageMap).filter(pid => {
+      const pg = session.permissions && session.permissions.pages && session.permissions.pages[pid];
+      return pg && pg.access;
+    });
+    // Una sola página accesible → ir directo a ella
+    if (accessible.length === 1) return pageMap[accessible[0]];
+    // Múltiples páginas → portal tecnopanel
+    return 'tecnopanel.html';
+  }
+
   // Si ya hay sesión activa, redirigir
   const existing = AUTH.getSession();
-  if (existing) {
-    window.location.href = existing.role === 'admin' ? 'layout.html' : 'layout.html';
-  }
+  if (existing) window.location.href = resolveRedirect(existing);
 
   const form    = document.getElementById('loginForm');
   const btnText = document.getElementById('btnText');
@@ -173,8 +184,7 @@
       const user = document.getElementById('username').value;
       const pass = document.getElementById('password').value;
       const session = await AUTH.login(user, pass);
-      // Redirigir según rol
-      window.location.href = 'layout.html';
+      window.location.href = resolveRedirect(session);
     } catch (err) {
       errorEl.textContent = err.message || 'Error al iniciar sesión';
       errorEl.classList.add('show');
