@@ -99,14 +99,14 @@
   },
   {
     "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
-    "username": "esegel",
+    "username": "eseguel",
     "password": "3402fc1406d9e1ce1a446778b6d84eaa38d7a1e5d3354a40b2615d3326e60f24",
     "plainPassword": "ES.123",
     "role": "operador",
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781268591486,
+    "updatedAt": 1781268707324,
     "permissions": {
       "pages": {
         "dashboard": {
