@@ -271,6 +271,7 @@
             <th>Modo</th>
             <th>Estado</th>
             <th>Contraseña</th>
+            <th>Último ingreso</th>
             <th>Última modificación</th>
             <th>Acciones</th>
           </tr>
@@ -468,6 +469,7 @@ async function renderTable(highlightId) {
       <td>${modoBadge}</td>
       <td>${activoBadge}</td>
       <td style="font-family:monospace;font-size:0.8rem;color:#444">${u.plainPassword || '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
+      <td>${u.lastLogin ? fmtDate(u.lastLogin) : '<span style="color:#bbb;font-size:0.72rem">Nunca</span>'}</td>
       <td>${fmtDate(u.updatedAt || u.createdAt)}</td>
       <td><div class="btn-group">
         <button class="btn btn-edit btn-sm" onclick="editUser('${u.id}')">Editar</button>

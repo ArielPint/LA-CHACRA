@@ -266,6 +266,9 @@ const AUTH = (() => {
       role: user.role, permissions: user.permissions, loginAt: Date.now()
     };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    // Actualizar lastLogin en GitHub (silencioso, no bloquea el login)
+    user.lastLogin = session.loginAt;
+    saveUsers(users).catch(() => {});
     return session;
   }
 
