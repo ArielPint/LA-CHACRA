@@ -243,5 +243,54 @@
       },
       "readonly": false
     }
+  },
+  {
+    "id": "8c2ea023-bd59-4314-86e8-dafccfe506fa",
+    "username": "sscholl",
+    "password": "7f62359a9cfdb2fea8124bf5d287f4aec919f59417a8cf62ba6140e9e65e451b",
+    "plainPassword": "SSCHOLL.789",
+    "role": "operador",
+    "name": "Santiago Scholl",
+    "active": true,
+    "createdAt": 1781293243214,
+    "updatedAt": 1781293243214,
+    "permissions": {
+      "pages": {
+        "dashboard": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "curva",
+            "modulos",
+            "compras",
+            "productos",
+            "stock",
+            "despachos"
+          ]
+        },
+        "produccion": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "torres",
+            "partidas",
+            "alertas",
+            "detalle"
+          ]
+        },
+        "layout": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "galpon",
+            "carpa-grande",
+            "carpa-chica",
+            "patio",
+            "planta"
+          ]
+        }
+      },
+      "readonly": false
+    }
   }
 ]
