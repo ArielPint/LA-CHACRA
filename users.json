@@ -184,5 +184,54 @@
       },
       "readonly": false
     }
+  },
+  {
+    "id": "f016416c-71c4-4519-b6f2-334f3edeac33",
+    "username": "vpinto",
+    "password": "28be1a751060bd395a626a1de376c4e0b47128650ffb2e6631e09de731b2a6d9",
+    "plainPassword": "vp.345",
+    "role": "operador",
+    "name": "Vicente Pinto",
+    "active": true,
+    "createdAt": 1781267164450,
+    "updatedAt": 1781267164450,
+    "permissions": {
+      "pages": {
+        "dashboard": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "curva",
+            "modulos",
+            "compras",
+            "productos",
+            "stock",
+            "despachos"
+          ]
+        },
+        "produccion": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "torres",
+            "partidas",
+            "alertas",
+            "detalle"
+          ]
+        },
+        "layout": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "galpon",
+            "carpa-grande",
+            "carpa-chica",
+            "patio",
+            "planta"
+          ]
+        }
+      },
+      "readonly": false
+    }
   }
 ]
