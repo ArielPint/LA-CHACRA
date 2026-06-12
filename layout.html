@@ -76,7 +76,7 @@
     background: #fafafa;
   }
   .card-header   { display: flex; justify-content: space-between; align-items: flex-start; gap: 3px; }
-  .module-name   { color: #cc0000; font-weight: 800; font-size: 0.82em; letter-spacing: 0.2px; line-height: 1.2; }
+  .module-name   { color: #cc0000; font-weight: 800; font-size: 1.3em; letter-spacing: 0.2px; line-height: 1.1; }
   .module-days   { color: #333; font-weight: 800; font-size: 1.3em; line-height: 1.1; white-space: nowrap; flex-shrink: 0; }
   .module-status { font-weight: 700; font-size: 0.82em; margin-top: 2px; }
   .status-humedo { color: #27ae60; }
@@ -652,7 +652,7 @@ function cardInner(id, p, status, fecha, w, h) {
   const hStyle = h ? `min-height:${h};` : 'min-height:80px;';
   return `<div class="module-card" style="${wStyle}${hStyle}" title="${id} · ${p}% · ${status}">
     <div class="card-header">
-      <div class="module-name">${id}</div>
+      <div class="module-name">${parseInt(id, 10) || id}</div>
       <div style="text-align:right;flex-shrink:0;">
         <div class="module-days">${daysElapsed(fecha)}</div>
         <div style="font-size:0.65em;color:#666;line-height:1;margin-top:1px;">días</div>
@@ -685,7 +685,7 @@ function mkCell(id, col, row, rowSpan, w, h) {
   const d = M[id];
   return `<div class="module-card" style="${style}" title="${id} · ${d.avance}% · ${d.status}">
     <div class="card-header">
-      <div class="module-name">${id}</div>
+      <div class="module-name">${parseInt(id, 10) || id}</div>
       <div style="text-align:right;flex-shrink:0;">
         <div class="module-days">${daysElapsed(d.fecha)}</div>
         <div style="font-size:0.65em;color:#666;line-height:1;margin-top:1px;">días</div>
