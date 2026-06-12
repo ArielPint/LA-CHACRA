@@ -100,25 +100,35 @@
   {
     "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
     "username": "esegel",
-    "password": "4d65c3c3c3dde0a7cd43d6e3ee9dc68232a2144b5316b6cca255c4ca840cb966",
-    "plainPassword": "es.123",
-    "role": "viewer",
+    "password": "3402fc1406d9e1ce1a446778b6d84eaa38d7a1e5d3354a40b2615d3326e60f24",
+    "plainPassword": "ES.123",
+    "role": "operador",
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781217894259,
+    "updatedAt": 1781268591486,
     "permissions": {
       "pages": {
         "dashboard": {
-          "access": false,
-          "tabs": []
+          "access": true,
+          "tabs": [
+            "resumen",
+            "curva",
+            "modulos",
+            "compras",
+            "productos",
+            "stock",
+            "despachos"
+          ]
         },
         "produccion": {
           "access": true,
           "tabs": [
             "resumen",
             "torres",
-            "alertas"
+            "partidas",
+            "alertas",
+            "detalle"
           ]
         },
         "layout": {
@@ -133,7 +143,7 @@
           ]
         }
       },
-      "readonly": true
+      "readonly": false
     }
   },
   {
