@@ -279,8 +279,10 @@ const AUTH = (() => {
 
   // ─── Registro de eventos de login (Supabase) ─────────────────────────────
   function recordLoginEvent(user) {
+    // keepalive: true → el fetch sobrevive la navegación de página
     fetch(`${SUPA_URL}/rest/v1/login_events`, {
       method: 'POST',
+      keepalive: true,
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPA_KEY,
