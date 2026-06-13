@@ -269,6 +269,7 @@
     margin: 1px 2px 1px 0; white-space: nowrap;
   }
   .pend-cat { font-weight: 700; }
+  .hidden { display: none !important; }
 
   /* =====================
      MODO EDICIÓN
@@ -749,12 +750,13 @@ function updateScale() { SCALE = Math.min(Math.max(window.innerWidth / 1280, 0.6
 function px(n) { return Math.round(n * SCALE) + 'px'; }
 function pxN(n) { return Math.round(n * SCALE); }
 
-function cardInner(id, p, status, fecha, w, h) {
+function cardInner(id, p, status, fecha, w, h, pk) {
   const cls    = pbClass(p);
   const sc     = status === 'HUMEDO' ? 'status-humedo' : 'status-seco';
   const wStyle = w ? `min-width:${w};` : 'min-width:0;';
   const hStyle = h ? `min-height:${h};` : 'min-height:80px;';
-  return `<div class="module-card" style="${wStyle}${hStyle}" title="${id} · ${p}% · ${status}">
+  const pkAttr = pk ? ` data-pk="${pk}"` : '';
+  return `<div class="module-card"${pkAttr} style="${wStyle}${hStyle}" title="${id} · ${p}% · ${status}">
     <div class="card-header">
       <div class="module-name">${parseInt(id, 10) || id}</div>
       <div style="text-align:right;flex-shrink:0;">
@@ -769,11 +771,12 @@ function cardInner(id, p, status, fecha, w, h) {
   </div>`;
 }
 
-function card(id, data, w, h) {
+function card(id, data, w, h, pk) {
   const wStyle = w ? `min-width:${w};` : 'min-width:0;';
   const hStyle = h ? `min-height:${h};` : 'min-height:80px;';
-  if (!data) return `<div class="module-card empty" style="${wStyle}${hStyle}"></div>`;
-  return cardInner(id, data.avance, data.status, data.fecha, w, h);
+  const pkAttr = pk ? ` data-pk="${pk}"` : '';
+  if (!data) return `<div class="module-card empty"${pkAttr} style="${wStyle}${hStyle}"></div>`;
+  return cardInner(id, data.avance, data.status, data.fecha, w, h, pk);
 }
 
 // Celda con grid-column/row para layout de celdas altas
@@ -785,9 +788,12 @@ function mkCell(id, col, row, rowSpan, w, h) {
   const rowVal = rowSpan > 1 ? `${row} / ${row + rowSpan}` : `${row}`;
   const wStyle = fill ? 'min-width:0;' : `min-width:${w};`;
   const style  = `grid-column:${col};grid-row:${rowVal};${wStyle}min-height:${cellH};`;
-  if (!id || !M[id]) return `<div class="module-card empty" style="${style}"></div>`;
+  // pk: para celdas con id conocido en LOC; para vacías sin id no hay pk trackeable en carpa grande
+  const pk     = id && LOC[id] ? posKey(LOC[id]) : null;
+  const pkAttr = pk ? ` data-pk="${pk}"` : '';
+  if (!id || !M[id]) return `<div class="module-card empty"${pkAttr} style="${style}"></div>`;
   const d = M[id];
-  return `<div class="module-card" style="${style}" title="${id} · ${d.avance}% · ${d.status}">
+  return `<div class="module-card"${pkAttr} style="${style}" title="${id} · ${d.avance}% · ${d.status}">
     <div class="card-header">
       <div class="module-name">${parseInt(id, 10) || id}</div>
       <div style="text-align:right;flex-shrink:0;">
@@ -835,7 +841,8 @@ function buildSectionGrid(modules) {
   const uCols = [...new Set(modules.map(m => m.col))].sort((a, b) => a - b);
   const map   = {};
   modules.forEach(m => { map[`${m.row},${m.col}`] = m.id; });
-  return uRows.map(r => uCols.map(c => map[`${r},${c}`] || null));
+  // Cada celda: { id, pk } — pk permite edición incluso en celdas vacías
+  return uRows.map(r => uCols.map(c => ({ id: map[`${r},${c}`] || null, pk: `r${r}_c${c}` })));
 }
 
 function renderGrid(g, w, h) {
@@ -844,12 +851,16 @@ function renderGrid(g, w, h) {
   const fill   = !w;
   const colDef = fill ? '1fr' : w;
   const wAttr  = fill ? 'width:100%;' : '';
-  // In fill mode, use a proportional height if none provided
   const effH   = h || (fill ? `${Math.max(90, Math.min(180, Math.round(pxN(100))))}px` : null);
   let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${colDef});gap:5px;${wAttr}">`;
-  for (const row of g)
-    for (const id of row)
-      html += card(id, id ? M[id] : null, fill ? null : w, effH);
+  for (const row of g) {
+    for (const cell of row) {
+      // cell puede ser {id, pk} (nuevo) o id string/null (legacy Vista Completa)
+      const id = (cell && typeof cell === 'object') ? cell.id : cell;
+      const pk = (cell && typeof cell === 'object') ? cell.pk : (id && LOC[id] ? posKey(LOC[id]) : null);
+      html += card(id, id ? M[id] : null, fill ? null : w, effH, pk);
+    }
+  }
   return html + '</div>';
 }
 
@@ -992,8 +1003,11 @@ function buildGalpon() {
   const h     = Math.max(90, Math.min(200, Math.round(cw * 0.75))) + 'px';
   let html = '';
   for (const row of g)
-    for (const id of row)
-      html += card(id, id ? M[id] : null, null, h); // null w → 1fr grid, explicit h
+    for (const cell of row) {
+      const id = (cell && typeof cell === 'object') ? cell.id : cell;
+      const pk = (cell && typeof cell === 'object') ? cell.pk : (id && LOC[id] ? posKey(LOC[id]) : null);
+      html += card(id, id ? M[id] : null, null, h, pk);
+    }
   const el = document.getElementById('galpon-grid');
   el.innerHTML = html;
   el.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
@@ -1203,8 +1217,10 @@ function buildVistaPlanta() {
   const galponNcols = galponGrid.length ? galponGrid[0].length : 3;
   let galponHtml = '';
   for (const row of galponGrid)
-    for (const id of row)
-      galponHtml += card(id, id ? M[id] : null, px(86), px(85)); // compact sizes for Vista Completa
+    for (const cell of row) {
+      const id = (cell && typeof cell === 'object') ? cell.id : cell;
+      galponHtml += card(id, id ? M[id] : null, px(86), px(85)); // Vista Completa: no pk (no editable)
+    }
   const vpGalpon = document.getElementById('vp-galpon-grid');
   if (vpGalpon) {
     vpGalpon.innerHTML = galponHtml;
@@ -1406,6 +1422,8 @@ function toggleEditMode(tab) {
     if (tb) tb.classList.add('hidden');
     // Ocultar botones de agregar posición en patio
     if (tab === 'patio') hideAddPosButtons();
+    // Limpiar UI de posiciones extra (si es patio)
+    if (tab === 'patio') clearExtraPositionsUI();
     // Limpiar cambios pendientes sin guardar
     PENDING_CHANGES = {};
     // Re-renderizar la pestaña sin modo edición
@@ -1456,17 +1474,37 @@ function allModuleIds() {
 }
 
 function effectiveModuleAt(origId, d) {
-  // Devuelve el módulo realmente asignado a esta posición (override o el original)
   const pk = posKey(d);
   if (PENDING_CHANGES[pk] !== undefined) return PENDING_CHANGES[pk];
   if (DB_OVERRIDES[pk])                  return DB_OVERRIDES[pk].module_id;
-  return origId; // sin override → el mismo
+  return origId;
+}
+
+// Devuelve el módulo actual en la posición pk (para patchEditableCards)
+function effectiveModuleAtPk(pk) {
+  if (PENDING_CHANGES[pk] !== undefined) return PENDING_CHANGES[pk];
+  if (DB_OVERRIDES[pk])                  return DB_OVERRIDES[pk].module_id;
+  const entry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+  return entry ? entry[0] : null;
+}
+
+// Devuelve el sector para una posición pk
+function sectorForPk(pk) {
+  const entry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+  if (entry) return sectorForLoc(entry[1].loc, entry[1].sector);
+  return null;
 }
 
 // Inyectar overlay de edición dentro de una module-card
 function injectCellEdit(cardEl, positionKey, currentModuleId, sector) {
   if (!EDIT_TAB) return;
-  // Quitar overlay anterior si existe
+
+  // Cerrar cualquier overlay abierto en otro card
+  document.querySelectorAll('.cell-edit-overlay').forEach(el => {
+    if (!cardEl.contains(el)) el.remove();
+  });
+
+  // Toggle: si ya tiene overlay, cerrarlo
   const existing = cardEl.querySelector('.cell-edit-overlay');
   if (existing) { existing.remove(); return; }
 
@@ -1474,9 +1512,8 @@ function injectCellEdit(cardEl, positionKey, currentModuleId, sector) {
   const opts   = allIds.map(id => {
     const num = parseInt(id.replace(/\D/g,''), 10) || id;
     const sel = id === currentModuleId ? ' selected' : '';
-    return `<option value="${id}"${sel}>${num} — ${id}</option>`;
+    return `<option value="${id}"${sel}>${num}</option>`;
   });
-  // Opción vacía
   const emptyOpt = `<option value=""${!currentModuleId ? ' selected' : ''}>(vacío)</option>`;
 
   const ov = document.createElement('div');
@@ -1488,22 +1525,27 @@ function injectCellEdit(cardEl, positionKey, currentModuleId, sector) {
       <button class="cell-btn-cancel">✖</button>
     </div>`;
 
+  // *** CRÍTICO: detener propagación para que el click en el overlay
+  // no suba al card y cierre el overlay inmediatamente ***
+  ov.addEventListener('mousedown', e => e.stopPropagation());
+  ov.addEventListener('click',     e => e.stopPropagation());
+
   ov.querySelector('.cell-btn-cancel').onclick = e => { e.stopPropagation(); ov.remove(); };
   ov.querySelector('.cell-btn-ok').onclick = e => {
     e.stopPropagation();
     const val = ov.querySelector('select').value || null;
     PENDING_CHANGES[positionKey] = val;
-    // Actualizar apariencia de la celda
-    const numStr = val ? (parseInt(val.replace(/\D/g,''), 10) || val) : '—';
-    const nameEl = cardEl.querySelector('.module-name');
-    if (nameEl) nameEl.textContent = numStr;
-    if (val) {
-      cardEl.classList.remove('empty');
+    // Actualizar nombre visible en la tarjeta
+    const numStr = val ? (parseInt(val.replace(/\D/g,''), 10) || val) : '';
+    let nameEl = cardEl.querySelector('.module-name');
+    if (!nameEl) {
+      // Celda vacía: inyectar estructura mínima de nombre
+      cardEl.innerHTML = `<div class="card-header"><div class="module-name" style="color:#cc0000;font-weight:800;font-size:1.3em;">${numStr}</div></div>`;
     } else {
-      cardEl.classList.add('empty');
+      nameEl.textContent = numStr;
     }
+    cardEl.classList.toggle('empty', !val);
     ov.remove();
-    // Marcar que hay cambios pendientes
     setEditStatus(EDIT_TAB, '● Cambios sin guardar', 'saving');
   };
 
@@ -1560,8 +1602,11 @@ function addExtraPosition(sector) {
 }
 
 function renderExtraPositions(sector) {
+  // Solo renderizar UI de extras en modo edición
+  if (EDIT_TAB !== 'patio') return;
+
   const containerMap = {
-    'costado-bodega':    'costado-bodega-grid',
+    'costado-bodega':     'costado-bodega-grid',
     'patio-carpa-grande': 'patio-cg',
     'patio-carpa-chica':  'patio-cc',
   };
@@ -1570,8 +1615,6 @@ function renderExtraPositions(sector) {
   const el = document.getElementById(containerId);
   if (!el) return;
 
-  // Obtener el HTML actual (posiciones del xlsx ya renderizadas)
-  // Las extra se agregan al final como mini-grid
   let extraEl = el.querySelector('.extra-positions-row');
   if (!extraEl) {
     extraEl = document.createElement('div');
@@ -1591,26 +1634,57 @@ function renderExtraPositions(sector) {
   for (const pos of extras) {
     const pk  = pos.position_key;
     const cur = PENDING_CHANGES[pk] !== undefined ? PENDING_CHANGES[pk] : pos.module_id;
-    html += `<div class="module-card empty" style="min-width:90px;min-height:80px;position:relative;" title="Posición extra — click para asignar módulo">
-      <div style="font-size:0.75em;color:#aaa;text-align:center;margin-top:8px;">Nueva pos.</div>
-      <div class="cell-edit-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;padding:4px;gap:4px;">
-        <select data-pk="${pk}" style="font-size:0.75rem;width:100%;padding:2px;">
+    const curNum = cur ? parseInt(cur.replace(/\D/g,''),10) || cur : '';
+    if (cur) {
+      // Posición ya asignada: mostrar como card normal con selector
+      html += `<div class="module-card" style="min-width:90px;min-height:80px;position:relative;cursor:pointer;" data-extra-pk="${pk}">
+        <div class="card-header"><div class="module-name">${curNum}</div></div>
+        <div style="font-size:0.65em;color:#888;margin-top:2px;">Extra</div>
+      </div>`;
+    } else {
+      // Posición vacía: mostrar selector directamente
+      html += `<div class="module-card empty" style="min-width:100px;min-height:80px;padding:6px;">
+        <div style="font-size:0.72em;color:#aaa;margin-bottom:4px;">Nueva posición</div>
+        <select data-pk="${pk}" style="font-size:0.8rem;width:100%;padding:3px;border:1px solid #ccc;border-radius:4px;">
           <option value="">(vacío)</option>${opts.join('')}
         </select>
-        <button class="cell-btn-ok" style="font-size:0.7rem;padding:2px 6px;border-radius:4px;border:none;background:#27ae60;color:white;cursor:pointer;" data-pk="${pk}">✔ Asignar</button>
-      </div>
-    </div>`;
+        <button class="cell-btn-ok" style="margin-top:4px;font-size:0.72rem;padding:2px 8px;border-radius:4px;border:none;background:#27ae60;color:white;cursor:pointer;width:100%;" data-pk="${pk}">✔ Asignar</button>
+      </div>`;
+    }
   }
   extraEl.innerHTML = html;
 
-  // Handlers
+  // Handlers para asignar
   extraEl.querySelectorAll('.cell-btn-ok').forEach(btn => {
-    btn.onclick = () => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
       const pk2 = btn.dataset.pk;
       const sel = extraEl.querySelector(`select[data-pk="${pk2}"]`);
       PENDING_CHANGES[pk2] = sel.value || null;
+      // Actualizar objeto local
+      const pos = (EXTRA_POSITIONS[sector] || []).find(p => p.position_key === pk2);
+      if (pos) pos.module_id = sel.value || null;
       setEditStatus('patio', '● Cambios sin guardar', 'saving');
+      renderExtraPositions(sector); // re-render para mostrar el card asignado
     };
+  });
+
+  // Click en card asignado → abrir selector
+  extraEl.querySelectorAll('[data-extra-pk]').forEach(cardEl => {
+    cardEl.onclick = (e) => {
+      e.stopPropagation();
+      const pk2 = cardEl.dataset.extraPk;
+      const curId = PENDING_CHANGES[pk2] !== undefined ? PENDING_CHANGES[pk2] : (EXTRA_POSITIONS[sector] || []).find(p=>p.position_key===pk2)?.module_id;
+      injectCellEdit(cardEl, pk2, curId, sector);
+    };
+  });
+}
+
+// Limpiar UI de posiciones extra del patio (al salir de modo edición)
+function clearExtraPositionsUI() {
+  ['costado-bodega-grid','patio-cg','patio-cc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { const row = el.querySelector('.extra-positions-row'); if (row) row.remove(); }
   });
 }
 
@@ -1682,30 +1756,32 @@ async function saveLayoutChanges(tab) {
 // ============================================================
 //  SOBREESCRIBIR CARD EN MODO EDICIÓN — patch de buildGalpon / buildPatio
 // ============================================================
-// Patch: agregar onclick a todas las .module-card del tab activo después de renderizar
+// Usa data-pk embebido en cada card durante el renderizado para manejar
+// tanto celdas con módulo como celdas vacías rastreables.
 function patchEditableCards(tabContentId) {
   if (!EDIT_TAB) return;
   const content = document.getElementById(tabContentId);
   if (!content) return;
   content.querySelectorAll('.module-card').forEach(cardEl => {
-    if (cardEl.querySelector('.cell-edit-overlay')) return; // ya tiene overlay
-    // Encontrar a qué posición corresponde por title
-    const title = cardEl.title || '';
-    const matchId = title.split('·')[0].trim();
-    if (!matchId || matchId === 'Vacío') {
-      cardEl.onclick = () => {
-        // Celda vacía — buscar posición por posKey...
-        // Para simplificar, no manejamos celdas vacías sin id en el patio-xlsx
-      };
-      return;
-    }
-    const locData = LOC[matchId];
-    if (!locData) return;
-    const pk = posKey(locData);
-    const effectiveId = effectiveModuleAt(matchId, locData);
-    cardEl.onclick = () => injectCellEdit(cardEl, pk, effectiveId, sectorForLoc(locData.loc, locData.sector));
-    cardEl.title   = (effectiveId || 'Vacío') + ' · Click para cambiar';
+    if (cardEl.querySelector('.cell-edit-overlay')) return;
+
+    const pk = cardEl.dataset.pk;
+    if (!pk) return; // sin posición rastreable → ignorar (ej. vista completa)
+
+    const effectiveId = effectiveModuleAtPk(pk);
+    const sec         = sectorForPk(pk);
+
     cardEl.style.cursor = 'pointer';
+    cardEl.title = (effectiveId
+      ? 'Módulo ' + (parseInt(effectiveId.replace(/\D/g,''),10) || effectiveId)
+      : 'Vacío') + ' · Click para cambiar';
+
+    cardEl.onclick = (e) => {
+      e.stopPropagation();
+      // Refrescar effectiveId en el momento del click (puede haber cambiado)
+      const curId = effectiveModuleAtPk(pk);
+      injectCellEdit(cardEl, pk, curId, sec);
+    };
   });
 }
 
