@@ -273,6 +273,7 @@
             <th>Estado</th>
             <th>Contraseña</th>
             <th>Último ingreso</th>
+            <th>Ingresos</th>
             <th>Última modificación</th>
             <th>Acciones</th>
           </tr>
@@ -449,12 +450,17 @@ function fmtDate(ts) {
 // ── Render tabla ──────────────────────────────────────────────────────────
 async function renderTable(highlightId) {
   const tbody = document.getElementById('usersTableBody');
-  tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando usuarios...</td></tr>';
-  const users = await AUTH.getUsers();
+  tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Cargando usuarios...</td></tr>';
+
+  const [users, loginStats] = await Promise.all([
+    AUTH.getUsers(),
+    AUTH.getLoginStats()
+  ]);
+
   document.getElementById('userCount').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
 
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Sin usuarios.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Sin usuarios.</td></tr>';
     return;
   }
 
@@ -476,6 +482,15 @@ async function renderTable(highlightId) {
       return `<span class="page-chip" title="${tabCount}/${totalTabs} pestañas">${pages[pid].label}</span>`;
     }).join('');
 
+    // Estadísticas de Supabase
+    const stats = loginStats[u.id];
+    const countBadge = stats
+      ? `<span title="Último: ${new Date(stats.lastLogin).toLocaleString('es-CL')}" style="display:inline-block;background:#e0f2fe;color:#0369a1;border-radius:12px;padding:2px 10px;font-size:0.78rem;font-weight:700;cursor:default">${stats.count}</span>`
+      : '<span style="color:#bbb;font-size:0.72rem">0</span>';
+
+    // Último ingreso: preferir Supabase (más preciso), fallback a lastLogin de GitHub
+    const lastLoginTs = stats ? new Date(stats.lastLogin).getTime() : (u.lastLogin || null);
+
     const isSelf = u.username === session.username;
     const flash  = highlightId === u.id ? ' class="just-saved"' : '';
     return `<tr data-uid="${u.id}"${flash}>
@@ -486,7 +501,8 @@ async function renderTable(highlightId) {
       <td>${modoBadge} ${layoutBadge}</td>
       <td>${activoBadge}</td>
       <td style="font-family:monospace;font-size:0.8rem;color:#444">${u.plainPassword || '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
-      <td>${u.lastLogin ? fmtDate(u.lastLogin) : '<span style="color:#bbb;font-size:0.72rem">Nunca</span>'}</td>
+      <td>${lastLoginTs ? fmtDate(lastLoginTs) : '<span style="color:#bbb;font-size:0.72rem">Nunca</span>'}</td>
+      <td style="text-align:center">${countBadge}</td>
       <td>${fmtDate(u.updatedAt || u.createdAt)}</td>
       <td><div class="btn-group">
         <button class="btn btn-edit btn-sm" onclick="editUser('${u.id}')">Editar</button>

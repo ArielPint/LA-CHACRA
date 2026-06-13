@@ -15,6 +15,10 @@ const AUTH = (() => {
   const RAW_URL    = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${USERS_FILE}`;
   const API_URL    = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${USERS_FILE}`;
 
+  // ─── Config Supabase ──────────────────────────────────────────────────────
+  const SUPA_URL  = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+  const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+
   // ─── Claves localStorage ──────────────────────────────────────────────────
   const SESSION_KEY = 'lachacra_session';
   const CACHE_KEY   = 'lachacra_users_cache';
@@ -273,6 +277,25 @@ const AUTH = (() => {
     return true;
   }
 
+  // ─── Registro de eventos de login (Supabase) ─────────────────────────────
+  function recordLoginEvent(user) {
+    fetch(`${SUPA_URL}/rest/v1/login_events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        user_id:    user.id,
+        username:   user.username,
+        name:       user.name,
+        user_agent: navigator.userAgent
+      })
+    }).catch(() => {}); // silencioso — no bloquea el login
+  }
+
   // ─── Sesión ───────────────────────────────────────────────────────────────
   async function login(username, password) {
     // Forzar fetch fresco en login (ignorar cache de mem)
@@ -289,6 +312,8 @@ const AUTH = (() => {
     // Actualizar lastLogin en GitHub (silencioso, no bloquea el login)
     user.lastLogin = session.loginAt;
     saveUsers(users).catch(() => {});
+    // Registrar evento en Supabase (funciona desde cualquier dispositivo)
+    recordLoginEvent(user);
     return session;
   }
 
@@ -363,6 +388,27 @@ const AUTH = (() => {
   function getTabLabel(pid, tid)   { return PAGE_MAP[pid]?.tabs[tid] || tid; }
   function getAllTabs()             { return Object.keys(PAGE_MAP.layout.tabs); }
 
+  // ─── Estadísticas de login (Supabase) ────────────────────────────────────
+  // Devuelve { [user_id]: { count, lastLogin } } para todos los usuarios
+  async function getLoginStats() {
+    try {
+      const resp = await fetch(
+        `${SUPA_URL}/rest/v1/login_events?select=user_id,logged_at&order=logged_at.desc`,
+        { headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY } }
+      );
+      if (!resp.ok) return {};
+      const rows = await resp.json();
+      const stats = {};
+      rows.forEach(r => {
+        if (!stats[r.user_id]) {
+          stats[r.user_id] = { count: 0, lastLogin: r.logged_at };
+        }
+        stats[r.user_id].count++;
+      });
+      return stats;
+    } catch (_) { return {}; }
+  }
+
   // ─── Exportar / Importar ──────────────────────────────────────────────────
   async function exportUsers() { return JSON.stringify(await getUsers()); }
 
@@ -383,7 +429,7 @@ const AUTH = (() => {
     login, logout, getSession, requireAuth, requireAdmin,
     canAccessPage, canViewTab, isReadonly, isAdmin, canEditLayout,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,
-    hashPassword
+    hashPassword, getLoginStats
   };
 
 })();
