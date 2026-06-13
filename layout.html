@@ -676,7 +676,8 @@ function assignLoc(r, c) {
 
 async function loadDespachos() {
   try {
-    const resp = await fetch('data/LACHACRA.xlsm');
+    let resp = await fetch('data/lachacra.xlsm');
+    if (!resp.ok) resp = await fetch('data/LACHACRA.xlsm');
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const buf = await resp.arrayBuffer();
     const wb  = XLSX.read(new Uint8Array(buf), { type: 'array', dense: true });
