@@ -791,11 +791,12 @@ function mkCell(id, col, row, rowSpan, w, h) {
   // pk: para celdas con id conocido en LOC; para vacías sin id no hay pk trackeable en carpa grande
   const pk     = id && LOC[id] ? posKey(LOC[id]) : null;
   const pkAttr = pk ? ` data-pk="${pk}"` : '';
-  if (!id || !M[id]) return `<div class="module-card empty"${pkAttr} style="${style}"></div>`;
-  const d = M[id];
-  return `<div class="module-card"${pkAttr} style="${style}" title="${id} · ${d.avance}% · ${d.status}">
+  const eid    = (pk && typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pk) : id;
+  if (!eid || !M[eid]) return `<div class="module-card empty"${pkAttr} style="${style}"></div>`;
+  const d = M[eid];
+  return `<div class="module-card"${pkAttr} style="${style}" title="${eid} · ${d.avance}% · ${d.status}">
     <div class="card-header">
-      <div class="module-name">${parseInt(id, 10) || id}</div>
+      <div class="module-name">${parseInt(eid, 10) || eid}</div>
       <div style="text-align:right;flex-shrink:0;">
         <div class="module-days">${daysElapsed(d.fecha)}</div>
         <div style="font-size:0.65em;color:#666;line-height:1;margin-top:1px;">días</div>
@@ -858,7 +859,8 @@ function renderGrid(g, w, h) {
       // cell puede ser {id, pk} (nuevo) o id string/null (legacy Vista Completa)
       const id = (cell && typeof cell === 'object') ? cell.id : cell;
       const pk = (cell && typeof cell === 'object') ? cell.pk : (id && LOC[id] ? posKey(LOC[id]) : null);
-      html += card(id, id ? M[id] : null, fill ? null : w, effH, pk);
+      const eid = (pk && typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pk) : id;
+      html += card(eid, eid ? M[eid] : null, fill ? null : w, effH, pk);
     }
   }
   return html + '</div>';
@@ -1006,7 +1008,8 @@ function buildGalpon() {
     for (const cell of row) {
       const id = (cell && typeof cell === 'object') ? cell.id : cell;
       const pk = (cell && typeof cell === 'object') ? cell.pk : (id && LOC[id] ? posKey(LOC[id]) : null);
-      html += card(id, id ? M[id] : null, null, h, pk);
+      const eid = (pk && typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pk) : id;
+      html += card(eid, eid ? M[eid] : null, null, h, pk);
     }
   const el = document.getElementById('galpon-grid');
   el.innerHTML = html;
@@ -1205,6 +1208,12 @@ function buildPatio() {
   if (cgEl) cgEl.innerHTML = renderGrid(buildSectionGrid(cgMods)); // null w → 1fr fill
   if (ccEl) ccEl.innerHTML = renderGrid(buildSectionGrid(ccMods)); // null w → 1fr fill
   renderStats('stats-patio', [...cbMods, ...cgMods, ...ccMods].map(m=>m.id));
+  // Renderizar posiciones extra guardadas (siempre, no solo en edición)
+  if (typeof renderExtraPositions === 'function') {
+    renderExtraPositions('costado-bodega');
+    renderExtraPositions('patio-carpa-grande');
+    renderExtraPositions('patio-carpa-chica');
+  }
 }
 
 // ============================================================
@@ -1535,17 +1544,23 @@ function injectCellEdit(cardEl, positionKey, currentModuleId, sector) {
     e.stopPropagation();
     const val = ov.querySelector('select').value || null;
     PENDING_CHANGES[positionKey] = val;
-    // Actualizar nombre visible en la tarjeta
-    const numStr = val ? (parseInt(val.replace(/\D/g,''), 10) || val) : '';
-    let nameEl = cardEl.querySelector('.module-name');
-    if (!nameEl) {
-      // Celda vacía: inyectar estructura mínima de nombre
-      cardEl.innerHTML = `<div class="card-header"><div class="module-name" style="color:#cc0000;font-weight:800;font-size:1.3em;">${numStr}</div></div>`;
-    } else {
-      nameEl.textContent = numStr;
-    }
-    cardEl.classList.toggle('empty', !val);
-    ov.remove();
+
+    // Re-renderizar el card completo con todos los datos de avance
+    const newCardHtml = card(val, val ? M[val] : null, null, null, positionKey);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = newCardHtml;
+    const newCard = tmp.firstElementChild;
+
+    // Re-attachar el handler de edición en el nuevo card
+    newCard.style.cursor = 'pointer';
+    newCard.title = (val
+      ? 'Módulo ' + (parseInt(val.replace(/\D/g,''), 10) || val)
+      : 'Vacío') + ' · Click para cambiar';
+    newCard.onclick = (ev) => {
+      ev.stopPropagation();
+      injectCellEdit(newCard, positionKey, val, sector);
+    };
+    cardEl.replaceWith(newCard);
     setEditStatus(EDIT_TAB, '● Cambios sin guardar', 'saving');
   };
 
@@ -1602,8 +1617,9 @@ function addExtraPosition(sector) {
 }
 
 function renderExtraPositions(sector) {
-  // Solo renderizar UI de extras en modo edición
-  if (EDIT_TAB !== 'patio') return;
+  // Renderiza las posiciones extra (guardadas o pendientes) para el sector dado.
+  // En modo normal: muestra solo las asignadas (card completo con datos).
+  // En modo edición (patio): muestra asignadas + slots vacíos con selector.
 
   const containerMap = {
     'costado-bodega':     'costado-bodega-grid',
@@ -1615,6 +1631,16 @@ function renderExtraPositions(sector) {
   const el = document.getElementById(containerId);
   if (!el) return;
 
+  const extras   = EXTRA_POSITIONS[sector] || [];
+  const isEditing = EDIT_TAB === 'patio';
+
+  // Si no hay extras y no estamos editando, eliminar row si existe y salir
+  if (!extras.length && !isEditing) {
+    const old = el.querySelector('.extra-positions-row');
+    if (old) old.remove();
+    return;
+  }
+
   let extraEl = el.querySelector('.extra-positions-row');
   if (!extraEl) {
     extraEl = document.createElement('div');
@@ -1623,8 +1649,7 @@ function renderExtraPositions(sector) {
     el.appendChild(extraEl);
   }
 
-  const extras = EXTRA_POSITIONS[sector] || [];
-  const allIds = allModuleIds();
+  const allIds = isEditing ? allModuleIds() : [];
   const opts   = allIds.map(id => {
     const num = parseInt(id.replace(/\D/g,''), 10) || id;
     return `<option value="${id}">${num}</option>`;
@@ -1634,47 +1659,50 @@ function renderExtraPositions(sector) {
   for (const pos of extras) {
     const pk  = pos.position_key;
     const cur = PENDING_CHANGES[pk] !== undefined ? PENDING_CHANGES[pk] : pos.module_id;
-    const curNum = cur ? parseInt(cur.replace(/\D/g,''),10) || cur : '';
-    if (cur) {
-      // Posición ya asignada: mostrar como card normal con selector
-      html += `<div class="module-card" style="min-width:90px;min-height:80px;position:relative;cursor:pointer;" data-extra-pk="${pk}">
-        <div class="card-header"><div class="module-name">${curNum}</div></div>
-        <div style="font-size:0.65em;color:#888;margin-top:2px;">Extra</div>
-      </div>`;
-    } else {
-      // Posición vacía: mostrar selector directamente
-      html += `<div class="module-card empty" style="min-width:100px;min-height:80px;padding:6px;">
-        <div style="font-size:0.72em;color:#aaa;margin-bottom:4px;">Nueva posición</div>
-        <select data-pk="${pk}" style="font-size:0.8rem;width:100%;padding:3px;border:1px solid #ccc;border-radius:4px;">
+
+    if (cur && M[cur]) {
+      // Posición asignada: renderizar card completo con datos de avance
+      html += card(cur, M[cur], null, null, pk);
+    } else if (isEditing) {
+      // Posición vacía: solo en edición mostrar selector de asignación
+      html += `<div class="module-card empty" style="min-width:110px;min-height:90px;padding:6px;" data-pk="${pk}">
+        <div style="font-size:0.72em;color:#aaa;margin-bottom:4px;text-align:center;">Nueva posición</div>
+        <select data-extra-sel="${pk}" style="font-size:0.8rem;width:100%;padding:3px;border:1px solid #ccc;border-radius:4px;">
           <option value="">(vacío)</option>${opts.join('')}
         </select>
-        <button class="cell-btn-ok" style="margin-top:4px;font-size:0.72rem;padding:2px 8px;border-radius:4px;border:none;background:#27ae60;color:white;cursor:pointer;width:100%;" data-pk="${pk}">✔ Asignar</button>
+        <button class="cell-btn-ok" style="margin-top:4px;font-size:0.72rem;padding:2px 8px;border-radius:4px;border:none;background:#27ae60;color:white;cursor:pointer;width:100%;" data-extra-btn="${pk}">✔ Asignar</button>
       </div>`;
     }
   }
   extraEl.innerHTML = html;
 
-  // Handlers para asignar
-  extraEl.querySelectorAll('.cell-btn-ok').forEach(btn => {
-    btn.onclick = (e) => {
+  if (!isEditing) return; // En modo normal no se necesitan handlers
+
+  // Handler ✔ Asignar en slots vacíos
+  extraEl.querySelectorAll('[data-extra-btn]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const pk2 = btn.dataset.pk;
-      const sel = extraEl.querySelector(`select[data-pk="${pk2}"]`);
-      PENDING_CHANGES[pk2] = sel.value || null;
-      // Actualizar objeto local
+      const pk2 = btn.dataset.extraBtn;
+      const sel = extraEl.querySelector(`[data-extra-sel="${pk2}"]`);
+      const val = sel ? sel.value || null : null;
+      PENDING_CHANGES[pk2] = val;
       const pos = (EXTRA_POSITIONS[sector] || []).find(p => p.position_key === pk2);
-      if (pos) pos.module_id = sel.value || null;
+      if (pos) pos.module_id = val;
       setEditStatus('patio', '● Cambios sin guardar', 'saving');
-      renderExtraPositions(sector); // re-render para mostrar el card asignado
-    };
+      renderExtraPositions(sector);
+    });
   });
 
-  // Click en card asignado → abrir selector
-  extraEl.querySelectorAll('[data-extra-pk]').forEach(cardEl => {
+  // Click en cards asignadas → abrir injectCellEdit para reasignar
+  extraEl.querySelectorAll('.module-card[data-pk]').forEach(cardEl => {
+    const pk2 = cardEl.dataset.pk;
+    if (!(EXTRA_POSITIONS[sector] || []).find(p => p.position_key === pk2)) return;
+    cardEl.style.cursor = 'pointer';
+    cardEl.title = (cardEl.title || '') + ' · Click para cambiar';
     cardEl.onclick = (e) => {
       e.stopPropagation();
-      const pk2 = cardEl.dataset.extraPk;
-      const curId = PENDING_CHANGES[pk2] !== undefined ? PENDING_CHANGES[pk2] : (EXTRA_POSITIONS[sector] || []).find(p=>p.position_key===pk2)?.module_id;
+      const curId = PENDING_CHANGES[pk2] !== undefined ? PENDING_CHANGES[pk2]
+        : (EXTRA_POSITIONS[sector] || []).find(p => p.position_key === pk2)?.module_id;
       injectCellEdit(cardEl, pk2, curId, sector);
     };
   });
