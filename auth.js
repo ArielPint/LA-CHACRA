@@ -113,15 +113,36 @@ const AUTH = (() => {
   }
 
   // ─── Obtener usuarios (remoto → cache → fallback) ─────────────────────────
+  // Decodifica la respuesta base64 de la GitHub API con soporte UTF-8
+  function _decodeGithubContent(b64) {
+    const binary = atob(b64.replace(/\n/g, ''));
+    const bytes  = Uint8Array.from(binary, c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
   async function getUsers({ force = false } = {}) {
     const now = Date.now();
     // 1. In-memory (más rápido, mismo tab)
     if (!force && _mem && (now - _memTs) < CACHE_TTL) return _mem;
-    // 2. Remoto (GitHub raw)
+    // 2. Remoto
     try {
-      const resp = await fetch(RAW_URL + '?_=' + now);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const users = _normalize(await resp.json());
+      let users;
+      if (force) {
+        // Login/forzado → GitHub API (siempre fresca, sin caché CDN de Fastly)
+        // Esto evita que cambios de permisos recientes no se vean al hacer login
+        const token = localStorage.getItem(TOKEN_KEY);
+        const headers = { Accept: 'application/vnd.github+json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const resp = await fetch(API_URL, { headers });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        users = _normalize(JSON.parse(_decodeGithubContent(data.content)));
+      } else {
+        // Uso normal → raw URL (más rápido, sin autenticación)
+        const resp = await fetch(RAW_URL + '?_=' + now);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        users = _normalize(await resp.json());
+      }
       // Mergear lastLogin del cache local si es más reciente que lo que tiene GitHub
       // (ocurre cuando el write a GitHub falló por falta de token)
       try {
