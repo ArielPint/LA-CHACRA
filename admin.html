@@ -55,6 +55,7 @@
 
   .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
   .badge-admin    { background: #fef3c7; color: #92400e; }
+  .badge-editor   { background: #ede9fe; color: #5b21b6; }
   .badge-operador { background: var(--blue2); color: var(--blue); }
   .badge-viewer   { background: #f3f4f6; color: #555; }
   .badge-on  { background: #d1fae5; color: #065f46; }
@@ -130,7 +131,7 @@
   .empty-state { text-align: center; padding: 28px; color: var(--gray); font-size: 0.88rem; }
 
   /* ── Roles ref ── */
-  .roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .roles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
   .role-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
   .role-card h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 5px; }
   .role-card ul { list-style: none; font-size: 0.75rem; color: var(--gray); }
@@ -324,11 +325,15 @@
       <div class="roles-grid">
         <div class="role-card">
           <h4>🔑 Administrador</h4>
-          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Puede editar</li><li>Accede al panel admin</li></ul>
+          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Puede editar</li><li>Puede editar layout</li><li>Accede al panel admin</li></ul>
+        </div>
+        <div class="role-card" style="border-color:#8b5cf6;">
+          <h4>✏️ Editor Layout</h4>
+          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Puede editar layout</li><li>Sin acceso al panel admin</li></ul>
         </div>
         <div class="role-card">
           <h4>⚙️ Operador</h4>
-          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Puede editar</li><li>Sin acceso al panel admin</li></ul>
+          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Puede editar datos</li><li>Sin edición de layout</li></ul>
         </div>
         <div class="role-card">
           <h4>👁️ Solo Lectura</h4>
@@ -371,6 +376,7 @@
           <select class="form-select" id="fRole" onchange="onRoleChange()">
             <option value="viewer">👁️ Solo Lectura</option>
             <option value="operador">⚙️ Operador</option>
+            <option value="editor">✏️ Editor Layout</option>
             <option value="admin">🔑 Administrador</option>
           </select>
           <p class="form-hint">Aplica permisos por defecto del rol</p>
@@ -391,6 +397,13 @@
             <small>El usuario no podrá modificar datos</small>
           </div>
           <label class="switch"><input type="checkbox" id="fReadonly"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">
+            Puede editar layout
+            <small>Asignar módulos a posiciones y agregar posiciones en Patio</small>
+          </div>
+          <label class="switch"><input type="checkbox" id="fCanEditLayout"><span class="slider"></span></label>
         </div>
         <div class="toggle-row">
           <div class="toggle-label">
@@ -446,8 +459,12 @@ async function renderTable(highlightId) {
   }
 
   tbody.innerHTML = users.map(u => {
-    const roleBadge = { admin: '<span class="badge badge-admin">Admin</span>', operador: '<span class="badge badge-operador">Operador</span>', viewer: '<span class="badge badge-viewer">Viewer</span>' }[u.role] || '';
+    const roleBadge = { admin: '<span class="badge badge-admin">Admin</span>', editor: '<span class="badge badge-editor">Editor</span>', operador: '<span class="badge badge-operador">Operador</span>', viewer: '<span class="badge badge-viewer">Viewer</span>' }[u.role] || '<span class="badge badge-viewer">' + (u.role||'?') + '</span>';
+    const roles2 = AUTH.getRoles();
+    const rl2 = roles2[u.role];
+    const celVal = u.permissions.canEditLayout !== undefined ? u.permissions.canEditLayout : (rl2 ? !!rl2.canEditLayout : false);
     const modoBadge = u.permissions.readonly ? '<span class="badge badge-viewer">Solo lectura</span>' : '<span class="badge badge-on">Edición</span>';
+    const layoutBadge = celVal ? '<span class="badge badge-editor">✏️ Layout</span>' : '';
     const activoBadge = u.active ? '<span class="badge badge-on">Activo</span>' : '<span class="badge badge-off">Inactivo</span>';
 
     const pages = AUTH.getPages();
@@ -466,7 +483,7 @@ async function renderTable(highlightId) {
       <td style="font-family:monospace;color:#666;font-size:0.8rem">${u.username}</td>
       <td>${roleBadge}</td>
       <td>${pageChips || '<span style="color:#bbb;font-size:0.75rem">Sin acceso</span>'}</td>
-      <td>${modoBadge}</td>
+      <td>${modoBadge} ${layoutBadge}</td>
       <td>${activoBadge}</td>
       <td style="font-family:monospace;font-size:0.8rem;color:#444">${u.plainPassword || '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
       <td>${u.lastLogin ? fmtDate(u.lastLogin) : '<span style="color:#bbb;font-size:0.72rem">Nunca</span>'}</td>
@@ -555,7 +572,8 @@ function onRoleChange() {
   const rolePerms = AUTH.getDefaultPages(role);
   buildPagePerms(rolePerms);
   const roles = AUTH.getRoles();
-  document.getElementById('fReadonly').checked = roles[role] ? roles[role].readonly : false;
+  document.getElementById('fReadonly').checked      = roles[role] ? roles[role].readonly : false;
+  document.getElementById('fCanEditLayout').checked = roles[role] ? !!roles[role].canEditLayout : false;
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
@@ -581,8 +599,15 @@ async function editUser(id) {
   document.getElementById('fUsername').value   = user.username;
   document.getElementById('fPassword').value   = '';
   document.getElementById('fRole').value       = user.role;
-  document.getElementById('fReadonly').checked = user.permissions.readonly;
-  document.getElementById('fActive').checked   = user.active;
+  document.getElementById('fReadonly').checked      = user.permissions.readonly;
+  // canEditLayout: override en el usuario, o default del rol
+  const rolesDef = AUTH.getRoles();
+  const roleDef  = rolesDef[user.role];
+  const cel = user.permissions.canEditLayout !== undefined
+    ? user.permissions.canEditLayout
+    : (roleDef ? !!roleDef.canEditLayout : false);
+  document.getElementById('fCanEditLayout').checked = cel;
+  document.getElementById('fActive').checked        = user.active;
   document.getElementById('passHint').textContent = user.plainPassword ? 'Actual: ' + user.plainPassword + '  (dejar vacío para no cambiar)' : '(dejar vacío para no cambiar)';
   document.getElementById('modalTitle').textContent = 'Editar usuario';
   buildPagePerms(user.permissions.pages);
@@ -602,6 +627,7 @@ async function saveUser() {
   const pass = document.getElementById('fPassword').value;
   const role = document.getElementById('fRole').value;
   const ro   = document.getElementById('fReadonly').checked;
+  const cel  = document.getElementById('fCanEditLayout').checked;
   const act  = document.getElementById('fActive').checked;
   const pages = getPagePermsFromForm();
 
@@ -615,10 +641,10 @@ async function saveUser() {
   try {
     let savedUser;
     if (id) {
-      savedUser = await AUTH.updateUser(id, { username: user, name, role, customPages: pages, readonly: ro, active: act, password: pass || undefined });
+      savedUser = await AUTH.updateUser(id, { username: user, name, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel });
       showToast('Usuario actualizado', 'success');
     } else {
-      savedUser = await AUTH.createUser({ username: user, password: pass, name, role, customPages: pages, readonly: ro });
+      savedUser = await AUTH.createUser({ username: user, password: pass, name, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel });
       showToast('Usuario creado', 'success');
     }
     closeModal();

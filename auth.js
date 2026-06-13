@@ -71,9 +71,10 @@ const AUTH = (() => {
   }
 
   const DEFAULT_ROLES = {
-    admin:    { label: 'Administrador', readonly: false, pages: () => defaultPagePerms() },
-    operador: { label: 'Operador',      readonly: false, pages: () => defaultPagePerms() },
-    viewer:   { label: 'Solo Lectura',  readonly: true,  pages: () => defaultPagePerms() }
+    admin:    { label: 'Administrador',  readonly: false, canEditLayout: true,  pages: () => defaultPagePerms() },
+    editor:   { label: 'Editor Layout',  readonly: false, canEditLayout: true,  pages: () => defaultPagePerms() },
+    operador: { label: 'Operador',       readonly: false, canEditLayout: false, pages: () => defaultPagePerms() },
+    viewer:   { label: 'Solo Lectura',   readonly: true,  canEditLayout: false, pages: () => defaultPagePerms() }
   };
 
   // ─── Hash SHA-256 ─────────────────────────────────────────────────────────
@@ -177,12 +178,17 @@ const AUTH = (() => {
   }
 
   // ─── CRUD de usuarios ─────────────────────────────────────────────────────
-  async function createUser({ username, password, name, role, customPages, readonly }) {
+  async function createUser({ username, password, name, role, customPages, readonly, canEditLayoutOverride }) {
     const users = await getUsers();
     if (users.find(u => u.username === username.trim().toLowerCase())) {
       throw new Error('El usuario ya existe');
     }
     const roleDef = DEFAULT_ROLES[role] || DEFAULT_ROLES.viewer;
+    const perms = {
+      pages: customPages || roleDef.pages(),
+      readonly: readonly !== undefined ? readonly : roleDef.readonly
+    };
+    if (canEditLayoutOverride !== undefined) perms.canEditLayout = canEditLayoutOverride;
     const user = {
       id: crypto.randomUUID(),
       username: username.trim().toLowerCase(),
@@ -190,17 +196,14 @@ const AUTH = (() => {
       plainPassword: password,
       role, name: name || username, active: true,
       createdAt: Date.now(), updatedAt: Date.now(),
-      permissions: {
-        pages: customPages || roleDef.pages(),
-        readonly: readonly !== undefined ? readonly : roleDef.readonly
-      }
+      permissions: perms
     };
     users.push(user);
     await saveUsers(users);
     return user;
   }
 
-  async function updateUser(id, { username, password, name, role, customPages, readonly, active }) {
+  async function updateUser(id, { username, password, name, role, customPages, readonly, active, canEditLayoutOverride }) {
     const users = await getUsers();
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) throw new Error('Usuario no encontrado');
@@ -213,11 +216,14 @@ const AUTH = (() => {
         const rDef = DEFAULT_ROLES[role] || DEFAULT_ROLES.viewer;
         u.permissions.pages    = rDef.pages();
         u.permissions.readonly = rDef.readonly;
+        // Resetear canEditLayout al default del rol
+        delete u.permissions.canEditLayout;
       }
     }
-    if (customPages !== undefined) u.permissions.pages    = customPages;
-    if (readonly    !== undefined) u.permissions.readonly = readonly;
-    if (active      !== undefined) u.active = active;
+    if (customPages              !== undefined) u.permissions.pages          = customPages;
+    if (readonly                 !== undefined) u.permissions.readonly        = readonly;
+    if (canEditLayoutOverride    !== undefined) u.permissions.canEditLayout   = canEditLayoutOverride;
+    if (active                   !== undefined) u.active = active;
     if (password)                { u.password = await hashPassword(password); u.plainPassword = password; }
     u.updatedAt = Date.now();
     await saveUsers(users);
@@ -326,6 +332,15 @@ const AUTH = (() => {
     return s ? s.role === 'admin' : false;
   }
 
+  function canEditLayout() {
+    const s = getSession();
+    if (!s) return false;
+    const roleDef = DEFAULT_ROLES[s.role];
+    // Verificar permiso explícito en permisos del usuario o por rol
+    if (s.permissions && s.permissions.canEditLayout !== undefined) return !!s.permissions.canEditLayout;
+    return roleDef ? !!roleDef.canEditLayout : false;
+  }
+
   // ─── Helpers UI ───────────────────────────────────────────────────────────
   function getPages()              { return PAGE_MAP; }
   function getRoles()              { return DEFAULT_ROLES; }
@@ -352,7 +367,7 @@ const AUTH = (() => {
     exportUsers, importUsers,
     setGithubToken, getGithubToken, hasGithubToken, testGithubToken,
     login, logout, getSession, requireAuth, requireAdmin,
-    canAccessPage, canViewTab, isReadonly, isAdmin,
+    canAccessPage, canViewTab, isReadonly, isAdmin, canEditLayout,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,
     hashPassword
   };

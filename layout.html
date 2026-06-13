@@ -269,6 +269,69 @@
     margin: 1px 2px 1px 0; white-space: nowrap;
   }
   .pend-cat { font-weight: 700; }
+
+  /* =====================
+     MODO EDICIÓN
+  ===================== */
+  .edit-toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: #fffbe6; border: 1px solid #f0d060; border-radius: 8px;
+    padding: 10px 16px; margin-bottom: 16px;
+  }
+  .edit-toolbar.hidden { display: none; }
+  .btn-edit-toggle {
+    padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer;
+    font-weight: 700; font-size: 0.85rem; transition: background 0.2s;
+  }
+  .btn-edit-toggle.off { background: #1a2c4e; color: white; }
+  .btn-edit-toggle.off:hover { background: #243d6a; }
+  .btn-edit-toggle.on  { background: #e63946; color: white; }
+  .btn-edit-toggle.on:hover  { background: #c0303a; }
+  .btn-save {
+    padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer;
+    font-weight: 700; font-size: 0.85rem; background: #27ae60; color: white;
+    transition: background 0.2s;
+  }
+  .btn-save:hover { background: #1e8449; }
+  .btn-save:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-add-pos {
+    padding: 5px 12px; border-radius: 6px; border: 2px dashed #1a2c4e;
+    background: white; color: #1a2c4e; font-weight: 700; font-size: 0.82rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-add-pos:hover { background: #1a2c4e; color: white; }
+  .edit-status { font-size: 0.8rem; color: #666; }
+  .edit-status.saving { color: #f39c12; }
+  .edit-status.saved  { color: #27ae60; }
+  .edit-status.error  { color: #e63946; }
+
+  /* Celda editable */
+  body.edit-mode .module-card,
+  body.edit-mode .module-card.empty {
+    cursor: pointer;
+    position: relative;
+  }
+  body.edit-mode .module-card:hover { box-shadow: 0 0 0 3px #f0d060; }
+  body.edit-mode .module-card.empty:hover { box-shadow: 0 0 0 3px #1a2c4e; }
+
+  /* Overlay del select de módulo */
+  .cell-edit-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    background: rgba(255,255,255,0.97);
+    border-radius: 4px; display: flex; flex-direction: column;
+    align-items: stretch; justify-content: center; padding: 4px;
+    gap: 4px;
+  }
+  .cell-edit-overlay select {
+    font-size: 0.8rem; padding: 3px 5px; border: 1px solid #aaa;
+    border-radius: 4px; width: 100%;
+  }
+  .cell-edit-overlay .cell-btns { display: flex; gap: 4px; justify-content: flex-end; }
+  .cell-edit-overlay button {
+    font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; border: none; cursor: pointer;
+  }
+  .cell-btn-ok  { background: #27ae60; color: white; }
+  .cell-btn-cancel { background: #ccc; color: #333; }
 </style>
 <script src="xlsx.min.js"></script>
 </head>
@@ -318,12 +381,20 @@
 
 <!-- ======================== GALPÓN ======================== -->
 <div id="tab-galpon" class="tab-content">
-  <div class="loc-title">Ubicación 1 — Galpón</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+    <div class="loc-title" style="margin-bottom:0;">Ubicación 1 — Galpón</div>
+    <button id="edit-btn-galpon" class="btn-edit-toggle off hidden" onclick="toggleEditMode('galpon')">✏️ Editar layout</button>
+  </div>
   <div class="loc-desc">Galpón principal</div>
   <div class="legend">
     <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
     <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
     <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="edit-toolbar-galpon" class="edit-toolbar hidden">
+    <button class="btn-edit-toggle on" onclick="toggleEditMode('galpon')">✖ Salir edición</button>
+    <button class="btn-save" id="btn-save-galpon" onclick="saveLayoutChanges('galpon')">💾 Guardar cambios</button>
+    <span class="edit-status" id="edit-status-galpon"></span>
   </div>
   <div id="stats-galpon" class="stats-bar"></div>
   <div class="multi-wrap">
@@ -343,12 +414,20 @@
 
 <!-- ======================== CARPA GRANDE ======================== -->
 <div id="tab-carpa-grande" class="tab-content">
-  <div class="loc-title">Ubicación 2 — Carpa Grande</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+    <div class="loc-title" style="margin-bottom:0;">Ubicación 2 — Carpa Grande</div>
+    <button id="edit-btn-carpa-grande" class="btn-edit-toggle off hidden" onclick="toggleEditMode('carpa-grande')">✏️ Editar layout</button>
+  </div>
   <div class="loc-desc">Módulos en proceso dentro de Carpa Grande · Sector Sur y Sector Norte</div>
   <div class="legend">
     <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
     <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
     <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="edit-toolbar-carpa-grande" class="edit-toolbar hidden">
+    <button class="btn-edit-toggle on" onclick="toggleEditMode('carpa-grande')">✖ Salir edición</button>
+    <button class="btn-save" id="btn-save-carpa-grande" onclick="saveLayoutChanges('carpa-grande')">💾 Guardar cambios</button>
+    <span class="edit-status" id="edit-status-carpa-grande"></span>
   </div>
   <div id="stats-carpa-grande" class="stats-bar"></div>
   <div class="multi-wrap">
@@ -365,12 +444,20 @@
 
 <!-- ======================== CARPA CHICA ======================== -->
 <div id="tab-carpa-chica" class="tab-content">
-  <div class="loc-title">Ubicación 3 — Carpa Chica</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+    <div class="loc-title" style="margin-bottom:0;">Ubicación 3 — Carpa Chica</div>
+    <button id="edit-btn-carpa-chica" class="btn-edit-toggle off hidden" onclick="toggleEditMode('carpa-chica')">✏️ Editar layout</button>
+  </div>
   <div class="loc-desc">Módulos en Carpa Chica · Layout horizontal en 3 filas</div>
   <div class="legend">
     <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
     <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
     <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="edit-toolbar-carpa-chica" class="edit-toolbar hidden">
+    <button class="btn-edit-toggle on" onclick="toggleEditMode('carpa-chica')">✖ Salir edición</button>
+    <button class="btn-save" id="btn-save-carpa-chica" onclick="saveLayoutChanges('carpa-chica')">💾 Guardar cambios</button>
+    <span class="edit-status" id="edit-status-carpa-chica"></span>
   </div>
   <div id="stats-carpa-chica" class="stats-bar"></div>
   <div class="section-wrap">
@@ -380,26 +467,43 @@
 
 <!-- ======================== PATIO DE ACOPIO ======================== -->
 <div id="tab-patio" class="tab-content">
-  <div class="loc-title">Ubicación 4 — Patio de Acopio</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+    <div class="loc-title" style="margin-bottom:0;">Ubicación 4 — Patio de Acopio</div>
+    <button id="edit-btn-patio" class="btn-edit-toggle off hidden" onclick="toggleEditMode('patio')">✏️ Editar layout</button>
+  </div>
   <div class="loc-desc">Módulos en patio exterior · Costado Bodega, Sector Carpa Grande y Sector Carpa Chica</div>
   <div class="legend">
     <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
     <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
     <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
   </div>
+  <div id="edit-toolbar-patio" class="edit-toolbar hidden">
+    <button class="btn-edit-toggle on" onclick="toggleEditMode('patio')">✖ Salir edición</button>
+    <button class="btn-save" id="btn-save-patio" onclick="saveLayoutChanges('patio')">💾 Guardar cambios</button>
+    <span class="edit-status" id="edit-status-patio"></span>
+  </div>
   <div id="stats-patio" class="stats-bar"></div>
   <div class="multi-wrap">
     <div class="section-wrap">
       <div class="section-title" style="color:#7f8c8d;">▣ Costado Bodega</div>
       <div id="costado-bodega-grid"></div>
+      <div id="add-pos-costado-bodega" class="hidden" style="margin-top:8px;">
+        <button class="btn-add-pos" onclick="addExtraPosition('costado-bodega')">+ Agregar posición</button>
+      </div>
     </div>
     <div class="section-wrap">
       <div class="section-title" style="color:#2980b9;">▣ Sector Carpa Grande</div>
       <div id="patio-cg"></div>
+      <div id="add-pos-patio-cg" class="hidden" style="margin-top:8px;">
+        <button class="btn-add-pos" onclick="addExtraPosition('patio-carpa-grande')">+ Agregar posición</button>
+      </div>
     </div>
     <div class="section-wrap">
       <div class="section-title" style="color:#16a085;">▣ Sector Carpa Chica</div>
       <div id="patio-cc"></div>
+      <div id="add-pos-patio-cc" class="hidden" style="margin-top:8px;">
+        <button class="btn-add-pos" onclick="addExtraPosition('patio-carpa-chica')">+ Agregar posición</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1174,6 +1278,484 @@ init();
 
 let _rt;
 window.addEventListener('resize', () => { clearTimeout(_rt); _rt = setTimeout(init, 150); });
+
+// ============================================================
+//  SUPABASE — cliente liviano sin SDK
+// ============================================================
+const SB_URL    = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+const SB_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const SB_HEADERS = { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+async function sbSelect(table, params = '') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, { headers: { ...SB_HEADERS, Prefer: 'return=representation' } });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbUpsert(table, rows) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...SB_HEADERS, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(rows)
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+async function sbDelete(table, match) {
+  const params = Object.entries(match).map(([k,v]) => `${k}=eq.${encodeURIComponent(v)}`).join('&');
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, { method: 'DELETE', headers: SB_HEADERS });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ============================================================
+//  ESTADO DE EDICIÓN
+// ============================================================
+// DB overrides cargados al inicio: { position_key -> row }
+let DB_OVERRIDES = {};
+// Cambios pendientes en la sesión actual: { position_key -> module_id|null }
+let PENDING_CHANGES = {};
+// Posiciones extra agregadas (is_extra=true): [ { position_key, sector, module_id } ]
+let EXTRA_POSITIONS = {};  // sector -> [{position_key, module_id}]
+
+// Pestaña actualmente en modo edición (null = ninguna)
+let EDIT_TAB = null;
+
+// Mapa sector → ids de módulos ya usados (para el dropdown)
+function getAssignedModules() {
+  const assigned = new Set();
+  for (const [pk, d] of Object.entries(LOC)) {
+    // Si hay override en DB o pendiente, usar ese
+    const override = PENDING_CHANGES[posKey(d)] !== undefined ? PENDING_CHANGES[posKey(d)] : DB_OVERRIDES[posKey(d)]?.module_id;
+    const id = override !== undefined ? override : pk;
+    if (id) assigned.add(id);
+  }
+  return assigned;
+}
+
+function posKey(d) { return `r${d.xls_row}_c${d.xls_col}`; }
+function sectorForLoc(loc, sector) {
+  if (loc === 'galpon')         return 'galpon';
+  if (loc === 'costado-bodega') return 'costado-bodega';
+  if (loc === 'carpa-grande')   return `carpa-grande-${sector}`;
+  if (loc === 'carpa-chica')    return 'carpa-chica';
+  if (loc === 'patio')          return `patio-${sector}`;
+  return loc;
+}
+
+// ============================================================
+//  CARGAR OVERRIDES DESDE SUPABASE
+// ============================================================
+async function loadDBOverrides() {
+  try {
+    const rows = await sbSelect('layout_positions', 'select=position_key,module_id,sector,xls_row,xls_col,is_extra');
+    DB_OVERRIDES = {};
+    EXTRA_POSITIONS = {};
+    for (const row of rows) {
+      DB_OVERRIDES[row.position_key] = row;
+      if (row.is_extra) {
+        if (!EXTRA_POSITIONS[row.sector]) EXTRA_POSITIONS[row.sector] = [];
+        EXTRA_POSITIONS[row.sector].push(row);
+      }
+    }
+    // Aplicar overrides al mapa M: reasignar module_id donde hay override
+    applyOverridesToM();
+  } catch(e) { console.warn('Supabase loadDBOverrides:', e.message); }
+}
+
+function applyOverridesToM() {
+  // Reconstruir M a partir de LOC + overrides
+  for (const [origId, d] of Object.entries(LOC)) {
+    const pk = posKey(d);
+    const override = DB_OVERRIDES[pk];
+    if (override !== undefined) {
+      // Si la posición fue reasignada a otro módulo, mover los datos
+      const newId = override.module_id;
+      if (newId && newId !== origId && M[origId]) {
+        // Crear entrada en M con la nueva clave si no existe
+        if (!M[newId]) M[newId] = { avance: 0, status: 'SECO', fecha: null };
+        // La posición ahora apunta al nuevo módulo
+        M[origId + '__overridden__'] = { ...M[origId], _overriddenTo: newId };
+      }
+    }
+  }
+}
+
+// ============================================================
+//  MODO EDICIÓN — toggle
+// ============================================================
+const EDIT_TABS = ['galpon', 'carpa-grande', 'carpa-chica', 'patio'];
+
+function showEditButtons() {
+  if (!AUTH.canEditLayout()) return;
+  EDIT_TABS.forEach(t => {
+    const btn = document.getElementById('edit-btn-' + t);
+    if (btn) btn.classList.remove('hidden');
+  });
+}
+
+function toggleEditMode(tab) {
+  if (EDIT_TAB === tab) {
+    // Salir de modo edición
+    EDIT_TAB = null;
+    document.body.classList.remove('edit-mode');
+    // Restaurar botón
+    const btn = document.getElementById('edit-btn-' + tab);
+    if (btn) { btn.textContent = '✏️ Editar layout'; btn.classList.remove('on'); btn.classList.add('off'); }
+    // Ocultar toolbar
+    const tb = document.getElementById('edit-toolbar-' + tab);
+    if (tb) tb.classList.add('hidden');
+    // Ocultar botones de agregar posición en patio
+    if (tab === 'patio') hideAddPosButtons();
+    // Limpiar cambios pendientes sin guardar
+    PENDING_CHANGES = {};
+    // Re-renderizar la pestaña sin modo edición
+    rebuildTab(tab);
+  } else {
+    // Entrar en modo edición
+    if (EDIT_TAB) toggleEditMode(EDIT_TAB); // salir del anterior primero
+    EDIT_TAB = tab;
+    document.body.classList.add('edit-mode');
+    const btn = document.getElementById('edit-btn-' + tab);
+    if (btn) { btn.textContent = '✖ Salir edición'; btn.classList.remove('off'); btn.classList.add('on'); }
+    const tb = document.getElementById('edit-toolbar-' + tab);
+    if (tb) tb.classList.remove('hidden');
+    if (tab === 'patio') showAddPosButtons();
+    rebuildTab(tab);
+  }
+}
+
+function showAddPosButtons() {
+  ['add-pos-costado-bodega', 'add-pos-patio-cg', 'add-pos-patio-cc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('hidden');
+  });
+}
+function hideAddPosButtons() {
+  ['add-pos-costado-bodega', 'add-pos-patio-cg', 'add-pos-patio-cc'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+}
+
+function rebuildTab(tab) {
+  if (tab === 'galpon')       buildGalpon();
+  if (tab === 'carpa-grande') buildCarpaGrande();
+  if (tab === 'carpa-chica')  buildCarpaChica();
+  if (tab === 'patio')        buildPatio();
+}
+
+// ============================================================
+//  DROPDOWN DE MÓDULO POR CELDA
+// ============================================================
+function allModuleIds() {
+  return Object.keys(M).filter(id => !id.includes('__overridden__')).sort((a, b) => {
+    const na = parseInt(a.replace(/\D/g,''), 10);
+    const nb = parseInt(b.replace(/\D/g,''), 10);
+    return na - nb;
+  });
+}
+
+function effectiveModuleAt(origId, d) {
+  // Devuelve el módulo realmente asignado a esta posición (override o el original)
+  const pk = posKey(d);
+  if (PENDING_CHANGES[pk] !== undefined) return PENDING_CHANGES[pk];
+  if (DB_OVERRIDES[pk])                  return DB_OVERRIDES[pk].module_id;
+  return origId; // sin override → el mismo
+}
+
+// Inyectar overlay de edición dentro de una module-card
+function injectCellEdit(cardEl, positionKey, currentModuleId, sector) {
+  if (!EDIT_TAB) return;
+  // Quitar overlay anterior si existe
+  const existing = cardEl.querySelector('.cell-edit-overlay');
+  if (existing) { existing.remove(); return; }
+
+  const allIds = allModuleIds();
+  const opts   = allIds.map(id => {
+    const num = parseInt(id.replace(/\D/g,''), 10) || id;
+    const sel = id === currentModuleId ? ' selected' : '';
+    return `<option value="${id}"${sel}>${num} — ${id}</option>`;
+  });
+  // Opción vacía
+  const emptyOpt = `<option value=""${!currentModuleId ? ' selected' : ''}>(vacío)</option>`;
+
+  const ov = document.createElement('div');
+  ov.className = 'cell-edit-overlay';
+  ov.innerHTML = `
+    <select>${emptyOpt}${opts.join('')}</select>
+    <div class="cell-btns">
+      <button class="cell-btn-ok">✔</button>
+      <button class="cell-btn-cancel">✖</button>
+    </div>`;
+
+  ov.querySelector('.cell-btn-cancel').onclick = e => { e.stopPropagation(); ov.remove(); };
+  ov.querySelector('.cell-btn-ok').onclick = e => {
+    e.stopPropagation();
+    const val = ov.querySelector('select').value || null;
+    PENDING_CHANGES[positionKey] = val;
+    // Actualizar apariencia de la celda
+    const numStr = val ? (parseInt(val.replace(/\D/g,''), 10) || val) : '—';
+    const nameEl = cardEl.querySelector('.module-name');
+    if (nameEl) nameEl.textContent = numStr;
+    if (val) {
+      cardEl.classList.remove('empty');
+    } else {
+      cardEl.classList.add('empty');
+    }
+    ov.remove();
+    // Marcar que hay cambios pendientes
+    setEditStatus(EDIT_TAB, '● Cambios sin guardar', 'saving');
+  };
+
+  cardEl.style.position = 'relative';
+  cardEl.appendChild(ov);
+  ov.querySelector('select').focus();
+}
+
+function setEditStatus(tab, msg, cls) {
+  const el = document.getElementById('edit-status-' + tab);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'edit-status ' + (cls || '');
+}
+
+// ============================================================
+//  CARD CON EDICIÓN
+// ============================================================
+// Wrapper que agrega onclick en modo edición
+function editableCard(origId, d, w, h) {
+  if (EDIT_TAB === null) return card(origId, d ? M[origId] : null, w, h);
+  const effectiveId = d ? effectiveModuleAt(origId, d) : null;
+  const pk    = d ? posKey(d) : null;
+  const sec   = d ? sectorForLoc(d.loc, d.sector) : null;
+  const html  = card(effectiveId, effectiveId ? M[effectiveId] : null, w, h);
+  // Envolver en div temporal, agregar handler
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  const cardEl = wrap.firstElementChild;
+  if (pk) {
+    cardEl.onclick = () => injectCellEdit(cardEl, pk, effectiveId, sec);
+    cardEl.title   = (effectiveId || 'Vacío') + ' · Click para cambiar';
+  }
+  return cardEl.outerHTML;
+}
+
+// ============================================================
+//  POSICIONES EXTRA (PATIO DE ACOPIO)
+// ============================================================
+let _extraCounter = {};
+
+function addExtraPosition(sector) {
+  if (!EXTRA_POSITIONS[sector]) EXTRA_POSITIONS[sector] = [];
+  if (!_extraCounter[sector]) _extraCounter[sector] = 0;
+  _extraCounter[sector]++;
+  const pk = `extra_${sector}_${Date.now()}_${_extraCounter[sector]}`;
+  const newPos = { position_key: pk, sector, module_id: null, is_extra: true };
+  EXTRA_POSITIONS[sector].push(newPos);
+  // Marcar como pendiente
+  PENDING_CHANGES[pk] = null;
+  setEditStatus('patio', '● Cambios sin guardar', 'saving');
+  // Re-renderizar sólo el sector correspondiente
+  renderExtraPositions(sector);
+}
+
+function renderExtraPositions(sector) {
+  const containerMap = {
+    'costado-bodega':    'costado-bodega-grid',
+    'patio-carpa-grande': 'patio-cg',
+    'patio-carpa-chica':  'patio-cc',
+  };
+  const containerId = containerMap[sector];
+  if (!containerId) return;
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  // Obtener el HTML actual (posiciones del xlsx ya renderizadas)
+  // Las extra se agregan al final como mini-grid
+  let extraEl = el.querySelector('.extra-positions-row');
+  if (!extraEl) {
+    extraEl = document.createElement('div');
+    extraEl.className = 'extra-positions-row';
+    extraEl.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;';
+    el.appendChild(extraEl);
+  }
+
+  const extras = EXTRA_POSITIONS[sector] || [];
+  const allIds = allModuleIds();
+  const opts   = allIds.map(id => {
+    const num = parseInt(id.replace(/\D/g,''), 10) || id;
+    return `<option value="${id}">${num}</option>`;
+  });
+
+  let html = '';
+  for (const pos of extras) {
+    const pk  = pos.position_key;
+    const cur = PENDING_CHANGES[pk] !== undefined ? PENDING_CHANGES[pk] : pos.module_id;
+    html += `<div class="module-card empty" style="min-width:90px;min-height:80px;position:relative;" title="Posición extra — click para asignar módulo">
+      <div style="font-size:0.75em;color:#aaa;text-align:center;margin-top:8px;">Nueva pos.</div>
+      <div class="cell-edit-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;padding:4px;gap:4px;">
+        <select data-pk="${pk}" style="font-size:0.75rem;width:100%;padding:2px;">
+          <option value="">(vacío)</option>${opts.join('')}
+        </select>
+        <button class="cell-btn-ok" style="font-size:0.7rem;padding:2px 6px;border-radius:4px;border:none;background:#27ae60;color:white;cursor:pointer;" data-pk="${pk}">✔ Asignar</button>
+      </div>
+    </div>`;
+  }
+  extraEl.innerHTML = html;
+
+  // Handlers
+  extraEl.querySelectorAll('.cell-btn-ok').forEach(btn => {
+    btn.onclick = () => {
+      const pk2 = btn.dataset.pk;
+      const sel = extraEl.querySelector(`select[data-pk="${pk2}"]`);
+      PENDING_CHANGES[pk2] = sel.value || null;
+      setEditStatus('patio', '● Cambios sin guardar', 'saving');
+    };
+  });
+}
+
+// ============================================================
+//  GUARDAR CAMBIOS EN SUPABASE
+// ============================================================
+async function saveLayoutChanges(tab) {
+  const saveBtn = document.getElementById('btn-save-' + tab);
+  if (saveBtn) saveBtn.disabled = true;
+  setEditStatus(tab, 'Guardando…', 'saving');
+
+  const session = AUTH.getSession();
+  const updatedBy = session ? session.username : 'desconocido';
+
+  try {
+    const upsertRows = [];
+
+    // Procesar cambios en posiciones del xlsx
+    for (const [pk, newModuleId] of Object.entries(PENDING_CHANGES)) {
+      // Posiciones extra — pk = "extra_{sector}_{timestamp}_{counter}"
+      if (pk.startsWith('extra_')) {
+        // Extraer sector: quitar prefijo "extra_" y sufijo "_{timestamp}_{counter}"
+        const sector = pk.replace(/^extra_/, '').replace(/_\d+_\d+$/, '');
+        upsertRows.push({
+          position_key: pk,
+          sector,
+          xls_row:      null,
+          xls_col:      null,
+          module_id:    newModuleId,
+          is_extra:     true,
+          updated_by:   updatedBy,
+          updated_at:   new Date().toISOString()
+        });
+        continue;
+      }
+
+      // Posiciones normales del xlsx — buscar datos de LOC
+      const locEntry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+      if (!locEntry) continue;
+      const [origId, d] = locEntry;
+
+      upsertRows.push({
+        position_key: pk,
+        sector:       sectorForLoc(d.loc, d.sector),
+        xls_row:      d.xls_row,
+        xls_col:      d.xls_col,
+        module_id:    newModuleId,
+        is_extra:     false,
+        updated_by:   updatedBy,
+        updated_at:   new Date().toISOString()
+      });
+    }
+
+    if (upsertRows.length > 0) await sbUpsert('layout_positions', upsertRows);
+
+    // Actualizar cache local
+    for (const row of upsertRows) DB_OVERRIDES[row.position_key] = row;
+    PENDING_CHANGES = {};
+    setEditStatus(tab, '✔ Guardado correctamente', 'saved');
+    setTimeout(() => setEditStatus(tab, '', ''), 3000);
+  } catch(e) {
+    console.error('saveLayoutChanges:', e);
+    setEditStatus(tab, '✖ Error: ' + e.message, 'error');
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
+// ============================================================
+//  SOBREESCRIBIR CARD EN MODO EDICIÓN — patch de buildGalpon / buildPatio
+// ============================================================
+// Patch: agregar onclick a todas las .module-card del tab activo después de renderizar
+function patchEditableCards(tabContentId) {
+  if (!EDIT_TAB) return;
+  const content = document.getElementById(tabContentId);
+  if (!content) return;
+  content.querySelectorAll('.module-card').forEach(cardEl => {
+    if (cardEl.querySelector('.cell-edit-overlay')) return; // ya tiene overlay
+    // Encontrar a qué posición corresponde por title
+    const title = cardEl.title || '';
+    const matchId = title.split('·')[0].trim();
+    if (!matchId || matchId === 'Vacío') {
+      cardEl.onclick = () => {
+        // Celda vacía — buscar posición por posKey...
+        // Para simplificar, no manejamos celdas vacías sin id en el patio-xlsx
+      };
+      return;
+    }
+    const locData = LOC[matchId];
+    if (!locData) return;
+    const pk = posKey(locData);
+    const effectiveId = effectiveModuleAt(matchId, locData);
+    cardEl.onclick = () => injectCellEdit(cardEl, pk, effectiveId, sectorForLoc(locData.loc, locData.sector));
+    cardEl.title   = (effectiveId || 'Vacío') + ' · Click para cambiar';
+    cardEl.style.cursor = 'pointer';
+  });
+}
+
+// Inyectar patchEditableCards al final de cada buildXxx
+const _origBuildGalpon       = buildGalpon;
+const _origBuildCarpaGrande  = buildCarpaGrande;
+const _origBuildCarpaChica   = buildCarpaChica;
+const _origBuildPatio        = buildPatio;
+
+buildGalpon = function() {
+  _origBuildGalpon();
+  patchEditableCards('tab-galpon');
+};
+buildCarpaGrande = function() {
+  _origBuildCarpaGrande();
+  patchEditableCards('tab-carpa-grande');
+};
+buildCarpaChica = function() {
+  _origBuildCarpaChica();
+  patchEditableCards('tab-carpa-chica');
+};
+buildPatio = function() {
+  _origBuildPatio();
+  patchEditableCards('tab-patio');
+  // Re-renderizar posiciones extra del patio
+  ['costado-bodega','patio-carpa-grande','patio-carpa-chica'].forEach(s => {
+    if ((EXTRA_POSITIONS[s] || []).length > 0) renderExtraPositions(s);
+  });
+};
+
+// ============================================================
+//  INIT EXTENDIDO — reemplaza init() para incluir Supabase + edición
+// ============================================================
+// Redefinimos init() para que el resize handler también use la versión completa.
+init = async function() {
+  updateScale();
+  await loadAvanceData();    // datos xlsx
+  await loadDBOverrides();   // overrides de Supabase (después de LOC/M populados)
+  buildResumen();
+  buildGalpon();
+  buildCarpaGrande();
+  buildCarpaChica();
+  buildPatio();
+  buildVistaPlanta();
+  showEditButtons();
+};
+// Ejecutar inmediatamente (reemplaza el init() original que ya fue despachado,
+// pero como ambos son async, carrerán concurrentemente — el segundo render
+// completo (con overrides) será el definitivo y ocurre en ~ms).
+init();
 </script>
 </body>
 </html>
