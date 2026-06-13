@@ -1317,8 +1317,8 @@ async function sbSelect(table, params = '') {
   return r.json();
 }
 
-async function sbUpsert(table, rows) {
-  const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
+async function sbUpsert(table, rows, onConflict = 'position_key') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=${onConflict}`, {
     method: 'POST',
     headers: { ...SB_HEADERS, Prefer: 'resolution=merge-duplicates,return=minimal' },
     body: JSON.stringify(rows)
@@ -1734,6 +1734,8 @@ async function saveLayoutChanges(tab) {
     for (const [pk, newModuleId] of Object.entries(PENDING_CHANGES)) {
       // Posiciones extra — pk = "extra_{sector}_{timestamp}_{counter}"
       if (pk.startsWith('extra_')) {
+        // No guardar posiciones extra sin módulo asignado (evita rows inútiles en DB)
+        if (!newModuleId) continue;
         // Extraer sector: quitar prefijo "extra_" y sufijo "_{timestamp}_{counter}"
         const sector = pk.replace(/^extra_/, '').replace(/_\d+_\d+$/, '');
         upsertRows.push({
