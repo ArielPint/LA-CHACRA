@@ -1658,7 +1658,7 @@ function renderExtraPositions(sector) {
   let html = '';
   for (const pos of extras) {
     const pk  = pos.position_key;
-    const cur = PENDING_CHANGES[pk] !== undefined ? PENDING_CHANGES[pk] : pos.module_id;
+    const cur = effectiveModuleAtPk(pk); // lee PENDING_CHANGES → DB_OVERRIDES → null
 
     if (cur && M[cur]) {
       // Posición asignada: renderizar card completo con datos de avance
@@ -1675,6 +1675,9 @@ function renderExtraPositions(sector) {
     }
   }
   extraEl.innerHTML = html;
+
+  // Si no hay contenido visible, quitar el contenedor del DOM
+  if (!html) { extraEl.remove(); return; }
 
   if (!isEditing) return; // En modo normal no se necesitan handlers
 
@@ -1701,9 +1704,7 @@ function renderExtraPositions(sector) {
     cardEl.title = (cardEl.title || '') + ' · Click para cambiar';
     cardEl.onclick = (e) => {
       e.stopPropagation();
-      const curId = PENDING_CHANGES[pk2] !== undefined ? PENDING_CHANGES[pk2]
-        : (EXTRA_POSITIONS[sector] || []).find(p => p.position_key === pk2)?.module_id;
-      injectCellEdit(cardEl, pk2, curId, sector);
+      injectCellEdit(cardEl, pk2, effectiveModuleAtPk(pk2), sector);
     };
   });
 }
