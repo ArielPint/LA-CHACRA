@@ -118,6 +118,20 @@ const AUTH = (() => {
       const resp = await fetch(RAW_URL + '?_=' + now);
       if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const users = _normalize(await resp.json());
+      // Mergear lastLogin del cache local si es más reciente que lo que tiene GitHub
+      // (ocurre cuando el write a GitHub falló por falta de token)
+      try {
+        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+        if (Array.isArray(cached.users)) {
+          const localLastLogin = {};
+          cached.users.forEach(u => { if (u.lastLogin) localLastLogin[u.id] = u.lastLogin; });
+          users.forEach(u => {
+            if (localLastLogin[u.id] && (!u.lastLogin || localLastLogin[u.id] > u.lastLogin)) {
+              u.lastLogin = localLastLogin[u.id];
+            }
+          });
+        }
+      } catch (_) {}
       _mem = users;
       _memTs = now;
       localStorage.setItem(CACHE_KEY, JSON.stringify({ users, ts: now }));
