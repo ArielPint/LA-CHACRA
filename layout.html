@@ -658,6 +658,7 @@ function doLogout() {
 // ============================================================
 let LOC = {};
 let M   = {};
+let DESPACHADOS = new Set();
 
 // SheetJS sheet_to_json produce índices RELATIVOS al !ref de la hoja (O3:BV176).
 // Offset fila: ref empieza en row 3  → r = excel_row - 3
@@ -671,6 +672,24 @@ function assignLoc(r, c) {
   if (c <  20)             return { loc: 'carpa-grande',   sector: 'sur'          };  // c=12,14,18
   if (c <  32)             return { loc: 'carpa-grande',   sector: 'norte'        };  // c=22,24,28
   return                          { loc: 'patio',          sector: 'carpa-grande' };  // c=32 (M-00032)
+}
+
+async function loadDespachos() {
+  try {
+    const resp = await fetch('data/LACHACRA.xlsm');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const wb  = XLSX.read(new Uint8Array(buf), { type: 'array', dense: true });
+    const ws  = wb.Sheets['GD_MODULOS'];
+    if (!ws) throw new Error('Hoja GD_MODULOS no encontrada');
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+    DESPACHADOS = new Set();
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      // r[1]=FECHA DESPACHO (debe existir), r[6]=MODULO (e.g. M-00001)
+      if (r[1] && r[6]) DESPACHADOS.add(String(r[6]).trim());
+    }
+  } catch (e) { console.warn('GD_MODULOS despachos:', e.message); }
 }
 
 async function loadUbicaciones() {
@@ -695,6 +714,7 @@ async function loadUbicaciones() {
 }
 
 async function loadAvanceData() {
+  await loadDespachos();
   await loadUbicaciones();
   for (const id of Object.keys(LOC))
     M[id] = Object.assign({}, LOC[id], { avance: 0, status: 'SECO', fecha: null });
@@ -730,6 +750,11 @@ async function loadAvanceData() {
     document.querySelector('header .subtitle').textContent =
       'Estado y progreso por ubicación · Datos desde avance.xlsx';
   } catch (e) { console.warn('avance.xlsx:', e.message); }
+  // Filtrar módulos despachados: no deben aparecer en el mapa
+  for (const id of DESPACHADOS) {
+    delete LOC[id];
+    delete M[id];
+  }
 }
 
 // ============================================================

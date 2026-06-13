@@ -931,7 +931,7 @@ function renderResumen(){
   ]);
 
   // Distribución 10% buckets – solo ≥50%
-  const bucketDefs=['50–59%','60–69%','70–79%','80–89%','90–99%','COMPLETADO'];
+  const bucketDefs=['50–59%','60–69%','70–79%','80–89%','90–99%','COMPLETADO','DESPACHADOS'];
   const buckets={}; bucketDefs.forEach(b=>buckets[b]=0);
   m.forEach(x=>{
     if(x.termReal){ buckets['COMPLETADO']++; return; }
@@ -944,8 +944,9 @@ function renderResumen(){
     else if(p>=50) buckets['50–59%']++;
     // < 50% excluidos de este gráfico
   });
-  // Gradiente naranja → verde
-  const bColors=['rgba(227,144,62,.85)','rgba(210,185,50,.85)','rgba(163,200,60,.85)','rgba(100,200,80,.85)','rgba(63,185,80,.85)','rgba(40,160,60,.9)'];
+  buckets['DESPACHADOS'] = new Set((DATA.despachos||[]).map(d=>d.modulo)).size;
+  // Gradiente naranja → verde + azul para despachados
+  const bColors=['rgba(227,144,62,.85)','rgba(210,185,50,.85)','rgba(163,200,60,.85)','rgba(100,200,80,.85)','rgba(63,185,80,.85)','rgba(40,160,60,.9)','rgba(52,152,219,.85)'];
   barChart('ch-dist-res', bucketDefs, [{
     label:'Módulos', data:bucketDefs.map(b=>buckets[b]),
     backgroundColor:bColors, borderRadius:5
