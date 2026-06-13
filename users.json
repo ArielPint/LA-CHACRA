@@ -46,7 +46,8 @@
       },
       "readonly": false
     },
-    "plainPassword": "Admin.4855"
+    "plainPassword": "Admin.4855",
+    "lastLogin": 1781376800020
   },
   {
     "id": "636febe4-c524-4acd-bf27-b8beb6d5e1d5",
@@ -106,16 +107,14 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781268707324,
+    "updatedAt": 1781378909415,
     "permissions": {
       "pages": {
         "dashboard": {
           "access": true,
           "tabs": [
             "resumen",
-            "curva",
             "modulos",
-            "compras",
             "productos",
             "stock",
             "despachos"
@@ -143,7 +142,8 @@
           ]
         }
       },
-      "readonly": false
+      "readonly": false,
+      "canEditLayout": false
     }
   },
   {
