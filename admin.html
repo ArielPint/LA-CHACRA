@@ -9,9 +9,9 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --green:   #2d4a2d;
-    --green2:  #3a5c3a;
-    --green3:  #e8f0e8;
+    --green:   #cd1c18;
+    --green2:  #a81512;
+    --green3:  #fff0f0;
     --red:     #c0392b;
     --red2:    #fff0f0;
     --blue:    #2563eb;
@@ -37,7 +37,7 @@
   .btn-h:hover { background: rgba(255,255,255,0.25); }
 
   /* ── Layout ── */
-  .page { max-width: 1000px; margin: 28px auto; padding: 0 22px; }
+  .page { max-width: 1600px; margin: 28px auto; padding: 0 22px; }
 
   /* ── Cards ── */
   .card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 20px; overflow: hidden; }
@@ -45,6 +45,8 @@
   .card-header h2 { font-size: 0.95rem; font-weight: 700; }
   .card-header span { font-size: 0.76rem; color: var(--gray); }
   .card-body { padding: 0; }
+  .card-body.scrollable { overflow-x: auto; }
+  .card-body.scrollable table { min-width: 960px; }
 
   /* ── Tabla ── */
   table { width: 100%; border-collapse: collapse; }
@@ -62,7 +64,7 @@
   .badge-off { background: #fee2e2; color: #991b1b; }
 
   .page-chip { display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin: 1px 2px; background: #e0f2fe; color: #0369a1; }
-  .tab-chip  { display: inline-block; font-size: 0.65rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; margin: 1px 1px; background: var(--green3); color: var(--green); }
+  .tab-chip  { display: inline-block; font-size: 0.65rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; margin: 1px 1px; background: #e0f2fe; color: #0369a1; }
 
   /* ── Botones ── */
   .btn { padding: 6px 13px; border-radius: 6px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
@@ -261,7 +263,7 @@
       </div>
       <button class="btn btn-primary" onclick="openModal()">+ Nuevo usuario</button>
     </div>
-    <div class="card-body">
+    <div class="card-body scrollable">
       <table>
         <thead>
           <tr>
