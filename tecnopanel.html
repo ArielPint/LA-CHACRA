@@ -38,6 +38,7 @@ iframe{border:none;width:100%;flex:1;min-height:0}
     <div class="tb-tab active" onclick="showSheet(this,'dashboard')">&#127968; Dashboard</div>
     <div class="tb-tab" onclick="showSheet(this,'produccion')">&#128200; Produccion</div>
     <div class="tb-tab" onclick="showSheet(this,'layout')">&#128205; Layout</div>
+    <div class="tb-tab" onclick="showSheet(this,'despacho')">&#128230; Despacho GD</div>
   </nav>
   <div class="tb-right">
     <button class="upload-btn" onclick="recargar()">&#8635; Actualizar datos</button>
@@ -56,6 +57,9 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   </div>
   <div class="sheet" id="sheet-layout">
     <iframe id="frame-layout" src="" title="Layout"></iframe>
+  </div>
+  <div class="sheet" id="sheet-despacho">
+    <iframe id="frame-despacho" src="" title="Despacho GD"></iframe>
   </div>
 </div>
 
@@ -86,7 +90,7 @@ iframe{border:none;width:100%;flex:1;min-height:0}
     var match = btn.getAttribute('onclick').match(/'(\w+)'/);
     if (!match) return;
     var pageId = match[1];
-    if (!AUTH.canAccessPage(pageId)) {
+    if (pageId !== 'despacho' && !AUTH.canAccessPage(pageId)) {
       btn.style.display = 'none';
     } else if (!firstVisible) {
       firstVisible = pageId;
@@ -112,6 +116,7 @@ function doLogout(){
 
 var prodLoaded = false;
 var layoutLoaded = false;
+var despachoLoaded = false;
 
 function showSheet(el, name) {
   document.querySelectorAll('.tb-tab').forEach(function(t){ t.classList.remove('active'); });
@@ -125,6 +130,10 @@ function showSheet(el, name) {
   if (name === 'layout' && !layoutLoaded) {
     document.getElementById('frame-layout').src = 'layout.html';
     layoutLoaded = true;
+  }
+  if (name === 'despacho' && !despachoLoaded) {
+    document.getElementById('frame-despacho').src = 'compras.html';
+    despachoLoaded = true;
   }
 }
 
