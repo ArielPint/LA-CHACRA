@@ -284,7 +284,7 @@
     "name": "Santiago Scholl",
     "active": true,
     "createdAt": 1781293243214,
-    "updatedAt": 1781293243214,
+    "updatedAt": 1781411561849,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -319,9 +319,15 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
         }
       },
-      "readonly": false
-    }
+      "readonly": false,
+      "canEditLayout": false
+    },
+    "email": ""
   }
 ]
