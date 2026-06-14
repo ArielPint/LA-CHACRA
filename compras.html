@@ -11,6 +11,8 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;display:flex;flex-direction:column}
+
+/* ── Header ── */
 #hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:48px;display:flex;align-items:center;gap:12px;flex-shrink:0}
 #hdr h1{font-size:.98rem;font-weight:700}
 .hdr-badge{font-size:.7rem;background:rgba(255,255,255,.08);padding:2px 8px;border-radius:20px;color:var(--muted)}
@@ -20,20 +22,33 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .btn:disabled{opacity:.5;cursor:default}
 .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn-primary:hover{background:#3a7ae8;border-color:#3a7ae8;color:#fff}
+.btn-sm{padding:4px 10px;font-size:.74rem}
+
+/* ── Stats ── */
 #stats{display:flex;gap:12px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
 .stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:9px 16px;min-width:140px}
 .stat-card .lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
 .stat-card .val{font-size:1.45rem;font-weight:800}
 .sc-blue .val{color:var(--accent)}.sc-green .val{color:var(--green)}.sc-yellow .val{color:var(--yellow)}.sc-red .val{color:var(--brand)}
+
+/* ── Toolbar ── */
 #toolbar{display:flex;align-items:center;gap:8px;padding:9px 20px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
 #toolbar input,#toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:6px;font-size:.78rem;outline:none}
 #toolbar input:focus,#toolbar select:focus{border-color:var(--accent)}
 input[type="date"]{color-scheme:dark}
 .tsep{width:1px;height:22px;background:var(--border);margin:0 4px}
 .tlbl{font-size:.72rem;color:var(--muted);white-space:nowrap}
+
+/* ── Table ── */
 #tbl-wrap{flex:1;overflow-y:auto;padding:0 20px 20px}
 table{width:100%;border-collapse:collapse;margin-top:8px}
-thead th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;padding:7px 9px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2}
+thead th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;padding:7px 9px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2;user-select:none}
+thead th.sortable{cursor:pointer}
+thead th.sortable:hover{color:var(--text)}
+thead th .sort-icon{margin-left:4px;opacity:.3;font-size:.65rem}
+thead th.sort-asc .sort-icon::after{content:'▲';opacity:1;color:var(--accent)}
+thead th.sort-desc .sort-icon::after{content:'▼';opacity:1;color:var(--accent)}
+thead th:not(.sort-asc):not(.sort-desc) .sort-icon::after{content:'⇅'}
 th.r,td.r{text-align:right}
 th.c,td.c{text-align:center}
 tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
@@ -45,26 +60,30 @@ tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
 .acum{font-weight:700;color:var(--yellow)}
 .mono{font-family:monospace}
 .no-data{text-align:center;padding:48px;color:var(--muted);font-size:.9rem}
-#overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;display:none}
+
+/* ── Overlay & Drawer ── */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99;display:none}
 #overlay.show{display:block}
-#drawer{position:fixed;right:0;top:0;bottom:0;width:880px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s ease;z-index:100}
+#drawer{position:fixed;right:0;top:0;bottom:0;width:520px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:100}
 #drawer.open{transform:translateX(0)}
-#drw-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
-#drw-hdr h2{font-size:.92rem;font-weight:700;flex:1}
-#drw-body{flex:1;overflow-y:auto;padding:14px 20px}
-#drw-foot{padding:10px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-shrink:0}
-.def-row{display:flex;gap:10px;align-items:center;margin-bottom:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;flex-wrap:wrap}
-.def-row label{font-size:.73rem;color:var(--muted);white-space:nowrap}
-.def-row input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 9px;border-radius:5px;font-size:.78rem;outline:none;color-scheme:dark}
-.def-row input:focus{border-color:var(--accent)}
-.btbl{width:100%;border-collapse:collapse}
-.btbl th{background:var(--surface2);color:var(--muted);font-size:.66rem;text-transform:uppercase;letter-spacing:.5px;padding:5px 7px;text-align:left;border:1px solid var(--border);white-space:nowrap}
-.btbl td{border:1px solid rgba(255,255,255,.06);padding:3px}
-.btbl input,.btbl select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:5px 7px;border-radius:4px;font-size:.78rem;outline:none;color-scheme:dark}
-.btbl input:focus,.btbl select:focus{border-color:var(--accent)}
-.btbl input[readonly]{color:var(--muted);background:var(--bg);cursor:default}
-.del-btn{background:none;border:none;color:var(--red);cursor:pointer;padding:3px 7px;font-size:1rem;opacity:.55}
-.del-btn:hover{opacity:1}
+#drw-hdr{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+#drw-hdr h2{font-size:.95rem;font-weight:700;flex:1}
+#drw-body{flex:1;overflow-y:auto;padding:20px 22px}
+#drw-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-shrink:0}
+
+/* ── Form inside drawer ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.wide{grid-column:1/-1}
+.fg label{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 11px;border-radius:7px;font-size:.85rem;outline:none;transition:border-color .15s;color-scheme:dark;width:100%}
+.fg input:focus,.fg select:focus{border-color:var(--accent);background:var(--bg)}
+.fg input[readonly]{color:var(--muted);background:var(--bg);cursor:default;border-style:dashed}
+.fg .hint{font-size:.68rem;color:var(--muted);margin-top:2px}
+.form-divider{grid-column:1/-1;border:none;border-top:1px solid var(--border);margin:4px 0}
+.auto-tag{font-size:.65rem;background:rgba(79,142,247,.15);color:var(--accent);padding:2px 6px;border-radius:3px;margin-left:4px;vertical-align:middle}
+
+/* ── Toast ── */
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 20px;border-radius:8px;font-size:.83rem;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1}
 #toast.ok{border-color:var(--green)}
@@ -91,19 +110,15 @@ tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
 </div>
 
 <div id="toolbar">
-  <input type="text" id="q-s" placeholder="🔍  GD #, módulo, serie…" style="width:210px" oninput="renderTable()">
+  <input type="text" id="q-s" placeholder="🔍  GD #, módulo, serie…" style="width:200px" oninput="renderTable()">
+  <select id="q-mes" onchange="renderTable()"><option value="">Todos los meses</option></select>
   <select id="q-torre" onchange="renderTable()"><option value="">Todas las torres</option></select>
   <select id="q-tipo" onchange="renderTable()">
     <option value="">Todos los tipos</option>
     <option value="SECO">SECO</option>
     <option value="HUMEDO">HÚMEDO</option>
   </select>
-  <div class="tsep"></div>
-  <span class="tlbl">Fecha GD desde</span>
-  <input type="date" id="q-desde" style="width:128px" oninput="renderTable()">
-  <span class="tlbl">hasta</span>
-  <input type="date" id="q-hasta" style="width:128px" oninput="renderTable()">
-  <button class="btn" onclick="clearFilters()">✕ Limpiar</button>
+  <button class="btn btn-sm" onclick="clearFilters()">✕ Limpiar</button>
   <span id="count-lbl" style="font-size:.75rem;color:var(--muted);margin-left:auto"></span>
 </div>
 
@@ -112,15 +127,15 @@ tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
   <table id="main-table" style="display:none">
     <thead>
       <tr>
-        <th>FECHA GD</th>
-        <th>FECHA DESPACHO</th>
-        <th>GD #</th>
+        <th class="sortable" onclick="sortBy('fecha_gd')">FECHA GD<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('fecha_despacho')">FECHA DESPACHO<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('gd_numero')">GD #<span class="sort-icon"></span></th>
         <th>NRO SERIE</th>
-        <th class="c">CANT</th>
-        <th class="r">MONTO NETO</th>
-        <th>MÓDULO</th>
-        <th>TORRE</th>
-        <th>TIPO</th>
+        <th class="c sortable" onclick="sortBy('cantidad')">CANT<span class="sort-icon"></span></th>
+        <th class="r sortable" onclick="sortBy('monto_neto')">MONTO NETO<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('modulo')">MÓDULO<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('torre')">TORRE<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('tipo')">TIPO<span class="sort-icon"></span></th>
         <th class="c">ACUM</th>
         <th></th>
       </tr>
@@ -129,46 +144,76 @@ tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
   </table>
 </div>
 
+<!-- Overlay -->
 <div id="overlay" onclick="closeDrawer()"></div>
 
+<!-- Drawer: formulario de entrada -->
 <div id="drawer">
   <div id="drw-hdr">
-    <h2>Nueva Entrada — Despacho GD</h2>
-    <button class="btn" onclick="closeDrawer()">✕ Cerrar</button>
+    <h2>Nueva Entrada</h2>
+    <button class="btn btn-sm" onclick="closeDrawer()">✕ Cerrar</button>
   </div>
   <div id="drw-body">
-    <div class="def-row">
-      <label>Fecha GD por defecto</label>
-      <input type="date" id="def-gd">
-      <label>Fecha Despacho por defecto</label>
-      <input type="date" id="def-desp">
-      <button class="btn" style="font-size:.75rem;padding:4px 10px" onclick="applyDefaults()">Aplicar a vacíos</button>
+    <div class="form-grid">
+
+      <!-- Fechas -->
+      <div class="fg">
+        <label>Fecha GD *</label>
+        <input type="date" id="f-gd">
+      </div>
+      <div class="fg">
+        <label>Fecha Despacho *</label>
+        <input type="date" id="f-desp">
+      </div>
+
+      <!-- GD y Módulo -->
+      <div class="fg">
+        <label>GD # *</label>
+        <input type="text" id="f-gdnum" placeholder="Ej: 44270">
+      </div>
+      <div class="fg">
+        <label>Módulo *</label>
+        <select id="f-mod" onchange="onFormMod()">
+          <option value="">— Seleccionar —</option>
+        </select>
+      </div>
+
+      <hr class="form-divider">
+
+      <!-- Nro Serie (auto) y Cantidad -->
+      <div class="fg">
+        <label>Nro Serie <span class="auto-tag">auto</span></label>
+        <input type="text" id="f-serie" readonly placeholder="—">
+      </div>
+      <div class="fg">
+        <label>Cantidad</label>
+        <input type="number" id="f-cant" value="1" min="1">
+      </div>
+
+      <!-- Monto Neto (full width) -->
+      <div class="fg wide">
+        <label>Monto Neto</label>
+        <input type="number" id="f-monto" placeholder="0" min="0">
+        <span class="hint" id="f-monto-hint"></span>
+      </div>
+
+      <!-- Torre y Tipo (auto) -->
+      <div class="fg">
+        <label>Torre <span class="auto-tag">auto</span></label>
+        <input type="text" id="f-torre" readonly placeholder="—">
+      </div>
+      <div class="fg">
+        <label>Tipo <span class="auto-tag">auto</span></label>
+        <input type="text" id="f-tipo" readonly placeholder="—">
+      </div>
+
     </div>
-    <div style="overflow-x:auto">
-      <table class="btbl">
-        <thead>
-          <tr>
-            <th>FECHA GD</th>
-            <th>FECHA DESPACHO</th>
-            <th>GD #</th>
-            <th style="min-width:175px">MÓDULO</th>
-            <th>NRO SERIE</th>
-            <th>CANT</th>
-            <th>MONTO NETO</th>
-            <th>TORRE</th>
-            <th>TIPO</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="batch-body"></tbody>
-      </table>
-    </div>
-    <button class="btn" style="margin-top:10px;font-size:.77rem" onclick="addRow()">+ Agregar fila</button>
   </div>
   <div id="drw-foot">
     <span id="save-st" style="color:var(--muted);font-size:.78rem"></span>
     <button class="btn" onclick="closeDrawer()">Cancelar</button>
-    <button class="btn btn-primary" id="save-btn" onclick="saveAll()">Guardar todo</button>
+    <button class="btn" id="save-otro-btn" onclick="saveForm(true)">Guardar y agregar otro</button>
+    <button class="btn btn-primary" id="save-btn" onclick="saveForm(false)">Guardar</button>
   </div>
 </div>
 
@@ -181,9 +226,12 @@ const XLSURL='https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/ub
 
 let catalog={};
 let records=[];
-let rowN=0;
 let _optHTML=null;
 
+// Sorting state
+let sortCol=null, sortDir='asc';
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
 (function(){
   var s=AUTH.requireAuth('login.html');
   if(!s)return;
@@ -195,6 +243,7 @@ let _optHTML=null;
   }
 })();
 
+// ── Init ──────────────────────────────────────────────────────────────────────
 async function init(){
   try{
     await loadCatalog();
@@ -205,6 +254,7 @@ async function init(){
   }
 }
 
+// ── Module catalog ────────────────────────────────────────────────────────────
 async function loadCatalog(){
   const res=await fetch(XLSURL);
   const buf=await res.arrayBuffer();
@@ -225,22 +275,21 @@ async function loadCatalog(){
     catalog[m]={nro_serie:String(r[iS]||'').trim(),torre,tipo:String(r[iTp]||'').trim()};
     if(torre)torres.add(torre);
   }
+  // Torre filter
   const sel=document.getElementById('q-torre');
   [...torres].sort((a,b)=>{const n=s=>parseInt(s.replace(/\D/g,''))||0;return n(a)-n(b);}).forEach(t=>{
     const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);
   });
-}
-
-function getOptHTML(){
-  if(_optHTML)return _optHTML;
+  // Module select in drawer
   _optHTML='<option value="">— Seleccionar módulo —</option>'+
     Object.keys(catalog).sort().map(k=>{
       const m=catalog[k];
       return `<option value="${k}" data-s="${m.nro_serie}" data-t="${m.torre}" data-tp="${m.tipo}">${k} · ${m.torre} · ${m.tipo}</option>`;
     }).join('');
-  return _optHTML;
+  document.getElementById('f-mod').innerHTML=_optHTML;
 }
 
+// ── Load records ──────────────────────────────────────────────────────────────
 async function loadData(){
   document.getElementById('loading').style.display='flex';
   document.getElementById('main-table').style.display='none';
@@ -249,14 +298,17 @@ async function loadData(){
   });
   if(!res.ok)throw new Error('HTTP '+res.status);
   records=await res.json();
+  // Compute running ACUMULADO on base order (fecha_gd asc, id asc)
   let acum=0;
   records.forEach(r=>{acum+=(r.cantidad||1);r._acum=acum;});
   updateStats();
+  populateMesFilter();
   renderTable();
   document.getElementById('loading').style.display='none';
   document.getElementById('main-table').style.display='table';
 }
 
+// ── Stats ─────────────────────────────────────────────────────────────────────
 function updateStats(){
   const total=records.reduce((s,r)=>s+(r.cantidad||1),0);
   const monto=records.reduce((s,r)=>s+(parseFloat(r.monto_neto)||0),0);
@@ -273,25 +325,84 @@ function updateStats(){
   document.getElementById('st-ultimo').textContent=ultimo?fmtD(ultimo):'—';
 }
 
+// ── Month filter ──────────────────────────────────────────────────────────────
+function populateMesFilter(){
+  const sel=document.getElementById('q-mes');
+  const current=sel.value;
+  // Build sorted unique mes keys from records
+  const keys=new Map();
+  records.forEach(r=>{
+    if(!r.fecha_gd)return;
+    const [y,m]=r.fecha_gd.split('-');
+    const k=`${y}-${m}`;
+    if(!keys.has(k)){
+      const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      keys.set(k,`${MES[parseInt(m)-1]} ${y}`);
+    }
+  });
+  sel.innerHTML='<option value="">Todos los meses</option>';
+  [...keys.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([k,lbl])=>{
+    const o=document.createElement('option');
+    o.value=k;o.textContent=lbl;
+    if(k===current)o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+// ── Sorting ───────────────────────────────────────────────────────────────────
+function sortBy(col){
+  if(sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
+  else{sortCol=col;sortDir='asc';}
+  // Update header classes
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.remove('sort-asc','sort-desc');
+    const fn=th.getAttribute('onclick');
+    if(fn&&fn.includes(`'${col}'`)){
+      th.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
+    }
+  });
+  renderTable();
+}
+
+// ── Render table ──────────────────────────────────────────────────────────────
 function renderTable(){
   const q=document.getElementById('q-s').value.toLowerCase();
+  const qMes=document.getElementById('q-mes').value;
   const qTorre=document.getElementById('q-torre').value;
   const qTipo=document.getElementById('q-tipo').value;
-  const qDesde=document.getElementById('q-desde').value;
-  const qHasta=document.getElementById('q-hasta').value;
-  const filtered=records.filter(r=>{
+
+  let filtered=records.filter(r=>{
     if(q){const hay=[r.gd_numero,r.modulo,r.modulo_nro_serie,r.torre].map(v=>(v||'').toLowerCase()).join(' ');if(!hay.includes(q))return false;}
+    if(qMes&&r.fecha_gd){const[y,m]=r.fecha_gd.split('-');if(`${y}-${m}`!==qMes)return false;}
     if(qTorre&&r.torre!==qTorre)return false;
     if(qTipo&&r.tipo!==qTipo)return false;
-    if(qDesde&&r.fecha_gd&&r.fecha_gd<qDesde)return false;
-    if(qHasta&&r.fecha_gd&&r.fecha_gd>qHasta)return false;
     return true;
   });
+
+  // Sort
+  if(sortCol){
+    filtered=[...filtered].sort((a,b)=>{
+      let va=a[sortCol],vb=b[sortCol];
+      if(va===null||va===undefined)va='';
+      if(vb===null||vb===undefined)vb='';
+      // Numeric columns
+      if(sortCol==='cantidad'||sortCol==='monto_neto'){va=parseFloat(va)||0;vb=parseFloat(vb)||0;}
+      // GD as number
+      if(sortCol==='gd_numero'){va=parseInt(va)||0;vb=parseInt(vb)||0;}
+      const cmp=va<vb?-1:va>vb?1:0;
+      return sortDir==='asc'?cmp:-cmp;
+    });
+  }
+
   document.getElementById('count-lbl').textContent=
     filtered.length<records.length?`${filtered.length} de ${records.length} registros`:`${records.length} registros`;
+
   const tbody=document.getElementById('tbody');
   tbody.innerHTML='';
-  if(!filtered.length){tbody.innerHTML='<tr><td colspan="11" class="no-data">Sin registros</td></tr>';return;}
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="11" class="no-data">Sin registros para los filtros aplicados</td></tr>';
+    return;
+  }
   const ro=AUTH.isReadonly();
   filtered.forEach(r=>{
     const tr=document.createElement('tr');
@@ -306,11 +417,12 @@ function renderTable(){
       `<td style="font-size:.73rem;color:var(--muted)">${r.torre||'—'}</td>`+
       `<td>${tipoChip(r.tipo)}</td>`+
       `<td class="c acum">${r._acum}</td>`+
-      `<td>${ro?'':`<button class="btn del-btn" onclick="delRecord(${r.id})" style="padding:3px 8px;font-size:.72rem">✕</button>`}</td>`;
+      `<td>${ro?'':`<button class="btn btn-sm" style="color:var(--red);padding:3px 8px" onclick="delRecord(${r.id})">✕</button>`}</td>`;
     tbody.appendChild(tr);
   });
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function fmtD(v){if(!v)return'—';const[y,m,d]=v.split('-');return`${d}-${m}-${y}`;}
 function fmtM(v,short){
   if(v===null||v===undefined||v==='')return'—';
@@ -320,100 +432,120 @@ function fmtM(v,short){
   return'$'+Math.round(n).toLocaleString('es-CL');
 }
 function tipoChip(t){if(!t)return'—';return`<span class="chip ${t==='SECO'?'chip-seco':'chip-humedo'}">${t}</span>`;}
-function clearFilters(){['q-s','q-torre','q-tipo','q-desde','q-hasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderTable();}
-function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+(type||'');clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3200);}
+function clearFilters(){
+  ['q-s','q-mes','q-torre','q-tipo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderTable();
+}
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show '+(type||'');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3200);
+}
 
+// ── Drawer / Form ─────────────────────────────────────────────────────────────
 function openDrawer(){
-  const tbody=document.getElementById('batch-body');
-  if(!tbody.children.length)addRow();
-  const today=new Date().toISOString().slice(0,10);
-  document.getElementById('def-gd').value=today;
-  document.getElementById('def-desp').value=today;
+  resetForm();
   document.getElementById('drawer').classList.add('open');
   document.getElementById('overlay').classList.add('show');
+  // Focus first empty required field
+  setTimeout(()=>{
+    const fg=document.getElementById('f-gd');
+    if(fg&&!fg.value)fg.focus();
+    else document.getElementById('f-gdnum').focus();
+  },280);
 }
+
 function closeDrawer(){
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
 }
-function applyDefaults(){
-  const fg=document.getElementById('def-gd').value;
-  const fd=document.getElementById('def-desp').value;
-  document.querySelectorAll('#batch-body tr').forEach(tr=>{
-    const g=tr.querySelector('.i-gd');if(fg&&g&&!g.value)g.value=fg;
-    const d=tr.querySelector('.i-desp');if(fd&&d&&!d.value)d.value=fd;
-  });
-}
-function addRow(){
+
+function resetForm(){
   const today=new Date().toISOString().slice(0,10);
-  const fg=document.getElementById('def-gd').value||today;
-  const fd=document.getElementById('def-desp').value||today;
-  rowN++;
-  const tr=document.createElement('tr');
-  tr.innerHTML=
-    `<td><input type="date" class="i-gd" value="${fg}"></td>`+
-    `<td><input type="date" class="i-desp" value="${fd}"></td>`+
-    `<td><input type="text" class="i-gdnum" placeholder="GD #" style="width:82px"></td>`+
-    `<td><select class="i-mod" onchange="onMod(this)">${getOptHTML()}</select></td>`+
-    `<td><input type="text" class="i-serie" readonly placeholder="—" style="width:108px"></td>`+
-    `<td><input type="number" class="i-cant" value="1" min="1" style="width:48px"></td>`+
-    `<td><input type="number" class="i-monto" value="" min="0" placeholder="0" style="width:108px"></td>`+
-    `<td><input type="text" class="i-torre" readonly placeholder="—" style="width:78px"></td>`+
-    `<td><input type="text" class="i-tipo" readonly placeholder="—" style="width:68px"></td>`+
-    `<td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
-  document.getElementById('batch-body').appendChild(tr);
-}
-function onMod(sel){
-  const opt=sel.options[sel.selectedIndex];
-  const tr=sel.closest('tr');
-  tr.querySelector('.i-serie').value=opt.dataset.s||'';
-  tr.querySelector('.i-torre').value=opt.dataset.t||'';
-  tr.querySelector('.i-tipo').value=opt.dataset.tp||'';
+  document.getElementById('f-gd').value=today;
+  document.getElementById('f-desp').value=today;
+  document.getElementById('f-gdnum').value='';
+  document.getElementById('f-mod').value='';
+  document.getElementById('f-serie').value='';
+  document.getElementById('f-cant').value='1';
+  document.getElementById('f-monto').value='';
+  document.getElementById('f-monto-hint').textContent='';
+  document.getElementById('f-torre').value='';
+  document.getElementById('f-tipo').value='';
 }
 
-async function saveAll(){
-  const rows=[...document.querySelectorAll('#batch-body tr')];
-  if(!rows.length){showToast('No hay filas para guardar','err');return;}
+function onFormMod(){
+  const sel=document.getElementById('f-mod');
+  const opt=sel.options[sel.selectedIndex];
+  document.getElementById('f-serie').value=opt.dataset.s||'';
+  document.getElementById('f-torre').value=opt.dataset.t||'';
+  document.getElementById('f-tipo').value=opt.dataset.tp||'';
+  // Hint: show formatted monto from last record of same módulo if any
+  const mod=sel.value;
+  if(mod){
+    const prev=records.filter(r=>r.modulo===mod);
+    if(prev.length){
+      const last=prev[prev.length-1];
+      document.getElementById('f-monto-hint').textContent=
+        `Último monto para ${mod}: ${fmtM(last.monto_neto)}`;
+    }
+  }
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+async function saveForm(keepOpen){
+  const gd=document.getElementById('f-gdnum').value.trim();
+  const mod=document.getElementById('f-mod').value;
+  if(!gd){showToast('GD # es obligatorio','err');document.getElementById('f-gdnum').focus();return;}
+  if(!mod){showToast('Selecciona un módulo','err');document.getElementById('f-mod').focus();return;}
+
   const sess=AUTH.getSession();
-  const who=sess?sess.name:'anon';
-  const recs=[];let err=false;
-  rows.forEach((tr,i)=>{
-    const gd=tr.querySelector('.i-gdnum').value.trim();
-    const mod=tr.querySelector('.i-mod').value;
-    if(!gd||!mod){showToast(`Fila ${i+1}: GD # y Módulo son obligatorios`,'err');err=true;return;}
-    recs.push({
-      fecha_gd:tr.querySelector('.i-gd').value||null,
-      fecha_despacho:tr.querySelector('.i-desp').value||null,
-      gd_numero:gd,
-      modulo_nro_serie:tr.querySelector('.i-serie').value||null,
-      cantidad:parseInt(tr.querySelector('.i-cant').value)||1,
-      monto_neto:parseFloat(tr.querySelector('.i-monto').value)||0,
-      modulo:mod,
-      torre:tr.querySelector('.i-torre').value||null,
-      tipo:tr.querySelector('.i-tipo').value||null,
-      created_by:who
-    });
-  });
-  if(err)return;
+  const rec={
+    fecha_gd:document.getElementById('f-gd').value||null,
+    fecha_despacho:document.getElementById('f-desp').value||null,
+    gd_numero:gd,
+    modulo_nro_serie:document.getElementById('f-serie').value||null,
+    cantidad:parseInt(document.getElementById('f-cant').value)||1,
+    monto_neto:parseFloat(document.getElementById('f-monto').value)||0,
+    modulo:mod,
+    torre:document.getElementById('f-torre').value||null,
+    tipo:document.getElementById('f-tipo').value||null,
+    created_by:sess?sess.name:'anon'
+  };
+
   const btn=document.getElementById('save-btn');
+  const btn2=document.getElementById('save-otro-btn');
   const st=document.getElementById('save-st');
-  btn.disabled=true;st.textContent='Guardando…';
+  btn.disabled=true;btn2.disabled=true;st.textContent='Guardando…';
+
   try{
     const res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd`,{
       method:'POST',
       headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify(recs)
+      body:JSON.stringify(rec)
     });
     if(!res.ok)throw new Error(await res.text());
-    showToast(`✓ ${recs.length} registro(s) guardado(s)`,'ok');
-    document.getElementById('batch-body').innerHTML='';
-    rowN=0;
-    closeDrawer();
+    showToast('✓ Registro guardado','ok');
     await loadData();
-  }catch(e){showToast('Error: '+e.message,'err');}
-  finally{btn.disabled=false;st.textContent='';}
+    if(keepOpen){
+      // Keep drawer open, reset form except dates
+      const fg=document.getElementById('f-gd').value;
+      const fd=document.getElementById('f-desp').value;
+      resetForm();
+      document.getElementById('f-gd').value=fg;
+      document.getElementById('f-desp').value=fd;
+      document.getElementById('f-gdnum').focus();
+    } else {
+      closeDrawer();
+    }
+  }catch(e){
+    showToast('Error: '+e.message,'err');
+  }finally{
+    btn.disabled=false;btn2.disabled=false;st.textContent='';
+  }
 }
 
+// ── Delete ────────────────────────────────────────────────────────────────────
 async function delRecord(id){
   if(!confirm('¿Eliminar este registro?'))return;
   const res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd?id=eq.${id}`,{
@@ -425,6 +557,7 @@ async function delRecord(id){
   await loadData();
 }
 
+// ── Start ─────────────────────────────────────────────────────────────────────
 init();
 </script>
 </body>
