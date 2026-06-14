@@ -7,7 +7,7 @@
     "name": "Administrador",
     "active": true,
     "createdAt": 1749600000000,
-    "updatedAt": 1781217666740,
+    "updatedAt": 1781404919581,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -44,10 +44,12 @@
           ]
         }
       },
-      "readonly": false
+      "readonly": false,
+      "canEditLayout": true
     },
     "plainPassword": "Admin.4855",
-    "lastLogin": 1781376800020
+    "lastLogin": 1781376800020,
+    "email": "ariel.pinto.a@gmail.com"
   },
   {
     "id": "636febe4-c524-4acd-bf27-b8beb6d5e1d5",
