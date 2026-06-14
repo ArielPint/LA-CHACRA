@@ -63,6 +63,10 @@ const AUTH = (() => {
         patio:          'Patio de Acopio',
         planta:         'Vista Completa'
       }
+    },
+    despacho: {
+      label: 'Despacho GD',
+      tabs: {}
     }
   };
 

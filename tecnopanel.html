@@ -90,7 +90,7 @@ iframe{border:none;width:100%;flex:1;min-height:0}
     var match = btn.getAttribute('onclick').match(/'(\w+)'/);
     if (!match) return;
     var pageId = match[1];
-    if (pageId !== 'despacho' && !AUTH.canAccessPage(pageId)) {
+    if (!AUTH.canAccessPage(pageId)) {
       btn.style.display = 'none';
     } else if (!firstVisible) {
       firstVisible = pageId;

@@ -78,7 +78,7 @@ tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
   <h1>📦 Despacho de Módulos GD</h1>
   <span class="hdr-badge" id="user-badge"></span>
   <div class="hdr-right">
-    <button class="btn btn-primary" onclick="openDrawer()">+ Nueva Entrada</button>
+    <button class="btn btn-primary" id="nueva-btn" onclick="openDrawer()">+ Nueva Entrada</button>
     <button class="btn" onclick="loadData()">↻ Recargar</button>
   </div>
 </div>
@@ -189,6 +189,10 @@ let _optHTML=null;
   if(!s)return;
   var el=document.getElementById('user-badge');
   if(el)el.textContent=s.name;
+  if(AUTH.isReadonly()){
+    var nb=document.getElementById('nueva-btn');
+    if(nb)nb.style.display='none';
+  }
 })();
 
 async function init(){
