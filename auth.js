@@ -94,7 +94,15 @@ const AUTH = (() => {
 
   // ─── Migración de permisos ────────────────────────────────────────────────
   function migratePermissions(perms) {
-    if (perms && perms.pages && typeof perms.pages === 'object') return perms;
+    if (perms && perms.pages && typeof perms.pages === 'object') {
+      // Forward-migrate: añadir páginas nuevas del PAGE_MAP que aún no existen en perms
+      for (const pid of Object.keys(PAGE_MAP)) {
+        if (!perms.pages[pid]) {
+          perms.pages[pid] = { access: false, tabs: Object.keys(PAGE_MAP[pid].tabs || {}) };
+        }
+      }
+      return perms;
+    }
     const newPerms = { pages: defaultPagePerms(), readonly: perms ? !!perms.readonly : false };
     if (perms && Array.isArray(perms.tabs)) newPerms.pages.layout.tabs = perms.tabs;
     return newPerms;
@@ -378,6 +386,7 @@ const AUTH = (() => {
   function canAccessPage(pageId) {
     const s = getSession();
     if (!s) return false;
+    if (s.role === 'admin') return true; // admin siempre tiene acceso a todas las páginas
     const pg = s.permissions.pages && s.permissions.pages[pageId];
     return pg ? !!pg.access : false;
   }
