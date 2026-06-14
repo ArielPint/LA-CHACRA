@@ -174,7 +174,7 @@
     "name": "Felipe Etchegaray",
     "active": true,
     "createdAt": 1781217627565,
-    "updatedAt": 1781217627565,
+    "updatedAt": 1781411547073,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -209,10 +209,16 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
         }
       },
-      "readonly": false
-    }
+      "readonly": false,
+      "canEditLayout": false
+    },
+    "email": ""
   },
   {
     "id": "f016416c-71c4-4519-b6f2-334f3edeac33",
