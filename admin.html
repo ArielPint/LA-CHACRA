@@ -369,6 +369,12 @@
         </div>
       </div>
 
+      <div class="form-row">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-input" id="fEmail" placeholder="Ej: juan@empresa.com" autocomplete="off">
+        <p class="form-hint">Se usa para enviar las credenciales de acceso al usuario.</p>
+      </div>
+
       <div class="form-grid form-row">
         <div>
           <label class="form-label">Contraseña <span id="passHint" style="font-weight:400;text-transform:none;color:#888;font-size:0.68rem"></span></label>
@@ -493,10 +499,25 @@ async function renderTable(highlightId) {
     // Último ingreso: preferir Supabase (más preciso), fallback a lastLogin de GitHub
     const lastLoginTs = stats ? new Date(stats.lastLogin).getTime() : (u.lastLogin || null);
 
+    // Botón enviar credenciales por email
+    const ACCESS_URL = 'https://arielpint.github.io/LA-CHACRA/login.html';
+    const emailBody = `Hola ${u.name},%0D%0A%0D%0ATe compartimos tus credenciales de acceso al sistema La Chacra:%0D%0A%0D%0A` +
+      `Acceso: ${ACCESS_URL}%0D%0AUsuario: ${u.username}%0D%0AContrase%C3%B1a: ${encodeURIComponent(u.plainPassword || '')}%0D%0A%0D%0A` +
+      `Saludos,%0D%0AAdministraci%C3%B3n La Chacra`;
+    const mailtoHref = u.email
+      ? `mailto:${u.email}?subject=Acceso%20La%20Chacra&body=${emailBody}`
+      : '';
+    const sendBtn = u.email
+      ? `<a class="btn btn-edit btn-sm" href="${mailtoHref}" title="Enviar credenciales a ${u.email}">📧 Enviar</a>`
+      : `<button class="btn btn-sm" style="background:#f3f4f6;color:#bbb;cursor:default" title="Sin email registrado" disabled>📧</button>`;
+
     const isSelf = u.username === session.username;
     const flash  = highlightId === u.id ? ' class="just-saved"' : '';
     return `<tr data-uid="${u.id}"${flash}>
-      <td><strong>${u.name}</strong>${isSelf ? ' <span style="font-size:0.68rem;color:#aaa">(tú)</span>' : ''}</td>
+      <td>
+        <strong>${u.name}</strong>${isSelf ? ' <span style="font-size:0.68rem;color:#aaa">(tú)</span>' : ''}
+        ${u.email ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:2px">${u.email}</div>` : ''}
+      </td>
       <td style="font-family:monospace;color:#666;font-size:0.8rem">${u.username}</td>
       <td>${roleBadge}</td>
       <td>${pageChips || '<span style="color:#bbb;font-size:0.75rem">Sin acceso</span>'}</td>
@@ -508,6 +529,7 @@ async function renderTable(highlightId) {
       <td>${fmtDate(u.updatedAt || u.createdAt)}</td>
       <td><div class="btn-group">
         <button class="btn btn-edit btn-sm" onclick="editUser('${u.id}')">Editar</button>
+        ${sendBtn}
         ${!isSelf ? `<button class="btn btn-danger btn-sm" onclick="confirmDelete('${u.id}','${u.name}')">Eliminar</button>` : ''}
       </div></td>
     </tr>`;
@@ -599,6 +621,7 @@ function openModal() {
   document.getElementById('editUserId').value  = '';
   document.getElementById('fName').value       = '';
   document.getElementById('fUsername').value   = '';
+  document.getElementById('fEmail').value      = '';
   document.getElementById('fPassword').value   = '';
   document.getElementById('fRole').value       = 'viewer';
   document.getElementById('fActive').checked   = true;
@@ -615,6 +638,7 @@ async function editUser(id) {
   document.getElementById('editUserId').value  = user.id;
   document.getElementById('fName').value       = user.name;
   document.getElementById('fUsername').value   = user.username;
+  document.getElementById('fEmail').value      = user.email || '';
   document.getElementById('fPassword').value   = '';
   document.getElementById('fRole').value       = user.role;
   document.getElementById('fReadonly').checked      = user.permissions.readonly;
@@ -638,15 +662,16 @@ document.getElementById('modalOverlay').addEventListener('click', e => { if (e.t
 
 // ── Guardar ────────────────────────────────────────────────────────────────
 async function saveUser() {
-  const btn  = document.getElementById('btnSave');
-  const id   = document.getElementById('editUserId').value;
-  const name = document.getElementById('fName').value.trim();
-  const user = document.getElementById('fUsername').value.trim();
-  const pass = document.getElementById('fPassword').value;
-  const role = document.getElementById('fRole').value;
-  const ro   = document.getElementById('fReadonly').checked;
-  const cel  = document.getElementById('fCanEditLayout').checked;
-  const act  = document.getElementById('fActive').checked;
+  const btn   = document.getElementById('btnSave');
+  const id    = document.getElementById('editUserId').value;
+  const name  = document.getElementById('fName').value.trim();
+  const user  = document.getElementById('fUsername').value.trim();
+  const email = document.getElementById('fEmail').value.trim();
+  const pass  = document.getElementById('fPassword').value;
+  const role  = document.getElementById('fRole').value;
+  const ro    = document.getElementById('fReadonly').checked;
+  const cel   = document.getElementById('fCanEditLayout').checked;
+  const act   = document.getElementById('fActive').checked;
   const pages = getPagePermsFromForm();
 
   if (!name || !user) { showToast('Nombre y usuario son requeridos', 'error'); return; }
@@ -659,10 +684,10 @@ async function saveUser() {
   try {
     let savedUser;
     if (id) {
-      savedUser = await AUTH.updateUser(id, { username: user, name, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel });
+      savedUser = await AUTH.updateUser(id, { username: user, name, email, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel });
       showToast('Usuario actualizado', 'success');
     } else {
-      savedUser = await AUTH.createUser({ username: user, password: pass, name, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel });
+      savedUser = await AUTH.createUser({ username: user, password: pass, name, email, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel });
       showToast('Usuario creado', 'success');
     }
     closeModal();

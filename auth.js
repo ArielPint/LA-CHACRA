@@ -217,7 +217,7 @@ const AUTH = (() => {
   }
 
   // ─── CRUD de usuarios ─────────────────────────────────────────────────────
-  async function createUser({ username, password, name, role, customPages, readonly, canEditLayoutOverride }) {
+  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride }) {
     const users = await getUsers();
     if (users.find(u => u.username === username.trim().toLowerCase())) {
       throw new Error('El usuario ya existe');
@@ -233,6 +233,7 @@ const AUTH = (() => {
       username: username.trim().toLowerCase(),
       password: await hashPassword(password),
       plainPassword: password,
+      email: email ? email.trim().toLowerCase() : '',
       role, name: name || username, active: true,
       createdAt: Date.now(), updatedAt: Date.now(),
       permissions: perms
@@ -242,13 +243,14 @@ const AUTH = (() => {
     return user;
   }
 
-  async function updateUser(id, { username, password, name, role, customPages, readonly, active, canEditLayoutOverride }) {
+  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride }) {
     const users = await getUsers();
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) throw new Error('Usuario no encontrado');
     const u = users[idx];
     if (username  !== undefined) u.username = username.trim().toLowerCase();
     if (name      !== undefined) u.name = name;
+    if (email     !== undefined) u.email = email ? email.trim().toLowerCase() : '';
     if (role      !== undefined) {
       u.role = role;
       if (customPages === undefined && readonly === undefined) {
