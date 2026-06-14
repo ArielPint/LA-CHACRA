@@ -119,14 +119,16 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781379443815,
+    "updatedAt": 1781411537834,
     "permissions": {
       "pages": {
         "dashboard": {
           "access": true,
           "tabs": [
             "resumen",
+            "curva",
             "modulos",
+            "compras",
             "productos",
             "stock",
             "despachos"
@@ -152,11 +154,16 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
       "canEditLayout": false
-    }
+    },
+    "email": ""
   },
   {
     "id": "55575ab8-63a8-4d2c-86e7-6b020558208f",
