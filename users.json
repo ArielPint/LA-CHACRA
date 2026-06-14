@@ -63,7 +63,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781217646263,
+    "updatedAt": 1781411521399,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -98,11 +98,17 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": true,
+          "tabs": []
         }
       },
-      "readonly": false
+      "readonly": false,
+      "canEditLayout": false
     },
-    "plainPassword": "da.123"
+    "plainPassword": "da.123",
+    "email": ""
   },
   {
     "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
