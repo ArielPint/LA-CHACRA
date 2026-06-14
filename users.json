@@ -7,7 +7,7 @@
     "name": "Administrador",
     "active": true,
     "createdAt": 1749600000000,
-    "updatedAt": 1781404919581,
+    "updatedAt": 1781411502025,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -42,6 +42,10 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": true,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -59,7 +63,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781217646263,
+    "updatedAt": 1781411521399,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -94,11 +98,17 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": true,
+          "tabs": []
         }
       },
-      "readonly": false
+      "readonly": false,
+      "canEditLayout": false
     },
-    "plainPassword": "da.123"
+    "plainPassword": "da.123",
+    "email": ""
   },
   {
     "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
@@ -109,14 +119,16 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781379443815,
+    "updatedAt": 1781411537834,
     "permissions": {
       "pages": {
         "dashboard": {
           "access": true,
           "tabs": [
             "resumen",
+            "curva",
             "modulos",
+            "compras",
             "productos",
             "stock",
             "despachos"
@@ -142,11 +154,16 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
       "canEditLayout": false
-    }
+    },
+    "email": ""
   },
   {
     "id": "55575ab8-63a8-4d2c-86e7-6b020558208f",
@@ -157,7 +174,7 @@
     "name": "Felipe Etchegaray",
     "active": true,
     "createdAt": 1781217627565,
-    "updatedAt": 1781217627565,
+    "updatedAt": 1781411547073,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -192,10 +209,16 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
         }
       },
-      "readonly": false
-    }
+      "readonly": false,
+      "canEditLayout": false
+    },
+    "email": ""
   },
   {
     "id": "f016416c-71c4-4519-b6f2-334f3edeac33",
@@ -206,7 +229,7 @@
     "name": "Vicente Pinto",
     "active": true,
     "createdAt": 1781267164450,
-    "updatedAt": 1781267164450,
+    "updatedAt": 1781411555273,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -241,10 +264,16 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
         }
       },
-      "readonly": false
-    }
+      "readonly": false,
+      "canEditLayout": false
+    },
+    "email": ""
   },
   {
     "id": "8c2ea023-bd59-4314-86e8-dafccfe506fa",
@@ -255,7 +284,7 @@
     "name": "Santiago Scholl",
     "active": true,
     "createdAt": 1781293243214,
-    "updatedAt": 1781293243214,
+    "updatedAt": 1781411561849,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -290,9 +319,15 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
         }
       },
-      "readonly": false
-    }
+      "readonly": false,
+      "canEditLayout": false
+    },
+    "email": ""
   }
 ]
