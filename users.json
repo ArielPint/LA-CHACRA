@@ -229,7 +229,7 @@
     "name": "Vicente Pinto",
     "active": true,
     "createdAt": 1781267164450,
-    "updatedAt": 1781267164450,
+    "updatedAt": 1781411555273,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -264,10 +264,16 @@
             "patio",
             "planta"
           ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
         }
       },
-      "readonly": false
-    }
+      "readonly": false,
+      "canEditLayout": false
+    },
+    "email": ""
   },
   {
     "id": "8c2ea023-bd59-4314-86e8-dafccfe506fa",
