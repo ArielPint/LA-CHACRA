@@ -194,7 +194,7 @@
     "name": "Felipe Etchegaray",
     "active": true,
     "createdAt": 1781217627565,
-    "updatedAt": 1781411547073,
+    "updatedAt": 1781553357054,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -235,15 +235,13 @@
           "tabs": []
         },
         "solicitudes": {
-          "access": true,
-          "tabs": [
-            "nueva",
-            "historial"
-          ]
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
-      "canEditLayout": false
+      "canEditLayout": false,
+      "canEditProducts": false
     },
     "email": ""
   },
