@@ -1199,6 +1199,11 @@ function buildCarpaChicaInto(targetId, compact) {
       nW = Math.max(60, Math.min(nW, maxFit));
     }
   }
+  // Guardar dimensiones de cards angostas en globals para que renderExtraPositions las use
+  if (!compact) {
+    window._ccNarrowW = nW;
+    window._ccNarrowH = hPx;
+  }
   const gap = 5;
   let html = '';
   let ccMedioInjected = false; // solo inyectar el contenedor de extras en la primera fila angosta
@@ -1224,11 +1229,29 @@ function buildCarpaChicaInto(targetId, compact) {
       const offsetNum = nearIdx >= 0 ? nearIdx * (wW + gap) : 0;
       html += `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;">`;
       if (!compact && !ccMedioInjected) {
-        // Primera fila angosta (sector medio): contenedor de posiciones extra
+        // Vista principal — contenedor vacío que renderExtraPositions llenará
         ccMedioInjected = true;
         html += `<div id="carpa-chica-extras-medio" style="display:flex;flex-wrap:wrap;gap:${gap}px;align-content:flex-start;min-width:${offsetNum}px;flex-shrink:0;"></div>`;
+      } else if (compact && !ccMedioInjected) {
+        // Vista Completa — incrustar directamente las extras asignadas
+        ccMedioInjected = true;
+        const _ccExt = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS['carpa-chica-medio'] || []) : [];
+        const _assigned = _ccExt.filter(pos => {
+          const cur = (typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pos.position_key) : null;
+          return cur && M[cur];
+        });
+        if (_assigned.length > 0) {
+          html += `<div style="display:flex;flex-wrap:wrap;gap:${gap}px;align-content:flex-start;flex-shrink:0;">`;
+          _assigned.forEach(pos => {
+            const cur = effectiveModuleAtPk(pos.position_key);
+            html += card(cur, M[cur], nW+'px', hPx+'px');
+          });
+          html += '</div>';
+        } else {
+          html += `<div style="width:${offsetNum}px;flex-shrink:0;"></div>`;
+        }
       } else {
-        // Otras filas angostas o compact: espaciador original
+        // Otras filas angostas: espaciador original
         html += `<div style="width:${offsetNum}px;flex-shrink:0;"></div>`;
       }
       for (const c of rowCols) {
@@ -1604,8 +1627,18 @@ function injectCellEdit(cardEl, positionKey, currentModuleId, sector) {
     const val = ov.querySelector('select').value || null;
     PENDING_CHANGES[positionKey] = val;
 
+    // Determinar dimensiones según sector (extra positions tienen dimensiones fijas)
+    let _newW = null, _newH = null;
+    if (sector && sector.startsWith('galpon-')) {
+      _newW = '100%';
+      _newH = `${Math.max(90, Math.min(180, Math.round(pxN(100))))}px`;
+    } else if (sector === 'carpa-chica-medio') {
+      _newW = window._ccNarrowW ? window._ccNarrowW + 'px' : null;
+      _newH = window._ccNarrowH ? window._ccNarrowH + 'px' : null;
+    }
+
     // Re-renderizar el card completo con todos los datos de avance
-    const newCardHtml = card(val, val ? M[val] : null, null, null, positionKey);
+    const newCardHtml = card(val, val ? M[val] : null, _newW, _newH, positionKey);
     const tmp = document.createElement('div');
     tmp.innerHTML = newCardHtml;
     const newCard = tmp.firstElementChild;
@@ -1712,18 +1745,23 @@ function renderExtraPositions(sector) {
     return;
   }
 
-  // Para sectores galpón: cards full-width con el mismo alto que el grid principal
-  const isGalpon = sector.startsWith('galpon-');
+  // Determinar dimensiones de card según tipo de sector
+  const isGalpon        = sector.startsWith('galpon-');
+  const isCarpaChicaMed = sector === 'carpa-chica-medio';
   const galponH  = isGalpon ? `${Math.max(90, Math.min(180, Math.round(pxN(100))))}px` : null;
+  const ccCardW  = isCarpaChicaMed && window._ccNarrowW ? window._ccNarrowW + 'px' : null;
+  const ccCardH  = isCarpaChicaMed && window._ccNarrowH ? window._ccNarrowH + 'px' : null;
+  const cardW    = isGalpon ? '100%' : (isCarpaChicaMed ? ccCardW : null);
+  const cardH    = isGalpon ? galponH : (isCarpaChicaMed ? ccCardH : null);
 
   let extraEl = el.querySelector('.extra-positions-row');
   if (!extraEl) {
     extraEl = document.createElement('div');
     extraEl.className = 'extra-positions-row';
-    // Galpón: columna vertical (una card ocupa todo el ancho); Patio: fila horizontal
+    // Galpón: columna vertical; Carpa Chica / Patio: fila horizontal
     extraEl.style.cssText = isGalpon
       ? 'display:flex;flex-direction:column;gap:5px;width:100%;'
-      : 'display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;';
+      : 'display:flex;gap:5px;flex-wrap:wrap;';
     el.appendChild(extraEl);
   }
 
@@ -1740,18 +1778,24 @@ function renderExtraPositions(sector) {
 
     if (cur && M[cur]) {
       // Posición asignada: renderizar card completo con datos de avance
-      html += card(cur, M[cur], isGalpon ? '100%' : null, galponH, pk);
+      html += card(cur, M[cur], cardW, cardH, pk);
     } else if (isEditing) {
       // Posición vacía: solo en edición mostrar selector de asignación
-      const emptyStyle = isGalpon
-        ? `width:100%;min-height:${galponH};padding:6px;box-sizing:border-box;`
-        : 'min-width:110px;min-height:90px;padding:6px;';
+      let emptyStyle;
+      if (isGalpon) {
+        // Mismo height y width que el grid principal; usar height fijo para igualar tamaño
+        emptyStyle = `width:100%;height:${galponH};min-height:${galponH};padding:6px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;`;
+      } else if (isCarpaChicaMed && ccCardW && ccCardH) {
+        emptyStyle = `width:${ccCardW};height:${ccCardH};min-height:${ccCardH};padding:6px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;`;
+      } else {
+        emptyStyle = 'min-width:110px;min-height:90px;padding:6px;';
+      }
       html += `<div class="module-card empty" style="${emptyStyle}" data-pk="${pk}">
-        <div style="font-size:0.72em;color:#aaa;margin-bottom:4px;text-align:center;">Nueva posición</div>
-        <select data-extra-sel="${pk}" style="font-size:0.8rem;width:100%;padding:3px;border:1px solid #ccc;border-radius:4px;">
+        <div style="font-size:0.72em;color:#aaa;text-align:center;">Nueva posición</div>
+        <select data-extra-sel="${pk}" style="font-size:0.78rem;width:100%;padding:2px;border:1px solid #ccc;border-radius:4px;">
           <option value="">(vacío)</option>${opts.join('')}
         </select>
-        <button class="cell-btn-ok" style="margin-top:4px;font-size:0.72rem;padding:2px 8px;border-radius:4px;border:none;background:#27ae60;color:white;cursor:pointer;width:100%;" data-extra-btn="${pk}">✔ Asignar</button>
+        <button class="cell-btn-ok" style="font-size:0.72rem;padding:2px 6px;border-radius:4px;border:none;background:#27ae60;color:white;cursor:pointer;width:100%;" data-extra-btn="${pk}">✔ Asignar</button>
       </div>`;
     }
   }
