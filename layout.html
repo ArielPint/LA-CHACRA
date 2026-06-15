@@ -1285,8 +1285,10 @@ function buildCarpaChicaInto(targetId, compact) {
       // Fila ancha: una tarjeta por columna-ancha
       html += `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;">`;
       for (const c of wideCols) {
-        const id = map[`${r},${c}`] || null;
-        html += card(id, id?M[id]:null, wW+'px', hPx+'px');
+        const origId = map[`${r},${c}`] || null;
+        const pk     = origId && LOC[origId] ? posKey(LOC[origId]) : null;
+        const dispId = pk ? effectiveModuleAtPk(pk) : origId;
+        html += card(dispId, dispId ? M[dispId] : null, wW+'px', hPx+'px', pk);
       }
       html += '</div>';
     } else {
@@ -1322,8 +1324,10 @@ function buildCarpaChicaInto(targetId, compact) {
         html += `<div style="width:${offsetNum}px;flex-shrink:0;"></div>`;
       }
       for (const c of rowCols) {
-        const id = map[`${r},${c}`] || null;
-        html += card(id, id?M[id]:null, nW+'px', hPx+'px');
+        const origId = map[`${r},${c}`] || null;
+        const pk     = origId && LOC[origId] ? posKey(LOC[origId]) : null;
+        const dispId = pk ? effectiveModuleAtPk(pk) : origId;
+        html += card(dispId, dispId ? M[dispId] : null, nW+'px', hPx+'px', pk);
       }
       html += '</div>';
     }
