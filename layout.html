@@ -1375,8 +1375,10 @@ function buildVistaPlanta() {
   let galponHtml = '';
   for (const row of galponGrid)
     for (const cell of row) {
-      const id = (cell && typeof cell === 'object') ? cell.id : cell;
-      galponHtml += card(id, id ? M[id] : null, px(86), px(85)); // Vista Completa: no pk (no editable)
+      const origId = (cell && typeof cell === 'object') ? cell.id : cell;
+      const pk     = origId && LOC[origId] ? posKey(LOC[origId]) : null;
+      const dispId = pk ? effectiveModuleAtPk(pk) : origId;
+      galponHtml += card(dispId, dispId ? M[dispId] : null, px(86), px(85));
     }
   const vpGalpon = document.getElementById('vp-galpon-grid');
   if (vpGalpon) {
@@ -1425,6 +1427,8 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   if (btn) btn.classList.add('active');
+  // Reconstruir Vista Completa cada vez que se activa para reflejar cambios guardados
+  if (tab === 'planta') buildVistaPlanta();
 }
 function switchToTab(tab) {
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
@@ -1850,8 +1854,9 @@ function setEditStatus(tab, msg, cls) {
 // ============================================================
 // Wrapper que agrega onclick en modo edición
 function editableCard(origId, d, w, h) {
-  if (EDIT_TAB === null) return card(origId, d ? M[origId] : null, w, h);
-  const effectiveId = d ? effectiveModuleAt(origId, d) : null;
+  // Siempre mostrar el módulo efectivo (respeta DB_OVERRIDES y PENDING_CHANGES)
+  const effectiveId = d ? effectiveModuleAt(origId, d) : origId;
+  if (EDIT_TAB === null) return card(effectiveId, effectiveId ? M[effectiveId] : null, w, h);
   const pk    = d ? posKey(d) : null;
   const sec   = d ? sectorForLoc(d.loc, d.sector) : null;
   const html  = card(effectiveId, effectiveId ? M[effectiveId] : null, w, h);
