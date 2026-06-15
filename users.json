@@ -254,7 +254,7 @@
     "name": "Vicente Pinto",
     "active": true,
     "createdAt": 1781267164450,
-    "updatedAt": 1781551450607,
+    "updatedAt": 1781553475711,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -295,11 +295,8 @@
           "tabs": []
         },
         "solicitudes": {
-          "access": true,
-          "tabs": [
-            "nueva",
-            "historial"
-          ]
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
