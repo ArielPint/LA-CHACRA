@@ -1306,14 +1306,17 @@ function buildCarpaChicaInto(targetId, compact) {
         ccMedioInjected = true;
         const _ccExt = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS['carpa-chica-medio'] || []) : [];
         const _assigned = _ccExt.filter(pos => {
-          const cur = (typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pos.position_key) : null;
-          return cur && M[cur];
+          const mid = (PENDING_CHANGES[pos.position_key] !== undefined)
+            ? PENDING_CHANGES[pos.position_key] : pos.module_id;
+          return !!mid;
         });
         if (_assigned.length > 0) {
           html += `<div style="display:flex;flex-wrap:wrap;gap:${gap}px;align-content:flex-start;flex-shrink:0;">`;
           _assigned.forEach(pos => {
-            const cur = effectiveModuleAtPk(pos.position_key);
-            html += card(cur, M[cur], nW+'px', hPx+'px');
+            const mid = (PENDING_CHANGES[pos.position_key] !== undefined)
+              ? PENDING_CHANGES[pos.position_key] : pos.module_id;
+            const _data = M[mid] || { avance: 0, status: 'SECO', fecha: null };
+            html += card(mid, _data, nW+'px', hPx+'px');
           });
           html += '</div>';
         } else {
@@ -1417,18 +1420,24 @@ function buildVistaPlanta() {
   ].forEach(({ el, sector, w, h }) => {
     if (!el) return;
     const extras = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS[sector] || []) : [];
+    // Usar pos.module_id directamente (fuente más confiable); PENDING_CHANGES tiene prioridad
     const assigned = extras.filter(pos => {
-      const cur = effectiveModuleAtPk(pos.position_key);
-      return cur && M[cur];
+      const mid = (PENDING_CHANGES[pos.position_key] !== undefined)
+        ? PENDING_CHANGES[pos.position_key]
+        : pos.module_id;
+      return !!mid;
     });
     if (!assigned.length) return;
-    const row = document.createElement('div');
-    row.style.cssText = `display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;`;
+    const extraRow = document.createElement('div');
+    extraRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;';
     assigned.forEach(pos => {
-      const cur = effectiveModuleAtPk(pos.position_key);
-      row.innerHTML += card(cur, M[cur], w, h);
+      const mid = (PENDING_CHANGES[pos.position_key] !== undefined)
+        ? PENDING_CHANGES[pos.position_key]
+        : pos.module_id;
+      const data = M[mid] || { avance: 0, status: 'SECO', fecha: null };
+      extraRow.innerHTML += card(mid, data, w, h);
     });
-    el.appendChild(row);
+    el.appendChild(extraRow);
   });
 
   // ── Stats globales ──
@@ -1757,8 +1766,10 @@ function showMobileCellEdit(cardEl, positionKey, currentModuleId, sector) {
 
     const isExtra = positionKey.startsWith('extra_');
     if (isExtra) {
-      // Extra position → re-renderizar el sector de extras
+      // Extra position → sincronizar module_id en EXTRA_POSITIONS y re-renderizar
       const sec = positionKey.replace(/^extra_/, '').replace(/_\d+_\d+$/, '');
+      const posEntry = (EXTRA_POSITIONS[sec] || []).find(p => p.position_key === positionKey);
+      if (posEntry) posEntry.module_id = val;
       renderExtraPositions(sec);
     } else {
       // Posición regular → reemplazar el card en el DOM
