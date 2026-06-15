@@ -408,6 +408,17 @@
           <div class="linea-box">L2</div>
           <div class="linea-box">L1</div>
         </div>
+        <!-- Posiciones extra por línea (visibles siempre si hay asignadas; editables en modo edición) -->
+        <div id="galpon-extras-area" style="display:grid;gap:5px;margin-top:4px;">
+          <div id="galpon-extras-l3"></div>
+          <div id="galpon-extras-l2"></div>
+          <div id="galpon-extras-l1"></div>
+        </div>
+        <div id="add-pos-galpon" class="hidden" style="display:grid;gap:5px;margin-top:6px;">
+          <button class="btn-add-pos" onclick="addExtraPosition('galpon-l3')">+ Agregar pos. L3</button>
+          <button class="btn-add-pos" onclick="addExtraPosition('galpon-l2')">+ Agregar pos. L2</button>
+          <button class="btn-add-pos" onclick="addExtraPosition('galpon-l1')">+ Agregar pos. L1</button>
+        </div>
       </div>
     </div>
   </div>
@@ -463,6 +474,11 @@
   <div id="stats-carpa-chica" class="stats-bar"></div>
   <div class="section-wrap">
     <div id="carpa-chica-grid"></div>
+    <!-- Posiciones extra · Sector Medio -->
+    <div id="carpa-chica-extras-medio" style="margin-top:8px;"></div>
+    <div id="add-pos-carpa-chica" class="hidden" style="margin-top:5px;">
+      <button class="btn-add-pos" onclick="addExtraPosition('carpa-chica-medio')">+ Agregar posición · Sector Medio</button>
+    </div>
   </div>
 </div>
 
@@ -1043,6 +1059,10 @@ function buildGalpon() {
   el.style.width = '100%';
   const ll = document.getElementById('galpon-linea-label');
   if (ll) ll.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
+  const ea = document.getElementById('galpon-extras-area');
+  if (ea) ea.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
+  const ap = document.getElementById('add-pos-galpon');
+  if (ap) ap.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
 
   renderStats('stats-galpon', mods.map(m=>m.id));
 }
@@ -1455,10 +1475,10 @@ function toggleEditMode(tab) {
     // Ocultar toolbar
     const tb = document.getElementById('edit-toolbar-' + tab);
     if (tb) tb.classList.add('hidden');
-    // Ocultar botones de agregar posición en patio
-    if (tab === 'patio') hideAddPosButtons();
-    // Limpiar UI de posiciones extra (si es patio)
-    if (tab === 'patio') clearExtraPositionsUI();
+    // Ocultar botones de agregar posición
+    hideAddPosButtons(tab);
+    // Limpiar UI de posiciones extra
+    clearExtraPositionsUI(tab);
     // Limpiar cambios pendientes sin guardar
     PENDING_CHANGES = {};
     // Re-renderizar la pestaña sin modo edición
@@ -1472,19 +1492,24 @@ function toggleEditMode(tab) {
     if (btn) { btn.textContent = '✖ Salir edición'; btn.classList.remove('off'); btn.classList.add('on'); }
     const tb = document.getElementById('edit-toolbar-' + tab);
     if (tb) tb.classList.remove('hidden');
-    if (tab === 'patio') showAddPosButtons();
+    showAddPosButtons(tab);
     rebuildTab(tab);
   }
 }
 
-function showAddPosButtons() {
-  ['add-pos-costado-bodega', 'add-pos-patio-cg', 'add-pos-patio-cc'].forEach(id => {
+const ADD_POS_IDS = {
+  patio:        ['add-pos-costado-bodega', 'add-pos-patio-cg', 'add-pos-patio-cc'],
+  galpon:       ['add-pos-galpon'],
+  'carpa-chica': ['add-pos-carpa-chica'],
+};
+function showAddPosButtons(tab) {
+  (ADD_POS_IDS[tab] || []).forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('hidden');
   });
 }
-function hideAddPosButtons() {
-  ['add-pos-costado-bodega', 'add-pos-patio-cg', 'add-pos-patio-cc'].forEach(id => {
+function hideAddPosButtons(tab) {
+  (ADD_POS_IDS[tab] || []).forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
@@ -1637,7 +1662,9 @@ function addExtraPosition(sector) {
   EXTRA_POSITIONS[sector].push(newPos);
   // Marcar como pendiente
   PENDING_CHANGES[pk] = null;
-  setEditStatus('patio', '● Cambios sin guardar', 'saving');
+  // Notificar al tab correspondiente
+  const _sTabMap = { 'galpon-l1':'galpon','galpon-l2':'galpon','galpon-l3':'galpon','carpa-chica-medio':'carpa-chica' };
+  setEditStatus(_sTabMap[sector] || 'patio', '● Cambios sin guardar', 'saving');
   // Re-renderizar sólo el sector correspondiente
   renderExtraPositions(sector);
 }
@@ -1651,6 +1678,10 @@ function renderExtraPositions(sector) {
     'costado-bodega':     'costado-bodega-grid',
     'patio-carpa-grande': 'patio-cg',
     'patio-carpa-chica':  'patio-cc',
+    'galpon-l1':          'galpon-extras-l1',
+    'galpon-l2':          'galpon-extras-l2',
+    'galpon-l3':          'galpon-extras-l3',
+    'carpa-chica-medio':  'carpa-chica-extras-medio',
   };
   const containerId = containerMap[sector];
   if (!containerId) return;
@@ -1658,7 +1689,13 @@ function renderExtraPositions(sector) {
   if (!el) return;
 
   const extras   = EXTRA_POSITIONS[sector] || [];
-  const isEditing = EDIT_TAB === 'patio';
+  // Determinar qué tab corresponde al sector para verificar si está en modo edición
+  const sectorTabMap = {
+    'costado-bodega': 'patio', 'patio-carpa-grande': 'patio', 'patio-carpa-chica': 'patio',
+    'galpon-l1': 'galpon', 'galpon-l2': 'galpon', 'galpon-l3': 'galpon',
+    'carpa-chica-medio': 'carpa-chica',
+  };
+  const isEditing = EDIT_TAB === (sectorTabMap[sector] || sector);
 
   // Si no hay extras y no estamos editando, eliminar row si existe y salir
   if (!extras.length && !isEditing) {
@@ -1717,7 +1754,7 @@ function renderExtraPositions(sector) {
       PENDING_CHANGES[pk2] = val;
       const pos = (EXTRA_POSITIONS[sector] || []).find(p => p.position_key === pk2);
       if (pos) pos.module_id = val;
-      setEditStatus('patio', '● Cambios sin guardar', 'saving');
+      setEditStatus(EDIT_TAB || 'patio', '● Cambios sin guardar', 'saving');
       renderExtraPositions(sector);
     });
   });
@@ -1735,9 +1772,14 @@ function renderExtraPositions(sector) {
   });
 }
 
-// Limpiar UI de posiciones extra del patio (al salir de modo edición)
-function clearExtraPositionsUI() {
-  ['costado-bodega-grid','patio-cg','patio-cc'].forEach(id => {
+// Limpiar UI de posiciones extra al salir de modo edición
+const EXTRA_UI_IDS = {
+  patio:        ['costado-bodega-grid','patio-cg','patio-cc'],
+  galpon:       ['galpon-extras-l3','galpon-extras-l2','galpon-extras-l1'],
+  'carpa-chica': ['carpa-chica-extras-medio'],
+};
+function clearExtraPositionsUI(tab) {
+  (EXTRA_UI_IDS[tab] || []).forEach(id => {
     const el = document.getElementById(id);
     if (el) { const row = el.querySelector('.extra-positions-row'); if (row) row.remove(); }
   });
@@ -1849,6 +1891,7 @@ const _origBuildPatio        = buildPatio;
 buildGalpon = function() {
   _origBuildGalpon();
   patchEditableCards('tab-galpon');
+  ['galpon-l3','galpon-l2','galpon-l1'].forEach(s => renderExtraPositions(s));
 };
 buildCarpaGrande = function() {
   _origBuildCarpaGrande();
@@ -1857,6 +1900,7 @@ buildCarpaGrande = function() {
 buildCarpaChica = function() {
   _origBuildCarpaChica();
   patchEditableCards('tab-carpa-chica');
+  renderExtraPositions('carpa-chica-medio');
 };
 buildPatio = function() {
   _origBuildPatio();
