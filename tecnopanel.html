@@ -39,7 +39,7 @@ iframe{border:none;width:100%;flex:1;min-height:0}
     <div class="tb-tab" onclick="showSheet(this,'produccion')">&#128200; Produccion</div>
     <div class="tb-tab" onclick="showSheet(this,'layout')">&#128205; Layout</div>
     <div class="tb-tab" onclick="showSheet(this,'despacho')">&#128230; Despacho GD</div>
-    <div class="tb-tab" onclick="window.location.href='solicitudes.html'">&#128196; Solicitudes</div>
+    <div class="tb-tab" id="tab-solicitudes" onclick="window.location.href='solicitudes.html'" style="display:none">&#128196; Solicitudes</div>
   </nav>
   <div class="tb-right">
     <button class="upload-btn" onclick="recargar()">&#8635; Actualizar datos</button>
@@ -78,6 +78,12 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   if (AUTH.isAdmin()) {
     var adminBtn = document.getElementById('tp-admin-btn');
     if (adminBtn) adminBtn.style.display = 'inline-block';
+  }
+
+  // Tab Solicitudes: visible solo si tiene acceso
+  if (AUTH.canAccessPage('solicitudes')) {
+    var solTab = document.getElementById('tab-solicitudes');
+    if (solTab) solTab.style.display = '';
   }
 
   // Ocultar páginas sin acceso en la barra de navegación

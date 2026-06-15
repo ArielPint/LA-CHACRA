@@ -376,6 +376,12 @@ let pendingNewProduct = null; // guardar texto buscado cuando no existe
   SESSION = AUTH.requireAuth('login.html');
   if (!SESSION) return;
 
+  // Verificar acceso a la página solicitudes
+  if (SESSION.role !== 'admin' && !AUTH.canAccessPage('solicitudes')) {
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px;color:#7a7f99"><div style="font-size:2rem">🔒</div><div>Sin acceso a Solicitudes de Materiales.</div><a href="tecnopanel.html" style="color:#4f8ef7;font-size:.85rem">← Volver al portal</a></div>';
+    return;
+  }
+
   // Badge
   document.getElementById('user-badge').textContent = SESSION.name + ' · ' + SESSION.role;
 

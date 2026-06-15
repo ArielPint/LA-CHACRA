@@ -67,6 +67,13 @@ const AUTH = (() => {
     despacho: {
       label: 'Despacho GD',
       tabs: {}
+    },
+    solicitudes: {
+      label: 'Solicitudes',
+      tabs: {
+        nueva:     'Nueva Solicitud',
+        historial: 'Historial'
+      }
     }
   };
 
@@ -98,7 +105,7 @@ const AUTH = (() => {
       // Forward-migrate: añadir páginas nuevas del PAGE_MAP que aún no existen en perms
       for (const pid of Object.keys(PAGE_MAP)) {
         if (!perms.pages[pid]) {
-          perms.pages[pid] = { access: false, tabs: Object.keys(PAGE_MAP[pid].tabs || {}) };
+          perms.pages[pid] = { access: true, tabs: Object.keys(PAGE_MAP[pid].tabs || {}) };
         }
       }
       return perms;
