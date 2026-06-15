@@ -934,6 +934,7 @@ function renderResumen(){
   const totalComprado=(DATA.detalleGD||[]).reduce((s,x)=>s+(x.valorTotal??0),0);
   const presupuesto=(DATA.detalleGD||[]).find(x=>x.presupuesto)?.presupuesto??null;
 
+  const despachados=new Set((DATA.despachos||[]).map(x=>x.modulo).filter(Boolean)).size;
   document.getElementById('kpi-resumen').innerHTML=kpiHTML([
     {lbl:'Ejecución ppto',     val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
      cls:presupuesto&&totalComprado>presupuesto?'c-red':'c-green'},
@@ -941,6 +942,7 @@ function renderResumen(){
     {lbl:'Total comprado',     val:fmtM(totalComprado),    cls:'c-blue'},
     {lbl:'Módulos terminados', val:fmt(terminados),        cls:'c-green', sub:fmtPr(terminados/totalMod*100)+' del total'},
     {lbl:'Módulos en proceso', val:fmt(enProceso),         cls:'c-orange'},
+    {lbl:'Módulos despachados',val:fmt(despachados),       cls:'c-blue',  sub:totalMod?fmtPr(despachados/totalMod*100)+' del total':''},
   ]);
 
   // Distribución 10% buckets – solo ≥50%
