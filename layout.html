@@ -1662,7 +1662,13 @@ function rebuildTab(tab) {
 //  DROPDOWN DE MÓDULO POR CELDA
 // ============================================================
 function allModuleIds() {
-  return Object.keys(M).filter(id => !id.includes('__overridden__')).sort((a, b) => {
+  const ids = new Set(Object.keys(M).filter(id => !id.includes('__overridden__')));
+  // Incluir módulos asignados en DB_OVERRIDES aunque no estén en M
+  // (ej: despachados que igual están asignados a una posición)
+  if (typeof DB_OVERRIDES !== 'undefined') {
+    Object.values(DB_OVERRIDES).forEach(row => { if (row.module_id) ids.add(row.module_id); });
+  }
+  return [...ids].sort((a, b) => {
     const na = parseInt(a.replace(/\D/g,''), 10);
     const nb = parseInt(b.replace(/\D/g,''), 10);
     return na - nb;
@@ -2121,6 +2127,8 @@ async function saveLayoutChanges(tab) {
   } catch(e) {
     console.error('saveLayoutChanges:', e);
     setEditStatus(tab, '✖ Error: ' + e.message, 'error');
+    // En móvil el status puede estar fuera de pantalla — mostrar alert también
+    if (navigator.maxTouchPoints > 0) alert('Error al guardar: ' + e.message);
   } finally {
     if (saveBtn) saveBtn.disabled = false;
   }
