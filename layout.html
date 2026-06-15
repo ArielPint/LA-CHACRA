@@ -1409,6 +1409,27 @@ function buildVistaPlanta() {
   if (vpCB)  vpCB.innerHTML  = renderGrid(buildSectionGrid(cbMods),  px(86),  px(85));
   if (vpPGC) vpPGC.innerHTML = renderGrid(buildSectionGrid(pgcMods), px(112), px(90));
   if (vpPCC) vpPCC.innerHTML = renderGrid(buildSectionGrid(pccMods), px(112), px(90));
+  // También mostrar posiciones extra asignadas del patio en Vista Completa
+  [
+    { el: vpCB,  sector: 'costado-bodega',     w: px(86),  h: px(85)  },
+    { el: vpPGC, sector: 'patio-carpa-grande', w: px(112), h: px(90)  },
+    { el: vpPCC, sector: 'patio-carpa-chica',  w: px(112), h: px(90)  },
+  ].forEach(({ el, sector, w, h }) => {
+    if (!el) return;
+    const extras = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS[sector] || []) : [];
+    const assigned = extras.filter(pos => {
+      const cur = effectiveModuleAtPk(pos.position_key);
+      return cur && M[cur];
+    });
+    if (!assigned.length) return;
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;`;
+    assigned.forEach(pos => {
+      const cur = effectiveModuleAtPk(pos.position_key);
+      row.innerHTML += card(cur, M[cur], w, h);
+    });
+    el.appendChild(row);
+  });
 
   // ── Stats globales ──
   const allIds = [
