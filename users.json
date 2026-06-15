@@ -134,7 +134,7 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781411537834,
+    "updatedAt": 1781553459767,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -175,15 +175,13 @@
           "tabs": []
         },
         "solicitudes": {
-          "access": true,
-          "tabs": [
-            "nueva",
-            "historial"
-          ]
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
-      "canEditLayout": false
+      "canEditLayout": false,
+      "canEditProducts": false
     },
     "email": ""
   },
