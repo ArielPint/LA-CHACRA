@@ -134,7 +134,7 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781553336934,
+    "updatedAt": 1781411537834,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -175,13 +175,15 @@
           "tabs": []
         },
         "solicitudes": {
-          "access": false,
-          "tabs": []
+          "access": true,
+          "tabs": [
+            "nueva",
+            "historial"
+          ]
         }
       },
       "readonly": false,
-      "canEditLayout": false,
-      "canEditProducts": false
+      "canEditLayout": false
     },
     "email": ""
   },
@@ -194,7 +196,7 @@
     "name": "Felipe Etchegaray",
     "active": true,
     "createdAt": 1781217627565,
-    "updatedAt": 1781553357054,
+    "updatedAt": 1781553445854,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -254,7 +256,7 @@
     "name": "Vicente Pinto",
     "active": true,
     "createdAt": 1781267164450,
-    "updatedAt": 1781553373937,
+    "updatedAt": 1781551450607,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -295,8 +297,11 @@
           "tabs": []
         },
         "solicitudes": {
-          "access": false,
-          "tabs": []
+          "access": true,
+          "tabs": [
+            "nueva",
+            "historial"
+          ]
         }
       },
       "readonly": false,
@@ -314,7 +319,7 @@
     "name": "Santiago Scholl",
     "active": true,
     "createdAt": 1781293243214,
-    "updatedAt": 1781553381970,
+    "updatedAt": 1781549221564,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -355,8 +360,11 @@
           "tabs": []
         },
         "solicitudes": {
-          "access": false,
-          "tabs": []
+          "access": true,
+          "tabs": [
+            "nueva",
+            "historial"
+          ]
         }
       },
       "readonly": false,
