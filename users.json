@@ -63,7 +63,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781411521399,
+    "updatedAt": 1781552971893,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -105,7 +105,8 @@
         }
       },
       "readonly": false,
-      "canEditLayout": false
+      "canEditLayout": false,
+      "canEditProducts": true
     },
     "plainPassword": "da.123",
     "email": ""
@@ -229,7 +230,7 @@
     "name": "Vicente Pinto",
     "active": true,
     "createdAt": 1781267164450,
-    "updatedAt": 1781411555273,
+    "updatedAt": 1781551450607,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -271,9 +272,10 @@
         }
       },
       "readonly": false,
-      "canEditLayout": false
+      "canEditLayout": false,
+      "canEditProducts": false
     },
-    "email": ""
+    "email": "vpinto@tecnopanel.cl"
   },
   {
     "id": "8c2ea023-bd59-4314-86e8-dafccfe506fa",
