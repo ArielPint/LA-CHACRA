@@ -284,7 +284,7 @@
     "name": "Santiago Scholl",
     "active": true,
     "createdAt": 1781293243214,
-    "updatedAt": 1781411561849,
+    "updatedAt": 1781549221564,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -326,8 +326,9 @@
         }
       },
       "readonly": false,
-      "canEditLayout": false
+      "canEditLayout": false,
+      "canEditProducts": false
     },
-    "email": ""
+    "email": "sscholl@tecnopanel.cl"
   }
 ]
