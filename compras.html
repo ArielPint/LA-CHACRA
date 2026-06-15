@@ -136,6 +136,7 @@ tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
         <th class="sortable" onclick="sortBy('modulo')">MÓDULO<span class="sort-icon"></span></th>
         <th class="sortable" onclick="sortBy('torre')">TORRE<span class="sort-icon"></span></th>
         <th class="sortable" onclick="sortBy('tipo')">TIPO<span class="sort-icon"></span></th>
+        <th class="c sortable" onclick="sortBy('avance')">AVANCE<span class="sort-icon"></span></th>
         <th class="c">ACUM</th>
         <th></th>
       </tr>
@@ -195,6 +196,12 @@ tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
         <label>Monto Neto</label>
         <input type="number" id="f-monto" placeholder="0" min="0">
         <span class="hint" id="f-monto-hint"></span>
+      </div>
+
+      <!-- Avance -->
+      <div class="fg">
+        <label>Avance (%)</label>
+        <input type="number" id="f-avance" placeholder="0" min="0" max="100">
       </div>
 
       <!-- Torre y Tipo (auto) -->
@@ -400,7 +407,7 @@ function renderTable(){
   const tbody=document.getElementById('tbody');
   tbody.innerHTML='';
   if(!filtered.length){
-    tbody.innerHTML='<tr><td colspan="11" class="no-data">Sin registros para los filtros aplicados</td></tr>';
+    tbody.innerHTML='<tr><td colspan="12" class="no-data">Sin registros para los filtros aplicados</td></tr>';
     return;
   }
   const ro=AUTH.isReadonly();
@@ -416,6 +423,7 @@ function renderTable(){
       `<td style="font-weight:600">${r.modulo||'—'}</td>`+
       `<td style="font-size:.73rem;color:var(--muted)">${r.torre||'—'}</td>`+
       `<td>${tipoChip(r.tipo)}</td>`+
+      `<td class="c">${r.avance!=null?r.avance+'%':'—'}</td>`+
       `<td class="c acum">${r._acum}</td>`+
       `<td>${ro?'':`<button class="btn btn-sm" style="color:var(--red);padding:3px 8px" onclick="delRecord(${r.id})">✕</button>`}</td>`;
     tbody.appendChild(tr);
@@ -470,6 +478,7 @@ function resetForm(){
   document.getElementById('f-cant').value='1';
   document.getElementById('f-monto').value='';
   document.getElementById('f-monto-hint').textContent='';
+  document.getElementById('f-avance').value='';
   document.getElementById('f-torre').value='';
   document.getElementById('f-tipo').value='';
 }
@@ -510,6 +519,7 @@ async function saveForm(keepOpen){
     modulo:mod,
     torre:document.getElementById('f-torre').value||null,
     tipo:document.getElementById('f-tipo').value||null,
+    avance:document.getElementById('f-avance').value!==''?parseInt(document.getElementById('f-avance').value):null,
     created_by:sess?sess.name:'anon'
   };
 

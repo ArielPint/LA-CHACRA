@@ -737,7 +737,8 @@ function doLogout() {
 // ============================================================
 let LOC = {};
 let M   = {};
-let DESPACHADOS = new Set();
+let DESPACHADOS   = new Set();
+let ALL_LOC_IDS   = new Set(); // todos los IDs de ubicaciones.xlsx antes de filtrar despachados
 
 // SheetJS sheet_to_json produce índices RELATIVOS al !ref de la hoja (O3:BV176).
 // Offset fila: ref empieza en row 3  → r = excel_row - 3
@@ -799,37 +800,42 @@ async function loadAvanceData() {
   for (const id of Object.keys(LOC))
     M[id] = Object.assign({}, LOC[id], { avance: 0, status: 'SECO', fecha: null });
   try {
-    const resp = await fetch('data/avance.xlsx');
+    // Cargar avance desde despachos_gd en Supabase (fuente: compras.html)
+    const SUPA_URL = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+    const resp = await fetch(
+      `${SUPA_URL}/rest/v1/despachos_gd?select=modulo,tipo,avance,fecha_despacho&order=id.asc`,
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY } }
+    );
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const buf  = await resp.arrayBuffer();
-    const wb   = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true, dense: true });
-    const ws   = wb.Sheets['BD_AVANCE'];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+    const rows = await resp.json();
+    // Consolidar por módulo: si hay varios registros, el último prevalece
     const av = {};
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      if (!r[1]) continue;
-      av[String(r[1]).trim()] = {
-        avance:      r[4]  != null ? Math.round(+r[4] * 100) : 0,
-        tipo:        (r[3] || 'SECO').toString().trim().toUpperCase(),
-        fecha:       r[6]  instanceof Date ? r[6].toISOString().slice(0, 10) : null,
-        pendientes:  r[97] != null ? String(r[97]).trim() : null,   // detalle partidas
-        nPendientes: r[99] != null ? +r[99] : 0,                    // cantidad
+    for (const r of rows) {
+      if (!r.modulo) continue;
+      const id = String(r.modulo).trim();
+      const tipo = (r.tipo || 'SECO').toString().trim().toUpperCase();
+      // Avance: usar campo explícito si existe; si no, estimar por tipo
+      let avancePct = r.avance != null ? r.avance : (tipo === 'HUMEDO' ? 100 : 50);
+      av[id] = {
+        avance: avancePct,
+        status: tipo,
+        fecha:  r.fecha_despacho || null,
       };
     }
     for (const id of Object.keys(LOC)) {
       const d = av[id] || {};
       M[id] = Object.assign({}, LOC[id], {
-        avance:      d.avance      != null ? d.avance : 0,
-        status:      d.tipo        || 'SECO',
-        fecha:       d.fecha       || null,
-        pendientes:  d.pendientes  || null,
-        nPendientes: d.nPendientes || 0,
+        avance: d.avance != null ? d.avance : 0,
+        status: d.status || 'SECO',
+        fecha:  d.fecha  || null,
       });
     }
     document.querySelector('header .subtitle').textContent =
-      'Estado y progreso por ubicación · Datos desde avance.xlsx';
-  } catch (e) { console.warn('avance.xlsx:', e.message); }
+      'Estado y progreso por ubicación · Datos desde sistema de despachos';
+  } catch (e) { console.warn('despachos_gd avance:', e.message); }
+  // Guardar todos los IDs ANTES del filtro para que sigan disponibles en el dropdown
+  ALL_LOC_IDS = new Set(Object.keys(M));
   // Filtrar módulos despachados: no deben aparecer en el mapa
   for (const id of DESPACHADOS) {
     delete LOC[id];
@@ -1662,9 +1668,11 @@ function rebuildTab(tab) {
 //  DROPDOWN DE MÓDULO POR CELDA
 // ============================================================
 function allModuleIds() {
-  const ids = new Set(Object.keys(M).filter(id => !id.includes('__overridden__')));
-  // Incluir módulos asignados en DB_OVERRIDES aunque no estén en M
-  // (ej: despachados que igual están asignados a una posición)
+  const ids = new Set([
+    ...Object.keys(M).filter(id => !id.includes('__overridden__')),
+    ...ALL_LOC_IDS, // incluye despachados que siguen siendo válidos para asignar
+  ]);
+  // También incluir módulos asignados en DB_OVERRIDES
   if (typeof DB_OVERRIDES !== 'undefined') {
     Object.values(DB_OVERRIDES).forEach(row => { if (row.module_id) ids.add(row.module_id); });
   }
