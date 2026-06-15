@@ -314,7 +314,7 @@
     "name": "Santiago Scholl",
     "active": true,
     "createdAt": 1781293243214,
-    "updatedAt": 1781549221564,
+    "updatedAt": 1781553381970,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -355,11 +355,8 @@
           "tabs": []
         },
         "solicitudes": {
-          "access": true,
-          "tabs": [
-            "nueva",
-            "historial"
-          ]
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
