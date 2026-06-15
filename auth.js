@@ -229,7 +229,7 @@ const AUTH = (() => {
   }
 
   // ─── CRUD de usuarios ─────────────────────────────────────────────────────
-  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride }) {
+  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride }) {
     const users = await getUsers();
     if (users.find(u => u.username === username.trim().toLowerCase())) {
       throw new Error('El usuario ya existe');
@@ -239,7 +239,8 @@ const AUTH = (() => {
       pages: customPages || roleDef.pages(),
       readonly: readonly !== undefined ? readonly : roleDef.readonly
     };
-    if (canEditLayoutOverride !== undefined) perms.canEditLayout = canEditLayoutOverride;
+    if (canEditLayoutOverride    !== undefined) perms.canEditLayout    = canEditLayoutOverride;
+    if (canEditProductsOverride !== undefined) perms.canEditProducts = canEditProductsOverride;
     const user = {
       id: crypto.randomUUID(),
       username: username.trim().toLowerCase(),
@@ -255,7 +256,7 @@ const AUTH = (() => {
     return user;
   }
 
-  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride }) {
+  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride }) {
     const users = await getUsers();
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) throw new Error('Usuario no encontrado');
@@ -275,7 +276,8 @@ const AUTH = (() => {
     }
     if (customPages              !== undefined) u.permissions.pages          = customPages;
     if (readonly                 !== undefined) u.permissions.readonly        = readonly;
-    if (canEditLayoutOverride    !== undefined) u.permissions.canEditLayout   = canEditLayoutOverride;
+    if (canEditLayoutOverride    !== undefined) u.permissions.canEditLayout    = canEditLayoutOverride;
+    if (canEditProductsOverride !== undefined) u.permissions.canEditProducts = canEditProductsOverride;
     if (active                   !== undefined) u.active = active;
     if (password)                { u.password = await hashPassword(password); u.plainPassword = password; }
     u.updatedAt = Date.now();
@@ -418,6 +420,15 @@ const AUTH = (() => {
     return roleDef ? !!roleDef.canEditLayout : false;
   }
 
+  function canEditProducts() {
+    const s = getSession();
+    if (!s) return false;
+    if (s.role === 'admin') return true;
+    // Permiso explícito por usuario (canEditProducts: true/false en permissions)
+    if (s.permissions && s.permissions.canEditProducts !== undefined) return !!s.permissions.canEditProducts;
+    return false;
+  }
+
   // ─── Helpers UI ───────────────────────────────────────────────────────────
   function getPages()              { return PAGE_MAP; }
   function getRoles()              { return DEFAULT_ROLES; }
@@ -465,7 +476,7 @@ const AUTH = (() => {
     exportUsers, importUsers,
     setGithubToken, getGithubToken, hasGithubToken, testGithubToken,
     login, logout, getSession, requireAuth, requireAdmin,
-    canAccessPage, canViewTab, isReadonly, isAdmin, canEditLayout,
+    canAccessPage, canViewTab, isReadonly, isAdmin, canEditLayout, canEditProducts,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,
     hashPassword, getLoginStats
   };

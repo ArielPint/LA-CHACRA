@@ -416,6 +416,13 @@
         </div>
         <div class="toggle-row">
           <div class="toggle-label">
+            Puede editar catálogo de productos
+            <small>Agregar productos nuevos en Solicitud de Materiales</small>
+          </div>
+          <label class="switch"><input type="checkbox" id="fCanEditProducts"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">
             Usuario activo
             <small>Los usuarios inactivos no pueden iniciar sesión</small>
           </div>
@@ -477,8 +484,10 @@ async function renderTable(highlightId) {
     const roles2 = AUTH.getRoles();
     const rl2 = roles2[u.role];
     const celVal = u.permissions.canEditLayout !== undefined ? u.permissions.canEditLayout : (rl2 ? !!rl2.canEditLayout : false);
+    const cepVal = u.permissions.canEditProducts !== undefined ? u.permissions.canEditProducts : (u.role === 'admin');
     const modoBadge = u.permissions.readonly ? '<span class="badge badge-viewer">Solo lectura</span>' : '<span class="badge badge-on">Edición</span>';
-    const layoutBadge = celVal ? '<span class="badge badge-editor">✏️ Layout</span>' : '';
+    const layoutBadge   = celVal ? '<span class="badge badge-editor">✏️ Layout</span>' : '';
+    const productsBadge = cepVal ? '<span class="badge badge-editor">📦 Productos</span>' : '';
     const activoBadge = u.active ? '<span class="badge badge-on">Activo</span>' : '<span class="badge badge-off">Inactivo</span>';
 
     const pages = AUTH.getPages();
@@ -521,7 +530,7 @@ async function renderTable(highlightId) {
       <td style="font-family:monospace;color:#666;font-size:0.8rem">${u.username}</td>
       <td>${roleBadge}</td>
       <td>${pageChips || '<span style="color:#bbb;font-size:0.75rem">Sin acceso</span>'}</td>
-      <td>${modoBadge} ${layoutBadge}</td>
+      <td>${modoBadge} ${layoutBadge} ${productsBadge}</td>
       <td>${activoBadge}</td>
       <td style="font-family:monospace;font-size:0.8rem;color:#444">${u.plainPassword || '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
       <td>${lastLoginTs ? fmtDate(lastLoginTs) : '<span style="color:#bbb;font-size:0.72rem">Nunca</span>'}</td>
@@ -613,7 +622,8 @@ function onRoleChange() {
   buildPagePerms(rolePerms);
   const roles = AUTH.getRoles();
   document.getElementById('fReadonly').checked      = roles[role] ? roles[role].readonly : false;
-  document.getElementById('fCanEditLayout').checked = roles[role] ? !!roles[role].canEditLayout : false;
+  document.getElementById('fCanEditLayout').checked    = roles[role] ? !!roles[role].canEditLayout : false;
+  document.getElementById('fCanEditProducts').checked = false;
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
@@ -648,7 +658,9 @@ async function editUser(id) {
   const cel = user.permissions.canEditLayout !== undefined
     ? user.permissions.canEditLayout
     : (roleDef ? !!roleDef.canEditLayout : false);
-  document.getElementById('fCanEditLayout').checked = cel;
+  document.getElementById('fCanEditLayout').checked    = cel;
+  const cep = user.permissions.canEditProducts !== undefined ? user.permissions.canEditProducts : false;
+  document.getElementById('fCanEditProducts').checked = cep;
   document.getElementById('fActive').checked        = user.active;
   document.getElementById('passHint').textContent = user.plainPassword ? 'Actual: ' + user.plainPassword + '  (dejar vacío para no cambiar)' : '(dejar vacío para no cambiar)';
   document.getElementById('modalTitle').textContent = 'Editar usuario';
@@ -671,6 +683,7 @@ async function saveUser() {
   const role  = document.getElementById('fRole').value;
   const ro    = document.getElementById('fReadonly').checked;
   const cel   = document.getElementById('fCanEditLayout').checked;
+  const cep   = document.getElementById('fCanEditProducts').checked;
   const act   = document.getElementById('fActive').checked;
   const pages = getPagePermsFromForm();
 
@@ -684,10 +697,10 @@ async function saveUser() {
   try {
     let savedUser;
     if (id) {
-      savedUser = await AUTH.updateUser(id, { username: user, name, email, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel });
+      savedUser = await AUTH.updateUser(id, { username: user, name, email, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel, canEditProductsOverride: cep });
       showToast('Usuario actualizado', 'success');
     } else {
-      savedUser = await AUTH.createUser({ username: user, password: pass, name, email, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel });
+      savedUser = await AUTH.createUser({ username: user, password: pass, name, email, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel, canEditProductsOverride: cep });
       showToast('Usuario creado', 'success');
     }
     closeModal();
