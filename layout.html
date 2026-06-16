@@ -818,6 +818,11 @@ async function loadAvanceData() {
     }
     document.querySelector('header .subtitle').textContent =
       'Estado y progreso por ubicación · Datos desde avance.xlsx';
+    // DEBUG TEMPORAL — borrar después
+    const mKeys = Object.keys(M);
+    console.log('[avance] M cargado:', mKeys.length, 'módulos');
+    console.log('[avance] Primeros 5 IDs:', mKeys.slice(0,5));
+    if (mKeys.length) console.log('[avance] Ejemplo M[0]:', JSON.stringify(M[mKeys[0]]));
   } catch (e) { console.warn('avance.xlsx:', e.message); }
   // Guardar todos los IDs ANTES del filtro para que sigan disponibles en el dropdown
   ALL_LOC_IDS = new Set(Object.keys(M));
@@ -1425,6 +1430,8 @@ function buildVistaPlanta() {
         ? PENDING_CHANGES[pos.position_key]
         : pos.module_id;
       const data = M[mid] || { avance: 0, status: 'SECO', fecha: null };
+      // DEBUG TEMPORAL
+      console.log('[card] mid='+mid+' M[mid]='+JSON.stringify(M[mid]||null));
       extraRow.innerHTML += card(mid, data, w, h);
     });
     el.appendChild(extraRow);
