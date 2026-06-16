@@ -81,7 +81,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781614474886,
+    "updatedAt": 1781638876515,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -128,8 +128,13 @@
           ]
         },
         "planta": {
-          "access": false,
-          "tabs": []
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
@@ -138,7 +143,7 @@
     },
     "plainPassword": "da.123",
     "email": "dampuero@tecnopanel.cl",
-    "plantaRol": null
+    "plantaRol": "supervisor_terminaciones"
   },
   {
     "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
@@ -149,7 +154,7 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781614519548,
+    "updatedAt": 1781638759562,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -208,7 +213,7 @@
       "canEditProducts": false
     },
     "email": "eseguel@tecnopanel.cl",
-    "plantaRol": null
+    "plantaRol": "qc2"
   },
   {
     "id": "55575ab8-63a8-4d2c-86e7-6b020558208f",
@@ -288,7 +293,7 @@
     "name": "Vicente Pinto",
     "active": true,
     "createdAt": 1781267164450,
-    "updatedAt": 1781553475711,
+    "updatedAt": 1781640799860,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -346,7 +351,8 @@
       "canEditLayout": false,
       "canEditProducts": false
     },
-    "email": "vpinto@tecnopanel.cl"
+    "email": "vpinto@tecnopanel.cl",
+    "plantaRol": "supervisor_recepcion"
   },
   {
     "id": "8c2ea023-bd59-4314-86e8-dafccfe506fa",
