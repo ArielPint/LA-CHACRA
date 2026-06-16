@@ -81,7 +81,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781614474886,
+    "updatedAt": 1781638876515,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -128,8 +128,13 @@
           ]
         },
         "planta": {
-          "access": false,
-          "tabs": []
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
@@ -138,7 +143,7 @@
     },
     "plainPassword": "da.123",
     "email": "dampuero@tecnopanel.cl",
-    "plantaRol": null
+    "plantaRol": "supervisor_terminaciones"
   },
   {
     "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
