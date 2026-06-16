@@ -794,8 +794,7 @@ async function loadUbicaciones() {
 
 async function loadAvanceData() {
   await loadDespachos();
-  // ubicaciones.xlsx ya no se usa — posiciones gestionadas en Supabase (layout_positions)
-  LOC = {};
+  await loadUbicaciones(); // fallback para posiciones no guardadas en Supabase
   M   = {};
   try {
     const resp = await fetch('data/avance.xlsx');
@@ -929,14 +928,32 @@ function renderStats(containerId, ids) {
 // ============================================================
 function getSectionModules(loc, sector) {
   const sectorKey = sectorForLoc(loc, sector);
-  return Object.values(DB_OVERRIDES)
-    .filter(row => row.sector === sectorKey && !DESPACHADOS.has(row.module_id))
-    .sort((a, b) => {
-      const ra = a.xls_row || 0, rb = b.xls_row || 0;
-      if (ra !== rb) return ra - rb;
-      return (a.xls_col || 0) - (b.xls_col || 0);
-    })
-    .map(row => ({ id: row.module_id, row: row.xls_row || 0, col: row.xls_col || 0, pk: row.position_key }));
+
+  // 1) Posiciones desde Supabase (fuente principal)
+  const dbRows = Object.values(DB_OVERRIDES)
+    .filter(row => row.sector === sectorKey && !DESPACHADOS.has(row.module_id));
+  const dbPks    = new Set(dbRows.map(r => r.position_key));
+  const dbModIds = new Set(dbRows.map(r => r.module_id).filter(Boolean));
+
+  // 2) Fallback: ubicaciones.xlsx para módulos/posiciones no guardados en Supabase
+  const locRows = Object.entries(LOC)
+    .filter(([modId, d]) =>
+      sectorForLoc(d.loc, d.sector) === sectorKey &&
+      !DESPACHADOS.has(modId) &&
+      !dbModIds.has(modId) &&       // módulo no está ya en Supabase
+      !dbPks.has(posKey(d))         // posición no ocupada por Supabase
+    )
+    .map(([modId, d]) => ({ id: modId, row: d.xls_row || 0, col: d.xls_col || 0, pk: null }));
+
+  // 3) Combinar y ordenar
+  const combined = [
+    ...dbRows.map(r => ({ id: r.module_id, row: r.xls_row || 0, col: r.xls_col || 0, pk: r.position_key })),
+    ...locRows,
+  ];
+  return combined.sort((a, b) => {
+    if (a.row !== b.row) return a.row - b.row;
+    return a.col - b.col;
+  });
 }
 
 function buildSectionGrid(modules) {
@@ -1528,11 +1545,19 @@ let EDIT_TAB = null;
 // Mapa sector → ids de módulos ya usados (para el dropdown)
 function getAssignedModules() {
   const assigned = new Set();
-  for (const [pk, d] of Object.entries(LOC)) {
-    // Si hay override en DB o pendiente, usar ese
+  // 1) Módulos en LOC (ubicaciones.xlsx), respetando overrides de Supabase/pendientes
+  for (const [modId, d] of Object.entries(LOC)) {
     const override = PENDING_CHANGES[posKey(d)] !== undefined ? PENDING_CHANGES[posKey(d)] : DB_OVERRIDES[posKey(d)]?.module_id;
-    const id = override !== undefined ? override : pk;
+    const id = override !== undefined ? override : modId;
     if (id) assigned.add(id);
+  }
+  // 2) Módulos en Supabase que no están en LOC
+  for (const row of Object.values(DB_OVERRIDES)) {
+    if (row.module_id) assigned.add(row.module_id);
+  }
+  // 3) Cambios pendientes (pueden reemplazar a null)
+  for (const [, modId] of Object.entries(PENDING_CHANGES)) {
+    if (modId) assigned.add(modId);
   }
   return assigned;
 }
