@@ -428,12 +428,12 @@
     "username": "jmartinez",
     "password": "5dc7c7022cb1f354ae2823d8562ea66418f0164408869ca4cee76ff12158e38b",
     "plainPassword": "jmartinez.987",
-    "email": "jmartines@tecnofast.cl",
+    "email": "jmartinez@tecnofast.cl",
     "role": "operador",
     "name": "Jorge Martinez",
     "active": true,
     "createdAt": 1781646142052,
-    "updatedAt": 1781646142052,
+    "updatedAt": 1781646266920,
     "permissions": {
       "pages": {
         "dashboard": {
