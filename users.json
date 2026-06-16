@@ -424,16 +424,16 @@
     "email": "sscholl@tecnopanel.cl"
   },
   {
-    "id": "8f6c4518-90a3-49b8-bd29-dca258ae3e12",
-    "username": "jolivos",
-    "password": "b3e34e133a857de92fbc9cad92e3543faf749133f2224053b2a34941aae6464c",
-    "plainPassword": "Javi.123",
-    "email": "jolivos@tecnopanel.cl",
+    "id": "3b264db7-0e8e-4278-870a-1aeb8deec2ca",
+    "username": "jmartinez",
+    "password": "5dc7c7022cb1f354ae2823d8562ea66418f0164408869ca4cee76ff12158e38b",
+    "plainPassword": "jmartinez.987",
+    "email": "jmartines@tecnofast.cl",
     "role": "operador",
-    "name": "Javiera Olivos",
+    "name": "Jorge Martinez",
     "active": true,
-    "createdAt": 1781645998544,
-    "updatedAt": 1781645998544,
+    "createdAt": 1781646142052,
+    "updatedAt": 1781646142052,
     "permissions": {
       "pages": {
         "dashboard": {
