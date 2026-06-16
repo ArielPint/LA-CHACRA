@@ -4,10 +4,10 @@
     "username": "admin",
     "password": "353844af6299e78eef3b1712b97d1917e9e4ee0601222b437b0fd650aeccb407",
     "role": "admin",
-    "name": "Administrador",
+    "name": "Ariel",
     "active": true,
     "createdAt": 1749600000000,
-    "updatedAt": 1781411502025,
+    "updatedAt": 1781614568980,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -65,11 +65,13 @@
         }
       },
       "readonly": false,
-      "canEditLayout": true
+      "canEditLayout": true,
+      "canEditProducts": true
     },
     "plainPassword": "Admin.4855",
     "lastLogin": 1781407632196,
-    "email": "ariel.pinto.a@gmail.com"
+    "email": "ariel.pinto.a@gmail.com",
+    "plantaRol": "gerente"
   },
   {
     "id": "636febe4-c524-4acd-bf27-b8beb6d5e1d5",
