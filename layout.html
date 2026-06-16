@@ -930,7 +930,7 @@ function renderStats(containerId, ids) {
 function getSectionModules(loc, sector) {
   const sectorKey = sectorForLoc(loc, sector);
   return Object.values(DB_OVERRIDES)
-    .filter(row => row.sector === sectorKey)
+    .filter(row => row.sector === sectorKey && !DESPACHADOS.has(row.module_id))
     .sort((a, b) => {
       const ra = a.xls_row || 0, rb = b.xls_row || 0;
       if (ra !== rb) return ra - rb;
@@ -1471,6 +1471,7 @@ function switchToTab(tab) {
 async function init() {
   updateScale();
   await loadAvanceData();
+  await loadDBOverrides();
   buildResumen();
   buildGalpon();
   buildCarpaGrande();
