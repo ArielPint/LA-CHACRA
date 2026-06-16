@@ -387,6 +387,7 @@ function parseDate(v){
   if(!v) return null;
   if(v instanceof Date) return new Date(v);
   if(typeof v==='number') return new Date((v-25569)*86400000);
+  if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(v+'T00:00:00');
   const d=new Date(v);return isNaN(d)?null:d;
 }
 
@@ -1054,11 +1055,22 @@ function renderResumen(){
   // M² acumulado real vs programado por mes
   (function(){
     const curva=DATA.curva||[];
+    const today=new Date(); today.setHours(23,59,59,999);
     const m2ByMes={};
     curva.forEach(r=>{
       const fd=parseDate(r.fecha); if(!fd||isNaN(fd)) return;
       const key=`${fd.getMonth()+1}-${fd.getFullYear()}`;
-      if(!m2ByMes[key]||fd>parseDate(m2ByMes[key].fecha)) m2ByMes[key]=r;
+      if(!m2ByMes[key]) m2ByMes[key]={m2RealAcum:0,m2PlanAcum:0,_lastPlan:null,_lastReal:null};
+      // Plan: última fila del mes (incluye proyectadas)
+      if(!m2ByMes[key]._lastPlan||fd>m2ByMes[key]._lastPlan){
+        m2ByMes[key].m2PlanAcum=r.m2PlanAcum||0;
+        m2ByMes[key]._lastPlan=fd;
+      }
+      // Real: última fila del mes con fecha <= hoy
+      if(fd<=today&&(!m2ByMes[key]._lastReal||fd>m2ByMes[key]._lastReal)){
+        m2ByMes[key].m2RealAcum=r.m2RealAcum||0;
+        m2ByMes[key]._lastReal=fd;
+      }
     });
     const m2Ord=MESES_ORDER.filter(m=>m2ByMes[`${m.n}-${m.y}`]);
     killChart('ch-m2-res');
