@@ -4,10 +4,10 @@
     "username": "admin",
     "password": "353844af6299e78eef3b1712b97d1917e9e4ee0601222b437b0fd650aeccb407",
     "role": "admin",
-    "name": "Administrador",
+    "name": "Ariel",
     "active": true,
     "createdAt": 1749600000000,
-    "updatedAt": 1781411502025,
+    "updatedAt": 1781614568980,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -53,14 +53,25 @@
             "nueva",
             "historial"
           ]
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
-      "canEditLayout": true
+      "canEditLayout": true,
+      "canEditProducts": true
     },
     "plainPassword": "Admin.4855",
     "lastLogin": 1781407632196,
-    "email": "ariel.pinto.a@gmail.com"
+    "email": "ariel.pinto.a@gmail.com",
+    "plantaRol": "gerente"
   },
   {
     "id": "636febe4-c524-4acd-bf27-b8beb6d5e1d5",
@@ -70,7 +81,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781552971893,
+    "updatedAt": 1781614474886,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -113,9 +124,12 @@
         "solicitudes": {
           "access": true,
           "tabs": [
-            "nueva",
             "historial"
           ]
+        },
+        "planta": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -123,7 +137,8 @@
       "canEditProducts": true
     },
     "plainPassword": "da.123",
-    "email": ""
+    "email": "dampuero@tecnopanel.cl",
+    "plantaRol": null
   },
   {
     "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
@@ -134,7 +149,7 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781553459767,
+    "updatedAt": 1781614519548,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -177,13 +192,23 @@
         "solicitudes": {
           "access": false,
           "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
       "canEditLayout": false,
       "canEditProducts": false
     },
-    "email": ""
+    "email": "eseguel@tecnopanel.cl",
+    "plantaRol": null
   },
   {
     "id": "55575ab8-63a8-4d2c-86e7-6b020558208f",
@@ -237,6 +262,15 @@
         "solicitudes": {
           "access": false,
           "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
@@ -297,6 +331,15 @@
         "solicitudes": {
           "access": false,
           "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
@@ -357,6 +400,15 @@
         "solicitudes": {
           "access": false,
           "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
