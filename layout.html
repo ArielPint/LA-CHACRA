@@ -818,11 +818,6 @@ async function loadAvanceData() {
     }
     document.querySelector('header .subtitle').textContent =
       'Estado y progreso por ubicación · Datos desde avance.xlsx';
-    // DEBUG TEMPORAL — borrar después
-    const mKeys = Object.keys(M);
-    console.log('[avance] M cargado:', mKeys.length, 'módulos');
-    console.log('[avance] Primeros 5 IDs:', mKeys.slice(0,5));
-    if (mKeys.length) console.log('[avance] Ejemplo M[0]:', JSON.stringify(M[mKeys[0]]));
   } catch (e) { console.warn('avance.xlsx:', e.message); }
   // Guardar todos los IDs ANTES del filtro para que sigan disponibles en el dropdown
   ALL_LOC_IDS = new Set(Object.keys(M));
@@ -883,7 +878,7 @@ function card(id, data, w, h, pk) {
 }
 
 // Celda con grid-column/row para layout de celdas altas
-function mkCell(id, col, row, rowSpan, w, h) {
+function mkCell(id, col, row, rowSpan, w, h, pk) {
   const fill   = !w;
   w = w || px(86); h = h || px(85);
   const hTall  = `${2 * parseInt(h) + 5}px`;
@@ -891,8 +886,8 @@ function mkCell(id, col, row, rowSpan, w, h) {
   const rowVal = rowSpan > 1 ? `${row} / ${row + rowSpan}` : `${row}`;
   const wStyle = fill ? 'min-width:0;' : `min-width:${w};`;
   const style  = `grid-column:${col};grid-row:${rowVal};${wStyle}min-height:${cellH};`;
-  // pk: para celdas con id conocido en LOC; para vacías sin id no hay pk trackeable en carpa grande
-  const pk     = id && LOC[id] ? posKey(LOC[id]) : null;
+  // pk viene del módulo (DB_OVERRIDES); si no se pasó, fallback vacío
+  pk = pk || null;
   const pkAttr = pk ? ` data-pk="${pk}"` : '';
   const eid    = (pk && typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pk) : id;
   if (!eid || !M[eid]) return `<div class="module-card empty"${pkAttr} style="${style}"></div>`;
@@ -933,10 +928,15 @@ function renderStats(containerId, ids) {
 //  GRID HELPERS
 // ============================================================
 function getSectionModules(loc, sector) {
-  return Object.entries(LOC)
-    .filter(([, d]) => d.loc === loc && (sector == null || d.sector === sector))
-    .sort(([, a], [, b]) => a.xls_row !== b.xls_row ? a.xls_row - b.xls_row : a.xls_col - b.xls_col)
-    .map(([id, d]) => ({ id, row: d.xls_row, col: d.xls_col }));
+  const sectorKey = sectorForLoc(loc, sector);
+  return Object.values(DB_OVERRIDES)
+    .filter(row => row.sector === sectorKey)
+    .sort((a, b) => {
+      const ra = a.xls_row || 0, rb = b.xls_row || 0;
+      if (ra !== rb) return ra - rb;
+      return (a.xls_col || 0) - (b.xls_col || 0);
+    })
+    .map(row => ({ id: row.module_id, row: row.xls_row || 0, col: row.xls_col || 0, pk: row.position_key }));
 }
 
 function buildSectionGrid(modules) {
@@ -1182,10 +1182,10 @@ function buildCarpaGrandeSector(mods, compact) {
 
     // In fill mode pass null for w so mkCell uses min-width:0 (grid controls width)
     const cW = compact ? w : null;
-    html += mkCell(c1m.id,         1, gridRow,     2, cW, h);
-    html += mkCell(c2r1?.id||null, 2, gridRow,     1, cW, h);
-    if (col3) html += mkCell(c3m?.id||null, 3, gridRow, 2, cW, h);
-    html += mkCell(c2r2?.id||null, 2, gridRow + 1, 1, cW, h);
+    html += mkCell(c1m.id,         1, gridRow,     2, cW, h, c1m.pk||null);
+    html += mkCell(c2r1?.id||null, 2, gridRow,     1, cW, h, c2r1?.pk||null);
+    if (col3) html += mkCell(c3m?.id||null, 3, gridRow, 2, cW, h, c3m?.pk||null);
+    html += mkCell(c2r2?.id||null, 2, gridRow + 1, 1, cW, h, c2r2?.pk||null);
   });
 
   html += '</div>';
@@ -1213,7 +1213,7 @@ function buildCarpaChicaInto(targetId, compact) {
 
   const uRows = [...new Set(mods.map(m => m.row))].sort((a, b) => a - b);
   const map   = {};
-  mods.forEach(m => { map[`${m.row},${m.col}`] = m.id; });
+  mods.forEach(m => { map[`${m.row},${m.col}`] = m; }); // almacena {id, pk, row, col}
 
   // Paso máximo entre cols de cualquier fila → "paso ancho"
   const rowColSets = uRows.map(r => mods.filter(m=>m.row===r).map(m=>m.col).sort((a,b)=>a-b));
@@ -1280,8 +1280,9 @@ function buildCarpaChicaInto(targetId, compact) {
       // Fila ancha: una tarjeta por columna-ancha
       html += `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;">`;
       for (const c of wideCols) {
-        const origId = map[`${r},${c}`] || null;
-        const pk     = origId && LOC[origId] ? posKey(LOC[origId]) : null;
+        const mod    = map[`${r},${c}`] || null;
+        const origId = mod ? mod.id : null;
+        const pk     = mod ? mod.pk : null;
         const dispId = pk ? effectiveModuleAtPk(pk) : origId;
         html += card(dispId, dispId ? M[dispId] : null, wW+'px', hPx+'px', pk);
       }
@@ -1322,8 +1323,9 @@ function buildCarpaChicaInto(targetId, compact) {
         html += `<div style="width:${offsetNum}px;flex-shrink:0;"></div>`;
       }
       for (const c of rowCols) {
-        const origId = map[`${r},${c}`] || null;
-        const pk     = origId && LOC[origId] ? posKey(LOC[origId]) : null;
+        const mod    = map[`${r},${c}`] || null;
+        const origId = mod ? mod.id : null;
+        const pk     = mod ? mod.pk : null;
         const dispId = pk ? effectiveModuleAtPk(pk) : origId;
         html += card(dispId, dispId ? M[dispId] : null, nW+'px', hPx+'px', pk);
       }
@@ -1374,7 +1376,7 @@ function buildVistaPlanta() {
   for (const row of galponGrid)
     for (const cell of row) {
       const origId = (cell && typeof cell === 'object') ? cell.id : cell;
-      const pk     = origId && LOC[origId] ? posKey(LOC[origId]) : null;
+      const pk     = (cell && typeof cell === 'object') ? cell.pk : null;
       const dispId = pk ? effectiveModuleAtPk(pk) : origId;
       galponHtml += card(dispId, dispId ? M[dispId] : null, px(86), px(85));
     }
@@ -1430,8 +1432,6 @@ function buildVistaPlanta() {
         ? PENDING_CHANGES[pos.position_key]
         : pos.module_id;
       const data = M[mid] || { avance: 0, status: 'SECO', fecha: null };
-      // DEBUG TEMPORAL
-      console.log('[card] mid='+mid+' M[mid]='+JSON.stringify(M[mid]||null));
       extraRow.innerHTML += card(mid, data, w, h);
     });
     el.appendChild(extraRow);
@@ -1685,15 +1685,13 @@ function effectiveModuleAt(origId, d) {
 function effectiveModuleAtPk(pk) {
   if (PENDING_CHANGES[pk] !== undefined) return PENDING_CHANGES[pk];
   if (DB_OVERRIDES[pk])                  return DB_OVERRIDES[pk].module_id;
-  const entry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
-  return entry ? entry[0] : null;
+  return null;
 }
 
 // Devuelve el sector para una posición pk
 function sectorForPk(pk) {
-  const entry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
-  if (entry) return sectorForLoc(entry[1].loc, entry[1].sector);
-  return null;
+  const row = DB_OVERRIDES[pk];
+  return row ? row.sector : null;
 }
 
 // ============================================================
