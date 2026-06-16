@@ -77,6 +77,22 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .mp-partial{background:var(--orange)}
 .mp-pend{background:var(--border)}
 
+/* PHASE FILTER */
+.phase-filter{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0}
+.ph-btn{font-size:.67rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-weight:600;transition:all .12s;white-space:nowrap}
+.ph-btn:hover{color:var(--text)}
+.ph-btn.on{background:var(--surface2);border-color:var(--accent);color:var(--text)}
+.ph-btn.on.pf-fab{border-color:var(--muted);color:var(--muted)}
+.ph-btn.on.pf-cal{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.1)}
+.ph-btn.on.pf-cli{border-color:var(--orange);color:var(--orange);background:rgba(247,162,79,.1)}
+.ph-btn.on.pf-ent{border-color:var(--green);color:var(--green);background:rgba(62,207,142,.1)}
+/* PHASE BADGES */
+.ph-badge{font-size:.62rem;padding:1px 6px;border-radius:3px;font-weight:700;flex-shrink:0}
+.ph-fabricacion{background:rgba(122,127,153,.15);color:var(--muted)}
+.ph-calidad{background:rgba(168,85,247,.18);color:var(--purple)}
+.ph-cliente{background:rgba(247,162,79,.18);color:var(--orange)}
+.ph-entregado{background:rgba(62,207,142,.18);color:var(--green)}
+
 /* DETAIL PANEL */
 #detail-panel{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
 .dp-empty{justify-content:center;align-items:center;color:var(--muted);font-size:.88rem;text-align:center;gap:10px;flex-direction:column;display:flex;height:100%}
@@ -231,6 +247,13 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <button class="t-btn" id="tb-humedo" onclick="setTF('humedo')">H</button>
         </div>
       </div>
+      <div class="phase-filter">
+        <button class="ph-btn on" id="pf-all" onclick="setPF('all')">Todos</button>
+        <button class="ph-btn pf-fab" id="pf-fabricacion" onclick="setPF('fabricacion')">🔧 Fab.</button>
+        <button class="ph-btn pf-cal" id="pf-calidad" onclick="setPF('calidad')">🔍 Cal.</button>
+        <button class="ph-btn pf-cli" id="pf-cliente" onclick="setPF('cliente')">👤 Cliente</button>
+        <button class="ph-btn pf-ent" id="pf-entregado" onclick="setPF('entregado')">✅ Ent.</button>
+      </div>
       <div id="mod-list" style="flex:1;overflow-y:auto"></div>
     </div>
     <div id="detail-panel">
@@ -339,7 +362,7 @@ const ROLE_TABS = {
 // ── App state ─────────────────────────────────────────────────────────────────
 let SES=null, PROL=null;
 let curTab=null, curTorre=null;
-let allMods=[], tf='all';
+let allMods=[], tf='all', pf='all';
 let selId=null, selMod=null;
 let recepTF='all', pendConfirm=null;
 
@@ -407,6 +430,28 @@ function isAllDone(m) {
     const s=pS(m,p.c); return isDone(s)||isNA(s);
   });
 }
+
+// Phase of a module based on 3-check progress
+// fabricacion → calidad → cliente → entregado
+function getPhase(m) {
+  if (m.estado_modulo==='entregado') return 'entregado';
+  const allPs=[...PARTIDAS.obra_gruesa,...PARTIDAS.terminaciones];
+  const rel=allPs.filter(p=>!isNA(pS(m,p.c)));
+  if (!rel.length || rel.every(p=>isDone(pS(m,p.c)))) return 'entregado';
+  // Any partida with c1=false → still in fabricacion
+  if (rel.some(p=>!pS(m,p.c).c1)) return 'fabricacion';
+  // All c1 done, some c2 missing → calidad
+  if (rel.some(p=>!pS(m,p.c).c2)) return 'calidad';
+  // All c1+c2 done, waiting c3 → cliente
+  return 'cliente';
+}
+
+const PHASE_LABEL = {
+  fabricacion:{l:'🔧 Fabricación',cls:'ph-fabricacion'},
+  calidad:    {l:'🔍 Calidad',    cls:'ph-calidad'},
+  cliente:    {l:'👤 Cliente',    cls:'ph-cliente'},
+  entregado:  {l:'✅ Entregado',  cls:'ph-entregado'}
+};
 
 // ── Role permissions ──────────────────────────────────────────────────────────
 function isAdminOrGerente() { return SES.role==='admin'||PROL==='admin'||PROL==='gerente'; }
@@ -477,7 +522,8 @@ function showView(v) {
 }
 
 function selectTorre(t) {
-  curTorre=t; selId=null; selMod=null;
+  curTorre=t; selId=null; selMod=null; pf='all';
+  ['all','fabricacion','calidad','cliente','entregado'].forEach(id=>document.getElementById('pf-'+id)?.classList.toggle('on',id==='all'));
   document.getElementById('breadcrumb').classList.remove('hidden');
   ['bc-torre-sep','bc-torre'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
   document.getElementById('bc-torre').textContent=t;
@@ -542,9 +588,22 @@ function renderList() {
   const tab=curTab!=='recepcion'?curTab:'obra_gruesa';
   const mods=torreModules().filter(m=>{
     if(tf!=='all'&&m.tipo!==tf) return false;
+    if(pf!=='all'&&getPhase(m)!==pf) return false;
     if(q&&!m.nombre.toLowerCase().includes(q)) return false;
     return true;
   });
+
+  // Update phase filter counts
+  const allTM=torreModules();
+  ['fabricacion','calidad','cliente','entregado'].forEach(ph=>{
+    const cnt=allTM.filter(m=>(tf==='all'||m.tipo===tf)&&getPhase(m)===ph).length;
+    const el=document.getElementById('pf-'+ph);
+    if(el){
+      const labels={fabricacion:'🔧 Fab.',calidad:'🔍 Cal.',cliente:'👤 Cliente',entregado:'✅ Ent.'};
+      el.textContent=labels[ph]+(cnt>0?` (${cnt})`:'');
+    }
+  });
+
   document.getElementById('mod-list').innerHTML = mods.map(m=>{
     const ps=PARTIDAS[tab]||[];
     let done=0,partial=0,pend=0;
@@ -555,22 +614,32 @@ function renderList() {
       ${Array(partial).fill('<div class="mp-seg mp-partial"></div>').join('')}
       ${Array(pend).fill('<div class="mp-seg mp-pend"></div>').join('')}
     </div>`:'';
+    const phase=getPhase(m);
+    const phCfg=PHASE_LABEL[phase];
     return `<div class="mod-item${selId===m.id?' sel':''}" onclick="openMod('${m.id}')">
       <div class="mod-row1">
         <div style="display:flex;align-items:center;gap:7px">
           <span class="mod-nombre">${m.nombre}</span>
           <span class="badge badge-${m.tipo}">${m.tipo==='seco'?'S':'H'}</span>
         </div>
-        <span class="badge badge-${m.estado_modulo}">${m.estado_modulo==='entregado'?'✓ Ent.':'Fabr.'}</span>
+        <span class="ph-badge ${phCfg.cls}">${phCfg.l}</span>
       </div>
       ${segs}
     </div>`;
-  }).join('')||'<div style="padding:18px;color:var(--muted);text-align:center;font-size:.82rem">Sin módulos</div>';
+  }).join('')||'<div style="padding:18px;color:var(--muted);text-align:center;font-size:.82rem">Sin módulos con este filtro</div>';
 }
 
 function setTF(t){
   tf=t;
   ['all','seco','humedo'].forEach(id=>document.getElementById('tb-'+id)?.classList.toggle('on',id===t));
+  renderList();
+}
+
+function setPF(f){
+  pf=f;
+  ['all','fabricacion','calidad','cliente','entregado'].forEach(id=>{
+    document.getElementById('pf-'+id)?.classList.toggle('on',id===f);
+  });
   renderList();
 }
 
@@ -858,6 +927,30 @@ async function savePartida(modId,code,newState,newTimes,accion,grp){
     m.estados=updE; m.tiempos=updT;
     const isRej=accion==='cliente_rechaza';
     toast(`${code} · ${ACCION_LABELS[accion]||accion}`,isRej?'err':'ok');
+
+    // Auto-entregado: si todas las partidas quedan aprobadas/NA, marcar módulo
+    if(m.estado_modulo!=='entregado' && isAllDone(m)){
+      try{
+        await fetch(`${SURL}/rest/v1/planta_modulos?id=eq.${modId}`,{
+          method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+          body:JSON.stringify({estado_modulo:'entregado'})
+        });
+        await fetch(`${SURL}/rest/v1/planta_historial`,{
+          method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+          body:JSON.stringify({
+            modulo_id:modId,modulo_nombre:m.nombre,partida:'MÓDULO',
+            accion:'entregado',nuevo_estado:'entregado',
+            observacion:'Auto-entregado al completar todas las partidas',
+            usuario:SES.name,user_id:SES.id,rol:PROL||SES.role,
+            timestamp:new Date().toISOString()
+          })
+        });
+        m.estado_modulo='entregado';
+        toast(`✅ ${m.nombre} — Entregado automáticamente`,'ok');
+        if(curTab==='recepcion') renderRecep();
+      }catch(e2){ console.warn('auto-entregado error',e2); }
+    }
+
     renderGrid(); renderList();
     if(selId===modId){ selMod=m; renderDetail(); }
   } catch(e){ toast('Error al guardar','err'); console.error(e); }
