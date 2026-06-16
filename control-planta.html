@@ -109,11 +109,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .p-label{flex:1;font-size:.82rem;min-width:0}
 
 /* CHECK PILLS */
-.checks{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.checks{display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap}
 .cpill{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:5px;border:1.5px solid;font-size:.69rem;font-weight:700;white-space:nowrap;transition:all .15s;user-select:none}
-.cp-pend{border-color:var(--border);color:var(--muted);background:transparent;cursor:not-allowed;opacity:.55}
-.cp-open{border-color:var(--border);color:var(--muted);background:transparent;cursor:pointer}
-.cp-open:hover{border-color:var(--accent);color:var(--text);background:rgba(79,142,247,.08)}
+.cp-pend{border-color:var(--border);color:#555c7a;background:rgba(46,51,80,.4);cursor:not-allowed}
+.cp-open{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08);cursor:pointer}
+.cp-open:hover{background:rgba(79,142,247,.2)}
 .cp-c1{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.12);cursor:pointer}
 .cp-c1:hover{opacity:.8}
 .cp-c2{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.12);cursor:pointer}
@@ -201,7 +201,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <span class="planta-badge">PLANTA</span>
   </div>
   <div class="cp-tabs">
-    <button class="cp-tab hidden" id="tab-obra_gruesa" onclick="switchTab('obra_gruesa')">⚡ Obra Gruesa</button>
+    <button class="cp-tab hidden" id="tab-sanitario" onclick="switchTab('sanitario')">🚿 Sanitario</button>
+    <button class="cp-tab hidden" id="tab-electrico" onclick="switchTab('electrico')">⚡ Eléctrico</button>
     <button class="cp-tab hidden" id="tab-terminaciones" onclick="switchTab('terminaciones')">🏠 Terminaciones</button>
     <button class="cp-tab hidden" id="tab-recepcion" onclick="switchTab('recepcion')">✅ Recepción</button>
   </div>
@@ -328,10 +329,12 @@ const SH = {'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'applica
 
 // ── Partidas ──────────────────────────────────────────────────────────────────
 const PARTIDAS = {
-  obra_gruesa:[
+  sanitario:[
     {c:'SA.01',l:'Red de Alcantarillado'},{c:'SA.02',l:'Red de Agua'},
     {c:'SA.03',l:'Ventilaciones'},{c:'SA.04',l:'Tina'},{c:'SA.05',l:'WC'},
-    {c:'SA.06',l:'Lavamanos / Lavaplatos / Lavadero'},
+    {c:'SA.06',l:'Lavamanos / Lavaplatos / Lavadero'}
+  ],
+  electrico:[
     {c:'EL.01',l:'Canalización'},{c:'EL.02',l:'Conductores (Cableado)'},
     {c:'EL.03',l:'Artefactos'},{c:'EL.04',l:'Tablero'},{c:'EL.05',l:'Caja PAU'}
   ],
@@ -350,13 +353,13 @@ const PARTIDAS = {
 };
 
 const ROLE_TABS = {
-  admin:                    ['obra_gruesa','terminaciones','recepcion'],
-  gerente:                  ['obra_gruesa','terminaciones','recepcion'],
-  supervisor_obra_gruesa:   ['obra_gruesa'],
+  admin:                    ['sanitario','electrico','terminaciones','recepcion'],
+  gerente:                  ['sanitario','electrico','terminaciones','recepcion'],
+  supervisor_obra_gruesa:   ['sanitario','electrico'],
   supervisor_terminaciones: ['terminaciones'],
-  supervisor_recepcion:     ['obra_gruesa','terminaciones','recepcion'],
-  qc1:                      ['obra_gruesa','terminaciones'],
-  qc2:                      ['obra_gruesa','terminaciones','recepcion']
+  supervisor_recepcion:     ['sanitario','electrico','terminaciones','recepcion'],
+  qc1:                      ['sanitario','electrico','terminaciones'],
+  qc2:                      ['sanitario','electrico','terminaciones','recepcion']
 };
 
 // ── App state ─────────────────────────────────────────────────────────────────
@@ -392,7 +395,7 @@ let recepTF='all', pendConfirm=null;
   const isAdmin = SES.role==='admin' || PROL==='admin' || PROL==='gerente';
   if (isAdmin) document.getElementById('notif-btn').classList.remove('hidden');
 
-  curTab = allowed.includes('obra_gruesa') ? 'obra_gruesa' : allowed[0];
+  curTab = allowed.includes('sanitario') ? 'sanitario' : allowed[0];
   setActive(curTab);
 
   await loadAll();
@@ -457,7 +460,7 @@ const PHASE_LABEL = {
 function isAdminOrGerente() { return SES.role==='admin'||PROL==='admin'||PROL==='gerente'; }
 function canC1(grp) {
   if (isAdminOrGerente()) return true;
-  return (PROL==='supervisor_obra_gruesa'  && grp==='obra_gruesa') ||
+  return (PROL==='supervisor_obra_gruesa'  && (grp==='sanitario'||grp==='electrico')) ||
          (PROL==='supervisor_terminaciones' && grp==='terminaciones');
 }
 function canC2() { return isAdminOrGerente() || PROL==='qc1' || PROL==='qc2'; }
@@ -551,20 +554,16 @@ function doLogout(){ AUTH.logout(); window.location.href='login.html'; }
 function renderGrid() {
   const stats={};
   allMods.forEach(m=>{
-    if(!stats[m.torre]) stats[m.torre]={s:0,h:0,ent:0,done:0,tot:0};
+    if(!stats[m.torre]) stats[m.torre]={s:0,h:0,ent:0};
     const st=stats[m.torre];
     m.tipo==='seco'?st.s++:st.h++;
     if(m.estado_modulo==='entregado') st.ent++;
-    const ps=[...PARTIDAS.obra_gruesa,...PARTIDAS.terminaciones];
-    ps.forEach(p=>{
-      const s=pS(m,p.c);
-      if(!isNA(s)){ st.tot++; if(isDone(s)) st.done++; }
-    });
   });
   const keys=Object.keys(stats).sort((a,b)=>parseInt(a.replace(/\D/g,''))-parseInt(b.replace(/\D/g,'')));
   document.getElementById('torres-grid').innerHTML = keys.map(t=>{
     const s=stats[t];
-    const pct=s.tot>0?Math.round(s.done/s.tot*100):0;
+    const total=s.s+s.h;
+    const pct=total>0?Math.round(s.ent/total*100):0;
     return `<div class="torre-card${curTorre===t?' sel':''}" onclick="selectTorre('${t}')">
       <div class="torre-name">🏗️ ${t}</div>
       <div class="torre-chips">
@@ -573,7 +572,7 @@ function renderGrid() {
         ${s.ent>0?`<span class="tchip tchip-e">✓ ${s.ent}</span>`:''}
       </div>
       <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
-      <div class="prog-label">${pct}% aprobado por cliente</div>
+      <div class="prog-label">${s.ent}/${total} módulos entregados</div>
     </div>`;
   }).join('')||'<div class="loading">Sin datos</div>';
 }
@@ -585,7 +584,7 @@ function torreModules() {
 
 function renderList() {
   const q=(document.getElementById('f-search')?.value||'').toLowerCase();
-  const tab=curTab!=='recepcion'?curTab:'obra_gruesa';
+  const tab=curTab!=='recepcion'?curTab:'sanitario';
   const mods=torreModules().filter(m=>{
     if(tf!=='all'&&m.tipo!==tf) return false;
     if(pf!=='all'&&getPhase(m)!==pf) return false;
@@ -698,13 +697,14 @@ function renderDetail() {
 }
 
 function partsSummary() {
+  const LABELS={sanitario:'🚿 Sanitario',electrico:'⚡ Eléctrico',terminaciones:'🏠 Terminaciones'};
   let h='<div class="sec-title">Resumen de partidas</div>';
   for(const [grp,ps] of Object.entries(PARTIDAS)){
     const rel=ps.filter(p=>!isNA(pS(selMod,p.c)));
     const done=rel.filter(p=>isDone(pS(selMod,p.c))).length;
     const pct=rel.length?Math.round(done/rel.length*100):100;
     h+=`<div class="part-row">
-      <span class="p-label">${grp==='obra_gruesa'?'⚡ Obra Gruesa':'🏠 Terminaciones'}</span>
+      <span class="p-label">${LABELS[grp]||grp}</span>
       <div style="flex:1;margin:0 12px"><div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div></div>
       <span style="font-size:.75rem;color:${pct===100?'var(--green)':'var(--muted)'}">${done}/${rel.length}</span>
     </div>`;
@@ -713,7 +713,8 @@ function partsSummary() {
 }
 
 function partsHtml(tab) {
-  const label=tab==='obra_gruesa'?'⚡ Sanitario y Eléctrico':'🏠 Terminaciones';
+  const LABELS={sanitario:'🚿 Sanitario',electrico:'⚡ Eléctrico',terminaciones:'🏠 Terminaciones'};
+  const label=LABELS[tab]||tab;
   const grp=tab;
   let h=`<div class="sec-title">${label}</div>
   <div style="font-size:.68rem;color:var(--muted);margin-bottom:9px;display:flex;gap:14px">
