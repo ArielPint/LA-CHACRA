@@ -934,7 +934,7 @@ function renderResumen(){
   const totalComprado=(DATA.detalleGD||[]).reduce((s,x)=>s+(x.valorTotal??0),0);
   const presupuesto=(DATA.detalleGD||[]).find(x=>x.presupuesto)?.presupuesto??null;
 
-  const despachados=new Set((DATA.despachos||[]).map(x=>x.modulo).filter(Boolean)).size;
+  const despachados=new Set((_supaDesp.length?_supaDesp:(DATA.despachos||[])).map(x=>x.modulo).filter(Boolean)).size;
   document.getElementById('kpi-resumen').innerHTML=kpiHTML([
     {lbl:'Ejecución ppto',     val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
      cls:presupuesto&&totalComprado>presupuesto?'c-red':'c-green'},
