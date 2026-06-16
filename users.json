@@ -53,6 +53,15 @@
             "nueva",
             "historial"
           ]
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
@@ -70,7 +79,7 @@
     "name": "Daniela Ampuero",
     "active": true,
     "createdAt": 1781216928692,
-    "updatedAt": 1781552971893,
+    "updatedAt": 1781614474886,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -113,9 +122,12 @@
         "solicitudes": {
           "access": true,
           "tabs": [
-            "nueva",
             "historial"
           ]
+        },
+        "planta": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -123,7 +135,8 @@
       "canEditProducts": true
     },
     "plainPassword": "da.123",
-    "email": ""
+    "email": "dampuero@tecnopanel.cl",
+    "plantaRol": null
   },
   {
     "id": "0aebd29d-b6d6-4e3b-b014-b151f9751c45",
@@ -177,6 +190,15 @@
         "solicitudes": {
           "access": false,
           "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
@@ -237,6 +259,15 @@
         "solicitudes": {
           "access": false,
           "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
@@ -297,6 +328,15 @@
         "solicitudes": {
           "access": false,
           "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
@@ -357,6 +397,15 @@
         "solicitudes": {
           "access": false,
           "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
         }
       },
       "readonly": false,
