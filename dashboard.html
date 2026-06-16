@@ -332,7 +332,7 @@ async function loadDespachosSupa(){
           var pr = document.getElementById('prompt');
           if(pr) pr.style.display = 'none';
           renderAll();
-          loadDespachosSupa().then(()=>renderDespachos());
+          loadDespachosSupa().then(()=>{renderDespachos();renderResumen();});
           var t = document.querySelector('.tab[data-tab="resumen"]');
           if(t) t.click();
           var st = document.getElementById('load-status');
@@ -636,7 +636,7 @@ document.getElementById('file-input').addEventListener('change',function(e){
         document.getElementById('prompt').style.display='none';
         renderAll();
         document.querySelector('.tab[data-tab="resumen"]').click();
-        loadDespachosSupa().then(()=>renderDespachos());
+        loadDespachosSupa().then(()=>{renderDespachos();renderResumen();});
         st.textContent='✅ Cargado'; st.className='status-ok';
         // Save to localStorage for biblioteca
         try {
@@ -688,7 +688,7 @@ async function autoLoadFromRepo(){
     try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
     renderAll();
     try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
-    loadDespachosSupa().then(()=>renderDespachos());
+    loadDespachosSupa().then(()=>{renderDespachos();renderResumen();});
     showAutoStatus('✅ Datos cargados');
     try{
       localStorage.setItem('tp_dashboard_data',JSON.stringify(DATA));

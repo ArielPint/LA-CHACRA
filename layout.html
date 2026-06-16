@@ -929,9 +929,9 @@ function renderStats(containerId, ids) {
 function getSectionModules(loc, sector) {
   const sectorKey = sectorForLoc(loc, sector);
 
-  // 1) Posiciones desde Supabase (fuente principal)
+  // 1) Posiciones desde Supabase (fuente principal), excluyendo extras (se muestran aparte)
   const dbRows = Object.values(DB_OVERRIDES)
-    .filter(row => row.sector === sectorKey && !DESPACHADOS.has(row.module_id));
+    .filter(row => row.sector === sectorKey && !row.is_extra && !DESPACHADOS.has(row.module_id));
   const dbPks    = new Set(dbRows.map(r => r.position_key));
   const dbModIds = new Set(dbRows.map(r => r.module_id).filter(Boolean));
 
@@ -1717,7 +1717,11 @@ function effectiveModuleAtPk(pk) {
 // Devuelve el sector para una posición pk
 function sectorForPk(pk) {
   const row = DB_OVERRIDES[pk];
-  return row ? row.sector : null;
+  if (row) return row.sector;
+  // Fallback: buscar en LOC (posiciones que vienen de ubicaciones.xlsx)
+  const locEntry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+  if (locEntry) return sectorForLoc(locEntry[1].loc, locEntry[1].sector);
+  return null;
 }
 
 // ============================================================
@@ -2123,16 +2127,27 @@ async function saveLayoutChanges(tab) {
         continue;
       }
 
-      // Posiciones normales del xlsx — buscar datos de LOC
-      const locEntry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
-      if (!locEntry) continue;
-      const [origId, d] = locEntry;
+      // Posiciones normales — buscar primero en DB_OVERRIDES, luego en LOC
+      let sector, xls_row, xls_col;
+      const dbRow = DB_OVERRIDES[pk];
+      if (dbRow) {
+        sector  = dbRow.sector;
+        xls_row = dbRow.xls_row;
+        xls_col = dbRow.xls_col;
+      } else {
+        const locEntry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+        if (!locEntry) { console.warn('saveLayoutChanges: sin datos para pk', pk); continue; }
+        const [, d] = locEntry;
+        sector  = sectorForLoc(d.loc, d.sector);
+        xls_row = d.xls_row;
+        xls_col = d.xls_col;
+      }
 
       upsertRows.push({
         position_key: pk,
-        sector:       sectorForLoc(d.loc, d.sector),
-        xls_row:      d.xls_row,
-        xls_col:      d.xls_col,
+        sector,
+        xls_row,
+        xls_col,
         module_id:    newModuleId,
         is_extra:     false,
         updated_by:   updatedBy,

@@ -438,14 +438,11 @@ function isAllDone(m) {
 // fabricacion → calidad → cliente → entregado
 function getPhase(m) {
   if (m.estado_modulo==='entregado') return 'entregado';
-  const allPs=[...PARTIDAS.obra_gruesa,...PARTIDAS.terminaciones];
+  const allPs=Object.values(PARTIDAS).flat();
   const rel=allPs.filter(p=>!isNA(pS(m,p.c)));
   if (!rel.length || rel.every(p=>isDone(pS(m,p.c)))) return 'entregado';
-  // Any partida with c1=false → still in fabricacion
   if (rel.some(p=>!pS(m,p.c).c1)) return 'fabricacion';
-  // All c1 done, some c2 missing → calidad
   if (rel.some(p=>!pS(m,p.c).c2)) return 'calidad';
-  // All c1+c2 done, waiting c3 → cliente
   return 'cliente';
 }
 
