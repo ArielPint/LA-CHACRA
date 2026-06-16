@@ -656,8 +656,13 @@ async function openMod(id) {
 
 function canMarkEntregado() {
   if(!selMod||selMod.estado_modulo==='entregado') return false;
-  if(!(PROL==='supervisor_recepcion'||PROL==='gerente'||SES.role==='admin')) return false;
-  return isAllDone(selMod);
+  return PROL==='supervisor_recepcion'||PROL==='gerente'||SES.role==='admin';
+}
+
+function pendingCount(m) {
+  return Object.values(PARTIDAS).flat().filter(p=>{
+    const s=pS(m,p.c); return !isNA(s)&&!isDone(s);
+  }).length;
 }
 
 function renderDetail() {
@@ -675,7 +680,10 @@ function renderDetail() {
         <span class="badge badge-${selMod.estado_modulo}" style="font-size:.76rem;padding:4px 10px">
           ${selMod.estado_modulo==='entregado'?'✓ Entregado':'🔧 En Fabricación'}
         </span>
-        ${canMarkEntregado()?`<button class="btn btn-ok btn-sm" onclick="doEntregado()">✓ Marcar Entregado</button>`:''}
+        ${canMarkEntregado()?pendingCount(selMod)>0
+          ?`<button class="btn btn-sm" style="border:1px solid var(--orange);color:var(--orange);background:rgba(247,162,79,.1)" onclick="doEntregadoForzar()">⚠️ Marcar Entregado</button>
+             <button class="btn btn-sm btn-ghost" onclick="completarPendientesNA()" title="Marcar todas las partidas pendientes como N/A y entregar">✦ Completar y Entregar</button>`
+          :`<button class="btn btn-ok btn-sm" onclick="doEntregado()">✓ Marcar Entregado</button>`:''}
       </div>
     </div>
     <div id="dp-body">
@@ -954,6 +962,60 @@ async function savePartida(modId,code,newState,newTimes,accion,grp){
     renderGrid(); renderList();
     if(selId===modId){ selMod=m; renderDetail(); }
   } catch(e){ toast('Error al guardar','err'); console.error(e); }
+}
+
+// ── Entregar módulo (forzar con partidas pendientes) ──────────────────────────
+function doEntregadoForzar(){
+  const pc=pendingCount(selMod);
+  showConfirm(
+    '⚠️ Módulo con partidas pendientes',
+    `Este módulo tiene ${pc} partida${pc>1?'s':''} sin aprobación de cliente. ¿Marcarlo como Entregado de todas formas?`,
+    [['Cancelar',null,'btn-ghost'],['Entregar igual',async()=>{ closeModal(); await doEntregado(); },'btn-ok']]
+  );
+}
+
+// Marcar todas las partidas pendientes como N/A y luego entregar
+async function completarPendientesNA(){
+  const pc=pendingCount(selMod);
+  showConfirm(
+    '✦ Completar partidas pendientes',
+    `Se marcarán ${pc} partida${pc>1?'s':''} pendiente${pc>1?'s':''} como "No Aplica" y el módulo quedará Entregado. Esta acción no se puede deshacer fácilmente.`,
+    [['Cancelar',null,'btn-ghost'],['Confirmar',async()=>{
+      closeModal();
+      if(!selMod) return;
+      const updE={...(selMod.estados||{})};
+      const updT={...(selMod.tiempos||{})};
+      Object.values(PARTIDAS).flat().forEach(p=>{
+        const s=pS(selMod,p.c);
+        if(!isNA(s)&&!isDone(s)){
+          updE[p.c]={c1:false,c2:false,c3:'no_aplica'};
+          updT[p.c]={};
+        }
+      });
+      try{
+        await fetch(`${SURL}/rest/v1/planta_modulos?id=eq.${selMod.id}`,{
+          method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+          body:JSON.stringify({estados:updE,tiempos:updT,estado_modulo:'entregado'})
+        });
+        await fetch(`${SURL}/rest/v1/planta_historial`,{
+          method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+          body:JSON.stringify({
+            modulo_id:selMod.id,modulo_nombre:selMod.nombre,partida:'MÓDULO',
+            accion:'entregado',nuevo_estado:'entregado',
+            observacion:`${pc} partidas completadas como N/A al marcar entregado`,
+            usuario:SES.name,user_id:SES.id,rol:PROL||SES.role,
+            timestamp:new Date().toISOString()
+          })
+        });
+        selMod.estados=updE; selMod.tiempos=updT; selMod.estado_modulo='entregado';
+        const idx=allMods.findIndex(m=>m.id===selMod.id);
+        if(idx!==-1){ allMods[idx].estados=updE; allMods[idx].tiempos=updT; allMods[idx].estado_modulo='entregado'; }
+        toast(`✅ ${selMod.nombre} — Entregado (${pc} partidas → N/A)`,'ok');
+        renderGrid(); renderList(); renderDetail();
+        if(curTab==='recepcion') renderRecep();
+      }catch(e){ toast('Error','err'); console.error(e); }
+    },'btn-ok']]
+  );
 }
 
 // ── Entregar módulo ────────────────────────────────────────────────────────────
