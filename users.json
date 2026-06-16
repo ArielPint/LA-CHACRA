@@ -293,7 +293,7 @@
     "name": "Vicente Pinto",
     "active": true,
     "createdAt": 1781267164450,
-    "updatedAt": 1781640710987,
+    "updatedAt": 1781640799860,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -352,7 +352,7 @@
       "canEditProducts": false
     },
     "email": "vpinto@tecnopanel.cl",
-    "plantaRol": "qc2"
+    "plantaRol": "supervisor_recepcion"
   },
   {
     "id": "8c2ea023-bd59-4314-86e8-dafccfe506fa",
