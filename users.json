@@ -149,7 +149,7 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781614519548,
+    "updatedAt": 1781638759562,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -208,7 +208,7 @@
       "canEditProducts": false
     },
     "email": "eseguel@tecnopanel.cl",
-    "plantaRol": null
+    "plantaRol": "qc2"
   },
   {
     "id": "55575ab8-63a8-4d2c-86e7-6b020558208f",
