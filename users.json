@@ -492,5 +492,75 @@
       "canEditProducts": false
     },
     "plantaRol": "supervisor_recepcion"
+  },
+  {
+    "id": "348bb02e-b93d-4b9e-85f0-e4bafe0e850e",
+    "username": "jolivos",
+    "password": "b3e34e133a857de92fbc9cad92e3543faf749133f2224053b2a34941aae6464c",
+    "plainPassword": "Javi.123",
+    "email": "jolivos@tecnopanel.cl",
+    "role": "operador",
+    "name": "Javiera Olivos",
+    "active": true,
+    "createdAt": 1781646216342,
+    "updatedAt": 1781646216342,
+    "permissions": {
+      "pages": {
+        "dashboard": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "curva",
+            "modulos",
+            "compras",
+            "productos",
+            "stock",
+            "despachos"
+          ]
+        },
+        "produccion": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "torres",
+            "partidas",
+            "alertas",
+            "detalle"
+          ]
+        },
+        "layout": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "galpon",
+            "carpa-grande",
+            "carpa-chica",
+            "patio",
+            "planta"
+          ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
+        },
+        "solicitudes": {
+          "access": false,
+          "tabs": []
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa",
+            "terminaciones",
+            "recepcion"
+          ]
+        }
+      },
+      "readonly": false,
+      "canEditLayout": false,
+      "canEditProducts": false
+    },
+    "plantaRol": "supervisor_recepcion"
   }
 ]
