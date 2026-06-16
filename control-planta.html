@@ -330,26 +330,50 @@ const SH = {'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'applica
 
 // ── Partidas ──────────────────────────────────────────────────────────────────
 const PARTIDAS = {
-  sanitario:[
-    {c:'SA.01',l:'Red de Alcantarillado'},{c:'SA.02',l:'Red de Agua'},
-    {c:'SA.03',l:'Ventilaciones'},{c:'SA.04',l:'Tina'},{c:'SA.05',l:'WC'},
-    {c:'SA.06',l:'Lavamanos / Lavaplatos / Lavadero'}
+  obra_gruesa:[
+    {c:'OG.01',l:'Piso',              w:12.0},
+    {c:'OG.02',l:'Tabiques',          w:8.0},
+    {c:'OG.03',l:'Muros',             w:11.0},
+    {c:'OG.04',l:'Cielo',             w:8.0},
+    {c:'OG.05',l:'Estructura Balcón', w:4.0}
   ],
   electrico:[
-    {c:'EL.01',l:'Canalización'},{c:'EL.02',l:'Conductores (Cableado)'},
-    {c:'EL.03',l:'Artefactos'},{c:'EL.04',l:'Tablero'},{c:'EL.05',l:'Caja PAU'}
+    {c:'EL.01',l:'Canalización',            w:3.0},
+    {c:'EL.02',l:'Conductores (Cableado)',   w:3.0},
+    {c:'EL.03',l:'Artefactos',              w:1.0},
+    {c:'EL.04',l:'Tablero',                 w:2.0},
+    {c:'EL.05',l:'Caja PAU',               w:2.0}
+  ],
+  sanitario:[
+    {c:'SA.01',l:'Red de Alcantarillado',   w:2.0},
+    {c:'SA.02',l:'Red de Agua',             w:2.0},
+    {c:'SA.03',l:'Tina',                    w:1.0},
+    {c:'SA.04',l:'WC',                      w:1.0},
+    {c:'SA.05',l:'Lavamanos',              w:2.0}
   ],
   terminaciones:[
-    {c:'TE.01',l:'Instalación Vinílico'},{c:'TE.02',l:'OSB Cubierta'},
-    {c:'TE.03',l:'Baranda Balcón'},{c:'TE.04',l:'OSB Exterior'},{c:'TE.05',l:'Smart Panel'},
-    {c:'TE.06',l:'Pintura Exterior'},{c:'TE.07',l:'Zócalos Logia'},{c:'TE.08',l:'Molduras'},
-    {c:'TE.09',l:'Pilastreo'},{c:'TE.10',l:'Celosías'},{c:'TE.11',l:'Ventanas'},
-    {c:'TE.12',l:'Puertas Acceso / Logia / Baño'},{c:'TE.13',l:'Cerraduras'},
-    {c:'TE.14',l:'Revestimiento Interior Zona Seca'},
-    {c:'TE.15',l:'Revestimiento Interior Zonas Húmedas'},{c:'TE.16',l:'Membrana Cielo'},
-    {c:'TE.17',l:'Limpieza Final'},{c:'TE.18',l:'Puertas Dormitorio'},
-    {c:'TE.19',l:'Revestimiento Interior Baño'},{c:'TE.20',l:'Mueble Lavaplatos'},
-    {c:'TE.21',l:'Impermeabilización Baño / Cocina / Logia'}
+    {c:'TE.01',l:'OSB Cubierta',                             w:2.0},
+    {c:'TE.02',l:'OSB Exterior',                             w:3.0},
+    {c:'TE.03',l:'Lavadero',                                 w:0.5},
+    {c:'TE.04',l:'Impermeabilización Baño - Cocina - Logia', w:1.0},
+    {c:'TE.05',l:'Revestimiento Interior Zona Seca',         w:2.0},
+    {c:'TE.06',l:'Revestimiento Interior Cocina - Logia',    w:2.0},
+    {c:'TE.07',l:'Revestimiento Interior Baño',              w:3.0},
+    {c:'TE.08',l:'Instalación Vinílico',                     w:2.0},
+    {c:'TE.09',l:'Lavaplatos',                               w:1.0},
+    {c:'TE.10',l:'Marcos Ventanas',                          w:2.0},
+    {c:'TE.11',l:'Puertas',                                  w:2.0},
+    {c:'TE.12',l:'Extractores',                              w:2.0},
+    {c:'TE.13',l:'Termopaneles',                             w:1.0},
+    {c:'TE.14',l:'Cornizas',                                 w:1.0},
+    {c:'TE.15',l:'Pilastras',                                w:1.0},
+    {c:'TE.16',l:'Endolados',                                w:1.0},
+    {c:'TE.17',l:'Celosías',                                 w:0.5},
+    {c:'TE.18',l:'Baranda y Pintura Balcón',                 w:2.0},
+    {c:'TE.19',l:'Smart Panel',                              w:3.0},
+    {c:'TE.20',l:'Pintura Exterior',                         w:2.5},
+    {c:'TE.21',l:'Ventilaciones Pasivas',                    w:1.0},
+    {c:'TE.22',l:'Recepción Final',                          w:2.5}
   ]
 };
 
@@ -426,7 +450,17 @@ function tabProgress(m, tab) {
   const ps = PARTIDAS[tab]||[];
   const rel = ps.filter(p => !isNA(pS(m,p.c)));
   if (!rel.length) return 100;
-  return Math.round(rel.filter(p => isDone(pS(m,p.c))).length / rel.length * 100);
+  const totalW = rel.reduce((s,p)=>s+(p.w||1),0);
+  const doneW  = rel.filter(p=>isDone(pS(m,p.c))).reduce((s,p)=>s+(p.w||1),0);
+  return Math.round(doneW/totalW*100);
+}
+function moduleProgress(m) {
+  const all = Object.values(PARTIDAS).flat();
+  const rel = all.filter(p=>!isNA(pS(m,p.c)));
+  if (!rel.length) return 100;
+  const totalW = rel.reduce((s,p)=>s+(p.w||1),0);
+  const doneW  = rel.filter(p=>isDone(pS(m,p.c))).reduce((s,p)=>s+(p.w||1),0);
+  return Math.round(doneW/totalW*100);
 }
 
 function isAllDone(m) {
@@ -602,7 +636,7 @@ function renderList() {
   });
 
   document.getElementById('mod-list').innerHTML = mods.map(m=>{
-    const ps=tab==='obra_gruesa'?[...PARTIDAS.sanitario,...PARTIDAS.electrico]:(PARTIDAS[tab]||[]);
+    const ps=PARTIDAS[tab]||[];
     let done=0,partial=0,pend=0;
     ps.forEach(p=>{ const s=pS(m,p.c); if(isNA(s)) return; if(isDone(s)) done++; else if(s.c1||s.c2) partial++; else pend++; });
     const total=done+partial+pend;
@@ -695,24 +729,26 @@ function renderDetail() {
 }
 
 function partsSummary() {
-  const LABELS={sanitario:'🚿 Sanitario',electrico:'⚡ Eléctrico',terminaciones:'🏠 Terminaciones'};
-  let h='<div class="sec-title">Resumen de partidas</div>';
+  const LABELS={obra_gruesa:'🏗️ Obra Gruesa',electrico:'⚡ Eléctrico',sanitario:'🚿 Sanitario',terminaciones:'🏠 Terminaciones'};
+  const pct0=moduleProgress(selMod);
+  let h=`<div class="sec-title">Avance total: ${pct0}%</div>`;
   for(const [grp,ps] of Object.entries(PARTIDAS)){
     const rel=ps.filter(p=>!isNA(pS(selMod,p.c)));
+    const totalW=rel.reduce((s,p)=>s+(p.w||1),0);
+    const doneW=rel.filter(p=>isDone(pS(selMod,p.c))).reduce((s,p)=>s+(p.w||1),0);
+    const pct=totalW?Math.round(doneW/totalW*100):100;
     const done=rel.filter(p=>isDone(pS(selMod,p.c))).length;
-    const pct=rel.length?Math.round(done/rel.length*100):100;
     h+=`<div class="part-row">
       <span class="p-label">${LABELS[grp]||grp}</span>
       <div style="flex:1;margin:0 12px"><div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div></div>
-      <span style="font-size:.75rem;color:${pct===100?'var(--green)':'var(--muted)'}">${done}/${rel.length}</span>
+      <span style="font-size:.75rem;color:${pct===100?'var(--green)':'var(--muted)'}">${pct}% (${done}/${rel.length})</span>
     </div>`;
   }
   return h;
 }
 
 function partsHtml(tab) {
-  if (tab==='obra_gruesa') return partsHtml('sanitario') + partsHtml('electrico');
-  const LABELS={sanitario:'🚿 Sanitario',electrico:'⚡ Eléctrico',terminaciones:'🏠 Terminaciones'};
+  const LABELS={obra_gruesa:'🏗️ Obra Gruesa',sanitario:'🚿 Sanitario',electrico:'⚡ Eléctrico',terminaciones:'🏠 Terminaciones'};
   const label=LABELS[tab]||tab;
   const grp=tab;
   let h=`<div class="sec-title">${label}</div>
