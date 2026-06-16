@@ -40,6 +40,7 @@ iframe{border:none;width:100%;flex:1;min-height:0}
     <div class="tb-tab" onclick="showSheet(this,'layout')">&#128205; Layout</div>
     <div class="tb-tab" onclick="showSheet(this,'despacho')">&#128230; Despacho GD</div>
     <div class="tb-tab" id="tab-solicitudes" onclick="window.location.href='solicitudes.html'" style="display:none">&#128196; Solicitudes</div>
+    <div class="tb-tab" id="tab-planta" onclick="openPlanta()" style="display:none">&#127981; Control Planta</div>
   </nav>
   <div class="tb-right">
     <button class="upload-btn" onclick="recargar()">&#8635; Actualizar datos</button>
@@ -84,6 +85,12 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   if (AUTH.canAccessPage('solicitudes')) {
     var solTab = document.getElementById('tab-solicitudes');
     if (solTab) solTab.style.display = '';
+  }
+
+  // Tab Control Planta: visible solo si tiene plantaRol (o es admin)
+  if (AUTH.canAccessPlanta()) {
+    var plantaTab = document.getElementById('tab-planta');
+    if (plantaTab) plantaTab.style.display = '';
   }
 
   // Ocultar páginas sin acceso en la barra de navegación
@@ -142,6 +149,10 @@ function showSheet(el, name) {
     document.getElementById('frame-despacho').src = 'compras.html';
     despachoLoaded = true;
   }
+}
+
+function openPlanta() {
+  window.open('control-planta.html', '_blank');
 }
 
 function recargar() {

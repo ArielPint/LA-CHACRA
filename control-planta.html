@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Planta — La Chacra</title>
+<script src="auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--orange:#f7a24f;--yellow:#e8c73a;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;font-size:14px}
+
+/* TOPBAR */
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);height:54px;display:flex;align-items:center;padding:0 20px;gap:0;flex-shrink:0}
+.logo-area{display:flex;align-items:center;margin-right:20px;white-space:nowrap;flex-shrink:0}
+.planta-badge{font-size:10px;background:var(--brand);color:#fff;border-radius:4px;padding:2px 7px;margin-left:10px;font-weight:700;letter-spacing:.5px;flex-shrink:0}
+.cp-tabs{display:flex;align-items:stretch;gap:0;flex:1}
+.cp-tab{height:54px;padding:0 18px;font-size:.84rem;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;white-space:nowrap}
+.cp-tab:hover{color:var(--text)}
+.cp-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+.tb-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.auth-badge{font-size:.72rem;background:rgba(255,255,255,.08);padding:3px 9px;border-radius:20px;color:var(--muted);white-space:nowrap}
+.sm-btn{font-size:.72rem;padding:4px 10px;background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.sm-btn:hover{color:var(--text);border-color:var(--accent)}
+
+/* BREADCRUMB */
+#breadcrumb{padding:9px 20px;font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.bc-link{cursor:pointer;color:var(--accent)}
+.bc-link:hover{text-decoration:underline}
+.bc-sep{color:var(--border)}
+.bc-cur{color:var(--text)}
+
+/* MAIN */
+#main{flex:1;overflow:hidden;display:flex;position:relative}
+
+/* TORRE GRID VIEW */
+#view-torres{flex:1;overflow-y:auto;padding:20px}
+.grid-header{margin-bottom:16px}
+.grid-title{font-size:1.05rem;font-weight:700}
+.grid-sub{font-size:.78rem;color:var(--muted);margin-top:3px}
+.torres-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:11px}
+.torre-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px;cursor:pointer;transition:all .15s}
+.torre-card:hover,.torre-card.sel{border-color:var(--accent);transform:translateY(-1px)}
+.torre-name{font-size:.9rem;font-weight:700;margin-bottom:10px}
+.torre-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tchip{font-size:.68rem;padding:2px 7px;border-radius:4px;font-weight:600}
+.tchip-s{background:rgba(79,142,247,.15);color:var(--accent)}
+.tchip-h{background:rgba(62,207,142,.15);color:var(--green)}
+.tchip-e{background:rgba(62,207,142,.25);color:var(--green)}
+.prog-wrap{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+.prog-label{font-size:.68rem;color:var(--muted);margin-top:4px}
+
+/* MODULE VIEW */
+#view-modules{flex:1;overflow:hidden;display:flex}
+#list-panel{width:340px;min-width:260px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
+.list-filter{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-shrink:0}
+.f-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:.8rem}
+.f-input::placeholder{color:var(--muted)}
+.type-btns{display:flex;gap:3px}
+.t-btn{font-size:.68rem;padding:3px 7px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+.t-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mod-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.mod-item:hover{background:var(--surface2)}
+.mod-item.sel{background:rgba(79,142,247,.1);border-left:2px solid var(--accent);padding-left:12px}
+.mod-row1{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.mod-nombre{font-weight:700;font-size:.86rem}
+.mod-badges{display:flex;align-items:center;gap:5px}
+.badge{font-size:.64rem;padding:1px 6px;border-radius:3px;font-weight:700}
+.badge-s{background:rgba(79,142,247,.15);color:var(--accent)}
+.badge-h{background:rgba(62,207,142,.15);color:var(--green)}
+.badge-ent{background:rgba(62,207,142,.2);color:var(--green)}
+.badge-fab{background:rgba(122,127,153,.12);color:var(--muted)}
+.mini-chips{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
+.mchip{font-size:.63rem;padding:1px 5px;border-radius:3px;font-weight:600}
+
+/* DETAIL PANEL */
+#detail-panel{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.dp-empty{justify-content:center;align-items:center;color:var(--muted);font-size:.88rem;text-align:center;gap:10px;flex-direction:column;display:flex;height:100%}
+#dp-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;background:var(--surface);gap:12px}
+.dp-title{font-size:1.05rem;font-weight:800}
+.dp-meta{font-size:.74rem;color:var(--muted);margin-top:2px}
+#dp-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:18px}
+
+/* PARTIDAS */
+.sec-title{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px}
+.part-row{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;align-items:center;gap:10px;margin-bottom:5px;transition:background .1s}
+.part-row.click:hover{background:var(--surface2);cursor:pointer}
+.part-row.na{opacity:.4}
+.p-code{font-size:.7rem;font-weight:700;color:var(--muted);width:44px;flex-shrink:0}
+.p-label{flex:1;font-size:.83rem}
+.est-badge{font-size:.7rem;padding:3px 9px;border-radius:5px;font-weight:700;white-space:nowrap}
+.e-en_ejecucion{background:rgba(122,127,153,.15);color:var(--muted)}
+.e-ejecutado{background:rgba(79,142,247,.2);color:var(--accent)}
+.e-qc1{background:rgba(247,162,79,.2);color:var(--orange)}
+.e-qc2{background:rgba(232,199,58,.2);color:var(--yellow)}
+.e-aprobado{background:rgba(62,207,142,.2);color:var(--green)}
+.e-rechazado{background:rgba(247,95,95,.2);color:var(--red)}
+.e-no_aplica{background:rgba(122,127,153,.08);color:#444862}
+.mc-en_ejecucion{background:rgba(122,127,153,.15);color:var(--muted)}
+.mc-ejecutado{background:rgba(79,142,247,.2);color:var(--accent)}
+.mc-qc1{background:rgba(247,162,79,.2);color:var(--orange)}
+.mc-qc2{background:rgba(232,199,58,.2);color:var(--yellow)}
+.mc-aprobado{background:rgba(62,207,142,.2);color:var(--green)}
+.mc-rechazado{background:rgba(247,95,95,.2);color:var(--red)}
+.mc-no_aplica{background:rgba(122,127,153,.08);color:#444862}
+
+/* HISTORIAL */
+.hist-item{display:flex;gap:9px;margin-bottom:7px;font-size:.77rem}
+.h-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.h-meta{color:var(--muted);font-size:.68rem;margin-top:2px}
+
+/* RECEPCION */
+#view-recepcion{flex:1;overflow-y:auto;padding:20px}
+.recep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.r-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:13px 15px}
+.r-card.ent{border-color:var(--green)}
+.r-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.r-meta{font-size:.74rem;color:var(--muted);margin-bottom:10px}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;width:380px;max-width:92vw}
+.m-title{font-size:.98rem;font-weight:700;margin-bottom:3px}
+.m-sub{font-size:.78rem;color:var(--muted);margin-bottom:14px}
+.m-obs{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 11px;font-size:.83rem;resize:vertical;min-height:75px;font-family:inherit}
+.m-obs::placeholder{color:var(--muted)}
+.m-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.btn{padding:7px 16px;border-radius:6px;border:none;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text)}
+.btn-ok{background:var(--green);color:#0f1117}
+.btn-ok:hover{opacity:.85}
+.btn-rej{background:var(--red);color:#fff}
+.btn-rej:hover{opacity:.85}
+.btn-pri{background:var(--accent);color:#fff}
+.btn-pri:hover{opacity:.85}
+
+/* LOADING / TOAST */
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:.88rem;gap:8px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toasts{position:fixed;bottom:18px;right:18px;z-index:200;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:.8rem;max-width:270px;animation:si .2s ease;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+@keyframes si{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="logo-area">
+    <span style="font-size:21px;font-weight:900;color:#e8eaf0">TECNO</span>
+    <span style="font-size:21px;font-weight:900;color:#D42B1E">PANEL</span>
+    <span class="planta-badge">PLANTA</span>
+  </div>
+  <div class="cp-tabs">
+    <button class="cp-tab hidden" id="tab-obra_gruesa" onclick="switchTab('obra_gruesa')">⚡ Obra Gruesa</button>
+    <button class="cp-tab hidden" id="tab-terminaciones" onclick="switchTab('terminaciones')">🏠 Terminaciones</button>
+    <button class="cp-tab hidden" id="tab-recepcion" onclick="switchTab('recepcion')">✅ Recepción</button>
+  </div>
+  <div class="tb-right">
+    <span class="auth-badge" id="user-badge"></span>
+    <button class="sm-btn" onclick="goBack()">← Volver</button>
+    <button class="sm-btn" onclick="doLogout()">Salir</button>
+  </div>
+</div>
+
+<div id="breadcrumb" class="hidden">
+  <span class="bc-link" onclick="goHome()">🏗️ Torres</span>
+  <span id="bc-torre-sep" class="bc-sep hidden">›</span>
+  <span id="bc-torre" class="bc-link hidden"></span>
+  <span id="bc-mod-sep" class="bc-sep hidden">›</span>
+  <span id="bc-mod" class="bc-cur hidden"></span>
+</div>
+
+<div id="main">
+
+  <!-- TORRE GRID -->
+  <div id="view-torres">
+    <div style="max-width:1200px;margin:0 auto">
+      <div class="grid-header">
+        <div class="grid-title">🏗️ Control de Planta</div>
+        <div class="grid-sub" id="grid-sub">Cargando módulos...</div>
+      </div>
+      <div class="torres-grid" id="torres-grid">
+        <div class="loading"><div class="spinner"></div> Cargando torres...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULES VIEW -->
+  <div id="view-modules" class="hidden">
+    <div id="list-panel">
+      <div class="list-filter">
+        <input class="f-input" id="f-search" type="text" placeholder="Buscar módulo..." oninput="renderList()">
+        <div class="type-btns">
+          <button class="t-btn on" id="tb-all"  onclick="setTF('all')">Todos</button>
+          <button class="t-btn"    id="tb-seco"  onclick="setTF('seco')">S</button>
+          <button class="t-btn"    id="tb-humedo" onclick="setTF('humedo')">H</button>
+        </div>
+      </div>
+      <div id="mod-list" style="flex:1;overflow-y:auto"></div>
+    </div>
+    <div id="detail-panel">
+      <div class="dp-empty">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span>Selecciona un módulo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECEPCION VIEW -->
+  <div id="view-recepcion" class="hidden">
+    <div style="max-width:1200px;margin:0 auto">
+      <div class="grid-header">
+        <div class="grid-title">✅ Recepción de Módulos</div>
+        <div class="grid-sub">Módulos con todas las partidas aprobadas</div>
+      </div>
+      <div id="recep-filter" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div class="recep-grid" id="recep-grid">
+        <div class="loading"><div class="spinner"></div> Cargando...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- MODAL -->
+<div class="overlay hidden" id="modal">
+  <div class="modal">
+    <div class="m-title" id="m-title">Actualizar estado</div>
+    <div class="m-sub" id="m-sub"></div>
+    <textarea class="m-obs" id="m-obs" placeholder="Observación (opcional)..."></textarea>
+    <div class="m-actions" id="m-actions"></div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const SURL = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const SH = { 'apikey': SKEY, 'Authorization': 'Bearer ' + SKEY, 'Content-Type': 'application/json' };
+
+// ── Partidas ──────────────────────────────────────────────────────────────────
+const PARTIDAS = {
+  obra_gruesa: [
+    {c:'SA.01',l:'Red de Alcantarillado'},{c:'SA.02',l:'Red de Agua'},
+    {c:'SA.03',l:'Ventilaciones'},{c:'SA.04',l:'Tina'},{c:'SA.05',l:'WC'},
+    {c:'SA.06',l:'Lavamanos / Lavaplatos / Lavadero'},
+    {c:'EL.01',l:'Canalización'},{c:'EL.02',l:'Conductores (Cableado)'},
+    {c:'EL.03',l:'Artefactos'},{c:'EL.04',l:'Tablero'},{c:'EL.05',l:'Caja PAU'}
+  ],
+  terminaciones: [
+    {c:'TE.01',l:'Instalación Vinílico'},{c:'TE.02',l:'OSB Cubierta'},
+    {c:'TE.03',l:'Baranda Balcón'},{c:'TE.04',l:'OSB Exterior'},{c:'TE.05',l:'Smart Panel'},
+    {c:'TE.06',l:'Pintura Exterior'},{c:'TE.07',l:'Zócalos Logia'},{c:'TE.08',l:'Molduras'},
+    {c:'TE.09',l:'Pilastreo'},{c:'TE.10',l:'Celosías'},{c:'TE.11',l:'Ventanas'},
+    {c:'TE.12',l:'Puertas Acceso / Logia / Baño'},{c:'TE.13',l:'Cerraduras'},
+    {c:'TE.14',l:'Revestimiento Interior Zona Seca'},
+    {c:'TE.15',l:'Revestimiento Interior Zonas Húmedas'},{c:'TE.16',l:'Membrana Cielo'},
+    {c:'TE.17',l:'Limpieza Final'},{c:'TE.18',l:'Puertas Dormitorio'},
+    {c:'TE.19',l:'Revestimiento Interior Baño'},{c:'TE.20',l:'Mueble Lavaplatos'},
+    {c:'TE.21',l:'Impermeabilización Baño / Cocina / Logia'}
+  ]
+};
+
+const ECFG = {
+  en_ejecucion:{l:'Pendiente',  dot:'#7a7f99'},
+  ejecutado:   {l:'Ejecutado',  dot:'#4f8ef7'},
+  qc1:         {l:'QC1',        dot:'#f7a24f'},
+  qc2:         {l:'QC2',        dot:'#e8c73a'},
+  aprobado:    {l:'Aprobado',   dot:'#3ecf8e'},
+  rechazado:   {l:'Rechazado',  dot:'#f75f5f'},
+  no_aplica:   {l:'N/A',        dot:'#444862'}
+};
+
+const ROLE_TABS = {
+  admin:                   ['obra_gruesa','terminaciones','recepcion'],
+  gerente:                 ['obra_gruesa','terminaciones','recepcion'],
+  supervisor_obra_gruesa:  ['obra_gruesa'],
+  supervisor_terminaciones:['terminaciones'],
+  supervisor_recepcion:    ['recepcion'],
+  qc1:                     ['obra_gruesa','terminaciones'],
+  qc2:                     ['obra_gruesa','terminaciones','recepcion']
+};
+
+// Role permission to transition a partida state
+function getTrans(pRol, sysRole, curState, grp) {
+  if (curState === 'no_aplica') return null;
+  const admin = sysRole === 'admin' || pRol === 'admin' || pRol === 'gerente';
+  if (admin) {
+    const n = stateAfter(curState);
+    return n ? {next:n, canReject: curState !== 'en_ejecucion'} : null;
+  }
+  const isSup = (pRol === 'supervisor_obra_gruesa' && grp === 'obra_gruesa') ||
+                (pRol === 'supervisor_terminaciones' && grp === 'terminaciones');
+  if (isSup && (curState === 'en_ejecucion' || curState === 'rechazado')) return {next:'ejecutado', canReject:false};
+  if (pRol === 'qc1' && curState === 'ejecutado') return {next:'qc1', canReject:true};
+  if (pRol === 'qc2' && curState === 'qc1') return {next:'aprobado', canReject:true};
+  return null;
+}
+
+const STATE_ORDER = ['en_ejecucion','ejecutado','qc1','qc2','aprobado'];
+function stateAfter(s) { const i = STATE_ORDER.indexOf(s); return i >= 0 && i < 4 ? STATE_ORDER[i+1] : null; }
+
+// ── App state ─────────────────────────────────────────────────────────────────
+let SES = null, PROL = null;
+let curTab = null, curTorre = null;
+let allMods = [], tf = 'all';
+let selId = null, selMod = null, pending = null;
+let recepTF = 'all';
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async function() {
+  // Auth
+  SES = AUTH.getSession();
+  if (!SES && window.opener) {
+    try {
+      const raw = window.opener.sessionStorage.getItem('lachacra_session');
+      if (raw) { sessionStorage.setItem('lachacra_session', raw); SES = AUTH.getSession(); }
+    } catch(e) {}
+  }
+  if (!SES) { window.location.href = 'login.html'; return; }
+
+  PROL = SES.plantaRol || (SES.role === 'admin' ? 'admin' : null);
+  document.getElementById('user-badge').textContent =
+    SES.name + (PROL ? ' · ' + PROL.replace(/_/g,' ') : '');
+
+  const allowed = ROLE_TABS[PROL] || ROLE_TABS[SES.role] || [];
+  if (!allowed.length) {
+    document.getElementById('view-torres').innerHTML = '<div style="padding:40px;color:var(--muted);text-align:center">Sin acceso asignado. Contacta al administrador.</div>';
+    return;
+  }
+  allowed.forEach(t => { const el = document.getElementById('tab-' + t); if (el) el.classList.remove('hidden'); });
+
+  curTab = allowed.includes('obra_gruesa') ? 'obra_gruesa' : allowed[0];
+  setActive(curTab);
+
+  await loadAll();
+  setupRT();
+})();
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const r = await fetch(
+      `${SURL}/rest/v1/planta_modulos?select=id,nombre,nro_serie,torre,tipo,estado_modulo,estados,orden&order=orden.asc`,
+      {headers: SH}
+    );
+    allMods = await r.json();
+    renderGrid();
+    if (curTorre) renderList();
+    if (curTab === 'recepcion') renderRecep();
+    const total = allMods.length;
+    const ent = allMods.filter(m => m.estado_modulo === 'entregado').length;
+    document.getElementById('grid-sub').textContent =
+      `${total} módulos · ${ent} entregados · ${[...new Set(allMods.map(m=>m.torre))].length} torres`;
+  } catch(e) { toast('Error cargando datos', 'err'); }
+}
+
+async function loadHist(id) {
+  const r = await fetch(`${SURL}/rest/v1/planta_historial?modulo_id=eq.${id}&order=timestamp.desc&limit=25`, {headers:SH});
+  return await r.json();
+}
+
+// ── Realtime ──────────────────────────────────────────────────────────────────
+function setupRT() {
+  try {
+    const sc = supabase.createClient(SURL, SKEY);
+    sc.channel('cp_rt')
+      .on('postgres_changes', {event:'*', schema:'public', table:'planta_modulos'}, p => {
+        const idx = allMods.findIndex(m => m.id === p.new.id);
+        if (idx !== -1) allMods[idx] = {...allMods[idx], ...p.new};
+        else if (p.eventType === 'INSERT') allMods.push(p.new);
+        renderGrid();
+        if (curTorre) renderList();
+        if (curTab === 'recepcion') renderRecep();
+        if (selId === p.new.id) { selMod = allMods.find(m => m.id === selId); renderDetail(); }
+      })
+      .subscribe();
+  } catch(e) {}
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  curTab = t;
+  setActive(t);
+  if (t === 'recepcion') {
+    showView('recepcion');
+    renderRecep();
+  } else {
+    if (curTorre) showView('modules'); else showView('torres');
+  }
+}
+
+function setActive(t) {
+  document.querySelectorAll('.cp-tab').forEach(e => e.classList.remove('active'));
+  const el = document.getElementById('tab-' + t);
+  if (el) el.classList.add('active');
+}
+
+function showView(v) {
+  document.getElementById('view-torres').classList.toggle('hidden', v !== 'torres');
+  document.getElementById('view-modules').classList.toggle('hidden', v !== 'modules');
+  document.getElementById('view-recepcion').classList.toggle('hidden', v !== 'recepcion');
+}
+
+function selectTorre(t) {
+  curTorre = t;
+  selId = null; selMod = null;
+  // breadcrumb
+  document.getElementById('breadcrumb').classList.remove('hidden');
+  document.getElementById('bc-torre-sep').classList.remove('hidden');
+  document.getElementById('bc-torre').classList.remove('hidden');
+  document.getElementById('bc-torre').textContent = t;
+  document.getElementById('bc-mod-sep').classList.add('hidden');
+  document.getElementById('bc-mod').classList.add('hidden');
+  showView('modules');
+  renderList();
+  resetDP();
+}
+
+function goHome() {
+  curTorre = null; selId = null; selMod = null;
+  document.getElementById('breadcrumb').classList.add('hidden');
+  showView(curTab === 'recepcion' ? 'recepcion' : 'torres');
+}
+
+function goBack() {
+  if (selId) {
+    selId = null; selMod = null;
+    resetDP();
+    renderList();
+    document.getElementById('bc-mod-sep').classList.add('hidden');
+    document.getElementById('bc-mod').classList.add('hidden');
+  } else if (curTorre) { goHome(); }
+  else { try { window.close(); } catch(e) { history.back(); } }
+}
+
+function doLogout() { AUTH.logout(); window.location.href = 'login.html'; }
+
+// ── Torre Grid ─────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const stats = {};
+  allMods.forEach(m => {
+    if (!stats[m.torre]) stats[m.torre] = {s:0,h:0,ent:0,ap:0,tot:0};
+    const st = stats[m.torre];
+    if (m.tipo === 'seco') st.s++; else st.h++;
+    if (m.estado_modulo === 'entregado') st.ent++;
+    if (m.estados) {
+      Object.values(m.estados).forEach(v => {
+        if (v !== 'no_aplica') { st.tot++; if (v === 'aprobado') st.ap++; }
+      });
+    }
+  });
+  const keys = Object.keys(stats).sort((a,b) => parseInt(a.replace('TORRE ','')) - parseInt(b.replace('TORRE ','')));
+  document.getElementById('torres-grid').innerHTML = keys.map(t => {
+    const s = stats[t];
+    const pct = s.tot > 0 ? Math.round(s.ap/s.tot*100) : 0;
+    return `<div class="torre-card${curTorre===t?' sel':''}" onclick="selectTorre('${t}')">
+      <div class="torre-name">🏗️ ${t}</div>
+      <div class="torre-chips">
+        <span class="tchip tchip-s">${s.s} Seco</span>
+        <span class="tchip tchip-h">${s.h} Húm.</span>
+        ${s.ent > 0 ? `<span class="tchip tchip-e">✓ ${s.ent}</span>` : ''}
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div class="prog-label">${pct}% partidas aprobadas</div>
+    </div>`;
+  }).join('') || '<div class="loading">Sin datos</div>';
+}
+
+// ── Module List ───────────────────────────────────────────────────────────────
+function torreModules() {
+  return allMods.filter(m => m.torre === curTorre).sort((a,b) => a.orden - b.orden);
+}
+
+function tabProgress(m, tab) {
+  const ps = PARTIDAS[tab] || [];
+  const rel = ps.filter(p => (m.estados?.[p.c] || 'en_ejecucion') !== 'no_aplica');
+  if (!rel.length) return 100;
+  return Math.round(rel.filter(p => m.estados?.[p.c] === 'aprobado').length / rel.length * 100);
+}
+
+function renderList() {
+  const q = (document.getElementById('f-search')?.value || '').toLowerCase();
+  const mods = torreModules().filter(m => {
+    if (tf !== 'all' && m.tipo !== tf) return false;
+    if (q && !m.nombre.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const tab = curTab !== 'recepcion' ? curTab : 'obra_gruesa';
+  document.getElementById('mod-list').innerHTML = mods.map(m => {
+    const ps = PARTIDAS[tab] || [];
+    const cnt = {};
+    ps.forEach(p => {
+      const s = m.estados?.[p.c] || 'en_ejecucion';
+      if (s !== 'no_aplica') cnt[s] = (cnt[s]||0) + 1;
+    });
+    const chips = Object.entries(cnt)
+      .map(([s,c]) => `<span class="mchip mc-${s}">${c} ${ECFG[s]?.l||s}</span>`).join('');
+    return `<div class="mod-item${selId===m.id?' sel':''}" onclick="openMod('${m.id}')">
+      <div class="mod-row1">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span class="mod-nombre">${m.nombre}</span>
+          <span class="badge badge-${m.tipo}">${m.tipo==='seco'?'S':'H'}</span>
+        </div>
+        <span class="badge badge-${m.estado_modulo}">${m.estado_modulo==='entregado'?'✓ Ent.':'Fabr.'}</span>
+      </div>
+      ${chips ? `<div class="mini-chips">${chips}</div>` : ''}
+    </div>`;
+  }).join('') || '<div style="padding:18px;color:var(--muted);text-align:center;font-size:.82rem">Sin módulos</div>';
+}
+
+function setTF(t) {
+  tf = t;
+  ['all','seco','humedo'].forEach(id => document.getElementById('tb-'+id)?.classList.toggle('on', id===t));
+  renderList();
+}
+
+// ── Module Detail ─────────────────────────────────────────────────────────────
+async function openMod(id) {
+  selId = id;
+  selMod = allMods.find(m => m.id === id);
+  if (!selMod) return;
+  document.getElementById('bc-mod-sep').classList.remove('hidden');
+  document.getElementById('bc-mod').classList.remove('hidden');
+  document.getElementById('bc-mod').textContent = selMod.nombre;
+  renderList();
+  renderDetail();
+  // load historial async
+  loadHist(id).then(h => {
+    const el = document.getElementById('hist-list');
+    if (el) el.innerHTML = histHtml(h);
+  });
+}
+
+function canEntregado() {
+  if (!selMod || selMod.estado_modulo === 'entregado') return false;
+  const ok = PROL === 'supervisor_recepcion' || PROL === 'gerente' || SES.role === 'admin';
+  if (!ok) return false;
+  return Object.values(selMod.estados||{}).every(v => v==='aprobado'||v==='no_aplica');
+}
+
+function renderDetail() {
+  const dp = document.getElementById('detail-panel');
+  if (!selMod) { resetDP(); return; }
+  const tab = curTab !== 'recepcion' ? curTab : null;
+
+  dp.innerHTML = `
+    <div id="dp-header">
+      <div>
+        <div class="dp-title">${selMod.nombre}</div>
+        <div class="dp-meta">${selMod.torre} · ${selMod.tipo==='seco'?'Módulo Seco':'Módulo Húmedo'} · Nº serie: ${selMod.nro_serie||'-'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span class="badge badge-${selMod.estado_modulo}" style="font-size:.76rem;padding:4px 10px">
+          ${selMod.estado_modulo==='entregado'?'✓ Entregado':'🔧 En Fabricación'}
+        </span>
+        ${canEntregado() ? `<button class="btn btn-ok" style="font-size:.76rem;padding:5px 12px" onclick="doEntregado()">✓ Entregar</button>` : ''}
+      </div>
+    </div>
+    <div id="dp-body">
+      <div class="partidas-section">${partsHtml(tab)}</div>
+      <div>
+        <div class="sec-title">Historial</div>
+        <div id="hist-list"><div style="color:var(--muted);font-size:.78rem">Cargando...</div></div>
+      </div>
+    </div>`;
+}
+
+function partsHtml(tab) {
+  if (!tab) {
+    // Recepcion view: summary
+    let h = '<div class="sec-title">Resumen de partidas</div>';
+    for (const [grp, ps] of Object.entries(PARTIDAS)) {
+      const rel = ps.filter(p => (selMod.estados?.[p.c]||'en_ejecucion') !== 'no_aplica');
+      const ap = rel.filter(p => selMod.estados?.[p.c] === 'aprobado').length;
+      const pct = rel.length ? Math.round(ap/rel.length*100) : 100;
+      h += `<div class="part-row">
+        <span class="p-label">${grp==='obra_gruesa'?'⚡ Obra Gruesa':'🏠 Terminaciones'}</span>
+        <div style="flex:1;margin:0 12px"><div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div></div>
+        <span class="est-badge e-${pct===100?'aprobado':'en_ejecucion'}">${ap}/${rel.length}</span>
+      </div>`;
+    }
+    return h;
+  }
+  const label = tab === 'obra_gruesa' ? '⚡ Sanitario y Eléctrico' : '🏠 Terminaciones';
+  let h = `<div class="sec-title">${label}</div>`;
+  (PARTIDAS[tab]||[]).forEach(p => {
+    const s = selMod.estados?.[p.c] || 'en_ejecucion';
+    const tr = getTrans(PROL, SES.role, s, tab);
+    const click = tr && s !== 'no_aplica';
+    h += `<div class="part-row${click?' click':''}${s==='no_aplica'?' na':''}"
+      ${click ? `onclick="openModal('${selMod.id}','${p.c}','${tab}')"` : ''}>
+      <span class="p-code">${p.c}</span>
+      <span class="p-label">${p.l}</span>
+      <span class="est-badge e-${s}">${ECFG[s]?.l||s}</span>
+    </div>`;
+  });
+  return h;
+}
+
+function histHtml(rows) {
+  if (!rows?.length) return '<div style="color:var(--muted);font-size:.78rem">Sin historial aún.</div>';
+  return rows.map(r => {
+    const cfg = ECFG[r.nuevo_estado] || {};
+    const d = r.timestamp ? new Date(r.timestamp).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="hist-item">
+      <div class="h-dot" style="background:${cfg.dot||'#7a7f99'}"></div>
+      <div>
+        <div><strong>${r.partida}</strong> → <span style="color:${cfg.dot||'var(--muted)'}">${cfg.l||r.nuevo_estado}</span>${r.observacion?` <em style="color:var(--muted);font-size:.75rem">· ${r.observacion}</em>`:''}</div>
+        <div class="h-meta">${r.usuario||'Sistema'}${r.rol?' · '+r.rol.replace(/_/g,' '):''} · ${d}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resetDP() {
+  document.getElementById('detail-panel').innerHTML = `<div class="dp-empty">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    <span>Selecciona un módulo</span>
+  </div>`;
+}
+
+// ── State Transitions ─────────────────────────────────────────────────────────
+function openModal(modId, code, grp) {
+  const m = allMods.find(x => x.id === modId);
+  if (!m) return;
+  const curState = m.estados?.[code] || 'en_ejecucion';
+  const tr = getTrans(PROL, SES.role, curState, grp);
+  if (!tr) return;
+  pending = {modId, code, grp, curState};
+
+  const pDef = [...(PARTIDAS.obra_gruesa||[]), ...(PARTIDAS.terminaciones||[])].find(p => p.c === code);
+  document.getElementById('m-title').textContent = `Actualizar: ${code}`;
+  document.getElementById('m-sub').textContent = (pDef?.l||code) + ' · Estado actual: ' + (ECFG[curState]?.l||curState);
+  document.getElementById('m-obs').value = '';
+
+  let a = `<button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>`;
+  if (tr.next) a += `<button class="btn btn-ok" onclick="doTrans('${tr.next}')">→ ${ECFG[tr.next]?.l||tr.next}</button>`;
+  if (tr.canReject) a += `<button class="btn btn-rej" onclick="doTrans('rechazado')">✗ Rechazar</button>`;
+  document.getElementById('m-actions').innerHTML = a;
+  document.getElementById('modal').classList.remove('hidden');
+}
+
+async function doTrans(newState) {
+  if (!pending) return;
+  const {modId, code} = pending;
+  const obs = document.getElementById('m-obs').value.trim();
+  closeModal();
+  const m = allMods.find(x => x.id === modId);
+  if (!m) return;
+  const updated = {...(m.estados||{}), [code]: newState};
+  try {
+    await fetch(`${SURL}/rest/v1/planta_modulos?id=eq.${modId}`, {
+      method:'PATCH', headers:{...SH,'Prefer':'return=minimal'},
+      body: JSON.stringify({estados: updated})
+    });
+    await fetch(`${SURL}/rest/v1/planta_historial`, {
+      method:'POST', headers:{...SH,'Prefer':'return=minimal'},
+      body: JSON.stringify({
+        modulo_id: modId, modulo_nombre: m.nombre, partida: code,
+        accion:'cambio_estado', nuevo_estado: newState,
+        observacion: obs||null, usuario: SES.name, user_id: SES.id,
+        rol: PROL||SES.role, timestamp: new Date().toISOString()
+      })
+    });
+    m.estados = updated;
+    renderGrid(); renderList();
+    if (selId === modId) { selMod = m; renderDetail(); loadHist(modId).then(h => { const el=document.getElementById('hist-list'); if(el) el.innerHTML=histHtml(h); }); }
+    toast(`${code} → ${ECFG[newState]?.l||newState}`, 'ok');
+  } catch(e) { toast('Error al actualizar', 'err'); }
+}
+
+async function doEntregado() {
+  if (!selMod) return;
+  const id = selMod.id;
+  try {
+    await fetch(`${SURL}/rest/v1/planta_modulos?id=eq.${id}`, {
+      method:'PATCH', headers:{...SH,'Prefer':'return=minimal'},
+      body: JSON.stringify({estado_modulo:'entregado'})
+    });
+    await fetch(`${SURL}/rest/v1/planta_historial`, {
+      method:'POST', headers:{...SH,'Prefer':'return=minimal'},
+      body: JSON.stringify({
+        modulo_id:id, modulo_nombre:selMod.nombre, partida:'MÓDULO',
+        accion:'entregado', nuevo_estado:'entregado', observacion:null,
+        usuario:SES.name, user_id:SES.id, rol:PROL||SES.role,
+        timestamp:new Date().toISOString()
+      })
+    });
+    selMod.estado_modulo = 'entregado';
+    const idx = allMods.findIndex(m => m.id === id);
+    if (idx !== -1) allMods[idx].estado_modulo = 'entregado';
+    renderGrid(); renderList(); renderDetail();
+    if (curTab === 'recepcion') renderRecep();
+    toast(`${selMod.nombre} marcado como Entregado`, 'ok');
+  } catch(e) { toast('Error al actualizar módulo', 'err'); }
+}
+
+// ── Recepción ─────────────────────────────────────────────────────────────────
+function renderRecep() {
+  const ready = allMods.filter(m => {
+    if (m.estado_modulo === 'entregado') return true;
+    const vs = Object.values(m.estados||{}).filter(v => v !== 'no_aplica');
+    return vs.length > 0 && vs.every(v => v === 'aprobado');
+  });
+  const torres = [...new Set(ready.map(m=>m.torre))].sort((a,b)=>parseInt(a.replace('TORRE ',''))-parseInt(b.replace('TORRE ','')));
+  document.getElementById('recep-filter').innerHTML =
+    ['all',...torres].map(t => `<button class="sm-btn" style="${recepTF===t?'border-color:var(--accent);color:var(--text)':''}" onclick="setRT('${t}')">${t==='all'?'Todas':t}</button>`).join('');
+  const filt = ready.filter(m => recepTF === 'all' || m.torre === recepTF);
+  if (!filt.length) {
+    document.getElementById('recep-grid').innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:16px">Sin módulos listos aún.</div>';
+    return;
+  }
+  const canMark = PROL === 'supervisor_recepcion' || PROL === 'gerente' || SES.role === 'admin';
+  document.getElementById('recep-grid').innerHTML = filt.map(m => {
+    const ent = m.estado_modulo === 'entregado';
+    return `<div class="r-card${ent?' ent':''}">
+      <div class="r-card-top">
+        <div><strong>${m.nombre}</strong> <span class="badge badge-${m.tipo}" style="margin-left:4px">${m.tipo==='seco'?'SECO':'HÚM.'}</span></div>
+        <span class="badge badge-${m.estado_modulo}">${ent?'✓ Entregado':'🟡 Listo'}</span>
+      </div>
+      <div class="r-meta">${m.torre} · Nº serie ${m.nro_serie||'-'}</div>
+      ${canMark && !ent ? `<button class="btn btn-ok" style="width:100%;font-size:.78rem" onclick="doEntById('${m.id}')">✓ Marcar Entregado</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function setRT(t) { recepTF = t; renderRecep(); }
+
+async function doEntById(id) {
+  selMod = allMods.find(m => m.id === id);
+  selId = id;
+  if (selMod) await doEntregado();
+  renderRecep();
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+function closeModal() { document.getElementById('modal').classList.add('hidden'); pending = null; }
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id==='modal') closeModal(); });
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ── Keys ──────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (!document.getElementById('modal').classList.contains('hidden')) closeModal();
+    else goBack();
+  }
+});
+</script>
+</body>
+</html>

@@ -392,6 +392,20 @@
         </div>
       </div>
 
+      <div class="form-row">
+        <label class="form-label">Rol en Planta (Control Planta)</label>
+        <select class="form-select" id="fPlantaRol">
+          <option value="">— Sin acceso a Control Planta —</option>
+          <option value="gerente">👔 Gerente (todo)</option>
+          <option value="supervisor_obra_gruesa">🔧 Supervisor Obra Gruesa</option>
+          <option value="supervisor_terminaciones">🏠 Supervisor Terminaciones</option>
+          <option value="supervisor_recepcion">✅ Supervisor Recepción</option>
+          <option value="qc1">🔍 QC1 (Control de calidad 1)</option>
+          <option value="qc2">✔️ QC2 (Control de calidad 2)</option>
+        </select>
+        <p class="form-hint">Define qué pestañas y acciones tiene este usuario en el módulo de Control Planta. Vacío = sin acceso.</p>
+      </div>
+
       <!-- Permisos por página -->
       <div class="form-row">
         <div class="section-label">Acceso por página y pestaña</div>
@@ -488,6 +502,7 @@ async function renderTable(highlightId) {
     const modoBadge = u.permissions.readonly ? '<span class="badge badge-viewer">Solo lectura</span>' : '<span class="badge badge-on">Edición</span>';
     const layoutBadge   = celVal ? '<span class="badge badge-editor">✏️ Layout</span>' : '';
     const productsBadge = cepVal ? '<span class="badge badge-editor">📦 Productos</span>' : '';
+    const plantaBadge   = u.plantaRol ? `<span class="badge" style="background:#e0f2fe;color:#075985">🏭 ${u.plantaRol.replace(/_/g,' ')}</span>` : '';
     const activoBadge = u.active ? '<span class="badge badge-on">Activo</span>' : '<span class="badge badge-off">Inactivo</span>';
 
     const pages = AUTH.getPages();
@@ -530,7 +545,7 @@ async function renderTable(highlightId) {
       <td style="font-family:monospace;color:#666;font-size:0.8rem">${u.username}</td>
       <td>${roleBadge}</td>
       <td>${pageChips || '<span style="color:#bbb;font-size:0.75rem">Sin acceso</span>'}</td>
-      <td>${modoBadge} ${layoutBadge} ${productsBadge}</td>
+      <td>${modoBadge} ${layoutBadge} ${productsBadge} ${plantaBadge}</td>
       <td>${activoBadge}</td>
       <td style="font-family:monospace;font-size:0.8rem;color:#444">${u.plainPassword || '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
       <td>${lastLoginTs ? fmtDate(lastLoginTs) : '<span style="color:#bbb;font-size:0.72rem">Nunca</span>'}</td>
@@ -634,6 +649,7 @@ function openModal() {
   document.getElementById('fEmail').value      = '';
   document.getElementById('fPassword').value   = '';
   document.getElementById('fRole').value       = 'viewer';
+  document.getElementById('fPlantaRol').value  = '';
   document.getElementById('fActive').checked   = true;
   document.getElementById('passHint').textContent = '';
   document.getElementById('modalTitle').textContent = 'Nuevo usuario';
@@ -662,6 +678,7 @@ async function editUser(id) {
   const cep = user.permissions.canEditProducts !== undefined ? user.permissions.canEditProducts : false;
   document.getElementById('fCanEditProducts').checked = cep;
   document.getElementById('fActive').checked        = user.active;
+  document.getElementById('fPlantaRol').value       = user.plantaRol || '';
   document.getElementById('passHint').textContent = user.plainPassword ? 'Actual: ' + user.plainPassword + '  (dejar vacío para no cambiar)' : '(dejar vacío para no cambiar)';
   document.getElementById('modalTitle').textContent = 'Editar usuario';
   buildPagePerms(user.permissions.pages);
@@ -685,6 +702,7 @@ async function saveUser() {
   const cel   = document.getElementById('fCanEditLayout').checked;
   const cep   = document.getElementById('fCanEditProducts').checked;
   const act   = document.getElementById('fActive').checked;
+  const prol  = document.getElementById('fPlantaRol').value || null;
   const pages = getPagePermsFromForm();
 
   if (!name || !user) { showToast('Nombre y usuario son requeridos', 'error'); return; }
@@ -697,10 +715,10 @@ async function saveUser() {
   try {
     let savedUser;
     if (id) {
-      savedUser = await AUTH.updateUser(id, { username: user, name, email, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel, canEditProductsOverride: cep });
+      savedUser = await AUTH.updateUser(id, { username: user, name, email, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel, canEditProductsOverride: cep, plantaRol: prol });
       showToast('Usuario actualizado', 'success');
     } else {
-      savedUser = await AUTH.createUser({ username: user, password: pass, name, email, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel, canEditProductsOverride: cep });
+      savedUser = await AUTH.createUser({ username: user, password: pass, name, email, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel, canEditProductsOverride: cep, plantaRol: prol });
       showToast('Usuario creado', 'success');
     }
     closeModal();

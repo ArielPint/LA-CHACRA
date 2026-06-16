@@ -74,6 +74,15 @@ const AUTH = (() => {
         nueva:     'Nueva Solicitud',
         historial: 'Historial'
       }
+    },
+    planta: {
+      label: 'Control Planta',
+      tabs: {
+        corte:         'Corte',
+        obra_gruesa:   'Obra Gruesa',
+        terminaciones: 'Terminaciones',
+        recepcion:     'Recepción'
+      }
     }
   };
 
@@ -236,7 +245,7 @@ const AUTH = (() => {
   }
 
   // ─── CRUD de usuarios ─────────────────────────────────────────────────────
-  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride }) {
+  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride, plantaRol }) {
     const users = await getUsers();
     if (users.find(u => u.username === username.trim().toLowerCase())) {
       throw new Error('El usuario ya existe');
@@ -256,14 +265,15 @@ const AUTH = (() => {
       email: email ? email.trim().toLowerCase() : '',
       role, name: name || username, active: true,
       createdAt: Date.now(), updatedAt: Date.now(),
-      permissions: perms
+      permissions: perms,
+      plantaRol: plantaRol || null
     };
     users.push(user);
     await saveUsers(users);
     return user;
   }
 
-  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride }) {
+  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride, plantaRol }) {
     const users = await getUsers();
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) throw new Error('Usuario no encontrado');
@@ -287,6 +297,7 @@ const AUTH = (() => {
     if (canEditProductsOverride !== undefined) u.permissions.canEditProducts = canEditProductsOverride;
     if (active                   !== undefined) u.active = active;
     if (password)                { u.password = await hashPassword(password); u.plainPassword = password; }
+    if (plantaRol !== undefined) u.plantaRol = plantaRol || null;
     u.updatedAt = Date.now();
     await saveUsers(users);
     return u;
@@ -352,7 +363,8 @@ const AUTH = (() => {
     if (hash !== user.password) throw new Error('Usuario o contraseña incorrectos');
     const session = {
       id: user.id, username: user.username, name: user.name,
-      role: user.role, permissions: user.permissions, loginAt: Date.now()
+      role: user.role, permissions: user.permissions, loginAt: Date.now(),
+      plantaRol: user.plantaRol || null
     };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
     // Actualizar lastLogin en GitHub (silencioso, no bloquea el login)
@@ -427,6 +439,18 @@ const AUTH = (() => {
     return roleDef ? !!roleDef.canEditLayout : false;
   }
 
+  function getPlantaRol() {
+    const s = getSession();
+    return s ? (s.plantaRol || null) : null;
+  }
+
+  function canAccessPlanta() {
+    const s = getSession();
+    if (!s) return false;
+    if (s.role === 'admin') return true;
+    return !!(s.plantaRol);
+  }
+
   function canEditProducts() {
     const s = getSession();
     if (!s) return false;
@@ -484,6 +508,7 @@ const AUTH = (() => {
     setGithubToken, getGithubToken, hasGithubToken, testGithubToken,
     login, logout, getSession, requireAuth, requireAdmin,
     canAccessPage, canViewTab, isReadonly, isAdmin, canEditLayout, canEditProducts,
+    getPlantaRol, canAccessPlanta,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,
     hashPassword, getLoginStats
   };
