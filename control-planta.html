@@ -201,6 +201,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <span class="planta-badge">PLANTA</span>
   </div>
   <div class="cp-tabs">
+    <button class="cp-tab hidden" id="tab-obra_gruesa" onclick="switchTab('obra_gruesa')">🏗️ Obra Gruesa</button>
     <button class="cp-tab hidden" id="tab-sanitario" onclick="switchTab('sanitario')">🚿 Sanitario</button>
     <button class="cp-tab hidden" id="tab-electrico" onclick="switchTab('electrico')">⚡ Eléctrico</button>
     <button class="cp-tab hidden" id="tab-terminaciones" onclick="switchTab('terminaciones')">🏠 Terminaciones</button>
@@ -353,9 +354,9 @@ const PARTIDAS = {
 };
 
 const ROLE_TABS = {
-  admin:                    ['sanitario','electrico','terminaciones','recepcion'],
-  gerente:                  ['sanitario','electrico','terminaciones','recepcion'],
-  supervisor_obra_gruesa:   ['sanitario','electrico'],
+  admin:                    ['obra_gruesa','sanitario','electrico','terminaciones','recepcion'],
+  gerente:                  ['obra_gruesa','sanitario','electrico','terminaciones','recepcion'],
+  supervisor_obra_gruesa:   ['obra_gruesa','sanitario','electrico'],
   supervisor_terminaciones: ['terminaciones'],
   supervisor_recepcion:     ['sanitario','electrico','terminaciones','recepcion'],
   qc1:                      ['sanitario','electrico','terminaciones'],
@@ -395,7 +396,7 @@ let recepTF='all', pendConfirm=null;
   const isAdmin = SES.role==='admin' || PROL==='admin' || PROL==='gerente';
   if (isAdmin) document.getElementById('notif-btn').classList.remove('hidden');
 
-  curTab = allowed.includes('sanitario') ? 'sanitario' : allowed[0];
+  curTab = allowed.includes('obra_gruesa') ? 'obra_gruesa' : (allowed.includes('sanitario') ? 'sanitario' : allowed[0]);
   setActive(curTab);
 
   await loadAll();
@@ -601,7 +602,7 @@ function renderList() {
   });
 
   document.getElementById('mod-list').innerHTML = mods.map(m=>{
-    const ps=PARTIDAS[tab]||[];
+    const ps=tab==='obra_gruesa'?[...PARTIDAS.sanitario,...PARTIDAS.electrico]:(PARTIDAS[tab]||[]);
     let done=0,partial=0,pend=0;
     ps.forEach(p=>{ const s=pS(m,p.c); if(isNA(s)) return; if(isDone(s)) done++; else if(s.c1||s.c2) partial++; else pend++; });
     const total=done+partial+pend;
@@ -710,6 +711,7 @@ function partsSummary() {
 }
 
 function partsHtml(tab) {
+  if (tab==='obra_gruesa') return partsHtml('sanitario') + partsHtml('electrico');
   const LABELS={sanitario:'🚿 Sanitario',electrico:'⚡ Eléctrico',terminaciones:'🏠 Terminaciones'};
   const label=LABELS[tab]||tab;
   const grp=tab;
