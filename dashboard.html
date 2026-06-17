@@ -128,7 +128,7 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="page" id="page-resumen">
   <div class="kpi-row" id="kpi-resumen"></div>
   <div class="card" id="card-av-econ" style="margin-bottom:16px">
-    <h3>% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px"><h3 style="margin:0">% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3><label style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:#7d8590;white-space:nowrap">Proyectado mes actual:<input id="proy-extra-val" type="number" min="0" max="100" step="0.1" value="4.5" style="width:64px;background:#1a1f2e;border:1px solid #3a3f5c;border-radius:4px;color:#e6edf3;padding:3px 6px;font-size:.85rem;text-align:right">%</label></div>
     <div class="chart-wrap" style="height:320px"><canvas id="ch-av-econ"></canvas></div>
   </div>
   <div class="card" style="margin-bottom:16px">
@@ -1054,6 +1054,10 @@ function renderResumen(){
     });
     const haReal = ha.map(x=>x.avEcon!=null ? +((x.avEcon)*100).toFixed(2) : null);
     const haProy = ha.map(x=>x.avEconProy!=null ? +((x.avEconProy)*100).toFixed(2) : null);
+    const _proySaved=parseFloat(localStorage.getItem('proyExtra_avEcon')||'4.5');
+    const _inpPE=document.getElementById('proy-extra-val');
+    if(_inpPE) _inpPE.value=_proySaved;
+    const haProyExtra=ha.map((_,i)=>i===ha.length-1?_proySaved:null);
     killChart('ch-av-econ');
     const ctx = document.getElementById('ch-av-econ')?.getContext('2d');
     if(ctx){
@@ -1067,7 +1071,10 @@ function renderResumen(){
             { type:'line', label:'Proyectado mensual', data:haProy,
               borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.12)',
               pointBackgroundColor:'#4f8ef7', borderWidth:2.5, pointRadius:4,
-              tension:0.35, order:1, fill:false, spanGaps:true }
+              tension:0.35, order:1, fill:false, spanGaps:true },
+            { type:'bar', label:'Proyectado adicional', data:haProyExtra,
+              backgroundColor:'transparent', borderColor:'rgba(245,166,35,0.95)',
+              borderWidth:2.5, borderSkipped:false, borderRadius:5, order:2 }
           ]
         },
         options:{
@@ -1078,13 +1085,31 @@ function renderResumen(){
             datalabels:{display:false}
           },
           scales:{
-            x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+            x:{grouped:false,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
             y:{grid:{color:'rgba(255,255,255,0.04)'},
               ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},
               border:{color:'rgba(255,255,255,0.04)'}}
           }
         }
       });
+      // Event listener para edición directa del proyectado adicional
+      (function(){
+        const inp=document.getElementById('proy-extra-val');
+        if(!inp) return;
+        inp.addEventListener('input',function(){
+          const v=parseFloat(this.value);
+          if(isNaN(v)||v<0) return;
+          localStorage.setItem('proyExtra_avEcon',v);
+          const ch=CHARTS['ch-av-econ'];
+          if(!ch) return;
+          const ds=ch.data.datasets.find(d=>d.label==='Proyectado adicional');
+          if(!ds) return;
+          const idx=ds.data.findLastIndex(x=>x!==null);
+          if(idx>=0) ds.data[idx]=v;
+          else { const last=ds.data.length-1; if(last>=0) ds.data[last]=v; }
+          ch.update();
+        });
+      })();
     }
   }
 
