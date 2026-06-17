@@ -190,6 +190,11 @@
   .gh-steps a { color: var(--blue); }
   .gh-warn { background: #fef9c3; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #78350f; margin-bottom: 16px; display: none; }
   .gh-warn.show { display: block; }
+
+  /* ── Toggle contraseña ── */
+  .btn-pw-toggle { background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.35; vertical-align: middle; margin-left: 5px; padding: 1px 3px; border-radius: 3px; transition: opacity 0.15s; line-height: 1; }
+  .btn-pw-toggle:hover { opacity: 0.8; background: #f3f4f6; }
+  .btn-pw-toggle.active { opacity: 1; }
 </style>
 </head>
 <body>
@@ -460,6 +465,9 @@
 const session = AUTH.requireAdmin('tecnopanel.html');
 if (session) document.getElementById('headerUser').textContent = session.name + ' · Admin';
 
+// Mapa de contraseñas (poblado en cada renderTable)
+const pwMap = {};
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmtDate(ts) {
   if (!ts) return '<span class="ts">—</span>';
@@ -535,6 +543,7 @@ async function renderTable(highlightId) {
       ? `<a class="btn btn-edit btn-sm" href="${mailtoHref}" title="Enviar credenciales a ${u.email}">📧 Enviar</a>`
       : `<button class="btn btn-sm" style="background:#f3f4f6;color:#bbb;cursor:default" title="Sin email registrado" disabled>📧</button>`;
 
+    if (u.plainPassword) pwMap[u.id] = u.plainPassword;
     const isSelf = u.username === session.username;
     const flash  = highlightId === u.id ? ' class="just-saved"' : '';
     return `<tr data-uid="${u.id}"${flash}>
@@ -547,7 +556,7 @@ async function renderTable(highlightId) {
       <td>${pageChips || '<span style="color:#bbb;font-size:0.75rem">Sin acceso</span>'}</td>
       <td>${modoBadge} ${layoutBadge} ${productsBadge} ${plantaBadge}</td>
       <td>${activoBadge}</td>
-      <td style="font-family:monospace;font-size:0.8rem;color:#444">${u.plainPassword || '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
+      <td style="white-space:nowrap">${u.plainPassword ? `<span id="pw-${u.id}" style="font-family:monospace;font-size:0.8rem;color:#888;letter-spacing:2px">••••••</span><button class="btn-pw-toggle" id="pw-btn-${u.id}" onclick="togglePw('${u.id}')" title="Ver/ocultar contraseña">👁</button>` : '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
       <td>${lastLoginTs ? fmtDate(lastLoginTs) : '<span style="color:#bbb;font-size:0.72rem">Nunca</span>'}</td>
       <td style="text-align:center">${countBadge}</td>
       <td>${fmtDate(u.updatedAt || u.createdAt)}</td>
@@ -558,6 +567,28 @@ async function renderTable(highlightId) {
       </div></td>
     </tr>`;
   }).join('');
+}
+
+// ── Toggle contraseña ─────────────────────────────────────────────────────
+function togglePw(id) {
+  const span = document.getElementById('pw-' + id);
+  const btn  = document.getElementById('pw-btn-' + id);
+  if (!span) return;
+  if (span.dataset.shown === '1') {
+    span.textContent  = '••••••';
+    span.style.color  = '#888';
+    span.style.letterSpacing = '2px';
+    span.dataset.shown = '0';
+    btn.classList.remove('active');
+    btn.title = 'Ver contraseña';
+  } else {
+    span.textContent  = pwMap[id] || '?';
+    span.style.color  = '#333';
+    span.style.letterSpacing = 'normal';
+    span.dataset.shown = '1';
+    btn.classList.add('active');
+    btn.title = 'Ocultar contraseña';
+  }
 }
 
 // ── Permisos por página ────────────────────────────────────────────────────
