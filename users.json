@@ -293,7 +293,7 @@
     "name": "Vicente Pinto",
     "active": true,
     "createdAt": 1781267164450,
-    "updatedAt": 1781640799860,
+    "updatedAt": 1781715306010,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -330,12 +330,14 @@
           ]
         },
         "despacho": {
-          "access": false,
+          "access": true,
           "tabs": []
         },
         "solicitudes": {
-          "access": false,
-          "tabs": []
+          "access": true,
+          "tabs": [
+            "historial"
+          ]
         },
         "planta": {
           "access": true,
@@ -348,7 +350,7 @@
         }
       },
       "readonly": false,
-      "canEditLayout": false,
+      "canEditLayout": true,
       "canEditProducts": false
     },
     "email": "vpinto@tecnopanel.cl",
