@@ -1770,7 +1770,7 @@ function renderDespachos(){
 
   // ── CHART 1b: Semanal ───────────────────────────────────────────────────
   const getISOWeek=dt=>{const d=new Date(Date.UTC(dt.getFullYear(),dt.getMonth(),dt.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const yr=d.getUTCFullYear();const w=Math.ceil((((d-new Date(Date.UTC(yr,0,1)))/86400000)+1)/7);return yr+'_'+String(w).padStart(2,'0');};
-  const semLbl=k=>{const[yr,wk]=k.split('_');return 'S'+wk+' \''+String(yr).slice(2);};
+  const semLbl=k=>{const[yr,wk]=k.split('_');const jan4=new Date(Date.UTC(+yr,0,4));const mon=new Date(jan4.getTime()+((+wk-1)*7-(jan4.getUTCDay()||7)+1)*86400000);return mon.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});};
 
   const realSem={};
   d.forEach(x=>{
