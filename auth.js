@@ -40,7 +40,8 @@ const AUTH = (() => {
         compras:   'Compras',
         productos: 'Productos',
         stock:     'Stock',
-        despachos: 'Despachos'
+        despachos:    'Despachos',
+        'prod-diaria': 'Prod. Diaria'
       }
     },
     produccion: {
