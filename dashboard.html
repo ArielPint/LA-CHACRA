@@ -618,9 +618,9 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
     if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
     var adminBtn = document.getElementById('dash-admin-btn');
     if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
-    var peLbl=document.getElementById('proy-extra-lbl');
-    if(peLbl && AUTH.isAdmin()) peLbl.style.display='flex';
   }
+  var peLbl=document.getElementById('proy-extra-lbl');
+  if(peLbl && AUTH.isAdmin()) peLbl.style.display='flex';
 
   // Ocultar tabs sin permiso
   var DASH_TABS = ['resumen','curva','modulos','compras','productos','stock','despachos'];
@@ -1075,24 +1075,54 @@ function renderResumen(){
               pointBackgroundColor:'#4f8ef7', borderWidth:2.5, pointRadius:4,
               tension:0.35, order:1, fill:false, spanGaps:true },
             { type:'bar', label:'Proyectado adicional', data:haProyExtra,
-              backgroundColor:'transparent', borderColor:'rgba(245,166,35,0.95)',
-              borderWidth:2.5, borderSkipped:false, borderRadius:5, order:3 }
+              backgroundColor:'transparent', borderColor:'rgba(0,0,0,0)',
+              borderWidth:0, order:3 }
           ]
         },
         options:{
           responsive:true, maintainAspectRatio:false,
           plugins:{
-            legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+            legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11},
+              generateLabels(chart){
+                const labels=Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                labels.forEach(l=>{if(l.text==='Proyectado adicional'){l.fillStyle='transparent';l.strokeStyle='rgba(245,166,35,0.95)';l.lineWidth=2;}});
+                return labels;
+              }}},
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
             datalabels:{display:false}
           },
           scales:{
-            x:{grouped:false,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+            x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
             y:{grid:{color:'rgba(255,255,255,0.04)'},
               ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},
               border:{color:'rgba(255,255,255,0.04)'}}
           }
         }
+      },
+        plugins:[{
+          id:'proyExtraOutline',
+          afterDatasetsDraw(chart){
+            const proDS=chart.data.datasets.find(d=>d.label==='Proyectado adicional');
+            if(!proDS) return;
+            const val=proDS.data.find(v=>v!==null);
+            if(!val) return;
+            const realIdx=chart.data.datasets.findIndex(d=>d.label==='Avance económico real');
+            if(realIdx<0) return;
+            const meta=chart.getDatasetMeta(realIdx);
+            const lastBar=meta.data[meta.data.length-1];
+            if(!lastBar) return;
+            const yScale=chart.scales.y;
+            const y0=yScale.getPixelForValue(0);
+            const y1=yScale.getPixelForValue(val);
+            const bw=lastBar.width;
+            const ctx=chart.ctx;
+            ctx.save();
+            ctx.strokeStyle='rgba(245,166,35,0.95)';
+            ctx.lineWidth=2.5;
+            ctx.strokeRect(lastBar.x-bw/2, Math.min(y0,y1), bw, Math.abs(y0-y1));
+            ctx.restore();
+          }
+        }]
       });
       // Event listener para edición directa del proyectado adicional
       (function(){
