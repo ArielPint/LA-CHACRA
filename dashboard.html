@@ -1931,7 +1931,7 @@ let _chPD = null;
 let _pdInited = false;
 
 function _pdIsNA(s){ if(!s) return false; return typeof s==='object'?s.c3==='no_aplica':s==='no_aplica'; }
-function _pdIsDone(s){ if(!s) return false; return typeof s==='object'?(s.c2===true||s.c3==='aprobado'):s==='aprobado'; }
+function _pdIsDone(s){ if(!s) return false; return typeof s==='object'?s.c3==='aprobado':s==='aprobado'; }
 
 async function _loadPDData(){
   if(_pdMods!==null) return _pdMods;
@@ -1959,7 +1959,7 @@ function _computePDRows(mods){
       if(!rel.length) return;
       if(!rel.every(c=>_pdIsDone(est[c]))) return;
       let maxD=null;
-      rel.forEach(c=>{ const t=tim[c]; if(t&&t.t2){ const d=t.t2.slice(0,10); if(!maxD||d>maxD) maxD=d; } });
+      rel.forEach(c=>{ const t=tim[c]; if(t&&t.t3){ const d=t.t3.slice(0,10); if(!maxD||d>maxD) maxD=d; } });
       if(maxD) rows.push({date:maxD,cat,modulo:m.nombre,torre:m.torre,tipo:m.tipo});
     });
   });
