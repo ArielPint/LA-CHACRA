@@ -1819,19 +1819,28 @@ function renderDespachos(){
     const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
     if(!filteredMesSet.has(mk)) return;
     const k=getISOWeek(dt);
-    if(!proySem[k]) proySem[k]={lbl:semLbl(k),sum:0,ts:dt.getTime()};
+    if(!proySem[k]) proySem[k]={lbl:semLbl(k),sum:0,acum:0,ts:dt.getTime()};
     proySem[k].sum+=(x.modulosDia||0);
+    proySem[k].acum=Math.max(proySem[k].acum,x.modulosAcumulados||0);
   });
 
   const allSemKeys=[...new Set([...Object.keys(realSem),...Object.keys(proySem)])].sort();
   const semLabels=allSemKeys.map(k=>(realSem[k]||proySem[k]).lbl);
 
-  mixedChart('ch-desp-semana', semLabels,
-    [{label:'Despachado', data:allSemKeys.map(k=>realSem[k]?.count||0),
-      backgroundColor:'rgba(63,185,80,.75)', borderRadius:3}],
-    [{label:'Proyectado', data:allSemKeys.map(k=>proySem[k]?.sum||0),
-      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)'}]
-  );
+  let _acumSem=0;
+  const acumSemData=allSemKeys.map(k=>{_acumSem+=(realSem[k]?.count||0);return _acumSem;});
+
+  lineChart('ch-desp-semana', semLabels, [
+    {label:'Despachado acumulado', data:acumSemData,
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Proyectado acumulado', data:allSemKeys.map(k=>proySem[k]?.acum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Despachado semanal', data:allSemKeys.map(k=>realSem[k]?.count||0),
+      borderColor:'rgba(255,167,38,.9)', backgroundColor:'rgba(255,167,38,.1)',
+      tension:0.35, pointRadius:3, fill:false, borderDash:[5,4]}
+  ], {legend:true});
 
   // ── CHART 2: Diario ─────────────────────────────────────────────────────
   const realDia={};
@@ -1849,7 +1858,9 @@ function renderDespachos(){
     const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
     const ts=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()).getTime();
     const lbl=dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
-    proyDia[ts]={lbl,val:x.modulosDia||0};
+    if(!proyDia[ts]) proyDia[ts]={lbl,val:0,acum:0};
+    proyDia[ts].val=x.modulosDia||0;
+    proyDia[ts].acum=Math.max(proyDia[ts].acum,x.modulosAcumulados||0);
   });
 
   // Filter daily data by selected months
@@ -1860,12 +1871,20 @@ function renderDespachos(){
     }).sort((a,b)=>a-b);
   const diaLabels=allDiaKeys.map(k=>(realDia[k]||proyDia[k]).lbl);
 
-  mixedChart('ch-desp-dia', diaLabels,
-    [{label:'Despachado', data:allDiaKeys.map(k=>realDia[k]?.count||0),
-      backgroundColor:'rgba(63,185,80,.75)', borderRadius:3}],
-    [{label:'Proyectado', data:allDiaKeys.map(k=>proyDia[k]?.val||0),
-      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)'}]
-  );
+  let _acumDia=0;
+  const acumDiaData=allDiaKeys.map(k=>{_acumDia+=(realDia[k]?.count||0);return _acumDia;});
+
+  lineChart('ch-desp-dia', diaLabels, [
+    {label:'Despachado acumulado', data:acumDiaData,
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Proyectado acumulado', data:allDiaKeys.map(k=>proyDia[k]?.acum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Despachado diario', data:allDiaKeys.map(k=>realDia[k]?.count||0),
+      borderColor:'rgba(255,167,38,.9)', backgroundColor:'rgba(255,167,38,.1)',
+      tension:0.35, pointRadius:3, fill:false, borderDash:[5,4]}
+  ], {legend:true});
 
   // ── TABLA RESUMEN MENSUAL ────────────────────────────────────────────────
   let acumReal=0, acumPend=0, prevAcumProy=0;
