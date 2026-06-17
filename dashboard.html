@@ -271,8 +271,14 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="kpi-row" id="kpi-despachos"></div>
   <div class="grid-1">
     <div class="card">
-      <h3>Módulos despachados por mes vs proyectado</h3>
+      <h3 style="font-size:1.1rem;font-weight:700;text-transform:none;letter-spacing:0">Despacho Real VS Programa Baquedano</h3>
       <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-mes"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Módulos despachados por semana vs proyectado</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-semana"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
@@ -1749,6 +1755,7 @@ function renderDespachos(){
 
   // Apply active filter
   const filteredMesKeys=_despMesFilter?allMesKeys.filter(k=>_despMesFilter.has(k)):allMesKeys;
+  const filteredMesSet=new Set(filteredMesKeys.map(k=>{const [y,m]=k.split('_').map(Number);return y+'_'+m;}));
   // Chart 1 always shows full project (not affected by month filter)
   const mesLabels=allMesKeys.map(k=>(realMes[k]||proyMes[k]).lbl);
 
@@ -1760,6 +1767,41 @@ function renderDespachos(){
       borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)',
       tension:0.35, pointRadius:4, fill:false}
   ], {legend:true});
+
+  // ── CHART 1b: Semanal ───────────────────────────────────────────────────
+  const getISOWeek=dt=>{const d=new Date(Date.UTC(dt.getFullYear(),dt.getMonth(),dt.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const yr=d.getUTCFullYear();const w=Math.ceil((((d-new Date(Date.UTC(yr,0,1)))/86400000)+1)/7);return yr+'_'+String(w).padStart(2,'0');};
+  const semLbl=k=>{const[yr,wk]=k.split('_');return 'S'+wk+' \''+String(yr).slice(2);};
+
+  const realSem={};
+  d.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+    if(!filteredMesSet.has(mk)) return;
+    const k=getISOWeek(dt);
+    if(!realSem[k]) realSem[k]={lbl:semLbl(k),mods:new Set(),ts:dt.getTime()};
+    if(x.modulo) realSem[k].mods.add(x.modulo);
+  });
+  Object.values(realSem).forEach(v=>v.count=v.mods.size);
+
+  const proySem={};
+  proy.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+    if(!filteredMesSet.has(mk)) return;
+    const k=getISOWeek(dt);
+    if(!proySem[k]) proySem[k]={lbl:semLbl(k),sum:0,ts:dt.getTime()};
+    proySem[k].sum+=(x.modulosDia||0);
+  });
+
+  const allSemKeys=[...new Set([...Object.keys(realSem),...Object.keys(proySem)])].sort();
+  const semLabels=allSemKeys.map(k=>(realSem[k]||proySem[k]).lbl);
+
+  mixedChart('ch-desp-semana', semLabels,
+    [{label:'Despachado', data:allSemKeys.map(k=>realSem[k]?.count||0),
+      backgroundColor:'rgba(63,185,80,.75)', borderRadius:3}],
+    [{label:'Proyectado', data:allSemKeys.map(k=>proySem[k]?.sum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)'}]
+  );
 
   // ── CHART 2: Diario ─────────────────────────────────────────────────────
   const realDia={};
@@ -1780,8 +1822,7 @@ function renderDespachos(){
     proyDia[ts]={lbl,val:x.modulosDia||0};
   });
 
-  // Build set of timestamps for selected months to filter daily data
-  const filteredMesSet=new Set(filteredMesKeys.map(k=>{const [y,m]=k.split('_').map(Number);return y+'_'+m;}));
+  // Filter daily data by selected months
   const allDiaKeys=[...new Set([...Object.keys(realDia),...Object.keys(proyDia)])]
     .map(Number).filter(k=>{
       const dt=new Date(k); const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
