@@ -365,7 +365,7 @@
     "name": "Santiago Scholl",
     "active": true,
     "createdAt": 1781293243214,
-    "updatedAt": 1781553490689,
+    "updatedAt": 1781715328390,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -402,11 +402,11 @@
           ]
         },
         "despacho": {
-          "access": false,
+          "access": true,
           "tabs": []
         },
         "solicitudes": {
-          "access": false,
+          "access": true,
           "tabs": []
         },
         "planta": {
@@ -420,10 +420,11 @@
         }
       },
       "readonly": false,
-      "canEditLayout": false,
+      "canEditLayout": true,
       "canEditProducts": false
     },
-    "email": "sscholl@tecnopanel.cl"
+    "email": "sscholl@tecnopanel.cl",
+    "plantaRol": null
   },
   {
     "id": "3b264db7-0e8e-4278-870a-1aeb8deec2ca",
