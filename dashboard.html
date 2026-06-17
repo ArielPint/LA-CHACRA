@@ -128,7 +128,7 @@ tbody tr:hover td{background:var(--surface2)}
 <div class="page" id="page-resumen">
   <div class="kpi-row" id="kpi-resumen"></div>
   <div class="card" id="card-av-econ" style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px"><h3 style="margin:0">% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3><label style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:#7d8590;white-space:nowrap">Proyectado mes actual:<input id="proy-extra-val" type="number" min="0" max="100" step="0.1" value="4.5" style="width:64px;background:#1a1f2e;border:1px solid #3a3f5c;border-radius:4px;color:#e6edf3;padding:3px 6px;font-size:.85rem;text-align:right">%</label></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px"><h3 style="margin:0">% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3><label id="proy-extra-lbl" style="display:none;align-items:center;gap:6px;font-size:.8rem;color:#7d8590;white-space:nowrap">Proyectado mes actual:<input id="proy-extra-val" type="number" min="0" max="100" step="0.1" value="4.5" style="width:64px;background:#1a1f2e;border:1px solid #3a3f5c;border-radius:4px;color:#e6edf3;padding:3px 6px;font-size:.85rem;text-align:right">%</label></div>
     <div class="chart-wrap" style="height:320px"><canvas id="ch-av-econ"></canvas></div>
   </div>
   <div class="card" style="margin-bottom:16px">
@@ -618,6 +618,8 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
     if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
     var adminBtn = document.getElementById('dash-admin-btn');
     if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
+    var peLbl=document.getElementById('proy-extra-lbl');
+    if(peLbl && AUTH.isAdmin()) peLbl.style.display='flex';
   }
 
   // Ocultar tabs sin permiso
@@ -1074,7 +1076,7 @@ function renderResumen(){
               tension:0.35, order:1, fill:false, spanGaps:true },
             { type:'bar', label:'Proyectado adicional', data:haProyExtra,
               backgroundColor:'transparent', borderColor:'rgba(245,166,35,0.95)',
-              borderWidth:2.5, borderSkipped:false, borderRadius:5, order:2 }
+              borderWidth:2.5, borderSkipped:false, borderRadius:5, order:3 }
           ]
         },
         options:{
