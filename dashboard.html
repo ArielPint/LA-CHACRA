@@ -970,6 +970,11 @@ function renderResumen(){
   const terminados=m.filter(x=>x.termReal).length;
   const enProceso=m.filter(x=>x.initReal&&!x.termReal).length;
   const avProm=totalMod?m.reduce((s,x)=>s+(x.avance??0),0)/totalMod:0;
+  // Avance físico real: último valor acumulado de DATA.curva (igual que Curva S)
+  const _today=new Date(); _today.setHours(23,59,59,999);
+  const _curvaHoy=(DATA.curva||[]).filter(x=>{const d=parseDate(x.fecha);return d&&!isNaN(d)&&d<=_today;});
+  const _lastReal=[..._curvaHoy].reverse().find(x=>x.real!=null&&x.real>0);
+  const avFisicoReal=_lastReal?_lastReal.real*100:avProm*100;
   const totalComprado=(DATA.detalleGD||[]).reduce((s,x)=>s+(x.valorTotal??0),0);
   const presupuesto=(DATA.detalleGD||[]).find(x=>x.presupuesto)?.presupuesto??null;
 
@@ -977,7 +982,7 @@ function renderResumen(){
   document.getElementById('kpi-resumen').innerHTML=kpiHTML([
     {lbl:'Ejecución ppto',     val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
      cls:presupuesto&&totalComprado>presupuesto?'c-red':'c-green'},
-    {lbl:'% Avance Físico',    val:fmtPr(avProm*100),      cls:'c-purple'},
+    {lbl:'% Avance Físico',    val:fmtPr(avFisicoReal),    cls:'c-purple'},
     {lbl:'Total comprado',     val:fmtM(totalComprado),    cls:'c-blue'},
     {lbl:'Módulos terminados', val:fmt(terminados),        cls:'c-green', sub:fmtPr(terminados/totalMod*100)+' del total'},
     {lbl:'Módulos en proceso', val:fmt(enProceso),         cls:'c-orange'},
@@ -1084,9 +1089,12 @@ function renderResumen(){
           plugins:{
             legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11},
               generateLabels(chart){
-                const labels=Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                labels.forEach(l=>{if(l.text==='Proyectado adicional'){l.fillStyle='transparent';l.strokeStyle='rgba(245,166,35,0.95)';l.lineWidth=2;}});
-                return labels;
+                try{
+                  const fn=Chart.defaults.plugins.legend.labels.generateLabels;
+                  const labels=fn?fn(chart):[];
+                  labels.forEach(l=>{if(l.text==='Proyectado adicional'){l.fillStyle='transparent';l.strokeStyle='rgba(245,166,35,0.95)';l.lineWidth=2;}});
+                  return labels;
+                }catch(e){return [];}
               }}},
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
             datalabels:{display:false}
