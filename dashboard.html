@@ -76,29 +76,6 @@ tbody tr:hover td{background:var(--surface2)}
 .pct-cell{display:flex;align-items:center;gap:8px}.pct-cell .pbar-wrap{width:80px}
 </style>
 
-<!-- PRODUCCION DIARIA -->
-<div class="page" id="page-prod-diaria">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-    <span style="font-size:.85rem;font-weight:700;color:var(--text)">Módulos listos por día</span>
-    <label style="font-size:.8rem;color:var(--muted);margin-left:12px">Desde:</label>
-    <input type="date" id="pd-desde" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.83rem">
-    <label style="font-size:.8rem;color:var(--muted)">Hasta:</label>
-    <input type="date" id="pd-hasta" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.83rem">
-    <button class="btn btn-primary" onclick="renderProdDiaria()" style="padding:5px 14px;font-size:.8rem">Aplicar</button>
-    <span id="pd-status" style="font-size:.78rem;color:var(--muted);margin-left:4px"></span>
-  </div>
-  <div class="kpi-row" id="kpi-prod-diaria"></div>
-  <div class="grid-1" style="margin-bottom:16px">
-    <div class="card">
-      <h3>Módulos completados por día y categoría</h3>
-      <div class="chart-wrap" style="height:320px"><canvas id="ch-prod-diaria"></canvas></div>
-    </div>
-  </div>
-  <div class="card">
-    <h3>Detalle por fecha</h3>
-    <div class="tbl-wrap"><table id="tbl-prod-diaria"><thead></thead><tbody></tbody></table></div>
-  </div>
-</div>
 
 
 <script>
@@ -295,6 +272,7 @@ tbody tr:hover td{background:var(--surface2)}
 <!-- DESPACHOS -->
 <div class="page" id="page-despachos">
   <div class="kpi-row" id="kpi-despachos"></div>
+
   <div class="grid-1">
     <div class="card">
       <h3 style="font-size:1.1rem;font-weight:700;text-transform:none;letter-spacing:0">Despacho Real VS Programa Baquedano</h3>
@@ -332,6 +310,32 @@ tbody tr:hover td{background:var(--surface2)}
     </div>
   </div>
 </div>
+
+
+<!-- PRODUCCION DIARIA -->
+<div class="page" id="page-prod-diaria">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:.85rem;font-weight:700;color:var(--text)">Módulos listos por día</span>
+    <label style="font-size:.8rem;color:var(--muted);margin-left:12px">Desde:</label>
+    <input type="date" id="pd-desde" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.83rem">
+    <label style="font-size:.8rem;color:var(--muted)">Hasta:</label>
+    <input type="date" id="pd-hasta" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.83rem">
+    <button class="btn btn-primary" onclick="renderProdDiaria()" style="padding:5px 14px;font-size:.8rem">Aplicar</button>
+    <span id="pd-status" style="font-size:.78rem;color:var(--muted);margin-left:4px"></span>
+  </div>
+  <div class="kpi-row" id="kpi-prod-diaria"></div>
+  <div class="grid-1" style="margin-bottom:16px">
+    <div class="card">
+      <h3>Módulos completados por día y categoría</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-prod-diaria"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Detalle por fecha</h3>
+    <div class="tbl-wrap"><table id="tbl-prod-diaria"><thead></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
 
 <script>
 // ═══════════════════════════════════════════════
