@@ -76,6 +76,31 @@ tbody tr:hover td{background:var(--surface2)}
 .pct-cell{display:flex;align-items:center;gap:8px}.pct-cell .pbar-wrap{width:80px}
 </style>
 
+<!-- PRODUCCION DIARIA -->
+<div class="page" id="page-prod-diaria">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:.85rem;font-weight:700;color:var(--text)">Módulos listos por día</span>
+    <label style="font-size:.8rem;color:var(--muted);margin-left:12px">Desde:</label>
+    <input type="date" id="pd-desde" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.83rem">
+    <label style="font-size:.8rem;color:var(--muted)">Hasta:</label>
+    <input type="date" id="pd-hasta" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.83rem">
+    <button class="btn btn-primary" onclick="renderProdDiaria()" style="padding:5px 14px;font-size:.8rem">Aplicar</button>
+    <span id="pd-status" style="font-size:.78rem;color:var(--muted);margin-left:4px"></span>
+  </div>
+  <div class="kpi-row" id="kpi-prod-diaria"></div>
+  <div class="grid-1" style="margin-bottom:16px">
+    <div class="card">
+      <h3>Módulos completados por día y categoría</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-prod-diaria"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Detalle por fecha</h3>
+    <div class="tbl-wrap"><table id="tbl-prod-diaria"><thead></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+
 <script>
 // Embedded mode: hide header when inside iframe
 (function(){
@@ -113,6 +138,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="tab" data-tab="productos">📦 Productos</div>
   <div class="tab" data-tab="stock">🗄️ Stock</div>
   <div class="tab" data-tab="despachos">🚚 Despachos</div>
+  <div class="tab" data-tab="prod-diaria">📅 Prod. Diaria</div>
 </nav>
 
 <div id="prompt">
@@ -1886,6 +1912,149 @@ function renderDespachos(){
     backgroundColor:['rgba(88,166,255,.8)','rgba(63,185,80,.8)','rgba(227,144,62,.8)'][i%3], borderRadius:5
   })));
 }
+// ═══════════════════════════════════════════════
+// PRODUCCION DIARIA (Supabase)
+// ═══════════════════════════════════════════════
+const PD_CATS = {
+  obra_gruesa:  {label:'Obra Gruesa',   color:'rgba(79,142,247,.8)',  border:'rgba(79,142,247,1)',  codes:['OG.01','OG.02','OG.03','OG.04','OG.05']},
+  sanitario:    {label:'Sanitario',     color:'rgba(63,207,142,.8)',  border:'rgba(63,207,142,1)',  codes:['SA.01','SA.02','SA.03','SA.04','SA.05']},
+  electrico:    {label:'Eléctrico',     color:'rgba(247,215,79,.8)',  border:'rgba(247,215,79,1)',  codes:['EL.01','EL.02','EL.03','EL.04','EL.05']},
+  terminaciones:{label:'Terminaciones', color:'rgba(188,140,255,.8)', border:'rgba(188,140,255,1)', codes:['TE.01','TE.02','TE.03','TE.04','TE.05','TE.06','TE.07','TE.08','TE.09','TE.10','TE.11','TE.12','TE.13','TE.14','TE.15','TE.16','TE.17','TE.18','TE.19','TE.20','TE.21','TE.22']}
+};
+
+let _pdMods = null;
+let _chPD = null;
+let _pdInited = false;
+
+function _pdIsNA(s){ if(!s) return false; return typeof s==='object'?s.c3==='no_aplica':s==='no_aplica'; }
+function _pdIsDone(s){ if(!s) return false; return typeof s==='object'?(s.c2===true||s.c3==='aprobado'):s==='aprobado'; }
+
+async function _loadPDData(){
+  if(_pdMods!==null) return _pdMods;
+  const st=document.getElementById('pd-status');
+  if(st) st.textContent='Cargando módulos…';
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/planta_modulos?select=id,nombre,torre,tipo,estado_modulo,estados,tiempos&order=orden.asc',
+      {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    _pdMods=await r.json();
+    if(st) st.textContent=_pdMods.length+' módulos';
+  }catch(e){
+    if(st) st.textContent='Error al cargar';
+    _pdMods=[];
+  }
+  return _pdMods;
+}
+
+function _computePDRows(mods){
+  const rows=[];
+  mods.forEach(m=>{
+    const est=m.estados||{}, tim=m.tiempos||{};
+    Object.keys(PD_CATS).forEach(cat=>{
+      const codes=PD_CATS[cat].codes;
+      const rel=codes.filter(c=>!_pdIsNA(est[c]));
+      if(!rel.length) return;
+      if(!rel.every(c=>_pdIsDone(est[c]))) return;
+      let maxD=null;
+      rel.forEach(c=>{ const t=tim[c]; if(t&&t.t2){ const d=t.t2.slice(0,10); if(!maxD||d>maxD) maxD=d; } });
+      if(maxD) rows.push({date:maxD,cat,modulo:m.nombre,torre:m.torre,tipo:m.tipo});
+    });
+  });
+  return rows;
+}
+
+async function renderProdDiaria(){
+  const mods=await _loadPDData();
+  let rows=_computePDRows(mods);
+
+  const desde=document.getElementById('pd-desde').value;
+  const hasta=document.getElementById('pd-hasta').value;
+  if(desde) rows=rows.filter(r=>r.date>=desde);
+  if(hasta) rows=rows.filter(r=>r.date<=hasta);
+
+  const catKeys=Object.keys(PD_CATS);
+  const dateSet=[...new Set(rows.map(r=>r.date))].sort();
+
+  // byDate map
+  const byDate={};
+  dateSet.forEach(d=>{ byDate[d]={}; catKeys.forEach(c=>byDate[d][c]=0); });
+  rows.forEach(r=>{ if(byDate[r.date]) byDate[r.date][r.cat]++; });
+
+  // KPIs
+  const kpiColors=['c-blue','c-green','c-yellow','c-purple'];
+  const kpiEl=document.getElementById('kpi-prod-diaria');
+  if(kpiEl) kpiEl.innerHTML=catKeys.map((c,i)=>{
+    const tot=rows.filter(r=>r.cat===c).length;
+    return `<div class="kpi ${kpiColors[i]}"><div class="kpi-lbl">${PD_CATS[c].label}</div><div class="kpi-val">${tot}</div><div class="kpi-sub">etapas completadas</div></div>`;
+  }).join('')+`<div class="kpi c-orange"><div class="kpi-lbl">Total período</div><div class="kpi-val">${rows.length}</div><div class="kpi-sub">eventos</div></div>`;
+
+  // Chart
+  if(_chPD){ _chPD.destroy(); _chPD=null; }
+  const ctx=document.getElementById('ch-prod-diaria');
+  if(ctx&&dateSet.length){
+    _chPD=new Chart(ctx.getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:dateSet.map(d=>{ const [y,mo,dy]=d.split('-'); return dy+'/'+mo; }),
+        datasets:catKeys.map(c=>({
+          label:PD_CATS[c].label,
+          data:dateSet.map(d=>byDate[d][c]),
+          backgroundColor:PD_CATS[c].color,
+          borderColor:PD_CATS[c].border,
+          borderWidth:1,
+          borderRadius:4
+        }))
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:'#e8eaf0',font:{size:11}}},
+          datalabels:{
+            display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
+            color:'#fff',font:{size:10,weight:'bold'},
+            anchor:'center',align:'center'
+          }
+        },
+        scales:{
+          x:{ticks:{color:'#7a7f99'},grid:{color:'rgba(255,255,255,.05)'},stacked:false},
+          y:{ticks:{color:'#7a7f99',stepSize:1},grid:{color:'rgba(255,255,255,.05)'},beginAtZero:true,stacked:false}
+        }
+      }
+    });
+  } else if(ctx&&!dateSet.length){
+    const c2=ctx.getContext('2d');
+    c2.clearRect(0,0,ctx.width,ctx.height);
+    c2.fillStyle='#7a7f99'; c2.font='14px Segoe UI'; c2.textAlign='center';
+    c2.fillText('Sin datos en el rango seleccionado',ctx.width/2,ctx.height/2);
+  }
+
+  // Table
+  const tbl=document.getElementById('tbl-prod-diaria');
+  if(tbl){
+    tbl.querySelector('thead').innerHTML=`<tr><th>Fecha</th>${catKeys.map(c=>`<th>${PD_CATS[c].label}</th>`).join('')}<th>Total</th></tr>`;
+    tbl.querySelector('tbody').innerHTML=dateSet.length
+      ? dateSet.map(d=>{
+          const tot=catKeys.reduce((s,c)=>s+byDate[d][c],0);
+          return `<tr><td>${d.split('-').reverse().join('/')}</td>${catKeys.map(c=>`<td style="text-align:center">${byDate[d][c]||'—'}</td>`).join('')}<td style="text-align:center;font-weight:700">${tot}</td></tr>`;
+        }).join('')
+      : `<tr><td colspan="${catKeys.length+2}" style="text-align:center;color:var(--muted);padding:20px">Sin datos en el rango seleccionado</td></tr>`;
+  }
+}
+
+// Hook tab click
+(function(){
+  const pdTab=document.querySelector('.tab[data-tab="prod-diaria"]');
+  if(pdTab) pdTab.addEventListener('click',async()=>{
+    if(!_pdInited){
+      _pdInited=true;
+      const now=new Date();
+      document.getElementById('pd-hasta').value=now.toISOString().slice(0,10);
+      const d30=new Date(now); d30.setDate(d30.getDate()-30);
+      document.getElementById('pd-desde').value=d30.toISOString().slice(0,10);
+    }
+    await renderProdDiaria();
+  });
+})();
+
 </script>
 </body>
 </html>
