@@ -1336,7 +1336,7 @@ function renderModulos(){
     }).slice(0,200);
 
     document.querySelector('#tbl-modulos thead').innerHTML=
-      `<tr><th>Módulo</th><th>Torre</th><th>Tipo</th><th>% Avance</th><th>Inicio real</th><th>Término plan.</th><th>Término real</th><th>Estado</th></tr>`;
+      `<tr><th>Módulo</th><th>Torre</th><th>Tipo</th><th>% Avance</th><th>Inicio proy.</th><th>Inicio real</th><th>GAP inicio (días)</th><th>Término plan.</th><th>Término real</th><th>GAP término (días)</th><th>Duración real (días)</th><th>Estado</th></tr>`;
     document.querySelector('#tbl-modulos tbody').innerHTML=filtered.map(x=>{
       const pct=(x.avance??0)*100;
       const col=pct>=100?'var(--green)':pct>=75?'var(--accent)':pct>=50?'var(--yellow)':'var(--red)';
@@ -1345,10 +1345,15 @@ function renderModulos(){
       const badge=pct>=100||x.termReal?'<span class="badge b-green">Terminado</span>':
                   atrasado?'<span class="badge b-red">Atrasado</span>':
                   '<span class="badge b-blue">En proceso</span>';
+      const gapI=x.gapInicio!=null?x.gapInicio:'—';
+      const gapT=(parseDate(x.termReal)&&parseDate(x.termPlan))?Math.round((parseDate(x.termReal)-parseDate(x.termPlan))/86400000):'—';
+      const durR=(parseDate(x.termReal)&&parseDate(x.initReal))?Math.round((parseDate(x.termReal)-parseDate(x.initReal))/86400000):'—';
+      const gapIClr=typeof gapI==='number'?(gapI>0?'color:var(--red)':gapI<0?'color:var(--green)':''):'';
+      const gapTClr=typeof gapT==='number'?(gapT>0?'color:var(--red)':gapT<0?'color:var(--green)':''):'';
       return`<tr>
         <td>${x.modulo||'—'}</td><td>${x.torre||'—'}</td><td>${x.tipo||'—'}</td>
         <td><div class="pct-cell"><div class="pbar-wrap"><div class="pbar" style="width:${Math.min(pct,100).toFixed(0)}%;background:${col}"></div></div><span>${pct.toFixed(2)}%</span></div></td>
-        <td>${fmtDate(x.initReal)}</td><td>${fmtDate(x.termPlan)}</td><td>${fmtDate(x.termReal)}</td>
+        <td>${fmtDate(x.initTeorico)}</td><td>${fmtDate(x.initReal)}</td><td style="${gapIClr}">${gapI}</td><td>${fmtDate(x.termPlan)}</td><td>${fmtDate(x.termReal)}</td><td style="${gapTClr}">${gapT}</td><td>${durR}</td>
         <td>${badge}</td>
       </tr>`;
     }).join('');
