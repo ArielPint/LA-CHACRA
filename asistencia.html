@@ -446,7 +446,7 @@ async function loadAttendance() {
   try {
     const startDate = new Date(from + 'T00:00:00');
     const endDate   = new Date(to   + 'T23:59:59');
-    const userIds   = users ? users.split(',').map(s => s.trim()) : ['*'];
+    const userIds   = users ? users.split(',').map(s => s.trim()).filter(Boolean) : [];
 
     const data = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
     _attendanceData = Array.isArray(data?.Users) ? data.Users : [];
