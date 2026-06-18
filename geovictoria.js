@@ -59,12 +59,17 @@ const GeoVictoria = (() => {
     return `https://${subdomain}.${env}.geovictoria.com`;
   }
 
+  // ─── Proxy Supabase (resuelve CORS) ───────────────────────────────────────
+  // Todas las llamadas a GeoVictoria pasan por esta Edge Function server-side,
+  // evitando el bloqueo CORS que ocurre en llamadas directas desde el navegador.
+  const PROXY_URL = 'https://vtrpxsgcbojqgdcsplim.supabase.co/functions/v1/gv-proxy';
+
   // ─── Helper fetch JSON ─────────────────────────────────────────────────────
   async function post(url, body, headers = {}) {
-    const resp = await fetch(url, {
+    const resp = await fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: url, body, headers })
     });
 
     if (!resp.ok) {
@@ -319,33 +324,4 @@ const GeoVictoria = (() => {
   // ─── API PÚBLICA ───────────────────────────────────────────────────────────
   return {
     // Config
-    setCredentials,
-    isConfigured,
-    getApiKey,
-    getEnv,
-    testConnection,
-
-    // Datos principales
-    getWorkers,
-    getGroups,
-    getShifts,
-    getPositions,
-
-    // Asistencia
-    getAttendanceBook,
-    getTodayAttendance,
-    getWorkersOnSite,
-    getRecentPunches,
-    getPunchesByUser,
-
-    // Permisos
-    getTimeOffs,
-
-    // Actividades
-    getActivities,
-
-    // Remuneraciones
-    getRemunerationsConsolidated
-  };
-
-})();
+    setCreden
