@@ -7,7 +7,7 @@
     "name": "Ariel",
     "active": true,
     "createdAt": 1749600000000,
-    "updatedAt": 1781614568980,
+    "updatedAt": 1781785502601,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -19,7 +19,8 @@
             "compras",
             "productos",
             "stock",
-            "despachos"
+            "despachos",
+            "prod-diaria"
           ]
         },
         "produccion": {
@@ -62,10 +63,6 @@
             "terminaciones",
             "recepcion"
           ]
-        },
-        "geovictoria": {
-          "access": true,
-          "tabs": []
         }
       },
       "readonly": false,
