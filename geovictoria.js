@@ -132,6 +132,20 @@ const GeoVictoria = (() => {
     return { ApiKey: getApiKey(), Secret: getSecret(), ...extra };
   }
 
+  // Wrapper para endpoints apiv3: intenta primero con Bearer token (customerapi comparte token),
+  // si falla 401 intenta con OAuth body. Permite que funcione con cualquiera de los dos métodos.
+  async function apiv3Post(path, extra = {}) {
+    // Intento 1: Bearer token (más confiable si Token auth ya funciona)
+    try {
+      const headers = await tokenHeaders();
+      return await post(`${baseUrl('apiv3')}${path}`, extra, headers);
+    } catch (e) {
+      if (!(e.message || '').includes('401')) throw e; // si no es 401, propaga el error
+    }
+    // Intento 2: OAuth body (ApiKey + Secret en el body)
+    return post(`${baseUrl('apiv3')}${path}`, oauthBody(extra));
+  }
+
   // ─── LIBRO DE ASISTENCIA ───────────────────────────────────────────────────
   // POST /api/v1/AttendanceBook
   // Devuelve asistencia diaria por trabajador: marcajes, turno, horas, permisos, ausencias.
@@ -193,43 +207,31 @@ const GeoVictoria = (() => {
       const p = n => String(n).padStart(2, '0');
       return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
     };
-    return post(
-      `${baseUrl('apiv3')}/api/Punch/ListPendingCheckPoint`,
-      oauthBody({
-        CheckpointDate: fmt(since),
-        Range: userIdentifiers.join(',')
-      })
-    );
+    return apiv3Post('/api/Punch/ListPendingCheckPoint', {
+      CheckpointDate: fmt(since),
+      Range: userIdentifiers.join(',')
+    });
   }
 
   // ─── TRABAJADORES ──────────────────────────────────────────────────────────
   // POST /api/User/List
   // Lista todos los colaboradores activos/inactivos con nombre, grupo, cargo, etc.
   async function getWorkers() {
-    return post(
-      `${baseUrl('apiv3')}/api/User/List`,
-      oauthBody()
-    );
+    return apiv3Post('/api/User/List');
   }
 
   // ─── TURNOS ────────────────────────────────────────────────────────────────
   // POST /api/Shift/List
   // Lista todos los turnos configurados en la empresa.
   async function getShifts() {
-    return post(
-      `${baseUrl('apiv3')}/api/Shift/List`,
-      oauthBody()
-    );
+    return apiv3Post('/api/Shift/List');
   }
 
   // ─── GRUPOS / CUADRILLAS ───────────────────────────────────────────────────
   // POST /api/Group/ListGroup
   // Lista grupos con nombre, GPS, centro de costos y supervisores.
   async function getGroups() {
-    return post(
-      `${baseUrl('apiv3')}/api/Group/ListGroup`,
-      oauthBody()
-    );
+    return apiv3Post('/api/Group/ListGroup');
   }
 
   // ─── PERMISOS ──────────────────────────────────────────────────────────────
@@ -263,24 +265,18 @@ const GeoVictoria = (() => {
       const p = n => String(n).padStart(2, '0');
       return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
     };
-    return post(
-      `${baseUrl('apiv3')}/api/Activity/GetActivities`,
-      oauthBody({
-        Range: identifiers.join(','),
-        from: fmt(from),
-        to: fmt(to),
-        includeAll: '0'
-      })
-    );
+    return apiv3Post('/api/Activity/GetActivities', {
+      Range: identifiers.join(','),
+      from: fmt(from),
+      to: fmt(to),
+      includeAll: '0'
+    });
   }
 
   // ─── CARGOS ────────────────────────────────────────────────────────────────
   // POST /api/Position/List
   async function getPositions() {
-    return post(
-      `${baseUrl('apiv3')}/api/Position/List`,
-      oauthBody()
-    );
+    return apiv3Post('/api/Position/List');
   }
 
   // ─── REMUNERACIONES (resumen) ─────────────────────────────────────────────
