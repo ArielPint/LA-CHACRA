@@ -349,6 +349,25 @@ function showCfgStatus(msg, ok) {
 
 function openConfig() { switchTab('config'); }
 
+// ─── Parsear fechas de GeoVictoria (varios formatos posibles) ─────────────
+function parseGVDate(s) {
+  if (!s) return null;
+  const str = String(s).trim();
+  // ISO estándar (2026-06-18T15:16:25 o similar)
+  let d = new Date(str);
+  if (!isNaN(d)) return d;
+  // yyyyMMddHHmmss  → "20260618151625"
+  let m = str.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+  // dd-MM-yyyy HH:mm:ss  → "18-06-2026 15:16:25"
+  m = str.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
+  // yyyy-MM-dd HH:mm:ss  (con espacio, sin T)
+  m = str.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+  return null;
+}
+
 // ─── EN PREDIO AHORA ──────────────────────────────────────────────────────
 async function loadPresencia() {
   const body = document.getElementById('presencia-body');
@@ -402,7 +421,8 @@ function renderPresencia() {
   );
 
   const rows = filtered.map(p => {
-    const hora = p.Date ? new Date(p.Date).toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'}) : '–';
+    const dObj = parseGVDate(p.Date);
+    const hora = dObj ? dObj.toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'}) : (p.Date || '–');
     return `<tr>
       <td><span class="presence-dot dot-in"></span><strong>${esc(p.Name || '–')}</strong></td>
       <td>${esc(p.UserIdentifier || '–')}</td>

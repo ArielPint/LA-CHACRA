@@ -300,7 +300,8 @@ const GeoVictoria = (() => {
     const byWorker = {};
     punches.forEach(p => {
       const id = p.UserIdentifier;
-      if (!byWorker[id] || new Date(p.Date) > new Date(byWorker[id].Date)) {
+      const parseDate = s => { if(!s) return 0; const d=new Date(s); if(!isNaN(d)) return +d; const m=String(s).match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/); return m?+new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]):0; };
+      if (!byWorker[id] || parseDate(p.Date) > parseDate(byWorker[id].Date)) {
         byWorker[id] = p;
       }
     });
