@@ -140,7 +140,9 @@ const GeoVictoria = (() => {
       const headers = await tokenHeaders();
       return await post(`${baseUrl('apiv3')}${path}`, extra, headers);
     } catch (e) {
-      if (!(e.message || '').includes('401')) throw e; // si no es 401, propaga el error
+      // apiv3 puede devolver 401 o 404 cuando no acepta Bearer token → probar OAuth
+      const msg = e.message || '';
+      if (!msg.includes('401') && !msg.includes('404')) throw e;
     }
     // Intento 2: OAuth body (ApiKey + Secret en el body)
     return post(`${baseUrl('apiv3')}${path}`, oauthBody(extra));
