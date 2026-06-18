@@ -357,9 +357,15 @@ function parseGVDate(s) {
   // ISO estándar (2026-06-18T15:16:25 o similar)
   let d = new Date(str);
   if (!isNaN(d)) return d;
-  // yyyyMMddHHmmss  → "20260618151625"
+  // yyyyMMddHHmmss  → "20260618151625"  (14 dígitos)
   let m = str.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
   if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
+  // yyyyMMddHH  → "2026061815"  (10 dígitos — AttendanceBook usa este formato)
+  m = str.match(/^(\d{4})(\d{2})(\d{2})(\d{2})$/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], 0, 0);
+  // yyyyMMdd  → "20260618"  (8 dígitos — solo fecha)
+  m = str.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
   // dd-MM-yyyy HH:mm:ss  → "18-06-2026 15:16:25"
   m = str.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
   if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
@@ -512,9 +518,11 @@ function renderAttendance() {
       const ausente  = day.Absent === 'True';
       const vacacion = day.Holiday === 'True';
       const punches  = (day.Punches || []);
-      const punchStr = punches.map(p =>
-        `${p.Type === 'Ingreso' ? '▶' : '◀'} ${p.Date ? new Date(p.Date).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}) : ''}`
-      ).join('  ');
+      const punchStr = punches.map(p => {
+        const pd = parseGVDate(p.Date);
+        const hora = pd ? pd.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}) : (p.Date || '');
+        return `${p.Type === 'Ingreso' ? '▶' : '◀'} ${hora}`;
+      }).join('  ');
 
       const status = ausente ? '<span class="badge b-red">Ausente</span>'
                    : vacacion ? '<span class="badge b-yellow">Vacaciones</span>'
@@ -524,7 +532,7 @@ function renderAttendance() {
       rows += `<tr>
         <td><strong>${esc(user.Name || '')} ${esc(user.LastName || '')}</strong></td>
         <td>${esc(user.Identifier || '–')}</td>
-        <td>${esc(day.Date ? day.Date.slice(0,10) : '–')}</td>
+        <td>${(() => { const fd = parseGVDate(day.Date); return fd ? fd.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}) : (day.Date || '–'); })()}</td>
         <td>${status}</td>
         <td class="num">${worked}h</td>
         <td class="num">${nonWork}h</td>
