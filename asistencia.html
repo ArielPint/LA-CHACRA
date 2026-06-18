@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistencia GeoVictoria — La Chacra</title>
+<script src="auth.js"></script>
+<script src="geovictoria.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:14px}
+
+/* TOPBAR */
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);height:54px;display:flex;align-items:center;padding:0 20px;gap:12px}
+.logo-area{font-size:22px;font-weight:900;white-space:nowrap}
+.logo-area span{color:var(--brand)}
+.badge-gv{font-size:10px;background:#16a34a22;color:#4ade80;border:1px solid #4ade8040;border-radius:4px;padding:2px 8px;font-weight:700;letter-spacing:.5px}
+.badge-gv.err{background:#dc262622;color:var(--red);border-color:#dc262640}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.sm-btn{font-size:.72rem;padding:5px 12px;background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s}
+.sm-btn:hover{color:var(--text);border-color:var(--accent)}
+.sm-btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.sm-btn.primary:hover{opacity:.85}
+.auth-badge{font-size:.72rem;background:rgba(255,255,255,.08);padding:3px 9px;border-radius:20px;color:var(--muted)}
+
+/* TABS NAV */
+#nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:2px}
+.tab{padding:10px 18px;font-size:.84rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--text)}.tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+
+/* CONTENT */
+#content{padding:24px 20px;max-width:1400px;margin:0 auto}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.kpi-lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.kpi-val{font-size:1.8rem;font-weight:700}
+.kpi-sub{font-size:.72rem;color:var(--muted);margin-top:3px}
+.kpi.green .kpi-val{color:var(--green)}
+.kpi.red   .kpi-val{color:var(--red)}
+.kpi.blue  .kpi-val{color:var(--accent)}
+.kpi.yellow.kpi-val{color:var(--yellow)}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+thead th{text-align:left;padding:8px 10px;color:var(--muted);font-weight:600;font-size:.72rem;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:9px 10px;border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface2)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.68rem;font-weight:700;text-transform:uppercase}
+.b-green{background:rgba(74,222,128,.12);color:#4ade80}
+.b-red{background:rgba(248,113,113,.12);color:#f87171}
+.b-yellow{background:rgba(250,204,21,.12);color:#facc15}
+.b-blue{background:rgba(96,165,250,.12);color:#60a5fa}
+.b-muted{background:rgba(156,163,175,.1);color:var(--muted)}
+
+/* CONFIG PANEL */
+#cfg-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:520px;margin:40px auto}
+#cfg-panel h2{font-size:1rem;font-weight:700;margin-bottom:4px}
+#cfg-panel p{font-size:.8rem;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.field input,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;font-size:.85rem;outline:none;transition:border .15s}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.cfg-actions{display:flex;gap:8px;margin-top:20px}
+.btn{padding:9px 20px;border-radius:6px;font-size:.84rem;font-weight:700;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--accent)}
+#cfg-status{font-size:.8rem;margin-top:12px;padding:8px 12px;border-radius:6px;display:none}
+.cfg-ok{background:rgba(74,222,128,.1);color:#4ade80;display:block!important}
+.cfg-err{background:rgba(248,113,113,.1);color:#f87171;display:block!important}
+
+/* PÁGINA */
+.page{display:none}.page.active{display:block}
+
+/* LOADING / EMPTY */
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-msg{text-align:center;padding:48px 20px;color:var(--muted);font-size:.88rem}
+.empty-msg strong{display:block;font-size:1rem;color:var(--text);margin-bottom:6px}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filter-bar input,.filter-bar select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 10px;font-size:.82rem;outline:none}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent)}
+
+/* PRESENCIA LIVE */
+.presence-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.dot-in{background:var(--green)}
+.dot-out{background:var(--muted)}
+
+/* FECHA PICKER */
+.date-range{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.date-range label{font-size:.75rem;color:var(--muted);white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo-area">LA <span>CHACRA</span></div>
+  <span id="gv-status-badge" class="badge-gv err">GeoVictoria ✕</span>
+  <div class="tb-right">
+    <span id="auth-badge" class="auth-badge"></span>
+    <button class="sm-btn" onclick="openConfig()">⚙ Configurar API</button>
+    <button class="sm-btn" onclick="refreshAll()">↻ Actualizar</button>
+    <button class="sm-btn" onclick="window.location.href='index.html'">← Volver</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div id="nav">
+  <div class="tab active" data-tab="presencia" onclick="switchTab('presencia')">En Predio Ahora</div>
+  <div class="tab" data-tab="asistencia" onclick="switchTab('asistencia')">Libro de Asistencia</div>
+  <div class="tab" data-tab="trabajadores" onclick="switchTab('trabajadores')">Trabajadores</div>
+  <div class="tab" data-tab="grupos" onclick="switchTab('grupos')">Grupos / Cuadrillas</div>
+  <div class="tab" data-tab="config" onclick="switchTab('config')">Configuración API</div>
+</div>
+
+<div id="content">
+
+  <!-- ─── TAB: EN PREDIO AHORA ──────────────────────────────────────────── -->
+  <div class="page active" id="tab-presencia">
+    <div class="kpi-row">
+      <div class="kpi green"><div class="kpi-lbl">En el predio</div><div class="kpi-val" id="kpi-in">–</div><div class="kpi-sub">último marcaje: Ingreso</div></div>
+      <div class="kpi red"><div class="kpi-lbl">Registraron salida</div><div class="kpi-val" id="kpi-out">–</div><div class="kpi-sub">último marcaje: Salida</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Total marcajes hoy</div><div class="kpi-val" id="kpi-total">–</div><div class="kpi-sub">marcas registradas</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Personas actualmente en el predio</span>
+        <span id="presencia-time" style="font-size:.72rem;color:var(--muted)"></span>
+      </div>
+      <div class="filter-bar">
+        <input id="f-presencia" type="text" placeholder="Buscar por nombre o RUT…" oninput="filterPresencia()">
+      </div>
+      <div id="presencia-body"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: LIBRO DE ASISTENCIA ─────────────────────────────────────── -->
+  <div class="page" id="tab-asistencia">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Libro de Asistencia por rango de fechas</span>
+      </div>
+      <div class="filter-bar date-range">
+        <label>Desde</label>
+        <input type="date" id="att-from">
+        <label>Hasta</label>
+        <input type="date" id="att-to">
+        <input type="text" id="att-users" placeholder="RUTs separados por coma (dejar vacío = todos)" style="min-width:280px">
+        <button class="sm-btn primary" onclick="loadAttendance()">Consultar</button>
+      </div>
+      <div id="attendance-body"><div class="empty-msg"><strong>Selecciona un rango</strong>Elige fechas y haz clic en Consultar.</div></div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: TRABAJADORES ─────────────────────────────────────────────── -->
+  <div class="page" id="tab-trabajadores">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Nómina de trabajadores GeoVictoria</span>
+        <button class="sm-btn" onclick="loadWorkers()">↻ Recargar</button>
+      </div>
+      <div class="filter-bar">
+        <input id="f-workers" type="text" placeholder="Buscar por nombre, RUT o grupo…" oninput="filterWorkers()">
+        <select id="f-worker-status" onchange="filterWorkers()">
+          <option value="">Todos</option>
+          <option value="1">Activos</option>
+          <option value="0">Inactivos</option>
+        </select>
+      </div>
+      <div id="workers-body"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: GRUPOS ───────────────────────────────────────────────────── -->
+  <div class="page" id="tab-grupos">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Grupos y cuadrillas</span>
+        <button class="sm-btn" onclick="loadGroups()">↻ Recargar</button>
+      </div>
+      <div id="groups-body"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: CONFIGURACIÓN ────────────────────────────────────────────── -->
+  <div class="page" id="tab-config">
+    <div id="cfg-panel">
+      <h2>Credenciales GeoVictoria</h2>
+      <p>Las credenciales se obtienen en la plataforma GeoVictoria:<br>
+        <strong>Configuraciones Empresa → Acceso API</strong> → copiar "Clave Api" y "Secreto".</p>
+
+      <div class="field">
+        <label>Ambiente</label>
+        <select id="cfg-env">
+          <option value="produccion">Producción</option>
+          <option value="prueba">Prueba (Staging)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Clave API (API Key / User)</label>
+        <input type="text" id="cfg-apikey" placeholder="Ej: empresa_apikey_abc123" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Secreto (Password)</label>
+        <input type="password" id="cfg-secret" placeholder="Tu secreto GeoVictoria" autocomplete="off">
+      </div>
+
+      <div class="cfg-actions">
+        <button class="btn btn-primary" onclick="saveConfig()">Guardar y probar conexión</button>
+        <button class="btn btn-secondary" onclick="clearConfig()">Borrar credenciales</button>
+      </div>
+      <div id="cfg-status"></div>
+
+      <hr style="border-color:var(--border);margin:24px 0">
+
+      <p style="font-size:.78rem;color:var(--muted);line-height:1.6">
+        <strong style="color:var(--text)">Nota de seguridad:</strong> Las credenciales se guardan en el
+        <code>localStorage</code> del navegador y nunca se envían a servidores externos
+        (sólo se usan para llamar directamente a la API de GeoVictoria).<br><br>
+        <strong style="color:var(--text)">CORS:</strong> Si ves errores de CORS, GeoVictoria debe autorizar
+        el dominio de La Chacra en su configuración. Contacta a tu jefe de proyecto GeoVictoria.
+      </p>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+// ─── Estado global ──────────────────────────────────────────────────────────
+let _punches = [];
+let _workers = [];
+let _groups  = [];
+let _attendanceData = [];
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+const session = AUTH.requireAuth('login.html');
+if (session) {
+  document.getElementById('auth-badge').textContent = session.name + ' · ' + session.role;
+}
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+
+  if (name === 'trabajadores' && _workers.length === 0) loadWorkers();
+  if (name === 'grupos' && _groups.length === 0) loadGroups();
+  if (name === 'config') loadConfigForm();
+}
+
+// ─── Status badge ─────────────────────────────────────────────────────────
+function setGVStatus(ok) {
+  const el = document.getElementById('gv-status-badge');
+  el.textContent = ok ? 'GeoVictoria ✓' : 'GeoVictoria ✕';
+  el.className = 'badge-gv' + (ok ? '' : ' err');
+}
+
+// ─── CONFIGURACIÓN ────────────────────────────────────────────────────────
+function loadConfigForm() {
+  document.getElementById('cfg-apikey').value = GeoVictoria.getApiKey();
+  document.getElementById('cfg-env').value    = GeoVictoria.getEnv();
+  // no pre-rellenar secreto por seguridad
+}
+
+async function saveConfig() {
+  const apiKey = document.getElementById('cfg-apikey').value.trim();
+  const secret = document.getElementById('cfg-secret').value.trim();
+  const env    = document.getElementById('cfg-env').value;
+  if (!apiKey || !secret) { showCfgStatus('Completa Clave API y Secreto.', false); return; }
+
+  GeoVictoria.setCredentials({ apiKey, secret, env });
+  showCfgStatus('Probando conexión…', null);
+
+  const result = await GeoVictoria.testConnection();
+  if (result.ok) {
+    showCfgStatus('✓ Conexión exitosa. Token obtenido correctamente.', true);
+    setGVStatus(true);
+    refreshAll();
+  } else {
+    showCfgStatus('✗ Error: ' + result.error, false);
+    setGVStatus(false);
+  }
+}
+
+function clearConfig() {
+  GeoVictoria.setCredentials({ apiKey: ' ', secret: ' ' });
+  localStorage.removeItem('gv_apikey');
+  localStorage.removeItem('gv_secret');
+  localStorage.removeItem('gv_token');
+  document.getElementById('cfg-apikey').value = '';
+  document.getElementById('cfg-secret').value = '';
+  showCfgStatus('Credenciales borradas.', null);
+  setGVStatus(false);
+}
+
+function showCfgStatus(msg, ok) {
+  const el = document.getElementById('cfg-status');
+  el.textContent = msg;
+  el.className = ok === true ? 'cfg-ok' : ok === false ? 'cfg-err' : '';
+  if (ok === null) el.style.display = 'block';
+}
+
+function openConfig() { switchTab('config'); }
+
+// ─── EN PREDIO AHORA ──────────────────────────────────────────────────────
+async function loadPresencia() {
+  const body = document.getElementById('presencia-body');
+  body.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const punches = await GeoVictoria.getRecentPunches();
+    _punches = Array.isArray(punches) ? punches : [];
+    setGVStatus(true);
+    renderPresencia();
+    document.getElementById('presencia-time').textContent =
+      'Actualizado: ' + new Date().toLocaleTimeString('es-CL');
+  } catch(e) {
+    setGVStatus(false);
+    body.innerHTML = renderError(e.message);
+    document.getElementById('kpi-in').textContent = '–';
+    document.getElementById('kpi-out').textContent = '–';
+    document.getElementById('kpi-total').textContent = '–';
+  }
+}
+
+function renderPresencia() {
+  // Agrupar por trabajador, quedarse con el último marcaje
+  const byWorker = {};
+  _punches.forEach(p => {
+    const id = p.UserIdentifier;
+    if (!byWorker[id] || new Date(p.Date) > new Date(byWorker[id].Date)) {
+      byWorker[id] = p;
+    }
+  });
+
+  const all    = Object.values(byWorker);
+  const inside = all.filter(p => p.Type === 'Ingreso');
+  const outside = all.filter(p => p.Type === 'Salida');
+
+  document.getElementById('kpi-in').textContent    = inside.length;
+  document.getElementById('kpi-out').textContent   = outside.length;
+  document.getElementById('kpi-total').textContent = _punches.length;
+
+  if (inside.length === 0) {
+    document.getElementById('presencia-body').innerHTML =
+      '<div class="empty-msg"><strong>Sin datos</strong>No hay marcajes de ingreso recientes o la API no está configurada.</div>';
+    return;
+  }
+
+  const q = document.getElementById('f-presencia').value.toLowerCase();
+  const filtered = inside.filter(p =>
+    !q ||
+    (p.UserIdentifier || '').toLowerCase().includes(q) ||
+    (p.Name || '').toLowerCase().includes(q)
+  );
+
+  const rows = filtered.map(p => {
+    const hora = p.Date ? new Date(p.Date).toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'}) : '–';
+    return `<tr>
+      <td><span class="presence-dot dot-in"></span><strong>${esc(p.Name || '–')}</strong></td>
+      <td>${esc(p.UserIdentifier || '–')}</td>
+      <td>${hora}</td>
+      <td>${esc(p.Origin || '–')}</td>
+      <td>${p.gps_latitude ? `<span class="badge b-blue">GPS ✓</span>` : '<span class="badge b-muted">Sin GPS</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('presencia-body').innerHTML = `
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Nombre</th><th>RUT / ID</th><th>Hora ingreso</th><th>Origen</th><th>GPS</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function filterPresencia() { renderPresencia(); }
+
+// ─── LIBRO DE ASISTENCIA ──────────────────────────────────────────────────
+function initDatePickers() {
+  const today = new Date().toISOString().slice(0,10);
+  const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+  document.getElementById('att-from').value = weekAgo;
+  document.getElementById('att-to').value   = today;
+}
+
+async function loadAttendance() {
+  const from  = document.getElementById('att-from').value;
+  const to    = document.getElementById('att-to').value;
+  const users = document.getElementById('att-users').value.trim();
+  const body  = document.getElementById('attendance-body');
+
+  if (!from || !to) { body.innerHTML = renderError('Selecciona rango de fechas.'); return; }
+
+  body.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const startDate = new Date(from + 'T00:00:00');
+    const endDate   = new Date(to   + 'T23:59:59');
+    const userIds   = users ? users.split(',').map(s => s.trim()) : ['*'];
+
+    const data = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
+    _attendanceData = Array.isArray(data?.Users) ? data.Users : [];
+    renderAttendance();
+  } catch(e) {
+    body.innerHTML = renderError(e.message);
+  }
+}
+
+function renderAttendance() {
+  if (_attendanceData.length === 0) {
+    document.getElementById('attendance-body').innerHTML =
+      '<div class="empty-msg"><strong>Sin resultados</strong>No hay datos para el rango o trabajadores indicados.</div>';
+    return;
+  }
+
+  let rows = '';
+  _attendanceData.forEach(user => {
+    const intervals = user.PlannedInterval || [];
+    intervals.forEach(day => {
+      const worked   = parseFloat(day.WorkedHours || 0).toFixed(1);
+      const nonWork  = parseFloat(day.NonWorkedHours || 0).toFixed(1);
+      const ausente  = day.Absent === 'True';
+      const vacacion = day.Holiday === 'True';
+      const punches  = (day.Punches || []);
+      const punchStr = punches.map(p =>
+        `${p.Type === 'Ingreso' ? '▶' : '◀'} ${p.Date ? new Date(p.Date).toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}) : ''}`
+      ).join('  ');
+
+      const status = ausente ? '<span class="badge b-red">Ausente</span>'
+                   : vacacion ? '<span class="badge b-yellow">Vacaciones</span>'
+                   : day.Worked === 'True' ? '<span class="badge b-green">Trabajó</span>'
+                   : '<span class="badge b-muted">–</span>';
+
+      rows += `<tr>
+        <td><strong>${esc(user.Name || '')} ${esc(user.LastName || '')}</strong></td>
+        <td>${esc(user.Identifier || '–')}</td>
+        <td>${esc(day.Date ? day.Date.slice(0,10) : '–')}</td>
+        <td>${status}</td>
+        <td class="num">${worked}h</td>
+        <td class="num">${nonWork}h</td>
+        <td style="font-size:.75rem;color:var(--muted)">${punchStr || '–'}</td>
+        <td>${esc(user.GroupDescription || '–')}</td>
+      </tr>`;
+    });
+  });
+
+  document.getElementById('attendance-body').innerHTML = `
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Nombre</th><th>ID</th><th>Fecha</th><th>Estado</th>
+          <th>Hrs. trabajadas</th><th>Hrs. no trab.</th><th>Marcajes</th><th>Grupo</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ─── TRABAJADORES ─────────────────────────────────────────────────────────
+async function loadWorkers() {
+  const body = document.getElementById('workers-body');
+  body.innerHTML = '<div class="spinner"></div>';
+  try {
+    const data = await GeoVictoria.getWorkers();
+    _workers = Array.isArray(data) ? data : [];
+    renderWorkers();
+  } catch(e) {
+    body.innerHTML = renderError(e.message);
+  }
+}
+
+function renderWorkers() {
+  const q = document.getElementById('f-workers').value.toLowerCase();
+  const st = document.getElementById('f-worker-status').value;
+
+  const filtered = _workers.filter(w => {
+    const matchQ = !q ||
+      (w.Name || '').toLowerCase().includes(q) ||
+      (w.LastName || '').toLowerCase().includes(q) ||
+      (w.Identifier || '').toLowerCase().includes(q) ||
+      (w.GroupDescription || '').toLowerCase().includes(q);
+    const matchSt = !st || String(w.Enabled) === st;
+    return matchQ && matchSt;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById('workers-body').innerHTML =
+      '<div class="empty-msg"><strong>Sin resultados</strong>No se encontraron trabajadores con ese filtro.</div>';
+    return;
+  }
+
+  const rows = filtered.map(w => {
+    const activo = w.Enabled == 1;
+    return `<tr>
+      <td><strong>${esc(w.Name || '')} ${esc(w.LastName || '')}</strong></td>
+      <td>${esc(w.Identifier || '–')}</td>
+      <td>${esc(w.Email || '–')}</td>
+      <td>${esc(w.GroupDescription || '–')}</td>
+      <td>${esc(w.positionName || '–')}</td>
+      <td>${activo ? '<span class="badge b-green">Activo</span>' : '<span class="badge b-muted">Inactivo</span>'}</td>
+      <td>${w.ContractDate ? esc(w.ContractDate.slice(0,10)) : '–'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('workers-body').innerHTML = `
+    <p style="font-size:.75rem;color:var(--muted);margin-bottom:12px">${filtered.length} trabajadores</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Nombre</th><th>RUT / ID</th><th>Email</th><th>Grupo</th><th>Cargo</th><th>Estado</th><th>Inicio contrato</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function filterWorkers() { renderWorkers(); }
+
+// ─── GRUPOS ───────────────────────────────────────────────────────────────
+async function loadGroups() {
+  const body = document.getElementById('groups-body');
+  body.innerHTML = '<div class="spinner"></div>';
+  try {
+    const data = await GeoVictoria.getGroups();
+    _groups = Array.isArray(data) ? data : [];
+    renderGroups();
+  } catch(e) {
+    body.innerHTML = renderError(e.message);
+  }
+}
+
+function renderGroups() {
+  if (_groups.length === 0) {
+    document.getElementById('groups-body').innerHTML =
+      '<div class="empty-msg"><strong>Sin grupos</strong>No se encontraron grupos o la API no está configurada.</div>';
+    return;
+  }
+
+  const rows = _groups.map(g => {
+    const supervisores = (g.Supervisors || []).map(s => s.Name || s.Identifier).join(', ') || '–';
+    const hasGps = g.GpsLatitude && g.GpsLongitude;
+    const mapsUrl = hasGps
+      ? `https://www.google.com/maps?q=${g.GpsLatitude},${g.GpsLongitude}`
+      : null;
+    return `<tr>
+      <td><strong>${esc(g.Description || '–')}</strong></td>
+      <td>${esc(g.Path || '–')}</td>
+      <td>${esc(g.CostCenter || '–')}</td>
+      <td>${supervisores}</td>
+      <td>${hasGps
+        ? `<a href="${mapsUrl}" target="_blank" style="color:var(--accent);font-size:.75rem">Ver mapa ↗</a>`
+        : '<span style="color:var(--muted)">–</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('groups-body').innerHTML = `
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Nombre</th><th>Ruta</th><th>Centro de costos</th><th>Supervisores</th><th>Ubicación</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderError(msg) {
+  return `<div class="empty-msg">
+    <strong>Error al conectar con GeoVictoria</strong>
+    ${esc(msg)}<br><br>
+    <span style="font-size:.76rem">
+      Verifica las credenciales en la pestaña <strong>Configuración API</strong>.<br>
+      Si el error es de CORS, solicita a GeoVictoria autorizar el dominio del sistema.
+    </span>
+  </div>`;
+}
+
+// ─── REFRESH GLOBAL ───────────────────────────────────────────────────────
+async function refreshAll() {
+  if (!GeoVictoria.isConfigured()) {
+    setGVStatus(false);
+    return;
+  }
+  await loadPresencia();
+  if (_workers.length > 0) await loadWorkers();
+  if (_groups.length > 0) await loadGroups();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+(async function init() {
+  initDatePickers();
+  loadConfigForm();
+
+  if (GeoVictoria.isConfigured()) {
+    // Verificar token silenciosamente
+    const result = await GeoVictoria.testConnection().catch(() => ({ ok: false, error: 'No se pudo conectar' }));
+    setGVStatus(result.ok);
+    if (result.ok) await loadPresencia();
+    else {
+      document.getElementById('presencia-body').innerHTML = renderError('Credenciales inválidas o sin conexión. Ve a Configuración API.');
+    }
+  } else {
+    setGVStatus(false);
+    document.getElementById('presencia-body').innerHTML =
+      '<div class="empty-msg"><strong>API no configurada</strong>Ve a la pestaña <strong>Configuración API</strong> e ingresa tus credenciales de GeoVictoria.</div>';
+  }
+})();
+</script>
+</body>
+</html>

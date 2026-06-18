@@ -943,7 +943,7 @@ function getSectionModules(loc, sector) {
       !dbModIds.has(modId) &&       // módulo no está ya en Supabase
       !dbPks.has(posKey(d))         // posición no ocupada por Supabase
     )
-    .map(([modId, d]) => ({ id: modId, row: d.xls_row || 0, col: d.xls_col || 0, pk: null }));
+    .map(([modId, d]) => ({ id: modId, row: d.xls_row || 0, col: d.xls_col || 0, pk: posKey(d) }));
 
   // 3) Combinar y ordenar
   const combined = [
@@ -1711,7 +1711,9 @@ function effectiveModuleAt(origId, d) {
 function effectiveModuleAtPk(pk) {
   if (PENDING_CHANGES[pk] !== undefined) return PENDING_CHANGES[pk];
   if (DB_OVERRIDES[pk])                  return DB_OVERRIDES[pk].module_id;
-  return null;
+  // Fallback: módulos que vienen solo del xlsx (no guardados aún en Supabase)
+  const locEntry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+  return locEntry ? locEntry[0] : null;
 }
 
 // Devuelve el sector para una posición pk
