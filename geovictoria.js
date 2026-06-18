@@ -124,7 +124,7 @@ const GeoVictoria = (() => {
   // Headers para métodos Token
   async function tokenHeaders() {
     const token = await getToken();
-    return { Authorization: token };
+    return { Authorization: `Bearer ${token}` };
   }
 
   // Body base para métodos OAuth (Clave Api + Secreto)
