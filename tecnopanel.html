@@ -92,7 +92,7 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   <div class="tb-dd-item" id="dd-planta" data-icon="🏭" data-label="Control Planta" onclick="openPlanta();closeMenu()" style="display:none">
     <span>🏭</span> Control Planta
   </div>
-  <div class="tb-dd-item" id="dd-asistencia" data-icon="👷" data-label="Asistencia" onclick="window.location.href='asistencia.html';closeMenu()">
+  <div class="tb-dd-item" id="dd-asistencia" data-icon="👷" data-label="Asistencia" onclick="window.location.href='asistencia.html';closeMenu()" style="display:none">
     <span>👷</span> Asistencia GeoVictoria
   </div>
 </div>
@@ -134,6 +134,11 @@ iframe{border:none;width:100%;flex:1;min-height:0}
   if (AUTH.canAccessPlanta()) {
     var el2 = document.getElementById('dd-planta');
     if (el2) el2.style.display = 'flex';
+  }
+
+  if (AUTH.canAccessPage('geovictoria')) {
+    var el3 = document.getElementById('dd-asistencia');
+    if (el3) el3.style.display = 'flex';
   }
 
   // Ocultar páginas sin acceso
