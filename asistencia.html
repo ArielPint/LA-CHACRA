@@ -446,7 +446,28 @@ async function loadAttendance() {
   try {
     const startDate = new Date(from + 'T00:00:00');
     const endDate   = new Date(to   + 'T23:59:59');
-    const userIds   = users ? users.split(',').map(s => s.trim()).filter(Boolean) : [];
+    let userIds = users ? users.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+    // UserIds es REQUERIDO en la API. Si no se ingresaron RUTs, intentar
+    // obtener identificadores desde los marcajes recientes (ListPending, Token).
+    if (userIds.length === 0) {
+      body.innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--muted);margin-top:8px">Cargando listado de trabajadores desde marcajes recientes...</p>';
+      try {
+        const punches = await GeoVictoria.getRecentPunches();
+        if (Array.isArray(punches) && punches.length > 0) {
+          userIds = [...new Set(punches.map(p => p.UserIdentifier).filter(Boolean))];
+        }
+      } catch(_) { /* si falla, se lanzará el error de AttendanceBook abajo */ }
+
+      if (userIds.length === 0) {
+        body.innerHTML = renderError(
+          'La API de GeoVictoria requiere especificar los RUTs. ' +
+          'Ingresa los RUTs separados por coma (ej: 12345678, 87654321) y vuelve a consultar. ' +
+          'No se encontraron marcajes recientes para obtenerlos automáticamente.'
+        );
+        return;
+      }
+    }
 
     const data = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
     _attendanceData = Array.isArray(data?.Users) ? data.Users : [];
