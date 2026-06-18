@@ -252,6 +252,7 @@ let _punches = [];
 let _workers = [];
 let _groups  = [];
 let _attendanceData = [];
+let _cachedPunchIds = [];  // IDs obtenidos de ListPending (compartidos entre tabs)
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 const session = AUTH.requireAuth('login.html');
@@ -376,6 +377,8 @@ async function loadPresencia() {
   try {
     const punches = await GeoVictoria.getRecentPunches();
     _punches = Array.isArray(punches) ? punches : [];
+    // Cachear IDs únicos para que Libro de Asistencia los reutilice
+    _cachedPunchIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
     setGVStatus(true);
     renderPresencia();
     document.getElementById('presencia-time').textContent =
@@ -468,23 +471,19 @@ async function loadAttendance() {
     const endDate   = new Date(to   + 'T23:59:59');
     let userIds = users ? users.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-    // UserIds es REQUERIDO en la API. Si no se ingresaron RUTs, intentar
-    // obtener identificadores desde los marcajes recientes (ListPending, Token).
+    // UserIds es REQUERIDO en la API. Si no se ingresaron RUTs, usar
+    // los IDs cacheados de la pestaña "En Predio Ahora" (si ya se cargó).
     if (userIds.length === 0) {
-      body.innerHTML = '<div class="spinner"></div><p style="text-align:center;color:var(--muted);margin-top:8px">Cargando listado de trabajadores desde marcajes recientes...</p>';
-      try {
-        const punches = await GeoVictoria.getRecentPunches();
-        if (Array.isArray(punches) && punches.length > 0) {
-          userIds = [...new Set(punches.map(p => p.UserIdentifier).filter(Boolean))];
-        }
-      } catch(_) { /* si falla, se lanzará el error de AttendanceBook abajo */ }
-
-      if (userIds.length === 0) {
-        body.innerHTML = renderError(
-          'La API de GeoVictoria requiere especificar los RUTs. ' +
-          'Ingresa los RUTs separados por coma (ej: 12345678, 87654321) y vuelve a consultar. ' +
-          'No se encontraron marcajes recientes para obtenerlos automáticamente.'
-        );
+      if (_cachedPunchIds.length > 0) {
+        userIds = _cachedPunchIds;
+      } else {
+        body.innerHTML = `<div class="empty-msg">
+          <strong>Ingresa los RUTs de los trabajadores a consultar</strong>
+          <p style="margin-top:8px;color:var(--muted)">
+            La API requiere especificar los identificadores (RUTs sin puntos ni guión), separados por coma.<br>
+            <em>Tip: carga primero la pestaña "En Predio Ahora" para que los RUTs se completen automáticamente.</em>
+          </p>
+        </div>`;
         return;
       }
     }
