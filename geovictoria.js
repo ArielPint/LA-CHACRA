@@ -48,14 +48,23 @@ const GeoVictoria = (() => {
 
   // ─── URL base ──────────────────────────────────────────────────────────────
   // GeoVictoria usa dos subdominios:
-  //   customerapi.{env}.geovictoria.com  →  métodos autenticados por Token
-  //   apiv3.{env}.geovictoria.com        →  métodos autenticados por OAuth (Api Key + Secret)
+  //   customerapi.geovictoria.com  →  métodos autenticados por Token
+  //   apiv3.geovictoria.com        →  métodos autenticados por OAuth
+  //
+  // Si el usuario tiene un ambiente personalizado (staging, demo, etc.),
+  // puede definir GV_CUSTOM_HOST en localStorage para sobrescribir el dominio.
+  // Ej: localStorage.setItem('gv_custom_host', 'customerapi.miambiente.geovictoria.com')
   function baseUrl(subdomain = 'customerapi') {
+    const custom = localStorage.getItem('gv_custom_host');
+    if (custom && custom.trim()) {
+      // El custom host ya incluye el subdominio completo; solo cambiamos customerapi↔apiv3
+      return 'https://' + custom.trim().replace(/^https?:\/\//, '').replace(/^(customerapi|apiv3)\./, subdomain + '.');
+    }
     const env = getEnv();
-    // Para el ambiente de producción la URL es simplemente geovictoria.com
-    if (env === 'produccion') {
+    if (env === 'produccion' || !env) {
       return `https://${subdomain}.geovictoria.com`;
     }
+    // Entorno personalizado: usa la URL base que GeoVictoria le asignó
     return `https://${subdomain}.${env}.geovictoria.com`;
   }
 
@@ -136,15 +145,9 @@ const GeoVictoria = (() => {
       return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
     };
     const headers = await tokenHeaders();
-    return post(
-      `${baseUrl('customerapi')}/api/v1/AttendanceBook`,
-      {
-        StartDate: fmt(startDate),
-        EndDate:   fmt(endDate),
-        UserIds:   userIds.join(',')
-      },
-      headers
-    );
+    const body = { StartDate: fmt(startDate), EndDate: fmt(endDate) };
+    if (userIds && userIds.length > 0) body.UserIds = userIds.join(',');
+    return post(`${baseUrl('customerapi')}/api/v1/AttendanceBook`, body, headers);
   }
 
   // ─── MARCAJES PENDIENTES ───────────────────────────────────────────────────
@@ -223,7 +226,7 @@ const GeoVictoria = (() => {
     const headers = await tokenHeaders();
     return post(
       `${baseUrl('customerapi')}/api/v1/TimeOff/Get`,
-      { StartDate: fmt(startDate), EndDate: fmt(endDate), UserIds: userIds },
+      Object.assign({ StartDate: fmt(startDate), EndDate: fmt(endDate) }, userIds && userIds.length ? { UserIds: userIds } : {}),
       headers
     );
   }
@@ -272,12 +275,7 @@ const GeoVictoria = (() => {
     const headers = await tokenHeaders();
     return post(
       `${baseUrl('customerapi')}/api/v1/Consolidated`,
-      {
-        IncludeAll: includeAll,
-        StartDate:  fmt(startDate),
-        EndDate:    fmt(endDate),
-        UserIds:    userIds.join(',')
-      },
+      Object.assign({ IncludeAll: includeAll, StartDate: fmt(startDate), EndDate: fmt(endDate) }, userIds && userIds.length ? { UserIds: userIds.join(',') } : {}),
       headers
     );
   }

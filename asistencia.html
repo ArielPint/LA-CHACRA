@@ -207,10 +207,15 @@ tbody tr:hover td{background:var(--surface2)}
 
       <div class="field">
         <label>Ambiente</label>
-        <select id="cfg-env">
-          <option value="produccion">Producción</option>
-          <option value="prueba">Prueba (Staging)</option>
+        <select id="cfg-env" onchange="toggleCustomHost()">
+          <option value="produccion">Producción (customerapi.geovictoria.com)</option>
+          <option value="custom">Personalizado (staging, demo, etc.)</option>
         </select>
+      </div>
+      <div class="field" id="field-custom-host" style="display:none">
+        <label>Host base personalizado</label>
+        <input type="text" id="cfg-custom-host" placeholder="Ej: customerapi.miambiente.geovictoria.com">
+        <p style="font-size:.72rem;color:var(--muted);margin-top:4px">El host que te indicó tu jefe de proyecto GeoVictoria.</p>
       </div>
       <div class="field">
         <label>Clave API (API Key / User)</label>
@@ -276,17 +281,39 @@ function setGVStatus(ok) {
 }
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────────────────
+function toggleCustomHost() {
+  const env = document.getElementById('cfg-env').value;
+  document.getElementById('field-custom-host').style.display = env === 'custom' ? 'block' : 'none';
+}
+
 function loadConfigForm() {
   document.getElementById('cfg-apikey').value = GeoVictoria.getApiKey();
-  document.getElementById('cfg-env').value    = GeoVictoria.getEnv();
-  // no pre-rellenar secreto por seguridad
+  const customHost = localStorage.getItem('gv_custom_host') || '';
+  if (customHost) {
+    document.getElementById('cfg-env').value = 'custom';
+    document.getElementById('cfg-custom-host').value = customHost;
+    toggleCustomHost();
+  } else {
+    document.getElementById('cfg-env').value = GeoVictoria.getEnv() || 'produccion';
+    toggleCustomHost();
+  }
 }
 
 async function saveConfig() {
-  const apiKey = document.getElementById('cfg-apikey').value.trim();
-  const secret = document.getElementById('cfg-secret').value.trim();
-  const env    = document.getElementById('cfg-env').value;
+  const apiKey     = document.getElementById('cfg-apikey').value.trim();
+  const secret     = document.getElementById('cfg-secret').value.trim();
+  const envSel     = document.getElementById('cfg-env').value;
+  const customHost = document.getElementById('cfg-custom-host').value.trim();
+  const env        = envSel === 'custom' ? 'custom' : envSel;
+
   if (!apiKey || !secret) { showCfgStatus('Completa Clave API y Secreto.', false); return; }
+
+  if (env === 'custom') {
+    if (!customHost) { showCfgStatus('Ingresa el host personalizado.', false); return; }
+    localStorage.setItem('gv_custom_host', customHost);
+  } else {
+    localStorage.removeItem('gv_custom_host');
+  }
 
   GeoVictoria.setCredentials({ apiKey, secret, env });
   showCfgStatus('Probando conexión…', null);
