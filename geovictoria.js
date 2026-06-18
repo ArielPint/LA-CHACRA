@@ -151,10 +151,29 @@ const GeoVictoria = (() => {
   }
 
   // ─── MARCAJES PENDIENTES ───────────────────────────────────────────────────
+  // POST /api/v1/Punch/UpdateTimeOffCreationDateCheckpoint
+  // Resetea el cursor de ListPending a una fecha dada.
+  // @param {Date} date — fecha desde la que se quiere empezar a leer
+  async function resetPunchCheckpoint(date) {
+    const d = date || new Date(new Date().setHours(0, 0, 0, 0)); // medianoche hoy por defecto
+    const p = n => String(n).padStart(2, '0');
+    const fmt = `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+    const headers = await tokenHeaders();
+    return post(
+      `${baseUrl('customerapi')}/api/v1/Punch/UpdateTimeOffCreationDateCheckpoint`,
+      { CheckpointDate: fmt },
+      headers
+    );
+  }
+
   // POST /api/v1/Punch/ListPending
   // Lista hasta 1.000 marcajes nuevos desde el último checkpoint.
   // Campos: Type (Ingreso/Salida), Date, Origin, UploadDate, UserIdentifier
-  async function getRecentPunches() {
+  // resetCheckpoint: si es true, primero resetea el cursor a medianoche de hoy
+  async function getRecentPunches({ resetCheckpoint = false } = {}) {
+    if (resetCheckpoint) {
+      await resetPunchCheckpoint();
+    }
     const headers = await tokenHeaders();
     return post(
       `${baseUrl('customerapi')}/api/v1/Punch/ListPending`,
@@ -340,6 +359,7 @@ const GeoVictoria = (() => {
     getTodayAttendance,
     getWorkersOnSite,
     getRecentPunches,
+    resetPunchCheckpoint,
     getPunchesByUser,
 
     // Permisos

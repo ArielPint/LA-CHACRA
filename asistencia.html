@@ -375,7 +375,7 @@ async function loadPresencia() {
   body.innerHTML = '<div class="spinner"></div>';
 
   try {
-    const punches = await GeoVictoria.getRecentPunches();
+    const punches = await GeoVictoria.getRecentPunches({ resetCheckpoint: true });
     _punches = Array.isArray(punches) ? punches : [];
     // Cachear IDs únicos para que Libro de Asistencia los reutilice
     _cachedPunchIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
