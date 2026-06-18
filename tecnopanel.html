@@ -215,4 +215,12 @@ function recargar() {
   if (prodLoaded) document.getElementById('frame-produccion').src = 'produccion.html';
 }
 
-document.addEventListener('keydown', fu
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeMenu(); });
+
+window.addEventListener('storage', function(e) {
+  if (e.key === 'tp_dashboard_data') { var f=document.getElementById('frame-dashboard'); if(f) f.src=f.src; }
+  if (e.key === 'tp_produccion_data' && prodLoaded) { var f=document.getElementById('frame-produccion'); if(f) f.src=f.src; }
+});
+</script>
+</body>
+</html>

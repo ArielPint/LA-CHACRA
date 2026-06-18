@@ -324,4 +324,33 @@ const GeoVictoria = (() => {
   // ─── API PÚBLICA ───────────────────────────────────────────────────────────
   return {
     // Config
-    setCreden
+    setCredentials,
+    isConfigured,
+    getApiKey,
+    getEnv,
+    testConnection,
+
+    // Datos principales
+    getWorkers,
+    getGroups,
+    getShifts,
+    getPositions,
+
+    // Asistencia
+    getAttendanceBook,
+    getTodayAttendance,
+    getWorkersOnSite,
+    getRecentPunches,
+    getPunchesByUser,
+
+    // Permisos
+    getTimeOffs,
+
+    // Actividades
+    getActivities,
+
+    // Remuneraciones
+    getRemunerationsConsolidated
+  };
+
+})();
