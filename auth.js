@@ -84,13 +84,20 @@ const AUTH = (() => {
         terminaciones: 'Terminaciones',
         recepcion:     'Recepción'
       }
+    },
+    geovictoria: {
+      label: 'Asistencia GeoVictoria',
+      restricted: true,   // acceso desactivado por defecto; debe habilitarse explícitamente
+      tabs: {}
     }
   };
 
   function defaultPagePerms() {
     const pages = {};
     for (const [pid, pdef] of Object.entries(PAGE_MAP)) {
-      pages[pid] = { access: true, tabs: Object.keys(pdef.tabs) };
+      // Páginas restringidas (restricted: true) se desactivan por defecto
+      const access = !pdef.restricted;
+      pages[pid] = { access, tabs: access ? Object.keys(pdef.tabs) : [] };
     }
     return pages;
   }
@@ -113,9 +120,11 @@ const AUTH = (() => {
   function migratePermissions(perms) {
     if (perms && perms.pages && typeof perms.pages === 'object') {
       // Forward-migrate: añadir páginas nuevas del PAGE_MAP que aún no existen en perms
-      for (const pid of Object.keys(PAGE_MAP)) {
+      for (const [pid, pdef] of Object.entries(PAGE_MAP)) {
         if (!perms.pages[pid]) {
-          perms.pages[pid] = { access: true, tabs: Object.keys(PAGE_MAP[pid].tabs || {}) };
+          // Páginas restringidas (restricted: true) se agregan con acceso desactivado
+          const access = !pdef.restricted;
+          perms.pages[pid] = { access, tabs: access ? Object.keys(pdef.tabs || {}) : [] };
         }
       }
       return perms;

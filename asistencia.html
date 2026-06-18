@@ -251,6 +251,10 @@ let _attendanceData = [];
 // ─── Auth ────────────────────────────────────────────────────────────────────
 const session = AUTH.requireAuth('login.html');
 if (session) {
+  // Verificar permiso específico de GeoVictoria
+  if (!AUTH.canAccessPage('geovictoria')) {
+    window.location.href = 'tecnopanel.html';
+  }
   document.getElementById('auth-badge').textContent = session.name + ' · ' + session.role;
 }
 

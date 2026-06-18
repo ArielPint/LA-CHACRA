@@ -62,6 +62,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": true,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -135,6 +139,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -206,6 +214,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -276,6 +288,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -347,6 +363,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -417,6 +437,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -488,6 +512,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -558,6 +586,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
