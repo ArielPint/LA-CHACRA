@@ -177,6 +177,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .ev-check input{accent-color:var(--accent)}
 .del-btn{font-size:.7rem;padding:2px 7px;border-radius:4px;border:1px solid var(--red);color:var(--red);background:transparent;cursor:pointer}
 .del-btn:hover{background:rgba(247,95,95,.1)}
+.notif-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.notif-tab{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);padding:5px 14px;font-size:.78rem;cursor:pointer;transition:all .15s}
+.notif-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 
 /* LOADING / TOAST */
 .loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:.88rem;gap:8px;padding:30px}
@@ -295,27 +298,55 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <div class="overlay hidden" id="notif-modal">
   <div class="modal notif-modal">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="m-title">🔔 Contactos WhatsApp</div>
+      <div class="m-title">🔔 Notificaciones</div>
       <button class="sm-btn" onclick="closeNotifModal()">✕</button>
     </div>
-    <div id="notif-contacts-list"><div class="loading"><div class="spinner"></div></div></div>
-    <hr style="border-color:var(--border);margin:14px 0">
-    <div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Agregar contacto</div>
-    <div class="form-row"><label class="form-label">Nombre</label><input class="form-input" id="nc-name" placeholder="Ej: Juan QC1"></div>
-    <div class="form-row"><label class="form-label">Teléfono (con código país, sin +)</label><input class="form-input" id="nc-phone" placeholder="56912345678"></div>
-    <div class="form-row"><label class="form-label">CallMeBot API Key (<a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" style="color:var(--accent);font-size:.72rem">obtener key</a>)</label><input class="form-input" id="nc-key" placeholder="123456"></div>
-    <div class="form-row">
-      <label class="form-label">Notificar cuando:</label>
-      <div class="ev-checks">
-        <label class="ev-check"><input type="checkbox" id="ev-c1" value="check1_done"> ✅ Producción lista</label>
-        <label class="ev-check"><input type="checkbox" id="ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
-        <label class="ev-check"><input type="checkbox" id="ev-c3ok" value="check3_approved"> 👤 Cliente aprueba</label>
-        <label class="ev-check"><input type="checkbox" id="ev-c3rej" value="check3_rejected"> ❌ Cliente rechaza</label>
+    <div class="notif-tabs">
+      <button class="notif-tab active" id="ntab-wa" onclick="switchNotifTab('wa')">💬 WhatsApp</button>
+      <button class="notif-tab" id="ntab-slack" onclick="switchNotifTab('slack')">🟢 Slack</button>
+    </div>
+    <!-- Panel WhatsApp -->
+    <div id="npanel-wa">
+      <div id="notif-contacts-list"><div class="loading"><div class="spinner"></div></div></div>
+      <hr style="border-color:var(--border);margin:14px 0">
+      <div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Agregar contacto</div>
+      <div class="form-row"><label class="form-label">Nombre</label><input class="form-input" id="nc-name" placeholder="Ej: Juan QC1"></div>
+      <div class="form-row"><label class="form-label">Teléfono (con código país, sin +)</label><input class="form-input" id="nc-phone" placeholder="56912345678"></div>
+      <div class="form-row"><label class="form-label">CallMeBot API Key (<a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" style="color:var(--accent);font-size:.72rem">obtener key</a>)</label><input class="form-input" id="nc-key" placeholder="123456"></div>
+      <div class="form-row">
+        <label class="form-label">Notificar cuando:</label>
+        <div class="ev-checks">
+          <label class="ev-check"><input type="checkbox" id="ev-c1" value="check1_done"> ✅ Producción lista</label>
+          <label class="ev-check"><input type="checkbox" id="ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
+          <label class="ev-check"><input type="checkbox" id="ev-c3ok" value="check3_approved"> 👤 Cliente aprueba</label>
+          <label class="ev-check"><input type="checkbox" id="ev-c3rej" value="check3_rejected"> ❌ Cliente rechaza</label>
+        </div>
+      </div>
+      <div class="m-actions">
+        <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
+        <button class="btn btn-pri" onclick="saveContact()">➕ Agregar</button>
       </div>
     </div>
-    <div class="m-actions">
-      <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
-      <button class="btn btn-pri" onclick="saveContact()">➕ Agregar</button>
+    <!-- Panel Slack -->
+    <div id="npanel-slack" class="hidden">
+      <div id="slack-channels-list"><div class="loading"><div class="spinner"></div></div></div>
+      <hr style="border-color:var(--border);margin:14px 0">
+      <div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Agregar canal</div>
+      <div class="form-row"><label class="form-label">Nombre del canal</label><input class="form-input" id="sc-name" placeholder="Ej: #produccion-planta"></div>
+      <div class="form-row"><label class="form-label">Webhook URL (<a href="https://api.slack.com/apps" target="_blank" style="color:var(--accent);font-size:.72rem">cómo obtenerlo ↗</a>)</label><input class="form-input" id="sc-webhook" placeholder="https://hooks.slack.com/services/..."></div>
+      <div class="form-row">
+        <label class="form-label">Notificar cuando:</label>
+        <div class="ev-checks">
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c1" value="check1_done"> ✅ Producción lista</label>
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c3ok" value="check3_approved"> 👤 Cliente aprueba</label>
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c3rej" value="check3_rejected"> ❌ Cliente rechaza</label>
+        </div>
+      </div>
+      <div class="m-actions">
+        <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
+        <button class="btn btn-pri" onclick="saveSlackChannel()">➕ Agregar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1161,18 +1192,37 @@ function showConfirm(title,sub,btns){
 function closeModal(){ document.getElementById('modal').classList.add('hidden'); pendConfirm=null; }
 document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal') closeModal(); });
 
-// ── WhatsApp CallMeBot ────────────────────────────────────────────────────────
+// ── WhatsApp + Slack Notifications ───────────────────────────────────────────
 async function sendNotifs(evento, message){
+  // WhatsApp via CallMeBot
   try{
     const r=await fetch(`${SURL}/rest/v1/planta_notif_contacts?active=eq.true&select=phone,callmebot_key,eventos`,{headers:SH});
     const contacts=await r.json();
     contacts.filter(c=>c.callmebot_key&&c.eventos?.includes(evento)).forEach(c=>{
       new Image().src=`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(c.phone)}&text=${encodeURIComponent(message)}&apikey=${c.callmebot_key}`;
     });
-  } catch(e){ console.warn('Notif error',e); }
+  } catch(e){ console.warn('WhatsApp notif error',e); }
+  // Slack via Edge Function (proxy para evitar CORS)
+  try{
+    fetch(`${SURL}/functions/v1/slack-notify`,{
+      method:'POST',
+      headers:{...SH,'Content-Type':'application/json'},
+      body:JSON.stringify({evento,message})
+    });
+  } catch(e){ console.warn('Slack notif error',e); }
 }
 
-// ── Notification contacts management ─────────────────────────────────────────
+// ── Notification modal ────────────────────────────────────────────────────────
+const EV_LABEL={'check1_done':'Producción','check2_done':'Calidad','check3_approved':'Cliente aprueba','check3_rejected':'Cliente rechaza'};
+
+function switchNotifTab(tab){
+  ['wa','slack'].forEach(t=>{
+    document.getElementById('ntab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('npanel-'+t).classList.toggle('hidden',t!==tab);
+  });
+  if(tab==='slack') refreshSlackList();
+}
+
 async function openNotifModal(){
   document.getElementById('notif-modal').classList.remove('hidden');
   await refreshContactsList();
@@ -1181,13 +1231,13 @@ async function openNotifModal(){
 function closeNotifModal(){ document.getElementById('notif-modal').classList.add('hidden'); }
 document.getElementById('notif-modal').addEventListener('click',e=>{ if(e.target.id==='notif-modal') closeNotifModal(); });
 
+// ── WhatsApp contacts ─────────────────────────────────────────────────────────
 async function refreshContactsList(){
   const el=document.getElementById('notif-contacts-list');
   el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try{
     const r=await fetch(`${SURL}/rest/v1/planta_notif_contacts?order=created_at.asc`,{headers:SH});
     const contacts=await r.json();
-    const EV_LABEL={'check1_done':'Producción','check2_done':'Calidad','check3_approved':'Cliente aprueba','check3_rejected':'Cliente rechaza'};
     el.innerHTML=contacts.length?contacts.map(c=>`
       <div class="notif-contact">
         <div class="nc-top">
@@ -1237,6 +1287,64 @@ async function toggleContactActive(id, active){
     body:JSON.stringify({active})
   });
   await refreshContactsList();
+}
+
+// ── Slack channels ─────────────────────────────────────────────────────────────
+async function refreshSlackList(){
+  const el=document.getElementById('slack-channels-list');
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const r=await fetch(`${SURL}/rest/v1/planta_slack_channels?order=created_at.asc`,{headers:SH});
+    const channels=await r.json();
+    el.innerHTML=channels.length?channels.map(c=>`
+      <div class="notif-contact">
+        <div class="nc-top">
+          <div>
+            <div class="nc-name">🟢 ${c.nombre}</div>
+            <div style="font-size:.72rem;color:var(--muted);font-family:monospace">${c.webhook_url.replace(/\/[^\/]{10,}$/,'/*****')}${!c.active?' · ⚫ inactivo':''}</div>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <button class="sm-btn" onclick="toggleSlackActive('${c.id}',${!c.active})">${c.active?'Desactivar':'Activar'}</button>
+            <button class="del-btn" onclick="deleteSlackChannel('${c.id}')">✕</button>
+          </div>
+        </div>
+        <div class="nc-tags">${(c.eventos||[]).map(ev=>`<span class="nc-tag">${EV_LABEL[ev]||ev}</span>`).join('')}</div>
+      </div>`).join(''):'<div style="color:var(--muted);font-size:.82rem;padding:8px 0">Sin canales configurados.</div>';
+  } catch(e){ el.innerHTML='<div style="color:var(--red)">Error cargando canales.</div>'; }
+}
+
+async function saveSlackChannel(){
+  const nombre=document.getElementById('sc-name').value.trim();
+  const webhook_url=document.getElementById('sc-webhook').value.trim();
+  if(!nombre||!webhook_url){ toast('Completa nombre y webhook URL','err'); return; }
+  if(!webhook_url.startsWith('https://hooks.slack.com/')){ toast('URL de webhook inválida','err'); return; }
+  const evs=['sc-ev-c1','sc-ev-c2','sc-ev-c3ok','sc-ev-c3rej']
+    .filter(id=>document.getElementById(id).checked)
+    .map(id=>document.getElementById(id).value);
+  try{
+    await fetch(`${SURL}/rest/v1/planta_slack_channels`,{
+      method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({nombre,webhook_url,eventos:evs,active:true})
+    });
+    ['sc-name','sc-webhook'].forEach(id=>document.getElementById(id).value='');
+    ['sc-ev-c1','sc-ev-c2','sc-ev-c3ok','sc-ev-c3rej'].forEach(id=>document.getElementById(id).checked=false);
+    toast('Canal Slack agregado','ok');
+    await refreshSlackList();
+  } catch(e){ toast('Error al guardar canal','err'); }
+}
+
+async function deleteSlackChannel(id){
+  if(!confirm('¿Eliminar este canal?')) return;
+  await fetch(`${SURL}/rest/v1/planta_slack_channels?id=eq.${id}`,{method:'DELETE',headers:SH});
+  await refreshSlackList();
+}
+
+async function toggleSlackActive(id, active){
+  await fetch(`${SURL}/rest/v1/planta_slack_channels?id=eq.${id}`,{
+    method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+    body:JSON.stringify({active})
+  });
+  await refreshSlackList();
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
