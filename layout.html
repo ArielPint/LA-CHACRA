@@ -785,8 +785,16 @@ async function loadUbicaciones() {
       const row = rows[r] || [];
       for (let c = 0; c < row.length; c++) {
         const v = row[c];
-        if (v && typeof v === 'string' && /^M-\d+/.test(v.trim()))
-          LOC[v.trim()] = Object.assign({ xls_row: r, xls_col: c }, assignLoc(r, c));
+        if (v && typeof v === 'string' && /^M-\d+/.test(v.trim())) {
+          // La hoja UBICACIONES comienza en O3 (col 15, fila 3 en base-1).
+          // Los índices SheetJS son 0-based desde A/fila-1, por lo tanto:
+          //   r_adj = r - 2   (fila 3 → 0 ajustado)
+          //   c_adj = c - 14  (col O → 0 ajustado)
+          // Esto alinea LOC con los valores que almacena la BD y que espera assignLoc.
+          const r_adj = r - 2;
+          const c_adj = c - 14;
+          LOC[v.trim()] = Object.assign({ xls_row: r_adj, xls_col: c_adj }, assignLoc(r_adj, c_adj));
+        }
       }
     }
   } catch (e) { console.warn('ubicaciones.xlsx:', e.message); }
