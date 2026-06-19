@@ -63,6 +63,10 @@
             "terminaciones",
             "recepcion"
           ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
         }
       },
       "readonly": false,
@@ -594,5 +598,66 @@
       "canEditProducts": false
     },
     "plantaRol": "supervisor_recepcion"
+  },
+  {
+    "id": "854c693b-a3a7-459d-82a6-0965f1a211d0",
+    "username": "bvalenzuela",
+    "password": "ba90fec922a48bef9c05e664abb860dd649f09f44b98791d0580b9bdc4ba2e2c",
+    "plainPassword": "Bv.951",
+    "email": "bvalenzuela@tecnopanel.cl",
+    "role": "operador",
+    "name": "Catalina Valenzuela",
+    "active": true,
+    "createdAt": 1781874213945,
+    "updatedAt": 1781874213945,
+    "permissions": {
+      "pages": {
+        "dashboard": {
+          "access": false,
+          "tabs": []
+        },
+        "produccion": {
+          "access": false,
+          "tabs": []
+        },
+        "layout": {
+          "access": true,
+          "tabs": [
+            "resumen",
+            "galpon",
+            "carpa-grande",
+            "carpa-chica",
+            "patio",
+            "planta"
+          ]
+        },
+        "despacho": {
+          "access": false,
+          "tabs": []
+        },
+        "solicitudes": {
+          "access": true,
+          "tabs": [
+            "nueva",
+            "historial"
+          ]
+        },
+        "planta": {
+          "access": true,
+          "tabs": [
+            "corte",
+            "obra_gruesa"
+          ]
+        },
+        "geovictoria": {
+          "access": false,
+          "tabs": []
+        }
+      },
+      "readonly": false,
+      "canEditLayout": true,
+      "canEditProducts": false
+    },
+    "plantaRol": "supervisor_obra_gruesa"
   }
 ]
