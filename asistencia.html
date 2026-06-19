@@ -6,6 +6,7 @@
 <title>Asistencia GeoVictoria — La Chacra</title>
 <script src="auth.js"></script>
 <script src="geovictoria.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -94,6 +95,7 @@ tbody tr:hover td{background:var(--surface2)}
 .filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .filter-bar input,.filter-bar select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 10px;font-size:.82rem;outline:none}
 .filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent)}
+.filter-lbl{font-size:.75rem;color:var(--muted);white-space:nowrap}
 
 /* PRESENCIA LIVE */
 .presence-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
@@ -103,6 +105,9 @@ tbody tr:hover td{background:var(--surface2)}
 /* FECHA PICKER */
 .date-range{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .date-range label{font-size:.75rem;color:var(--muted);white-space:nowrap}
+
+/* CHART */
+.chart-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:20px;position:relative;height:320px}
 </style>
 </head>
 <body>
@@ -123,6 +128,7 @@ tbody tr:hover td{background:var(--surface2)}
 <div id="nav">
   <div class="tab active" data-tab="presencia" onclick="switchTab('presencia')">En Predio Ahora</div>
   <div class="tab" data-tab="asistencia" onclick="switchTab('asistencia')">Libro de Asistencia</div>
+  <div class="tab" data-tab="resumen" onclick="switchTab('resumen')">Resumen</div>
   <div class="tab" data-tab="trabajadores" onclick="switchTab('trabajadores')">Trabajadores</div>
   <div class="tab" data-tab="grupos" onclick="switchTab('grupos')">Grupos / Cuadrillas</div>
   <div class="tab" data-tab="config" onclick="switchTab('config')">Configuración API</div>
@@ -156,15 +162,50 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="card-header">
         <span class="card-title">Libro de Asistencia por rango de fechas</span>
       </div>
-      <div class="filter-bar date-range">
-        <label>Desde</label>
+      <div class="filter-bar">
+        <span class="filter-lbl">Grupo</span>
+        <select id="att-group" style="min-width:190px">
+          <option value="">Todos los grupos</option>
+        </select>
+        <span class="filter-lbl">Desde</span>
         <input type="date" id="att-from">
-        <label>Hasta</label>
+        <span class="filter-lbl">Hasta</span>
         <input type="date" id="att-to">
-        <input type="text" id="att-users" placeholder="RUTs separados por coma (dejar vacío = todos)" style="min-width:280px">
+        <input type="text" id="att-users" placeholder="RUTs (opcional, si no hay grupo)" style="min-width:240px">
         <button class="sm-btn primary" onclick="loadAttendance()">Consultar</button>
       </div>
-      <div id="attendance-body"><div class="empty-msg"><strong>Selecciona un rango</strong>Elige fechas y haz clic en Consultar.</div></div>
+      <div id="attendance-body">
+        <div class="empty-msg">
+          <strong>Selecciona un grupo y rango de fechas</strong>
+          Elige un grupo en el filtro (o ingresa RUTs manualmente) y haz clic en Consultar.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: RESUMEN ─────────────────────────────────────────────────── -->
+  <div class="page" id="tab-resumen">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Resumen de asistencia por día</span>
+      </div>
+      <div class="filter-bar">
+        <span class="filter-lbl">Grupo</span>
+        <select id="res-group" style="min-width:190px">
+          <option value="">Todos los grupos</option>
+        </select>
+        <span class="filter-lbl">Desde</span>
+        <input type="date" id="res-from">
+        <span class="filter-lbl">Hasta</span>
+        <input type="date" id="res-to">
+        <button class="sm-btn primary" onclick="loadResumen()">Consultar</button>
+      </div>
+      <div id="resumen-body">
+        <div class="empty-msg">
+          <strong>Selecciona un grupo y rango de fechas</strong>
+          Elige el grupo y las fechas para ver el gráfico de asistencia diaria.
+        </div>
+      </div>
     </div>
   </div>
 
@@ -248,16 +289,17 @@ tbody tr:hover td{background:var(--surface2)}
 
 <script>
 // ─── Estado global ──────────────────────────────────────────────────────────
-let _punches = [];
-let _workers = [];
-let _groups  = [];
+let _punches        = [];
+let _workers        = [];
+let _groups         = [];
 let _attendanceData = [];
-let _cachedPunchIds = [];  // IDs obtenidos de ListPending (compartidos entre tabs)
+let _cachedPunchIds = [];
+let _summaryChart   = null;
+let _groupsLoaded   = false;
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 const session = AUTH.requireAuth('login.html');
 if (session) {
-  // Verificar permiso específico de GeoVictoria
   if (!AUTH.canAccessPage('geovictoria')) {
     window.location.href = 'tecnopanel.html';
   }
@@ -272,6 +314,7 @@ function switchTab(name) {
   if (name === 'trabajadores' && _workers.length === 0) loadWorkers();
   if (name === 'grupos' && _groups.length === 0) loadGroups();
   if (name === 'config') loadConfigForm();
+  if (name === 'asistencia' || name === 'resumen') loadGroupFilters();
 }
 
 // ─── Status badge ─────────────────────────────────────────────────────────
@@ -323,6 +366,7 @@ async function saveConfig() {
   if (result.ok) {
     showCfgStatus('✓ Conexión exitosa. Token obtenido correctamente.', true);
     setGVStatus(true);
+    _groupsLoaded = false; // forzar recarga de grupos
     refreshAll();
   } else {
     showCfgStatus('✗ Error: ' + result.error, false);
@@ -354,25 +398,54 @@ function openConfig() { switchTab('config'); }
 function parseGVDate(s) {
   if (!s) return null;
   const str = String(s).trim();
-  // ISO estándar (2026-06-18T15:16:25 o similar)
   let d = new Date(str);
   if (!isNaN(d)) return d;
-  // yyyyMMddHHmmss  → "20260618151625"  (14 dígitos)
   let m = str.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
   if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
-  // yyyyMMddHH  → "2026061815"  (10 dígitos — AttendanceBook usa este formato)
   m = str.match(/^(\d{4})(\d{2})(\d{2})(\d{2})$/);
   if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], 0, 0);
-  // yyyyMMdd  → "20260618"  (8 dígitos — solo fecha)
   m = str.match(/^(\d{4})(\d{2})(\d{2})$/);
   if (m) return new Date(+m[1], +m[2]-1, +m[3]);
-  // dd-MM-yyyy HH:mm:ss  → "18-06-2026 15:16:25"
   m = str.match(/^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
   if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
-  // yyyy-MM-dd HH:mm:ss  (con espacio, sin T)
   m = str.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
   if (m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]);
   return null;
+}
+
+// ─── FILTROS DE GRUPO (compartidos entre pestañas) ────────────────────────
+async function loadGroupFilters() {
+  if (_groupsLoaded) return;
+  try {
+    if (_groups.length === 0) {
+      const data = await GeoVictoria.getGroups();
+      _groups = Array.isArray(data) ? data : [];
+    }
+    const options = _groups
+      .filter(g => g.Description)
+      .map(g => `<option value="${esc(g.Description)}">${esc(g.Description)}</option>`)
+      .join('');
+    const placeholder = '<option value="">Todos los grupos</option>';
+    ['att-group', 'res-group'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = placeholder + options;
+    });
+    _groupsLoaded = true;
+  } catch(e) {
+    console.warn('No se pudieron cargar los grupos para el filtro:', e.message);
+  }
+}
+
+// Obtiene los IDs de trabajadores para un grupo dado (carga _workers si hace falta)
+async function getWorkerIdsForGroup(groupDescription) {
+  if (_workers.length === 0) {
+    const data = await GeoVictoria.getWorkers();
+    _workers = Array.isArray(data) ? data : [];
+  }
+  return _workers
+    .filter(w => (w.GroupDescription || '') === groupDescription)
+    .map(w => w.Identifier)
+    .filter(Boolean);
 }
 
 // ─── EN PREDIO AHORA ──────────────────────────────────────────────────────
@@ -383,7 +456,6 @@ async function loadPresencia() {
   try {
     const punches = await GeoVictoria.getRecentPunches({ resetCheckpoint: true });
     _punches = Array.isArray(punches) ? punches : [];
-    // Cachear IDs únicos para que Libro de Asistencia los reutilice
     _cachedPunchIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
     setGVStatus(true);
     renderPresencia();
@@ -399,7 +471,6 @@ async function loadPresencia() {
 }
 
 function renderPresencia() {
-  // Agrupar por trabajador, quedarse con el último marcaje
   const byWorker = {};
   _punches.forEach(p => {
     const id = p.UserIdentifier;
@@ -456,41 +527,52 @@ function filterPresencia() { renderPresencia(); }
 
 // ─── LIBRO DE ASISTENCIA ──────────────────────────────────────────────────
 function initDatePickers() {
-  const today = new Date().toISOString().slice(0,10);
+  const today   = new Date().toISOString().slice(0,10);
   const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
   document.getElementById('att-from').value = weekAgo;
   document.getElementById('att-to').value   = today;
+  document.getElementById('res-from').value = weekAgo;
+  document.getElementById('res-to').value   = today;
 }
 
 async function loadAttendance() {
-  const from  = document.getElementById('att-from').value;
-  const to    = document.getElementById('att-to').value;
-  const users = document.getElementById('att-users').value.trim();
-  const body  = document.getElementById('attendance-body');
+  const from        = document.getElementById('att-from').value;
+  const to          = document.getElementById('att-to').value;
+  const groupFilter = document.getElementById('att-group').value;
+  const users       = document.getElementById('att-users').value.trim();
+  const body        = document.getElementById('attendance-body');
 
   if (!from || !to) { body.innerHTML = renderError('Selecciona rango de fechas.'); return; }
-
   body.innerHTML = '<div class="spinner"></div>';
 
   try {
     const startDate = new Date(from + 'T00:00:00');
     const endDate   = new Date(to   + 'T23:59:59');
-    let userIds = users ? users.split(',').map(s => s.trim()).filter(Boolean) : [];
+    let userIds = [];
 
-    // UserIds es REQUERIDO en la API. Si no se ingresaron RUTs, usar
-    // los IDs cacheados de la pestaña "En Predio Ahora" (si ya se cargó).
-    if (userIds.length === 0) {
-      if (_cachedPunchIds.length > 0) {
-        userIds = _cachedPunchIds;
-      } else {
-        body.innerHTML = `<div class="empty-msg">
-          <strong>Ingresa los RUTs de los trabajadores a consultar</strong>
-          <p style="margin-top:8px;color:var(--muted)">
-            La API requiere especificar los identificadores (RUTs sin puntos ni guión), separados por coma.<br>
-            <em>Tip: carga primero la pestaña "En Predio Ahora" para que los RUTs se completen automáticamente.</em>
-          </p>
-        </div>`;
+    if (groupFilter) {
+      // Filtrar por grupo: obtener IDs de los trabajadores del grupo
+      userIds = await getWorkerIdsForGroup(groupFilter);
+      if (userIds.length === 0) {
+        body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores en el grupo</strong>El grupo seleccionado no tiene trabajadores con identificador registrado.</div>';
         return;
+      }
+    } else {
+      // Sin grupo: usar RUTs ingresados manualmente o los cacheados de "En Predio Ahora"
+      userIds = users ? users.split(',').map(s => s.trim()).filter(Boolean) : [];
+      if (userIds.length === 0) {
+        if (_cachedPunchIds.length > 0) {
+          userIds = _cachedPunchIds;
+        } else {
+          body.innerHTML = `<div class="empty-msg">
+            <strong>Selecciona un grupo o ingresa los RUTs</strong>
+            <p style="margin-top:8px;color:var(--muted)">
+              Elige un grupo en el filtro, o ingresa RUTs separados por coma.<br>
+              <em>También puedes cargar "En Predio Ahora" para que los RUTs se completen automáticamente.</em>
+            </p>
+          </div>`;
+          return;
+        }
       }
     }
 
@@ -509,35 +591,46 @@ function renderAttendance() {
     return;
   }
 
+  // Función auxiliar para formatear hora de un marcaje
+  const fmtHora = (punch) => {
+    if (!punch) return '–';
+    const d = parseGVDate(punch.Date);
+    return d ? d.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'}) : '–';
+  };
+
   let rows = '';
   _attendanceData.forEach(user => {
-    const intervals = user.PlannedInterval || [];
-    intervals.forEach(day => {
+    const cargo    = esc(user.positionName || user.Position || '–');
+    const nombre   = `${esc(user.Name || '')} ${esc(user.LastName || '')}`.trim() || '–';
+    const rut      = esc(user.Identifier || '–');
+
+    (user.PlannedInterval || []).forEach(day => {
       const worked   = parseFloat(day.WorkedHours || 0).toFixed(1);
-      const nonWork  = parseFloat(day.NonWorkedHours || 0).toFixed(1);
       const ausente  = day.Absent === 'True';
       const vacacion = day.Holiday === 'True';
-      const punches  = (day.Punches || []);
-      const punchStr = punches.map(p => {
-        const pd = parseGVDate(p.Date);
-        const hora = pd ? pd.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'}) : (p.Date || '');
-        return `${p.Type === 'Ingreso' ? '▶' : '◀'} ${hora}`;
-      }).join('  ');
+      const punches  = day.Punches || [];
+      const entrada  = punches.find(p => p.Type === 'Ingreso');
+      const salida   = punches.find(p => p.Type === 'Salida');
 
-      const status = ausente ? '<span class="badge b-red">Ausente</span>'
+      const fechaObj = parseGVDate(day.Date);
+      const fecha    = fechaObj
+        ? fechaObj.toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'})
+        : (day.Date || '–');
+
+      const status = ausente  ? '<span class="badge b-red">Ausente</span>'
                    : vacacion ? '<span class="badge b-yellow">Vacaciones</span>'
                    : day.Worked === 'True' ? '<span class="badge b-green">Trabajó</span>'
                    : '<span class="badge b-muted">–</span>';
 
       rows += `<tr>
-        <td><strong>${esc(user.Name || '')} ${esc(user.LastName || '')}</strong></td>
-        <td>${esc(user.Identifier || '–')}</td>
-        <td>${(() => { const fd = parseGVDate(day.Date); return fd ? fd.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}) : (day.Date || '–'); })()}</td>
+        <td><strong>${nombre}</strong></td>
+        <td>${rut}</td>
+        <td style="color:var(--muted)">${cargo}</td>
+        <td>${fecha}</td>
         <td>${status}</td>
+        <td>${fmtHora(entrada)}</td>
+        <td>${fmtHora(salida)}</td>
         <td class="num">${worked}h</td>
-        <td class="num">${nonWork}h</td>
-        <td style="font-size:.75rem;color:var(--muted)">${punchStr || '–'}</td>
-        <td>${esc(user.GroupDescription || '–')}</td>
       </tr>`;
     });
   });
@@ -546,12 +639,186 @@ function renderAttendance() {
     <div class="tbl-wrap">
       <table>
         <thead><tr>
-          <th>Nombre</th><th>ID</th><th>Fecha</th><th>Estado</th>
-          <th>Hrs. trabajadas</th><th>Hrs. no trab.</th><th>Marcajes</th><th>Grupo</th>
+          <th>Nombre</th><th>RUT / ID</th><th>Cargo</th><th>Fecha</th><th>Estado</th>
+          <th>Entrada</th><th>Salida</th><th>Hrs. trabajadas</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+// ─── RESUMEN ──────────────────────────────────────────────────────────────
+async function loadResumen() {
+  const from        = document.getElementById('res-from').value;
+  const to          = document.getElementById('res-to').value;
+  const groupFilter = document.getElementById('res-group').value;
+  const body        = document.getElementById('resumen-body');
+
+  if (!from || !to) { body.innerHTML = renderError('Selecciona rango de fechas.'); return; }
+  body.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const startDate = new Date(from + 'T00:00:00');
+    const endDate   = new Date(to   + 'T23:59:59');
+    let userIds = [];
+
+    if (groupFilter) {
+      userIds = await getWorkerIdsForGroup(groupFilter);
+      if (userIds.length === 0) {
+        body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores en el grupo</strong>El grupo seleccionado no tiene trabajadores con identificador registrado.</div>';
+        return;
+      }
+    } else if (_cachedPunchIds.length > 0) {
+      userIds = _cachedPunchIds;
+    } else {
+      body.innerHTML = `<div class="empty-msg">
+        <strong>Selecciona un grupo</strong>
+        <p style="margin-top:8px;color:var(--muted)">
+          Elige un grupo en el filtro para ver el resumen de asistencia.<br>
+          <em>También puedes cargar primero "En Predio Ahora" para usar esos RUTs.</em>
+        </p>
+      </div>`;
+      return;
+    }
+
+    const data  = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
+    const users = Array.isArray(data?.Users) ? data.Users : [];
+    renderResumen(users, from, to);
+  } catch(e) {
+    body.innerHTML = renderError(e.message);
+  }
+}
+
+function renderResumen(users, from, to) {
+  if (users.length === 0) {
+    document.getElementById('resumen-body').innerHTML =
+      '<div class="empty-msg"><strong>Sin datos</strong>No hay datos de asistencia para el rango seleccionado.</div>';
+    return;
+  }
+
+  // Construir mapa de días con el total de días laborales registrados en la API
+  const dayMap = {}; // 'YYYY-MM-DD' → { date, asistentes, ausentes, registros }
+
+  // Inicializar todos los días del rango
+  const rangeStart = new Date(from + 'T00:00:00');
+  const rangeEnd   = new Date(to   + 'T00:00:00');
+  for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
+    const key = d.toISOString().slice(0, 10);
+    dayMap[key] = { date: new Date(d), asistentes: 0, ausentes: 0, registros: 0 };
+  }
+
+  // Acumular datos por día desde la respuesta de la API
+  users.forEach(user => {
+    (user.PlannedInterval || []).forEach(day => {
+      const dObj = parseGVDate(day.Date);
+      if (!dObj) return;
+      const key = dObj.toISOString().slice(0, 10);
+      if (!dayMap[key]) dayMap[key] = { date: dObj, asistentes: 0, ausentes: 0, registros: 0 };
+      dayMap[key].registros++;
+      if (day.Worked  === 'True') dayMap[key].asistentes++;
+      if (day.Absent  === 'True') dayMap[key].ausentes++;
+    });
+  });
+
+  const totalWorkers = users.length;
+  const days         = Object.keys(dayMap).sort();
+
+  const labels         = days.map(k => dayMap[k].date.toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit'}));
+  const asistentesData = days.map(k => dayMap[k].asistentes);
+  const ausentesData   = days.map(k => dayMap[k].ausentes);
+
+  // Renderizar estructura HTML
+  document.getElementById('resumen-body').innerHTML = `
+    <div class="chart-wrap">
+      <canvas id="resumen-chart"></canvas>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Fecha</th>
+          <th class="num">Asistentes</th>
+          <th class="num">Ausentes</th>
+          <th class="num">Total trabajadores</th>
+          <th class="num">% Asistencia</th>
+        </tr></thead>
+        <tbody id="resumen-table-rows"></tbody>
+      </table>
+    </div>`;
+
+  // Filas de la tabla
+  const tableRows = days.map(k => {
+    const row   = dayMap[k];
+    const total = totalWorkers;
+    const pct   = total > 0 ? ((row.asistentes / total) * 100).toFixed(1) : '0.0';
+    const pctNum = parseFloat(pct);
+    const pctColor = pctNum >= 80 ? 'var(--green)' : pctNum >= 50 ? 'var(--yellow)' : 'var(--red)';
+    return `<tr>
+      <td>${row.date.toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'})}</td>
+      <td class="num" style="color:var(--green);font-weight:600">${row.asistentes}</td>
+      <td class="num" style="color:var(--red)">${row.ausentes}</td>
+      <td class="num">${total}</td>
+      <td class="num" style="color:${pctColor};font-weight:700">${pct}%</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('resumen-table-rows').innerHTML = tableRows;
+
+  // Destruir chart previo si existe
+  if (_summaryChart) { _summaryChart.destroy(); _summaryChart = null; }
+
+  // Crear gráfico de barras
+  const ctx = document.getElementById('resumen-chart').getContext('2d');
+  _summaryChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Asistentes',
+          data: asistentesData,
+          backgroundColor: 'rgba(62,207,142,0.65)',
+          borderColor: '#3ecf8e',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: 'Ausentes',
+          data: ausentesData,
+          backgroundColor: 'rgba(247,95,95,0.45)',
+          borderColor: '#f75f5f',
+          borderWidth: 1,
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#e8eaf0', font: { size: 12 }, padding: 16 }
+        },
+        tooltip: {
+          backgroundColor: '#1a1d27',
+          borderColor: '#2e3350',
+          borderWidth: 1,
+          titleColor: '#e8eaf0',
+          bodyColor: '#7a7f99',
+          padding: 10,
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#7a7f99', font: { size: 11 } },
+          grid:  { color: 'rgba(46,51,80,0.6)' },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#7a7f99', stepSize: 1, precision: 0 },
+          grid:  { color: 'rgba(46,51,80,0.6)' },
+        }
+      }
+    }
+  });
 }
 
 // ─── TRABAJADORES ─────────────────────────────────────────────────────────
@@ -568,7 +835,7 @@ async function loadWorkers() {
 }
 
 function renderWorkers() {
-  const q = document.getElementById('f-workers').value.toLowerCase();
+  const q  = document.getElementById('f-workers').value.toLowerCase();
   const st = document.getElementById('f-worker-status').value;
 
   const filtered = _workers.filter(w => {
@@ -621,6 +888,8 @@ async function loadGroups() {
   try {
     const data = await GeoVictoria.getGroups();
     _groups = Array.isArray(data) ? data : [];
+    _groupsLoaded = false; // permitir que los selects se actualicen
+    await loadGroupFilters();
     renderGroups();
   } catch(e) {
     body.innerHTML = renderError(e.message);
@@ -686,7 +955,9 @@ async function refreshAll() {
   }
   await loadPresencia();
   if (_workers.length > 0) await loadWorkers();
-  if (_groups.length > 0) await loadGroups();
+  if (_groups.length > 0) {
+    await loadGroups();
+  }
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────
@@ -695,11 +966,12 @@ async function refreshAll() {
   loadConfigForm();
 
   if (GeoVictoria.isConfigured()) {
-    // Verificar token silenciosamente
     const result = await GeoVictoria.testConnection().catch(() => ({ ok: false, error: 'No se pudo conectar' }));
     setGVStatus(result.ok);
-    if (result.ok) await loadPresencia();
-    else {
+    if (result.ok) {
+      await loadPresencia();
+      loadGroupFilters(); // cargar grupos en segundo plano para los filtros
+    } else {
       document.getElementById('presencia-body').innerHTML = renderError('Credenciales inválidas o sin conexión. Ve a Configuración API.');
     }
   } else {
