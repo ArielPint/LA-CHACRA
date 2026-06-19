@@ -79,8 +79,9 @@ const AUTH = (() => {
     planta: {
       label: 'Control Planta',
       tabs: {
-        corte:         'Corte',
         obra_gruesa:   'Obra Gruesa',
+        sanitario:     'Sanitario',
+        electrico:     'Eléctrico',
         terminaciones: 'Terminaciones',
         recepcion:     'Recepción'
       }
@@ -126,6 +127,14 @@ const AUTH = (() => {
           const access = !pdef.restricted;
           perms.pages[pid] = { access, tabs: access ? Object.keys(pdef.tabs || {}) : [] };
         }
+      }
+      // Migración de pestañas planta: corregir set de tabs (sanitario y electrico
+      // no existían en el PAGE_MAP anterior; 'corte' ya no es una tab válida)
+      if (perms.pages.planta && Array.isArray(perms.pages.planta.tabs)) {
+        const pt = perms.pages.planta.tabs;
+        const ci = pt.indexOf('corte');
+        if (ci >= 0) pt.splice(ci, 1);
+        ['sanitario', 'electrico'].forEach(t => { if (!pt.includes(t)) pt.push(t); });
       }
       return perms;
     }

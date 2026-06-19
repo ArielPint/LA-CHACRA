@@ -1506,7 +1506,7 @@ async function init() {
 }
 
 let _rt;
-window.addEventListener('resize', () => { clearTimeout(_rt); _rt = setTimeout(init, 150); });
+window.addEventListener('resize', () => { clearTimeout(_rt); _rt = setTimeout(rebuild, 150); });
 
 // ============================================================
 //  SUPABASE — cliente liviano sin SDK
@@ -2268,6 +2268,21 @@ init = async function() {
   buildVistaPlanta();
   showEditButtons();
 };
+
+// rebuild() — reconstruye UI con datos ya cargados, sin re-fetchear.
+// El resize handler llama a esto para evitar race conditions con M y DB_OVERRIDES.
+function rebuild() {
+  if (!M || Object.keys(M).length === 0) return; // datos aún no cargados
+  updateScale();
+  buildResumen();
+  buildGalpon();
+  buildCarpaGrande();
+  buildCarpaChica();
+  buildPatio();
+  buildVistaPlanta();
+  showEditButtons();
+}
+
 // Ejecutar init completo (con funciones patched, Supabase y showEditButtons).
 init();
 </script>

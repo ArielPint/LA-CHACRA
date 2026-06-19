@@ -377,15 +377,8 @@ const PARTIDAS = {
   ]
 };
 
-const ROLE_TABS = {
-  admin:                    ['obra_gruesa','sanitario','electrico','terminaciones','recepcion'],
-  gerente:                  ['obra_gruesa','sanitario','electrico','terminaciones','recepcion'],
-  supervisor_obra_gruesa:   ['obra_gruesa','sanitario','electrico'],
-  supervisor_terminaciones: ['terminaciones'],
-  supervisor_recepcion:     ['sanitario','electrico','terminaciones','recepcion'],
-  qc1:                      ['sanitario','electrico','terminaciones'],
-  qc2:                      ['sanitario','electrico','terminaciones','recepcion']
-};
+// Todas las pestañas disponibles en control-planta
+const CP_TABS = ['obra_gruesa','sanitario','electrico','terminaciones','recepcion'];
 
 // ── App state ─────────────────────────────────────────────────────────────────
 let SES=null, PROL=null;
@@ -409,18 +402,31 @@ let recepTF='all', pendConfirm=null;
   document.getElementById('user-badge').textContent =
     SES.name + (PROL ? ' · '+PROL.replace(/_/g,' ') : '');
 
-  const allowed = ROLE_TABS[PROL] || ROLE_TABS[SES.role] || [];
+  // Control de pestañas — mismo patrón que el Dashboard
+  // Admin siempre ve todas las tabs; resto según AUTH.canViewTab('planta', t)
+  const allowed = SES.role === 'admin'
+    ? CP_TABS
+    : CP_TABS.filter(t => AUTH.canViewTab('planta', t));
+
   if (!allowed.length) {
     document.getElementById('view-torres').innerHTML =
       '<div style="padding:40px;color:var(--muted);text-align:center">Sin acceso asignado. Contacta al administrador.</div>';
     return;
   }
-  allowed.forEach(t => { const el=document.getElementById('tab-'+t); if(el) el.classList.remove('hidden'); });
+
+  // Mostrar/ocultar tabs según permisos — igual que Dashboard: visible por defecto, ocultar las no permitidas
+  CP_TABS.forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (!el) return;
+    if (allowed.includes(t)) el.classList.remove('hidden');
+    // Las no permitidas quedan con class="hidden" (estado por defecto en el HTML)
+  });
 
   const isAdmin = SES.role==='admin' || PROL==='admin' || PROL==='gerente';
   if (isAdmin) document.getElementById('notif-btn').classList.remove('hidden');
 
-  curTab = allowed.includes('obra_gruesa') ? 'obra_gruesa' : (allowed.includes('sanitario') ? 'sanitario' : allowed[0]);
+  // Activar primera pestaña visible — igual que Dashboard
+  curTab = allowed[0];
   setActive(curTab);
 
   await loadAll();
@@ -542,7 +548,10 @@ function setupRT() {
 function switchTab(t) {
   curTab=t; setActive(t);
   if (t==='recepcion') { showView('recepcion'); renderRecep(); }
-  else { if(curTorre) showView('modules'); else showView('torres'); }
+  else {
+    if(curTorre) { showView('modules'); renderList(); if(selMod) renderDetail(); }
+    else showView('torres');
+  }
 }
 
 function setActive(t) {
