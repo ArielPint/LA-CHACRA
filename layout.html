@@ -1282,8 +1282,9 @@ function buildCarpaChicaInto(targetId, compact) {
 
   const medioHtml = () => {
     if (!compact) {
-      // Vista principal: contenedor que renderExtraPositions() llena
-      return `<div id="carpa-chica-extras-medio" style="display:flex;flex-wrap:wrap;gap:${gap}px;margin-bottom:${gap}px;"></div>`;
+      // Vista principal: contenedor que renderExtraPositions() llena.
+      // Alineado a la DERECHA (el módulo del centro queda en el lado derecho).
+      return `<div id="carpa-chica-extras-medio" style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:${gap}px;margin-bottom:${gap}px;width:100%;"></div>`;
     }
     // Vista Completa: incrustar directamente las posiciones asignadas del centro
     const _ccExt = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS['carpa-chica-medio'] || []) : [];
@@ -1292,7 +1293,7 @@ function buildCarpaChicaInto(targetId, compact) {
       return !!mid;
     });
     if (!_assigned.length) return '';
-    let h = `<div style="display:flex;flex-wrap:wrap;gap:${gap}px;margin-bottom:${gap}px;">`;
+    let h = `<div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:${gap}px;margin-bottom:${gap}px;width:100%;">`;
     _assigned.forEach(pos => {
       const mid = (PENDING_CHANGES[pos.position_key] !== undefined) ? PENDING_CHANGES[pos.position_key] : pos.module_id;
       h += card(mid, M[mid] || { avance: 0, status: 'SECO', fecha: null }, wW + 'px', hPx + 'px');
