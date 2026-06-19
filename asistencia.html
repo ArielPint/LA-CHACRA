@@ -295,7 +295,6 @@ let _groups         = [];
 let _attendanceData = [];
 let _cachedPunchIds = [];
 let _summaryChart   = null;
-let _groupsLoaded   = false;
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 const session = AUTH.requireAuth('login.html');
@@ -314,6 +313,7 @@ function switchTab(name) {
   if (name === 'trabajadores' && _workers.length === 0) loadWorkers();
   if (name === 'grupos' && _groups.length === 0) loadGroups();
   if (name === 'config') loadConfigForm();
+  // Siempre refrescar los selects de grupo al entrar a estas pestañas
   if (name === 'asistencia' || name === 'resumen') loadGroupFilters();
 }
 
@@ -366,7 +366,7 @@ async function saveConfig() {
   if (result.ok) {
     showCfgStatus('✓ Conexión exitosa. Token obtenido correctamente.', true);
     setGVStatus(true);
-    _groupsLoaded = false; // forzar recarga de grupos
+    _groups = []; // forzar recarga de grupos al cambiar credenciales
     refreshAll();
   } else {
     showCfgStatus('✗ Error: ' + result.error, false);
@@ -414,12 +414,13 @@ function parseGVDate(s) {
 }
 
 // ─── FILTROS DE GRUPO (compartidos entre pestañas) ────────────────────────
+// Carga grupos desde la API si aún no están en caché, y repopula los selects.
+// No usa flag booleano: _groups.length > 0 es el indicador de caché.
 async function loadGroupFilters() {
-  if (_groupsLoaded) return;
   try {
     if (_groups.length === 0) {
       const data = await GeoVictoria.getGroups();
-      _groups = Array.isArray(data) ? data : [];
+      _groups = Array.isArray(data) ? data : (Array.isArray(data?.Groups) ? data.Groups : []);
     }
     const options = _groups
       .filter(g => g.Description)
@@ -430,7 +431,6 @@ async function loadGroupFilters() {
       const el = document.getElementById(id);
       if (el) el.innerHTML = placeholder + options;
     });
-    _groupsLoaded = true;
   } catch(e) {
     console.warn('No se pudieron cargar los grupos para el filtro:', e.message);
   }
@@ -887,8 +887,7 @@ async function loadGroups() {
   body.innerHTML = '<div class="spinner"></div>';
   try {
     const data = await GeoVictoria.getGroups();
-    _groups = Array.isArray(data) ? data : [];
-    _groupsLoaded = false; // permitir que los selects se actualicen
+    _groups = Array.isArray(data) ? data : (Array.isArray(data?.Groups) ? data.Groups : []);
     await loadGroupFilters();
     renderGroups();
   } catch(e) {
