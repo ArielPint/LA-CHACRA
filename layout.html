@@ -551,7 +551,7 @@
     <div class="loc-title" style="margin-bottom:0;">Ubicación 4 — Patio de Acopio</div>
     <button id="edit-btn-patio" class="btn-edit-toggle off hidden" onclick="toggleEditMode('patio')">✏️ Editar layout</button>
   </div>
-  <div class="loc-desc">Módulos en patio exterior · Costado Bodega, Sector Carpa Grande y Sector Carpa Chica</div>
+  <div class="loc-desc">Módulos en patio exterior · Costado Galpón, Sector Carpa Grande y Sector Carpa Chica</div>
   <div class="legend">
     <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
     <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
@@ -565,7 +565,7 @@
   <div id="stats-patio" class="stats-bar"></div>
   <div class="multi-wrap">
     <div class="section-wrap">
-      <div class="section-title" style="color:#7f8c8d;">▣ Costado Bodega</div>
+      <div class="section-title" style="color:#7f8c8d;">▣ Costado Galpón</div>
       <div id="costado-bodega-grid"></div>
       <div id="add-pos-costado-bodega" class="hidden" style="margin-top:8px;">
         <button class="btn-add-pos" onclick="addExtraPosition('costado-bodega')">+ Agregar posición</button>
@@ -642,7 +642,7 @@
       <div class="planta-group-title"><a href="#" onclick="switchToTab('patio');return false;">🌳 Patio de Acopio</a></div>
       <div class="multi-wrap">
         <div class="section-wrap">
-          <div class="section-title" style="color:#7f8c8d;">▣ Costado Bodega</div>
+          <div class="section-title" style="color:#7f8c8d;">▣ Costado Galpón</div>
           <div id="vp-costado-bodega"></div>
         </div>
         <div class="section-wrap">
@@ -802,7 +802,7 @@ async function loadUbicaciones() {
 
 async function loadAvanceData() {
   await loadDespachos();
-  await loadUbicaciones(); // fallback para posiciones no guardadas en Supabase
+  // ubicaciones.xlsx queda EXCLUIDO como origen de posiciones (todo vive en Supabase)
   M   = {};
   try {
     const resp = await fetch('data/avance.xlsx');
@@ -937,31 +937,21 @@ function renderStats(containerId, ids) {
 function getSectionModules(loc, sector) {
   const sectorKey = sectorForLoc(loc, sector);
 
-  // 1) Posiciones desde Supabase (fuente principal), excluyendo extras (se muestran aparte)
+  // Fuente ÚNICA: Supabase (layout_positions). El Excel ubicaciones.xlsx ya NO
+  // se usa como origen de posiciones. Se conservan todas las posiciones del sector
+  // (incluso las de módulos despachados) para no dejar celdas "muertas"; los
+  // módulos despachados no se muestran porque no existen en M, quedando el slot
+  // vacío pero editable.
   const dbRows = Object.values(DB_OVERRIDES)
-    .filter(row => row.sector === sectorKey && !row.is_extra && !DESPACHADOS.has(row.module_id));
-  const dbPks    = new Set(dbRows.map(r => r.position_key));
-  const dbModIds = new Set(dbRows.map(r => r.module_id).filter(Boolean));
+    .filter(row => row.sector === sectorKey && !row.is_extra)
+    .map(row => DESPACHADOS.has(row.module_id) ? { ...row, module_id: null } : row);
 
-  // 2) Fallback: ubicaciones.xlsx para módulos/posiciones no guardados en Supabase
-  const locRows = Object.entries(LOC)
-    .filter(([modId, d]) =>
-      sectorForLoc(d.loc, d.sector) === sectorKey &&
-      !DESPACHADOS.has(modId) &&
-      !dbModIds.has(modId) &&       // módulo no está ya en Supabase
-      !dbPks.has(posKey(d))         // posición no ocupada por Supabase
-    )
-    .map(([modId, d]) => ({ id: modId, row: d.xls_row || 0, col: d.xls_col || 0, pk: posKey(d) }));
-
-  // 3) Combinar y ordenar
-  const combined = [
-    ...dbRows.map(r => ({ id: r.module_id, row: r.xls_row || 0, col: r.xls_col || 0, pk: r.position_key })),
-    ...locRows,
-  ];
-  return combined.sort((a, b) => {
-    if (a.row !== b.row) return a.row - b.row;
-    return a.col - b.col;
-  });
+  return dbRows
+    .map(r => ({ id: r.module_id, row: r.xls_row || 0, col: r.xls_col || 0, pk: r.position_key }))
+    .sort((a, b) => {
+      if (a.row !== b.row) return a.row - b.row;
+      return a.col - b.col;
+    });
 }
 
 function buildSectionGrid(modules) {
@@ -1041,15 +1031,22 @@ function buildResumen() {
 // ============================================================
 //  BUSCADOR DE MÓDULOS
 // ============================================================
-function locName(m) {
+// Nombre legible a partir del sector almacenado en Supabase
+function sectorDisplayName(sector) {
   const map = {
-    'galpon':         '📦 Galpón',
-    'costado-bodega': '🏭 Patio · Costado Bodega',
-    'carpa-grande':   m.sector === 'sur' ? '🏗️ Carpa Grande · Sur' : '🏗️ Carpa Grande · Norte',
-    'carpa-chica':    '🏕️ Carpa Chica',
-    'patio':          m.sector === 'carpa-chica' ? '🌳 Patio · Carpa Chica' : '🌳 Patio · Carpa Grande',
+    'galpon':              '📦 Galpón',
+    'galpon-l1':           '📦 Galpón',
+    'galpon-l2':           '📦 Galpón',
+    'galpon-l3':           '📦 Galpón',
+    'costado-bodega':      '🏭 Patio · Costado Galpón',
+    'carpa-grande-sur':    '🏗️ Carpa Grande · Sur',
+    'carpa-grande-norte':  '🏗️ Carpa Grande · Norte',
+    'carpa-chica':         '🏕️ Carpa Chica',
+    'carpa-chica-medio':   '🏕️ Carpa Chica · Centro',
+    'patio-carpa-grande':  '🌳 Patio · Carpa Grande',
+    'patio-carpa-chica':   '🌳 Patio · Carpa Chica',
   };
-  return map[m.loc] || m.loc;
+  return map[sector] || sector;
 }
 
 function renderPendientes(txt, n) {
@@ -1087,7 +1084,7 @@ function searchModules(q) {
     const chip    = d.status === 'HUMEDO'
       ? '<span class="search-status-chip chip-humedo">HÚMEDO</span>'
       : '<span class="search-status-chip chip-seco">SECO</span>';
-    const loc     = LOC[id] ? locName(LOC[id]) : '—';
+    const loc     = MOD_LOC[id] ? sectorDisplayName(MOD_LOC[id]) : '—';
     const pendHtml = renderPendientes(d.pendientes, d.nPendientes);
     rows += `<tr>
       <td class="col-id">${id}</td>
@@ -1207,10 +1204,15 @@ function buildCarpaGrandeSector(mods, compact) {
 
     // In fill mode pass null for w so mkCell uses min-width:0 (grid controls width)
     const cW = compact ? w : null;
-    html += mkCell(c1m.id,         1, gridRow,     2, cW, h, c1m.pk||null);
-    html += mkCell(c2r1?.id||null, 2, gridRow,     1, cW, h, c2r1?.pk||null);
+    html += mkCell(c1m.id, 1, gridRow, 2, cW, h, c1m.pk||null);
+    // Solo emitir celdas de las columnas central/derecha si esas columnas existen,
+    // evitando celdas vacías "muertas" (sin posición editable) cuando un sector
+    // tiene una sola columna (p. ej. Sur y Norte igualados).
+    if (col2) {
+      html += mkCell(c2r1?.id||null, 2, gridRow,     1, cW, h, c2r1?.pk||null);
+      html += mkCell(c2r2?.id||null, 2, gridRow + 1, 1, cW, h, c2r2?.pk||null);
+    }
     if (col3) html += mkCell(c3m?.id||null, 3, gridRow, 2, cW, h, c3m?.pk||null);
-    html += mkCell(c2r2?.id||null, 2, gridRow + 1, 1, cW, h, c2r2?.pk||null);
   });
 
   html += '</div>';
@@ -1234,130 +1236,80 @@ function buildCarpaChicaInto(targetId, compact) {
   const mods = getSectionModules('carpa-chica', null);
   const el   = document.getElementById(targetId);
   if (!el) return;
-  if (!mods.length) { el.innerHTML = ''; return; }
 
+  // Estructura fija: fila superior (5) · centro ampliable (medio) · fila inferior (5).
+  // Las columnas se derivan de los datos de Supabase; el centro se inserta SIEMPRE
+  // entre la primera y la segunda fila.
   const uRows = [...new Set(mods.map(m => m.row))].sort((a, b) => a - b);
-  const map   = {};
-  mods.forEach(m => { map[`${m.row},${m.col}`] = m; }); // almacena {id, pk, row, col}
+  const allCols = [...new Set(mods.map(m => m.col))].sort((a, b) => a - b);
+  const minCol = allCols.length ? allCols[0] : 0;
+  const maxCol = allCols.length ? allCols[allCols.length - 1] : 0;
+  let step = 4;
+  if (allCols.length > 1) step = Math.min(...allCols.slice(1).map((c, i) => c - allCols[i]));
+  const cols = [];
+  for (let c = minCol; c <= maxCol; c += step) cols.push(c);
+  if (!cols.length) cols.push(minCol);
 
-  // Paso máximo entre cols de cualquier fila → "paso ancho"
-  const rowColSets = uRows.map(r => mods.filter(m=>m.row===r).map(m=>m.col).sort((a,b)=>a-b));
-  const wideStep   = Math.max(...rowColSets.map(cols => {
-    if (cols.length < 2) return 2;
-    let mx = 0;
-    for (let i=1;i<cols.length;i++) mx = Math.max(mx, cols[i]-cols[i-1]);
-    return mx;
-  }));
+  const map = {};
+  mods.forEach(m => { map[`${m.row},${m.col}`] = m; });
 
-  const minCol = Math.min(...mods.map(m=>m.col));
-  const maxCol = Math.max(...mods.map(m=>m.col));
-  const wideCols = [];
-  for (let c = minCol; c <= maxCol; c += wideStep) wideCols.push(c);
-
-  let wW, nW, hPx;
+  // Dimensiones de las tarjetas
+  let wW, hPx;
   if (compact) {
     wW  = pxN(200);
-    nW  = pxN(108);
     hPx = pxN(88);
   } else {
-    // Full-width: tab-content padding 64px + section-wrap padding+border 36px
     const avail = window.innerWidth - 64 - 36;
-    const nWide = wideCols.length;
-    const gap5  = 5;
-    wW  = Math.max(80, Math.floor((avail - (nWide-1)*gap5) / nWide));
-    nW  = Math.round(wW * 108 / 200);
-    hPx = Math.round(wW * 88  / 200);
+    const nWide = Math.max(1, cols.length);
+    wW  = Math.max(80, Math.floor((avail - (nWide - 1) * 5) / nWide));
+    hPx = Math.round(wW * 88 / 200);
+  }
+  // Las tarjetas del centro usan el mismo tamaño que las filas
+  window._ccNarrowW = wW;
+  window._ccNarrowH = hPx;
 
-    // Ensure narrow rows don't overflow: find worst-case offset and shrink nW if needed
-    let maxOffset = 0;
-    let maxNarrowCards = 4;
-    for (const rr of uRows) {
-      const rc   = mods.filter(m=>m.row===rr).map(m=>m.col).sort((a,b)=>a-b);
-      const step = rc.length > 1 ? Math.min(...rc.slice(1).map((c,i)=>c-rc[i])) : wideStep;
-      if (step < wideStep) {
-        const nearIdx = Math.max(0, wideCols.filter(c=>c<=rc[0]).length - 1);
-        const offset  = nearIdx * (wW + gap5);
-        if (offset > maxOffset) { maxOffset = offset; maxNarrowCards = rc.length; }
-      }
-    }
-    if (maxOffset > 0) {
-      const remaining = avail - maxOffset;
-      const maxFit    = Math.floor((remaining - (maxNarrowCards-1)*gap5) / maxNarrowCards);
-      nW = Math.max(60, Math.min(nW, maxFit));
-    }
-  }
-  // Guardar dimensiones de cards angostas en globals para que renderExtraPositions las use
-  if (!compact) {
-    window._ccNarrowW = nW;
-    window._ccNarrowH = hPx;
-  }
   const gap = 5;
-  let html = '';
-  let ccMedioInjected = false; // solo inyectar el contenedor de extras en la primera fila angosta
-
-  for (const r of uRows) {
-    const rowCols = mods.filter(m=>m.row===r).map(m=>m.col).sort((a,b)=>a-b);
-    const rowStep = rowCols.length > 1
-      ? Math.min(...rowCols.slice(1).map((c,i)=>c-rowCols[i]))
-      : wideStep;
-
-    if (rowStep >= wideStep) {
-      // Fila ancha: una tarjeta por columna-ancha
-      html += `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;">`;
-      for (const c of wideCols) {
-        const mod    = map[`${r},${c}`] || null;
-        const origId = mod ? mod.id : null;
-        const pk     = mod ? mod.pk : null;
-        const dispId = pk ? effectiveModuleAtPk(pk) : origId;
-        html += card(dispId, dispId ? M[dispId] : null, wW+'px', hPx+'px', pk);
-      }
-      html += '</div>';
-    } else {
-      // Fila angosta con posible espacio vacío a la izquierda (sector medio)
-      const startCol = rowCols[0];
-      const nearIdx  = wideCols.filter(c=>c<=startCol).length - 1;
-      const offsetNum = nearIdx >= 0 ? nearIdx * (wW + gap) : 0;
-      html += `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;">`;
-      if (!compact && !ccMedioInjected) {
-        // Vista principal — contenedor vacío que renderExtraPositions llenará
-        ccMedioInjected = true;
-        html += `<div id="carpa-chica-extras-medio" style="display:flex;flex-wrap:wrap;gap:${gap}px;align-content:flex-start;min-width:${offsetNum}px;flex-shrink:0;"></div>`;
-      } else if (compact && !ccMedioInjected) {
-        // Vista Completa — incrustar directamente las extras asignadas
-        ccMedioInjected = true;
-        const _ccExt = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS['carpa-chica-medio'] || []) : [];
-        const _assigned = _ccExt.filter(pos => {
-          const mid = (PENDING_CHANGES[pos.position_key] !== undefined)
-            ? PENDING_CHANGES[pos.position_key] : pos.module_id;
-          return !!mid;
-        });
-        if (_assigned.length > 0) {
-          html += `<div style="display:flex;flex-wrap:wrap;gap:${gap}px;align-content:flex-start;flex-shrink:0;">`;
-          _assigned.forEach(pos => {
-            const mid = (PENDING_CHANGES[pos.position_key] !== undefined)
-              ? PENDING_CHANGES[pos.position_key] : pos.module_id;
-            const _data = M[mid] || { avance: 0, status: 'SECO', fecha: null };
-            html += card(mid, _data, nW+'px', hPx+'px');
-          });
-          html += '</div>';
-        } else {
-          html += `<div style="width:${offsetNum}px;flex-shrink:0;"></div>`;
-        }
-      } else {
-        // Otras filas angostas: espaciador original
-        html += `<div style="width:${offsetNum}px;flex-shrink:0;"></div>`;
-      }
-      for (const c of rowCols) {
-        const mod    = map[`${r},${c}`] || null;
-        const origId = mod ? mod.id : null;
-        const pk     = mod ? mod.pk : null;
-        const dispId = pk ? effectiveModuleAtPk(pk) : origId;
-        html += card(dispId, dispId ? M[dispId] : null, nW+'px', hPx+'px', pk);
-      }
-      html += '</div>';
+  const rowHtml = (r) => {
+    let h = `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;">`;
+    for (const c of cols) {
+      const mod    = map[`${r},${c}`] || null;
+      const pk     = mod ? mod.pk : null;
+      const dispId = pk ? effectiveModuleAtPk(pk) : null;
+      h += card(dispId, dispId ? M[dispId] : null, wW + 'px', hPx + 'px', pk);
     }
-  }
+    return h + '</div>';
+  };
 
+  const medioHtml = () => {
+    if (!compact) {
+      // Vista principal: contenedor que renderExtraPositions() llena
+      return `<div id="carpa-chica-extras-medio" style="display:flex;flex-wrap:wrap;gap:${gap}px;margin-bottom:${gap}px;"></div>`;
+    }
+    // Vista Completa: incrustar directamente las posiciones asignadas del centro
+    const _ccExt = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS['carpa-chica-medio'] || []) : [];
+    const _assigned = _ccExt.filter(pos => {
+      const mid = (PENDING_CHANGES[pos.position_key] !== undefined) ? PENDING_CHANGES[pos.position_key] : pos.module_id;
+      return !!mid;
+    });
+    if (!_assigned.length) return '';
+    let h = `<div style="display:flex;flex-wrap:wrap;gap:${gap}px;margin-bottom:${gap}px;">`;
+    _assigned.forEach(pos => {
+      const mid = (PENDING_CHANGES[pos.position_key] !== undefined) ? PENDING_CHANGES[pos.position_key] : pos.module_id;
+      h += card(mid, M[mid] || { avance: 0, status: 'SECO', fecha: null }, wW + 'px', hPx + 'px');
+    });
+    return h + '</div>';
+  };
+
+  let html = '';
+  if (!uRows.length) {
+    // Sin filas: mostrar solo el centro
+    html = medioHtml();
+  } else {
+    uRows.forEach((r, idx) => {
+      html += rowHtml(r);
+      if (idx === 0) html += medioHtml(); // centro entre fila superior e inferior
+    });
+  }
   el.innerHTML = html;
 }
 
@@ -1545,6 +1497,8 @@ let DB_OVERRIDES = {};
 let PENDING_CHANGES = {};
 // Posiciones extra agregadas (is_extra=true): [ { position_key, sector, module_id } ]
 let EXTRA_POSITIONS = {};  // sector -> [{position_key, module_id}]
+// Mapa module_id -> sector (Supabase) para mostrar ubicación en el buscador
+let MOD_LOC = {};
 
 // Pestaña actualmente en modo edición (null = ninguna)
 let EDIT_TAB = null;
@@ -1587,8 +1541,10 @@ async function loadDBOverrides() {
     const rows = await sbSelect('layout_positions', 'select=position_key,module_id,sector,xls_row,xls_col,is_extra');
     DB_OVERRIDES = {};
     EXTRA_POSITIONS = {};
+    MOD_LOC = {};
     for (const row of rows) {
       DB_OVERRIDES[row.position_key] = row;
+      if (row.module_id) MOD_LOC[row.module_id] = row.sector; // ubicación para el buscador
       if (row.is_extra) {
         if (!EXTRA_POSITIONS[row.sector]) EXTRA_POSITIONS[row.sector] = [];
         EXTRA_POSITIONS[row.sector].push(row);
@@ -1694,12 +1650,14 @@ function rebuildTab(tab) {
 function allModuleIds() {
   const ids = new Set([
     ...Object.keys(M).filter(id => !id.includes('__overridden__')),
-    ...ALL_LOC_IDS, // incluye despachados que siguen siendo válidos para asignar
+    ...ALL_LOC_IDS,
   ]);
   // También incluir módulos asignados en DB_OVERRIDES
   if (typeof DB_OVERRIDES !== 'undefined') {
     Object.values(DB_OVERRIDES).forEach(row => { if (row.module_id) ids.add(row.module_id); });
   }
+  // Excluir módulos despachados: no deben ofrecerse para asignar en el desplegable
+  for (const id of DESPACHADOS) ids.delete(id);
   return [...ids].sort((a, b) => {
     const na = parseInt(a.replace(/\D/g,''), 10);
     const nb = parseInt(b.replace(/\D/g,''), 10);
