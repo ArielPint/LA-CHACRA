@@ -680,7 +680,15 @@ function loadSheet(name) {
 function iframeLoaded(name) {
   var ov = document.getElementById('load-' + name);
   if (ov) ov.classList.add('done');
-  // Refrescar bottom bar ahora que el iframe ya cargó
+
+  // Ocultar header y nav interno del iframe (los reemplaza el topbar y bottom bar de tecnopanel)
+  var frame = document.getElementById('frame-' + name);
+  if (frame && frame.contentDocument && frame.contentDocument.head) {
+    var s = frame.contentDocument.createElement('style');
+    s.textContent = 'header { display:none !important; } nav { display:none !important; }';
+    frame.contentDocument.head.appendChild(s);
+  }
+
   if (name === currentPage) updateBottomTabs(name);
 }
 
