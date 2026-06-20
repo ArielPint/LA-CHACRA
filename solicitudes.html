@@ -974,8 +974,8 @@ function renderCatalog() {
       <td style="font-size:.78rem;color:var(--muted)">${p.grupo || '—'}</td>
       <td><span class="badge ${fuenteClass}" style="font-size:.65rem">${fuente}</span></td>
       <td style="display:flex;gap:6px;flex-wrap:nowrap">
-        <button class="btn btn-sm" style="font-size:.72rem;background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.3)" onclick="openEditProduct('${p.codigo.replace(/'/g,\"\\'\")}')">Editar</button>
-        <button class="btn btn-sm" style="font-size:.72rem;background:rgba(247,95,95,.1);color:var(--red);border:1px solid rgba(247,95,95,.25)" onclick="deleteProduct('${p.codigo.replace(/'/g,\"\\'\")}')">Eliminar</button>
+        <button class="btn btn-sm" style="font-size:.72rem;background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.3)" onclick="openEditProduct('${p.codigo}')">Editar</button>
+        <button class="btn btn-sm" style="font-size:.72rem;background:rgba(247,95,95,.1);color:var(--red);border:1px solid rgba(247,95,95,.25)" onclick="deleteProduct('${p.codigo}')">Eliminar</button>
       </td>
     </tr>`;
   }).join('');
