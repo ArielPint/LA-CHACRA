@@ -74,6 +74,24 @@ tbody tr:hover td{background:var(--surface2)}
 .filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent)}
 .filter-bar label{font-size:.78rem;color:var(--muted)}
 .pct-cell{display:flex;align-items:center;gap:8px}.pct-cell .pbar-wrap{width:80px}
+
+@media(max-width:768px){
+  header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+  .upload-area{gap:6px}
+  .auth-area{margin-left:0;margin-top:2px}
+  nav{padding:0 8px}
+  .page{padding:16px 10px}
+  .grid-2{grid-template-columns:1fr!important}
+  .kpi-val{font-size:1.3rem}
+  #file-name{max-width:120px}
+}
+@media(max-width:480px){
+  header{padding:8px 10px}
+  .page{padding:12px 8px}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .kpi{padding:12px 14px}
+  .tab{padding:8px 12px;font-size:.78rem}
+}
 </style>
 
 

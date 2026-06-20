@@ -68,6 +68,25 @@ tbody tr:hover td{background:var(--surface2)}
 .tc-bar{height:5px;border-radius:99px;background:var(--surface);overflow:hidden;margin-bottom:6px}
 .tc-fill{height:100%;border-radius:99px}
 .tc-stats{font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between}
+
+@media(max-width:768px){
+  header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+  .header-right{margin-left:0;flex-wrap:wrap;gap:6px}
+  nav{padding:0 8px}
+  .page{padding:16px 10px}
+  .grid-2{grid-template-columns:1fr!important}
+  .kpi-val{font-size:1.3rem}
+  .torre-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .tbl-wrap{max-height:none}
+}
+@media(max-width:480px){
+  header{padding:8px 10px}
+  .page{padding:12px 8px}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .kpi{padding:10px 12px}
+  .tab{padding:8px 12px;font-size:.78rem}
+  .auth-user-badge{display:none}
+}
 </style>
 
 <script>
