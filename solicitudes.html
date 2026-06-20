@@ -43,9 +43,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .auto-value{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:.9rem;cursor:default}
 
 /* ── Items table ── */
-.items-header{display:grid;grid-template-columns:1fr 80px 72px 62px 36px;gap:8px;padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.items-header{display:grid;grid-template-columns:1fr 62px 80px 72px 36px;gap:8px;padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:8px}
 .items-header span{font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.item-row{display:grid;grid-template-columns:1fr 80px 72px 62px 36px;gap:8px;align-items:center;margin-bottom:8px;position:relative}
+.item-row{display:grid;grid-template-columns:1fr 62px 80px 72px 36px;gap:8px;align-items:center;margin-bottom:8px;position:relative}
 
 /* ── Combobox ── */
 .combo-wrap{position:relative}
@@ -154,7 +154,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ── Responsive ── */
 @media(max-width:600px){
   #main{padding:16px}
-  .items-header,.item-row{grid-template-columns:1fr 70px 60px 50px 32px}
+  .items-header,.item-row{grid-template-columns:1fr 50px 70px 60px 32px}
   .auto-fields{flex-direction:column}
 }
 </style>
@@ -208,9 +208,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <div class="card-title">Productos solicitados</div>
       <div class="items-header">
         <span>Producto</span>
+        <span style="text-align:center">Unidad</span>
         <span style="text-align:center">Cantidad</span>
         <span style="text-align:center">Módulos</span>
-        <span style="text-align:center">Unidad</span>
         <span></span>
       </div>
       <div id="items-list"></div>
@@ -288,9 +288,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
             <th>Código</th>
             <th>Descripción</th>
             <th>Unidad</th>
+            <th class="num">Cant/Módulo</th>
             <th>Grupo</th>
             <th>Fuente</th>
-            <th></th>
+            <th style="min-width:130px"></th>
           </tr>
         </thead>
         <tbody id="catalog-tbody"></tbody>
@@ -299,6 +300,54 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   </div>
 
 </div><!-- /main -->
+
+<!-- ════════ MODAL: EDITAR PRODUCTO ════════ -->
+<div class="modal-bg" id="modal-edit-product">
+  <div class="modal">
+    <h3>✏️ Editar producto</h3>
+    <div class="modal-field">
+      <label>Código</label>
+      <input class="modal-input" id="ep-codigo" readonly style="opacity:.6;cursor:default">
+    </div>
+    <div class="modal-field">
+      <label>Descripción *</label>
+      <input class="modal-input" id="ep-descripcion" placeholder="Descripción completa del producto">
+    </div>
+    <div class="modal-field" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>Unidad *</label>
+        <select class="modal-select" id="ep-unidad">
+          <option>UND</option><option>CJA</option><option>GAL</option><option>JGO</option>
+          <option>KG</option><option>KIT</option><option>LTS</option><option>M2</option>
+          <option>ML</option><option>MTS</option><option>PL</option><option>PZA</option>
+          <option>RLL</option><option>TIN</option><option>TRA</option>
+        </select>
+      </div>
+      <div>
+        <label>Cant por Módulo</label>
+        <input class="modal-input" id="ep-cpm" type="number" min="0" step="any" placeholder="Ej: 2.5">
+      </div>
+    </div>
+    <div class="modal-field" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>Grupo</label>
+        <select class="modal-select" id="ep-grupo">
+          <option value="">Sin grupo</option>
+          <option>OBRA GRUESA</option><option>TERMINACION</option>
+          <option>GRIFERIA</option><option>MUEBLERIA</option>
+        </select>
+      </div>
+      <div>
+        <label>Subgrupo</label>
+        <input class="modal-input" id="ep-subgrupo" placeholder="Ej: FIJACION">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditProduct()" id="save-edit-btn">Guardar cambios</button>
+    </div>
+  </div>
+</div>
 
 <!-- ════════ MODAL: AGREGAR PRODUCTO ════════ -->
 <div class="modal-bg" id="modal-product">
@@ -439,8 +488,18 @@ async function loadCustomProducts() {
 function rebuildAllProducts() {
   // Custom products override / extend base
   const baseMap = {};
-  PRODUCTOS_BASE.forEach(p => { baseMap[p.codigo.toUpperCase()] = p; });
-  productosCustom.forEach(p => { baseMap[p.codigo.toUpperCase()] = p; });
+  PRODUCTOS_BASE.forEach(p => { baseMap[p.codigo.toUpperCase()] = {...p}; });
+  productosCustom.forEach(c => {
+    const key = c.codigo.toUpperCase();
+    if (baseMap[key]) {
+      // Mantener cpm del base si el custom no lo trae explícito
+      const baseCpm = baseMap[key].cantidad_por_modulo;
+      Object.assign(baseMap[key], c);
+      if (c.cantidad_por_modulo == null && baseCpm != null) baseMap[key].cantidad_por_modulo = baseCpm;
+    } else {
+      baseMap[key] = c;
+    }
+  });
   allProducts = Object.values(baseMap).sort((a,b) => a.descripcion.localeCompare(b.descripcion));
 }
 
@@ -478,9 +537,9 @@ function addItemRow() {
         onkeydown="onComboKey(event, ${id})">
       <div class="combo-dropdown" id="combo-dd-${id}"></div>
     </div>
+    <div class="unit-badge" id="unit-${id}">—</div>
     <input class="qty-input" id="qty-${id}" type="number" min="1" step="1" placeholder="0" value="" oninput="updateModBadge(${id})">
     <div class="mod-badge empty" id="mod-${id}">—</div>
-    <div class="unit-badge" id="unit-${id}">—</div>
     <button class="btn-remove" onclick="removeRow(${id})" title="Eliminar">✕</button>`;
 
   list.appendChild(div);
@@ -902,30 +961,116 @@ function renderCatalog() {
   const tbody = document.getElementById('catalog-tbody');
   tbody.innerHTML = list.map(p => {
     const isCustom = customCodes.has(p.codigo.toUpperCase());
+    const cpm = p.cantidad_por_modulo != null ? p.cantidad_por_modulo : '—';
+    const cpmStr = typeof cpm === 'number' ? cpm.toLocaleString('es-CL', {maximumFractionDigits:4}) : cpm;
+    const cpmColor = cpm !== '—' ? 'color:var(--accent);font-weight:600' : 'color:var(--muted)';
+    const fuente = isCustom ? 'Custom' : 'Base';
+    const fuenteClass = isCustom ? 'badge-pending' : 'badge-approved';
     return `<tr>
       <td class="code-cell">${escHtml(p.codigo)}</td>
       <td style="font-size:.82rem">${escHtml(p.descripcion)}</td>
-      <td class="unit-cell">${p.unidad}</td>
+      <td class="unit-cell">${escHtml(p.unidad||'—')}</td>
+      <td class="num" style="${cpmColor};font-size:.82rem">${cpmStr}</td>
       <td style="font-size:.78rem;color:var(--muted)">${p.grupo || '—'}</td>
-      <td><span class="badge ${isCustom ? 'badge-pending' : 'badge-approved'}" style="font-size:.65rem">${isCustom ? 'Custom' : 'Base'}</span></td>
-      <td>${isCustom ? `<button class="btn btn-sm" style="font-size:.72rem;background:rgba(247,95,95,.1);color:var(--red);border:1px solid rgba(247,95,95,.25)" onclick="deleteProduct('${p.codigo}')">Eliminar</button>` : ''}</td>
+      <td><span class="badge ${fuenteClass}" style="font-size:.65rem">${fuente}</span></td>
+      <td style="display:flex;gap:6px;flex-wrap:nowrap">
+        <button class="btn btn-sm" style="font-size:.72rem;background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.3)" onclick="openEditProduct(${JSON.stringify(escHtml(p.codigo))})">Editar</button>
+        <button class="btn btn-sm" style="font-size:.72rem;background:rgba(247,95,95,.1);color:var(--red);border:1px solid rgba(247,95,95,.25)" onclick="deleteProduct(${JSON.stringify(escHtml(p.codigo))})">Eliminar</button>
+      </td>
     </tr>`;
   }).join('');
 }
 
 async function deleteProduct(codigo) {
-  if (!confirm('¿Eliminar este producto del catálogo personalizado?')) return;
+  if (!confirm(`¿Ocultar "${codigo}" del catálogo? Podrá restaurarlo desde "Editar".`)) return;
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/productos_custom?codigo=eq.${encodeURIComponent(codigo)}`, {
-      method: 'PATCH',
-      headers: { ...SUPA_HEADERS, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ activo: false })
+    const p = allProducts.find(x => x.codigo === codigo) || {};
+    const payload = {
+      codigo,
+      descripcion: p.descripcion || '',
+      unidad: p.unidad || 'UND',
+      grupo: p.grupo || '',
+      subgrupo: p.subgrupo || '',
+      cantidad_por_modulo: p.cantidad_por_modulo != null ? p.cantidad_por_modulo : null,
+      activo: false,
+      creado_por: SESSION?.id || 'admin'
+    };
+    const r = await fetch(`${SUPA_URL}/rest/v1/productos_custom`, {
+      method: 'POST',
+      headers: { ...SUPA_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(payload)
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    toast('Producto desactivado.', 'ok');
+    toast('Producto ocultado del catálogo.', 'ok');
     await loadCustomProducts();
     renderCatalog();
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  } catch(e) { toast('Error al eliminar: ' + e.message, 'err'); }
+}
+
+// ════════════════════════════════════════════════════
+//  MODAL EDITAR PRODUCTO
+// ════════════════════════════════════════════════════
+let editingProductCodigo = null;
+
+function openEditProduct(codigo) {
+  const p = allProducts.find(x => x.codigo === codigo);
+  if (!p) { toast('Producto no encontrado.', 'err'); return; }
+  editingProductCodigo = codigo;
+  document.getElementById('ep-codigo').value = p.codigo;
+  document.getElementById('ep-descripcion').value = p.descripcion;
+  document.getElementById('ep-unidad').value = p.unidad || 'UND';
+  document.getElementById('ep-grupo').value = p.grupo || '';
+  document.getElementById('ep-subgrupo').value = p.subgrupo || '';
+  document.getElementById('ep-cpm').value = p.cantidad_por_modulo != null ? p.cantidad_por_modulo : '';
+  document.getElementById('modal-edit-product').classList.add('open');
+  setTimeout(() => document.getElementById('ep-descripcion').focus(), 50);
+}
+
+function closeEditModal() {
+  document.getElementById('modal-edit-product').classList.remove('open');
+  editingProductCodigo = null;
+}
+
+async function saveEditProduct() {
+  if (!editingProductCodigo) return;
+  const descripcion = document.getElementById('ep-descripcion').value.trim();
+  const unidad = document.getElementById('ep-unidad').value;
+  const grupo = document.getElementById('ep-grupo').value;
+  const subgrupo = document.getElementById('ep-subgrupo').value.trim();
+  const cpmRaw = document.getElementById('ep-cpm').value.trim();
+  const cantidad_por_modulo = cpmRaw !== '' ? parseFloat(cpmRaw) : null;
+
+  if (!descripcion) { toast('La descripción es obligatoria.', 'err'); return; }
+
+  const btn = document.getElementById('save-edit-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  try {
+    const payload = {
+      codigo: editingProductCodigo,
+      descripcion, unidad, grupo, subgrupo,
+      cantidad_por_modulo,
+      activo: true,
+      creado_por: SESSION?.id || 'admin'
+    };
+    const r = await fetch(`${SUPA_URL}/rest/v1/productos_custom`, {
+      method: 'POST',
+      headers: { ...SUPA_HEADERS, 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    toast('Producto actualizado.', 'ok');
+    closeEditModal();
+    await loadCustomProducts();
+    // Actualizar en allProducts en memoria
+    const idx = allProducts.findIndex(x => x.codigo === editingProductCodigo);
+    if (idx >= 0) Object.assign(allProducts[idx], { descripcion, unidad, grupo, subgrupo, cantidad_por_modulo });
+    renderCatalog();
+  } catch(e) {
+    toast('Error al guardar: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+  }
 }
 
 // ════════════════════════════════════════════════════
