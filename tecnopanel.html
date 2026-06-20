@@ -151,7 +151,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 150;
+  z-index: 9999;
   transition: width .25s cubic-bezier(.4,0,.2,1);
 }
 #sidebar.collapsed { width: 0; }
@@ -290,7 +290,7 @@ iframe {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.55);
-  z-index: 140;
+  z-index: 9998;
   backdrop-filter: blur(2px);
 }
 #sidebar-overlay.open { display: block; }
@@ -363,11 +363,15 @@ iframe {
 
   #body-layout { margin-left: 0 !important; }
   #bottombar { display: flex; }
+  #bottombar.no-tabs { display: none; }
   .tb-page-title { display: block; }
   .auth-badge { display: none; }
   .logo-tecno, .logo-panel { font-size: 17px; }
   #topbar { padding: 0 10px; gap: 8px; }
 }
+
+/* Ocultar iframes mientras el sidebar está abierto (fix z-index iframe) */
+body.sidebar-open iframe { visibility: hidden; }
 
 @media (max-width: 380px) {
   #tp-admin-btn { display: none !important; }
@@ -579,11 +583,13 @@ function toggleSidebarMobile() {
   var open = sb.classList.contains('mobile-open');
   sb.classList.toggle('mobile-open', !open);
   ov.classList.toggle('open', !open);
+  document.body.classList.toggle('sidebar-open', !open);
 }
 
 function closeSidebarMobile() {
   document.getElementById('sidebar').classList.remove('mobile-open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.classList.remove('sidebar-open');
 }
 
 // ── Nav ────────────────────────────────────────────────────────────────────
@@ -612,11 +618,11 @@ function updateBottomTabs(pageName) {
   inner.innerHTML = '';
 
   if (tabs.length === 0) {
-    bar.style.display = isMobile() ? 'none' : '';
+    bar.classList.add('no-tabs');
     return;
   }
 
-  bar.style.display = isMobile() ? 'block' : '';
+  bar.classList.remove('no-tabs');
 
   // Detectar tab activa en el iframe (si ya cargó)
   var activeTabId = null;
