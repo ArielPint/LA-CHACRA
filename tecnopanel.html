@@ -131,19 +131,24 @@ body {
 /* ── Body layout ── */
 #body-layout {
   flex: 1;
-  display: flex;
   overflow: hidden;
+  margin-left: var(--sidebar-w);
+  transition: margin-left .25s cubic-bezier(.4,0,.2,1);
   position: relative;
 }
+#body-layout.sidebar-collapsed { margin-left: 0; }
 
-/* ── Sidebar ── */
+/* ── Sidebar (fixed, fuera del flow) ── */
 #sidebar {
+  position: fixed;
+  top: var(--topbar-h);
+  left: 0;
+  bottom: 0;
   width: var(--sidebar-w);
   background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  flex-shrink: 0;
   overflow: hidden;
   z-index: 150;
   transition: width .25s cubic-bezier(.4,0,.2,1);
@@ -326,21 +331,17 @@ iframe {
 /* ── Responsive ── */
 @media (max-width: 768px) {
   #sidebar {
-    position: fixed;
-    top: var(--topbar-h);
-    left: 0;
     bottom: var(--bottombar-h);
-    width: 260px !important;
+    width: 260px;
     transform: translateX(-100%);
     transition: transform .25s cubic-bezier(.4,0,.2,1);
-    z-index: 150;
   }
   #sidebar.mobile-open { transform: translateX(0); }
 
+  #body-layout { margin-left: 0 !important; }
   #bottombar { display: flex; }
   .tb-page-title { display: block; }
   .auth-badge { display: none; }
-
   .logo-tecno, .logo-panel { font-size: 17px; }
   #topbar { padding: 0 10px; gap: 8px; }
 }
@@ -375,51 +376,51 @@ iframe {
   </div>
 </div>
 
+<!-- Sidebar overlay (móvil) -->
+<div id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
+
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+
+    <div class="nav-item active" id="dd-dashboard" data-sheet="dashboard" data-label="Dashboard" onclick="navSelect(this)">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Dashboard</span>
+    </div>
+    <div class="nav-item" id="dd-produccion" data-sheet="produccion" data-label="Producción" onclick="navSelect(this)">
+      <span class="nav-icon">📈</span>
+      <span class="nav-label">Producción</span>
+    </div>
+    <div class="nav-item" id="dd-layout" data-sheet="layout" data-label="Layout" onclick="navSelect(this)">
+      <span class="nav-icon">📍</span>
+      <span class="nav-label">Layout</span>
+    </div>
+    <div class="nav-item" id="dd-despacho" data-sheet="despacho" data-label="Despacho GD" onclick="navSelect(this)">
+      <span class="nav-icon">📦</span>
+      <span class="nav-label">Despacho GD</span>
+    </div>
+
+    <div class="nav-sep"></div>
+    <div class="nav-section">Gestión</div>
+
+    <div class="nav-item" id="dd-solicitudes" data-label="Solicitudes" onclick="window.location.href='solicitudes.html'" style="display:none">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Solicitudes</span>
+    </div>
+    <div class="nav-item" id="dd-planta" data-label="Control Planta" onclick="openPlanta()" style="display:none">
+      <span class="nav-icon">🏭</span>
+      <span class="nav-label">Control Planta</span>
+    </div>
+    <div class="nav-item" id="dd-asistencia" data-label="Asistencia GeoVictoria" onclick="window.location.href='asistencia.html'" style="display:none">
+      <span class="nav-icon">👷</span>
+      <span class="nav-label">Asistencia GeoVictoria</span>
+    </div>
+  </div>
+</nav>
+
 <!-- Body layout -->
 <div id="body-layout">
-
-  <!-- Sidebar overlay (móvil) -->
-  <div id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
-
-  <!-- Sidebar -->
-  <nav id="sidebar">
-    <div class="sidebar-nav">
-      <div class="nav-section">Principal</div>
-
-      <div class="nav-item active" id="dd-dashboard" data-sheet="dashboard" data-label="Dashboard" onclick="navSelect(this)">
-        <span class="nav-icon">🏠</span>
-        <span class="nav-label">Dashboard</span>
-      </div>
-      <div class="nav-item" id="dd-produccion" data-sheet="produccion" data-label="Producción" onclick="navSelect(this)">
-        <span class="nav-icon">📈</span>
-        <span class="nav-label">Producción</span>
-      </div>
-      <div class="nav-item" id="dd-layout" data-sheet="layout" data-label="Layout" onclick="navSelect(this)">
-        <span class="nav-icon">📍</span>
-        <span class="nav-label">Layout</span>
-      </div>
-      <div class="nav-item" id="dd-despacho" data-sheet="despacho" data-label="Despacho GD" onclick="navSelect(this)">
-        <span class="nav-icon">📦</span>
-        <span class="nav-label">Despacho GD</span>
-      </div>
-
-      <div class="nav-sep"></div>
-      <div class="nav-section">Gestión</div>
-
-      <div class="nav-item" id="dd-solicitudes" data-label="Solicitudes" onclick="window.location.href='solicitudes.html'" style="display:none">
-        <span class="nav-icon">📋</span>
-        <span class="nav-label">Solicitudes</span>
-      </div>
-      <div class="nav-item" id="dd-planta" data-label="Control Planta" onclick="openPlanta()" style="display:none">
-        <span class="nav-icon">🏭</span>
-        <span class="nav-label">Control Planta</span>
-      </div>
-      <div class="nav-item" id="dd-asistencia" data-label="Asistencia GeoVictoria" onclick="window.location.href='asistencia.html'" style="display:none">
-        <span class="nav-icon">👷</span>
-        <span class="nav-label">Asistencia GeoVictoria</span>
-      </div>
-    </div>
-  </nav>
 
   <!-- Content -->
   <div id="content">
@@ -544,6 +545,7 @@ function toggleSidebar() {
   } else {
     sidebarCollapsed = !sidebarCollapsed;
     document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+    document.getElementById('body-layout').classList.toggle('sidebar-collapsed', sidebarCollapsed);
   }
 }
 
