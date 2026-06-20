@@ -25,16 +25,21 @@
 
   /* ── Header ── */
   header {
-    background: var(--green); color: white;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 32px; height: 56px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    background: #1a1d27; border-bottom: 1px solid #2e3350;
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; height: 54px;
   }
-  header h1 { font-size: 1.1rem; font-weight: 700; }
-  header .sub { font-size: 0.72rem; opacity: 0.7; margin-top: 1px; }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .user-badge { font-size: 0.78rem; opacity: 0.8; background: rgba(255,255,255,0.15); padding: 3px 10px; border-radius: 20px; }
-  .btn-h { font-size: 0.78rem; padding: 5px 12px; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); border-radius: 5px; cursor: pointer; text-decoration: none; transition: background 0.2s; }
-  .btn-h:hover { background: rgba(255,255,255,0.25); }
+  .logo { display: flex; align-items: baseline; text-decoration: none; flex-shrink: 0; }
+  .logo-tecno { font-size: 19px; font-weight: 900; color: #e8eaf0; letter-spacing: 1.5px; }
+  .logo-panel { font-size: 19px; font-weight: 900; color: #D42B1E; letter-spacing: 1.5px; }
+  .logo sup { font-size: 9px; color: #7a7f99; margin-left: 2px; font-weight: 400; }
+  .tb-sep { color: #2e3350; margin: 0 2px; }
+  .tb-page-name { font-size: .82rem; font-weight: 600; color: #7a7f99; white-space: nowrap; }
+  .tb-spacer { flex: 1; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .user-badge { font-size: 0.7rem; background: rgba(255,255,255,.06); padding: 4px 10px; border-radius: 20px; color: #7a7f99; border: 1px solid #2e3350; white-space: nowrap; }
+  .btn-h { font-size: 0.74rem; padding: 5px 11px; background: transparent; color: #7a7f99; border: 1px solid #2e3350; border-radius: 7px; cursor: pointer; text-decoration: none; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; }
+  .btn-h:hover { color: #e8eaf0; border-color: #4f8ef7; }
 
   /* ── Layout ── */
   .page { max-width: 1600px; margin: 28px auto; padding: 0 22px; }
@@ -220,14 +225,16 @@
 <body>
 
 <header>
-  <div>
-    <h1>La Chacra · Administración</h1>
-    <div class="sub">Gestión de usuarios y permisos</div>
-  </div>
+  <a href="tecnopanel.html" class="logo">
+    <span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>®</sup>
+  </a>
+  <span class="tb-sep">·</span>
+  <span class="tb-page-name">Administración</span>
+  <div class="tb-spacer"></div>
   <div class="header-right">
     <span class="user-badge" id="headerUser"></span>
-    <a href="tecnopanel.html" class="btn-h">← Dashboard</a>
-    <button class="btn-h" onclick="doLogout()">Cerrar sesión</button>
+    <a href="tecnopanel.html" class="btn-h">← Portal</a>
+    <button class="btn-h" onclick="doLogout()">Salir</button>
   </div>
 </header>
 

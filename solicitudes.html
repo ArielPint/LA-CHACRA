@@ -12,12 +12,19 @@ html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;font-size:14px}
 
 /* ── Topbar ── */
-#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:0;flex-shrink:0;height:54px}
-.logo-area{display:flex;align-items:center;margin-right:28px;white-space:nowrap}
-.tb-right{display:flex;align-items:center;gap:10px;margin-left:auto}
-.auth-badge{font-size:.72rem;background:rgba(255,255,255,0.08);padding:3px 9px;border-radius:20px;color:var(--muted);white-space:nowrap}
-.auth-sm-btn{font-size:.72rem;padding:4px 10px;background:rgba(255,255,255,0.08);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s;white-space:nowrap}
-.auth-sm-btn:hover{color:var(--text);border-color:var(--accent)}
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;height:54px;position:relative;z-index:100}
+.logo{display:flex;align-items:baseline;text-decoration:none;flex-shrink:0}
+.logo-tecno{font-size:19px;font-weight:900;color:var(--text);letter-spacing:1.5px}
+.logo-panel{font-size:19px;font-weight:900;color:var(--brand);letter-spacing:1.5px}
+.logo sup{font-size:9px;color:var(--muted);margin-left:2px;font-weight:400}
+.tb-page-name{font-size:.82rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.tb-sep{color:var(--border);margin:0 2px}
+.tb-spacer{flex:1}
+.tb-right{display:flex;align-items:center;gap:6px}
+.btn-ghost{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:7px;font-size:.74rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none;transition:all .15s;white-space:nowrap}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
+.auth-badge{font-size:.7rem;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:20px;color:var(--muted);border:1px solid var(--border);white-space:nowrap}
+@media(max-width:600px){.auth-badge{display:none}.tb-page-name{display:none}}
 
 /* ── Tab nav ── */
 #tab-nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:0;padding:0 24px;flex-shrink:0}
@@ -163,17 +170,16 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 <!-- ── Topbar ── -->
 <div id="topbar">
-  <div class="logo-area">
-    <a href="tecnopanel.html" style="text-decoration:none;display:flex;align-items:center;gap:2px">
-      <span style="font-size:22px;font-weight:900;color:#e8eaf0;letter-spacing:1px">TECNO</span><span style="font-size:22px;font-weight:900;color:#D42B1E;letter-spacing:1px">PANEL</span>
-    </a>
-    <span style="color:var(--border);margin:0 10px">·</span>
-    <span style="color:var(--muted);font-size:.85rem;font-weight:600">Solicitud de Materiales</span>
-  </div>
+  <a href="tecnopanel.html" class="logo">
+    <span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>®</sup>
+  </a>
+  <span class="tb-sep">·</span>
+  <span class="tb-page-name">Solicitud de Materiales</span>
+  <div class="tb-spacer"></div>
   <div class="tb-right">
     <span class="auth-badge" id="user-badge"></span>
-    <a href="tecnopanel.html" class="auth-sm-btn">← Portal</a>
-    <button class="auth-sm-btn" onclick="AUTH.logout();location.href='login.html'">Salir</button>
+    <a href="tecnopanel.html" class="btn-ghost">← Portal</a>
+    <button class="btn-ghost" onclick="AUTH.logout();location.href='login.html'">Salir</button>
   </div>
 </div>
 

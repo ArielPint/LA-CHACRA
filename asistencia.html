@@ -13,17 +13,23 @@
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:14px}
 
 /* TOPBAR */
-#topbar{background:var(--surface);border-bottom:1px solid var(--border);height:54px;display:flex;align-items:center;padding:0 20px;gap:12px}
-.logo-area{font-size:22px;font-weight:900;white-space:nowrap}
-.logo-area span{color:var(--brand)}
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;height:54px;position:relative;z-index:100}
+.logo{display:flex;align-items:baseline;text-decoration:none;flex-shrink:0}
+.logo-tecno{font-size:19px;font-weight:900;color:var(--text);letter-spacing:1.5px}
+.logo-panel{font-size:19px;font-weight:900;color:var(--brand);letter-spacing:1.5px}
+.logo sup{font-size:9px;color:var(--muted);margin-left:2px;font-weight:400}
+.tb-page-name{font-size:.82rem;font-weight:600;color:var(--muted);white-space:nowrap}
+.tb-sep{color:var(--border);margin:0 2px}
+.tb-spacer{flex:1}
+.tb-right{display:flex;align-items:center;gap:6px}
+.btn-ghost{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:7px;font-size:.74rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none;transition:all .15s;white-space:nowrap}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
+.btn-ghost.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn-ghost.primary:hover{opacity:.85}
+.auth-badge{font-size:.7rem;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:20px;color:var(--muted);border:1px solid var(--border);white-space:nowrap}
 .badge-gv{font-size:10px;background:#16a34a22;color:#4ade80;border:1px solid #4ade8040;border-radius:4px;padding:2px 8px;font-weight:700;letter-spacing:.5px}
 .badge-gv.err{background:#dc262622;color:var(--red);border-color:#dc262640}
-.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
-.sm-btn{font-size:.72rem;padding:5px 12px;background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s}
-.sm-btn:hover{color:var(--text);border-color:var(--accent)}
-.sm-btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
-.sm-btn.primary:hover{opacity:.85}
-.auth-badge{font-size:.72rem;background:rgba(255,255,255,.08);padding:3px 9px;border-radius:20px;color:var(--muted)}
+@media(max-width:600px){.auth-badge{display:none}.tb-page-name{display:none}}
 
 /* TABS NAV */
 #nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;gap:2px}
@@ -114,13 +120,18 @@ tbody tr:hover td{background:var(--surface2)}
 
 <!-- TOPBAR -->
 <div id="topbar">
-  <div class="logo-area">LA <span>CHACRA</span></div>
+  <a href="tecnopanel.html" class="logo">
+    <span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>®</sup>
+  </a>
+  <span class="tb-sep">·</span>
+  <span class="tb-page-name">Asistencia GeoVictoria</span>
   <span id="gv-status-badge" class="badge-gv err">GeoVictoria ✕</span>
+  <div class="tb-spacer"></div>
   <div class="tb-right">
     <span id="auth-badge" class="auth-badge"></span>
-    <button class="sm-btn" onclick="openConfig()">⚙ Configurar API</button>
-    <button class="sm-btn" onclick="refreshAll()">↻ Actualizar</button>
-    <button class="sm-btn" onclick="window.location.href='index.html'">← Volver</button>
+    <button class="btn-ghost" onclick="openConfig()">⚙ Configurar API</button>
+    <button class="btn-ghost" onclick="refreshAll()">↻ Actualizar</button>
+    <a href="tecnopanel.html" class="btn-ghost">← Portal</a>
   </div>
 </div>
 

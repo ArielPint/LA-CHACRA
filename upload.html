@@ -9,10 +9,16 @@
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:14px}
-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
-.logo-back{display:flex;align-items:center;gap:20px}
-.back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;text-decoration:none}
-.back-btn:hover{color:var(--text);border-color:var(--accent)}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:10px;height:54px}
+.logo{display:flex;align-items:baseline;text-decoration:none;flex-shrink:0}
+.logo-tecno{font-size:19px;font-weight:900;color:var(--text);letter-spacing:1.5px}
+.logo-panel{font-size:19px;font-weight:900;color:var(--brand);letter-spacing:1.5px}
+.logo sup{font-size:9px;color:var(--muted);margin-left:2px;font-weight:400}
+.tb-sep{color:#2e3350;margin:0 2px}
+.tb-page-name{font-size:.82rem;font-weight:600;color:#7a7f99;white-space:nowrap}
+.tb-spacer{flex:1}
+.btn-ghost{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:7px;font-size:.74rem;font-weight:600;cursor:pointer;border:1px solid #2e3350;background:transparent;color:#7a7f99;text-decoration:none;transition:all .15s;white-space:nowrap}
+.btn-ghost:hover{color:#e8eaf0;border-color:#4f8ef7}
 main{max-width:900px;margin:40px auto;padding:0 24px}
 h1{font-size:1.3rem;font-weight:700;margin-bottom:6px}
 .sub{color:var(--muted);font-size:.85rem;margin-bottom:32px}
@@ -53,13 +59,13 @@ h1{font-size:1.3rem;font-weight:700;margin-bottom:6px}
 <body>
 
 <header>
-  <div class="logo-back">
-    <a href="tecnopanel.html" class="back-btn">&#8592; Volver al dashboard</a>
-    <div>
-      <span style="font-size:22px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:22px;font-weight:900;color:#D42B1E;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:10px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup>
-    </div>
-  </div>
-  <span style="font-size:.78rem;color:var(--muted)">Gestión de Archivos</span>
+  <a href="tecnopanel.html" class="logo">
+    <span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>®</sup>
+  </a>
+  <span class="tb-sep">·</span>
+  <span class="tb-page-name">Gestión de Archivos</span>
+  <div class="tb-spacer"></div>
+  <a href="tecnopanel.html" class="btn-ghost">← Portal</a>
 </header>
 
 <main>

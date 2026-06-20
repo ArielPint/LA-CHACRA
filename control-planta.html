@@ -13,9 +13,16 @@ html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;font-size:14px}
 
 /* TOPBAR */
-#topbar{background:var(--surface);border-bottom:1px solid var(--border);height:54px;display:flex;align-items:center;padding:0 20px;gap:0;flex-shrink:0}
-.logo-area{display:flex;align-items:center;margin-right:20px;white-space:nowrap;flex-shrink:0}
-.planta-badge{font-size:10px;background:var(--brand);color:#fff;border-radius:4px;padding:2px 7px;margin-left:10px;font-weight:700;letter-spacing:.5px;flex-shrink:0}
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;height:54px;position:relative;z-index:100}
+.logo{display:flex;align-items:baseline;text-decoration:none;flex-shrink:0}
+.logo-tecno{font-size:19px;font-weight:900;color:var(--text);letter-spacing:1.5px}
+.logo-panel{font-size:19px;font-weight:900;color:var(--brand);letter-spacing:1.5px}
+.logo sup{font-size:9px;color:var(--muted);margin-left:2px;font-weight:400}
+.planta-badge{font-size:10px;background:var(--brand);color:#fff;border-radius:4px;padding:2px 7px;font-weight:700;letter-spacing:.5px;flex-shrink:0}
+.btn-ghost{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:7px;font-size:.74rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none;transition:all .15s;white-space:nowrap}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
+.auth-badge{font-size:.7rem;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:20px;color:var(--muted);border:1px solid var(--border);white-space:nowrap}
+@media(max-width:600px){.auth-badge{display:none}}
 .cp-tabs{display:flex;align-items:stretch;gap:0;flex:1}
 .cp-tab{height:54px;padding:0 18px;font-size:.84rem;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;white-space:nowrap}
 .cp-tab:hover{color:var(--text)}
@@ -323,11 +330,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <body>
 
 <div id="topbar">
-  <div class="logo-area">
-    <span style="font-size:21px;font-weight:900;color:#e8eaf0">TECNO</span>
-    <span style="font-size:21px;font-weight:900;color:#D42B1E">PANEL</span>
-    <span class="planta-badge">PLANTA</span>
-  </div>
+  <a href="tecnopanel.html" class="logo">
+    <span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>®</sup>
+  </a>
+  <span class="planta-badge">PLANTA</span>
   <div class="cp-tabs">
     <button class="cp-tab hidden" id="tab-obra_gruesa" onclick="switchTab('obra_gruesa')">🏗️ Obra Gruesa</button>
     <button class="cp-tab hidden" id="tab-sanitario" onclick="switchTab('sanitario')">🚿 Sanitario</button>
@@ -336,10 +342,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <button class="cp-tab hidden" id="tab-recepcion" onclick="switchTab('recepcion')">✅ Recepción</button>
   </div>
   <div class="tb-right">
-    <button class="sm-btn hidden" id="notif-btn" onclick="openNotifModal()" title="Configurar notificaciones WhatsApp">🔔 Notif.</button>
+    <button class="btn-ghost hidden" id="notif-btn" onclick="openNotifModal()" title="Configurar notificaciones WhatsApp">🔔 Notif.</button>
     <span class="auth-badge" id="user-badge"></span>
-    <button class="sm-btn" onclick="goBack()">← Volver</button>
-    <button class="sm-btn" onclick="doLogout()">Salir</button>
+    <button class="btn-ghost" onclick="goBack()">← Volver</button>
+    <button class="btn-ghost" onclick="doLogout()">Salir</button>
   </div>
 </div>
 
