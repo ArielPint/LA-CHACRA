@@ -617,7 +617,7 @@
     "name": "Catalina Valenzuela",
     "active": true,
     "createdAt": 1781874213945,
-    "updatedAt": 1781874213945,
+    "updatedAt": 1781999973401,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -655,7 +655,9 @@
           "tabs": [
             "obra_gruesa",
             "sanitario",
-            "electrico"
+            "electrico",
+            "terminaciones",
+            "recepcion"
           ]
         },
         "geovictoria": {
@@ -665,7 +667,21 @@
       },
       "readonly": false,
       "canEditLayout": true,
-      "canEditProducts": false
+      "canEditProducts": false,
+      "planta_marks": {
+        "obra_gruesa": [
+          "produccion"
+        ],
+        "sanitario": [
+          "produccion"
+        ],
+        "electrico": [
+          "produccion"
+        ],
+        "terminaciones": [
+          "produccion"
+        ]
+      }
     },
     "plantaRol": "supervisor_obra_gruesa"
   }
