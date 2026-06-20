@@ -955,23 +955,62 @@ function partsHtml(tab) {
   const LABELS={obra_gruesa:'🏗️ Obra Gruesa',sanitario:'🚿 Sanitario',electrico:'⚡ Eléctrico',terminaciones:'🏠 Terminaciones'};
   const label=LABELS[tab]||tab;
   const grp=tab;
-  let h=`<div class="sec-title">${label}</div>
-  <div style="font-size:.68rem;color:var(--muted);margin-bottom:9px;display:flex;gap:14px">
-    <span>⬜ Producción</span><span style="color:var(--purple)">⬜ Calidad</span><span style="color:var(--green)">⬜ Cliente</span>
-  </div>`;
-  (PARTIDAS[tab]||[]).forEach(p=>{
-    const s=pS(selMod,p.c);
-    const na=isNA(s);
-    h+=`<div class="part-row${na?' na-row':''}" id="pr-${p.c}">
+  const ps=PARTIDAS[tab]||[];
+
+  // Separar pendientes de aprobadas/NA
+  const pending=ps.filter(p=>{ const s=pS(selMod,p.c); return !isDone(s)&&!isNA(s); });
+  const done   =ps.filter(p=>{ const s=pS(selMod,p.c); return  isDone(s)||isNA(s); });
+
+  const rowHtml=p=>{
+    const s=pS(selMod,p.c); const na=isNA(s);
+    return `<div class="part-row${na?' na-row':''}" id="pr-${p.c}">
       <span class="p-code">${p.c}</span>
       <span class="p-label">${p.l}</span>
       <div class="checks">${checksHtml(selMod,p.c,grp,s)}</div>
     </div>`;
-  });
+  };
+
+  const legend=`<div style="font-size:.68rem;color:var(--muted);margin-bottom:9px;display:flex;gap:14px">
+    <span>⬜ Producción</span><span style="color:var(--purple)">⬜ Calidad</span><span style="color:var(--green)">⬜ Cliente</span>
+  </div>`;
+
+  let h=`<div class="sec-title">${label}</div>${legend}`;
+
+  // Pendientes primero
+  if(pending.length===0){
+    h+=`<div style="padding:8px 0 4px;font-size:.82rem;color:var(--green)">✅ Todas las partidas aprobadas</div>`;
+  } else {
+    h+=pending.map(rowHtml).join('');
+  }
+
+  // Aprobadas/NA colapsadas al final
+  if(done.length>0){
+    const uid='done-'+tab;
+    h+=`<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">
+      <button id="btn-${uid}" onclick="toggleDone('${uid}')"
+        style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:600;color:var(--muted);background:transparent;border:none;cursor:pointer;padding:0;letter-spacing:.3px">
+        <span id="arr-${uid}" style="font-size:.65rem">▶</span>
+        ${done.length} partida${done.length>1?'s':''} aprobada${done.length>1?'s':''} / N/A
+      </button>
+      <div id="${uid}" style="display:none;margin-top:8px;opacity:.7">
+        ${done.map(rowHtml).join('')}
+      </div>
+    </div>`;
+  }
+
   if(isAdminOrGerente()){
     h+=`<div style="margin-top:10px;font-size:.72rem;color:var(--muted)">Clic en un check activo para desmarcarlo. Clic en N/A para marcar partida como no aplicable.</div>`;
   }
   return h;
+}
+
+function toggleDone(uid) {
+  const el=document.getElementById(uid);
+  const arr=document.getElementById('arr-'+uid);
+  if(!el) return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(arr) arr.textContent=open?'▶':'▼';
 }
 
 function checksHtml(m, code, grp, s) {
