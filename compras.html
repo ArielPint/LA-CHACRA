@@ -234,6 +234,7 @@ const XLSURL='https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/ub
 let catalog={};
 let records=[];
 let _optHTML=null;
+let editId=null;
 
 // Sorting state
 let sortCol=null, sortDir='asc';
@@ -425,7 +426,7 @@ function renderTable(){
       `<td>${tipoChip(r.tipo)}</td>`+
       `<td class="c">${r.avance!=null?r.avance+'%':'—'}</td>`+
       `<td class="c acum">${r._acum}</td>`+
-      `<td>${ro?'':`<button class="btn btn-sm" style="color:var(--red);padding:3px 8px" onclick="delRecord(${r.id})">✕</button>`}</td>`;
+      `<td style="white-space:nowrap">${ro?'':`<button class="btn btn-sm" style="padding:3px 8px;margin-right:4px" onclick="editRecord(${r.id})">✎</button><button class="btn btn-sm" style="color:var(--red);padding:3px 8px" onclick="delRecord(${r.id})">✕</button>`}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -452,10 +453,12 @@ function showToast(msg,type){
 
 // ── Drawer / Form ─────────────────────────────────────────────────────────────
 function openDrawer(){
+  editId=null;
   resetForm();
+  document.getElementById('drw-hdr').querySelector('h2').textContent='Nueva Entrada';
+  document.getElementById('save-otro-btn').style.display='';
   document.getElementById('drawer').classList.add('open');
   document.getElementById('overlay').classList.add('show');
-  // Focus first empty required field
   setTimeout(()=>{
     const fg=document.getElementById('f-gd');
     if(fg&&!fg.value)fg.focus();
@@ -463,9 +466,32 @@ function openDrawer(){
   },280);
 }
 
+function editRecord(id){
+  const r=records.find(x=>x.id===id);
+  if(!r)return;
+  editId=id;
+  resetForm();
+  document.getElementById('f-gd').value=r.fecha_gd||'';
+  document.getElementById('f-desp').value=r.fecha_despacho||'';
+  document.getElementById('f-gdnum').value=r.gd_numero||'';
+  document.getElementById('f-mod').value=r.modulo||'';
+  document.getElementById('f-serie').value=r.modulo_nro_serie||'';
+  document.getElementById('f-cant').value=r.cantidad??1;
+  document.getElementById('f-monto').value=r.monto_neto??'';
+  document.getElementById('f-avance').value=r.avance??'';
+  document.getElementById('f-torre').value=r.torre||'';
+  document.getElementById('f-tipo').value=r.tipo||'';
+  document.getElementById('drw-hdr').querySelector('h2').textContent='Editar Entrada';
+  document.getElementById('save-otro-btn').style.display='none';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('f-gdnum').focus(),280);
+}
+
 function closeDrawer(){
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
+  editId=null;
 }
 
 function resetForm(){
@@ -529,16 +555,24 @@ async function saveForm(keepOpen){
   btn.disabled=true;btn2.disabled=true;st.textContent='Guardando…';
 
   try{
-    const res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd`,{
-      method:'POST',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify(rec)
-    });
+    let res;
+    if(editId){
+      res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd?id=eq.${editId}`,{
+        method:'PATCH',
+        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify(rec)
+      });
+    } else {
+      res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd`,{
+        method:'POST',
+        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify(rec)
+      });
+    }
     if(!res.ok)throw new Error(await res.text());
-    showToast('✓ Registro guardado','ok');
+    showToast(editId?'✓ Registro actualizado':'✓ Registro guardado','ok');
     await loadData();
-    if(keepOpen){
-      // Keep drawer open, reset form except dates
+    if(!editId&&keepOpen){
       const fg=document.getElementById('f-gd').value;
       const fd=document.getElementById('f-desp').value;
       resetForm();
