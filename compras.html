@@ -426,7 +426,7 @@ function renderTable(){
       `<td>${tipoChip(r.tipo)}</td>`+
       `<td class="c">${r.avance!=null?r.avance+'%':'—'}</td>`+
       `<td class="c acum">${r._acum}</td>`+
-      `<td style="white-space:nowrap">${ro?'':`<button class="btn btn-sm" style="padding:3px 8px;margin-right:4px" onclick="editRecord(${r.id})">✎</button><button class="btn btn-sm" style="color:var(--red);padding:3px 8px" onclick="delRecord(${r.id})">✕</button>`}</td>`;
+      `<td style="white-space:nowrap">${ro?'':`<button class="btn btn-sm" style="padding:3px 8px;margin-right:4px" onclick="editRecord(${r.id})">Editar</button><button class="btn btn-sm" style="color:var(--red);padding:3px 8px" onclick="delRecord(${r.id})">✕</button>`}</td>`;
     tbody.appendChild(tr);
   });
 }
