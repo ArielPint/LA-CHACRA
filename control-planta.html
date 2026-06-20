@@ -206,6 +206,118 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .hidden{display:none!important}
+
+/* ─── RESPONSIVE / MOBILE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Topbar: 2 filas — fila 1: logo + botones, fila 2: tabs */
+  #topbar {
+    height: auto !important;
+    flex-wrap: wrap;
+    padding: 6px 12px 0;
+    align-items: center;
+  }
+  .logo-area { flex-shrink: 0; margin-right: 0; }
+  .logo-area span { font-size: 17px !important; }
+  .planta-badge { font-size: 9px; padding: 1px 5px; margin-left: 6px; }
+  .cp-tabs {
+    order: 10;
+    flex: 0 0 calc(100% + 24px);
+    margin: 0 -12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .cp-tabs::-webkit-scrollbar { display: none; }
+  .cp-tab { height: 38px; padding: 0 12px; font-size: .76rem; flex-shrink: 0; }
+  .tb-right { gap: 4px; margin-left: auto; }
+  .auth-badge { display: none !important; }
+  .sm-btn { padding: 3px 7px; font-size: .67rem; }
+
+  /* Breadcrumb */
+  #breadcrumb { padding: 5px 12px; font-size: .74rem; }
+
+  /* Main: scroll vertical */
+  #main { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+
+  /* Vista torres */
+  #view-torres { padding: 12px; overflow-y: visible; }
+  .torres-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .torre-card { padding: 11px 12px; }
+
+  /* Panel split → apilado */
+  #view-modules { flex-direction: column; overflow: visible; }
+  #list-panel {
+    width: 100% !important;
+    min-width: unset !important;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 45vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  #detail-panel { min-height: 50vh; overflow-y: auto; }
+
+  /* Mobile: cuando se selecciona un módulo, detalle ocupa toda la pantalla */
+  #view-modules.mob-detail #list-panel { display: none !important; }
+  #view-modules.mob-detail #detail-panel { min-height: 0; flex: 1; }
+
+  /* Botón "← Lista" — sólo visible en mobile */
+  .mobile-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    font-size: .73rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .mobile-back-btn:hover { color: var(--text); }
+
+  /* Partida rows: pills en segunda línea */
+  .part-row { flex-wrap: wrap; padding: 8px 10px; }
+  .p-code { width: 36px; }
+  .p-label { min-width: 0; }
+  .checks {
+    flex-wrap: wrap;
+    width: 100%;
+    padding-left: 44px;
+    margin-top: 5px;
+    gap: 4px;
+  }
+  .cpill { font-size: .67rem; padding: 4px 7px; }
+  .c3-btns { flex-wrap: wrap; }
+  .c3-btn { font-size: .67rem; padding: 4px 8px; }
+
+  /* dp-header: wrap */
+  #dp-header { flex-wrap: wrap; gap: 8px; }
+  .dp-title { font-size: .95rem; }
+
+  /* Filtro fases: scrollable horizontal */
+  .phase-filter { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .phase-filter::-webkit-scrollbar { display: none; }
+
+  /* Recepción: 1 columna */
+  .recep-grid { grid-template-columns: 1fr; }
+
+  /* Modales: ancho completo */
+  .modal { width: 94vw !important; max-height: 88vh; overflow-y: auto; }
+
+  /* Lista de filtros */
+  .list-filter { flex-wrap: wrap; gap: 6px; }
+}
+
+/* Desktop: ocultar botón mobile-only */
+@media (min-width: 769px) {
+  .mobile-back-btn { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -658,12 +770,19 @@ function goHome() {
 function goBack() {
   if (selId) {
     selId=null; selMod=null; resetDP(); renderList();
+    document.getElementById('view-modules')?.classList.remove('mob-detail');
     ['bc-mod-sep','bc-mod'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   } else if (curTorre) { goHome(); }
   else { try{window.close();}catch(e){history.back();} }
 }
 
 function doLogout(){ AUTH.logout(); window.location.href='login.html'; }
+
+function mobileBackToList() {
+  selId=null; selMod=null; resetDP(); renderList();
+  document.getElementById('view-modules')?.classList.remove('mob-detail');
+  ['bc-mod-sep','bc-mod'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+}
 
 // ── Torre Grid ─────────────────────────────────────────────────────────────────
 function renderGrid() {
@@ -761,6 +880,7 @@ function setPF(f){
 async function openMod(id) {
   selId=id; selMod=allMods.find(m=>m.id===id);
   if(!selMod) return;
+  if(window.innerWidth<=768) document.getElementById('view-modules').classList.add('mob-detail');
   document.getElementById('bc-mod-sep').classList.remove('hidden');
   document.getElementById('bc-mod').classList.remove('hidden');
   document.getElementById('bc-mod').textContent=selMod.nombre;
@@ -786,7 +906,8 @@ function renderDetail() {
 
   dp.innerHTML=`
     <div id="dp-header">
-      <div>
+      <button class="mobile-back-btn" onclick="mobileBackToList()">← Lista</button>
+      <div style="min-width:0;flex:1">
         <div class="dp-title">${selMod.nombre}</div>
         <div class="dp-meta">${selMod.torre} · ${selMod.tipo==='seco'?'Módulo Seco':'Módulo Húmedo'} · Nº serie: ${selMod.nro_serie||'-'}</div>
       </div>
