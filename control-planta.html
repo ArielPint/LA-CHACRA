@@ -190,6 +190,19 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .toast.ok{border-color:var(--green);color:var(--green)}
 .toast.err{border-color:var(--red);color:var(--red)}
 @keyframes si{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* REJECTION MODAL */
+.rej-modal{width:480px;max-height:88vh;overflow-y:auto}
+.img-upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:8px}
+.img-upload-area:hover{border-color:var(--accent)}
+.img-previews{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.img-thumb{position:relative;width:78px;height:78px;border-radius:6px;overflow:hidden;border:1px solid var(--border);flex-shrink:0}
+.img-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.img-thumb-del{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.75);border-radius:50%;border:none;color:#fff;font-size:9px;cursor:pointer;line-height:16px;text-align:center;padding:0}
+.hist-obs{font-size:.74rem;color:var(--muted);margin-top:3px;font-style:italic;word-break:break-word}
+.hist-imgs{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.hist-img{width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--border);cursor:pointer}
+
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .hidden{display:none!important}
@@ -347,6 +360,36 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
         <button class="btn btn-pri" onclick="saveSlackChannel()">➕ Agregar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- REJECTION MODAL (observación + imágenes) -->
+<div class="overlay hidden" id="rej-modal">
+  <div class="modal rej-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="m-title">✗ Rechazar Partida</div>
+      <button class="sm-btn" onclick="closeRejectModal()">✕</button>
+    </div>
+    <div id="rej-partida-info" style="font-size:.82rem;color:var(--muted);margin-bottom:14px;background:rgba(247,95,95,.08);border:1px solid rgba(247,95,95,.2);border-radius:6px;padding:8px 11px"></div>
+    <div style="font-size:.74rem;color:var(--muted);margin-bottom:12px">Esto reiniciará todos los checks (Producción, Calidad y Cliente). Se deberá ejecutar todo de nuevo.</div>
+    <div class="form-row">
+      <label class="form-label">Observación del cliente *</label>
+      <textarea class="form-input" id="rej-obs" rows="4" placeholder="Describe el problema encontrado..." style="resize:vertical;min-height:90px"></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Imágenes del problema (opcional, máx. 5)</label>
+      <div class="img-upload-area" id="rej-upload-area" onclick="document.getElementById('rej-img-input').click()">
+        <div style="font-size:.82rem;color:var(--muted)">📎 Haz clic para agregar imágenes</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px">JPG · PNG · WEBP · Máx 5 MB c/u</div>
+      </div>
+      <input type="file" id="rej-img-input" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" onchange="previewRejImages(this)">
+      <div class="img-previews" id="rej-img-previews"></div>
+    </div>
+    <div id="rej-upload-progress" class="hidden" style="font-size:.76rem;color:var(--muted);margin-bottom:8px">⏳ Subiendo imágenes...</div>
+    <div class="m-actions">
+      <button class="btn btn-ghost" onclick="closeRejectModal()">Cancelar</button>
+      <button class="btn btn-rej" id="rej-submit-btn" onclick="submitRejection()">✗ Confirmar Rechazo</button>
     </div>
   </div>
 </div>
@@ -942,9 +985,7 @@ function doC3(approve, modId, code, grp) {
       `${code} · La partida quedará como aprobada por el cliente.`,
       [['Cancelar',null,'btn-ghost'],['✓ Aprobar',async()=>{ closeModal(); await _doC3Aprob(m,code,grp); },'btn-ok']]);
   } else {
-    showConfirm('¿Rechazar partida?',
-      `${code} · Esto REINICIA todos los checks (Producción, Calidad y Cliente). Se debe hacer todo de nuevo.`,
-      [['Cancelar',null,'btn-ghost'],['✗ Rechazar y reiniciar',async()=>{ closeModal(); await _doC3Rech(m,code,grp); },'btn-rej']]);
+    openRejectModal(modId, code, grp);
   }
 }
 
@@ -956,9 +997,12 @@ async function _doC3Aprob(m,code,grp){
   await sendNotifs('check3_approved',`✅ [CLIENTE APRUEBA] ${code} en ${m.nombre} (${m.torre})`);
 }
 
-async function _doC3Rech(m,code,grp){
-  await savePartida(m.id,code,{c1:false,c2:false,c3:null},{},'cliente_rechaza',grp);
-  await sendNotifs('check3_rejected',`❌ [CLIENTE RECHAZA] ${code} en ${m.nombre} (${m.torre}) — Requiere nueva ejecución`);
+async function _doC3Rech(m,code,grp,obs='',imgUrls=[]){
+  const obsData=imgUrls.length?JSON.stringify({text:obs,images:imgUrls}):(obs||null);
+  await savePartida(m.id,code,{c1:false,c2:false,c3:null},{},'cliente_rechaza',grp,obsData);
+  let msg=`❌ [CLIENTE RECHAZA] ${code} en ${m.nombre} (${m.torre}) — Requiere nueva ejecución`;
+  if(obs) msg+=`\n📝 *Observación:* ${obs}`;
+  await sendNotifs('check3_rejected',msg,imgUrls);
 }
 
 function undoC3(modId,code,grp){
@@ -971,6 +1015,91 @@ function undoC3(modId,code,grp){
       const newT={...(t[code]||{})}; delete newT.t3;
       await savePartida(modId,code,{c1:true,c2:true,c3:null},newT,'undo_c3',grp);
     },'btn-rej']]);
+}
+
+// ── Rejection modal: observación + imágenes ────────────────────────────────────
+let _rejCtx=null, _rejFiles=[];
+
+function openRejectModal(modId,code,grp){
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  _rejCtx={modId,code,grp}; _rejFiles=[];
+  document.getElementById('rej-obs').value='';
+  document.getElementById('rej-img-previews').innerHTML='';
+  document.getElementById('rej-img-input').value='';
+  document.getElementById('rej-upload-progress').classList.add('hidden');
+  const btn=document.getElementById('rej-submit-btn');
+  btn.disabled=false; btn.textContent='✗ Confirmar Rechazo';
+  document.getElementById('rej-partida-info').innerHTML=
+    `<strong>${code}</strong> · ${m.nombre} · ${m.torre}`;
+  document.getElementById('rej-modal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('rej-obs').focus(),100);
+}
+
+function closeRejectModal(){
+  document.getElementById('rej-modal').classList.add('hidden');
+  _rejCtx=null; _rejFiles=[];
+}
+
+function previewRejImages(input){
+  const files=Array.from(input.files).slice(0,5);
+  _rejFiles=files;
+  const el=document.getElementById('rej-img-previews');
+  el.innerHTML=files.map((f,i)=>{
+    const url=URL.createObjectURL(f);
+    return `<div class="img-thumb" id="rejthumb-${i}">
+      <img src="${url}" alt="img-${i}">
+      <button class="img-thumb-del" onclick="removeRejImg(${i})" title="Quitar">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeRejImg(idx){
+  _rejFiles=_rejFiles.filter((_,i)=>i!==idx);
+  document.getElementById('rej-img-input').value='';
+  const el=document.getElementById('rej-img-previews');
+  el.innerHTML=_rejFiles.map((f,i)=>{
+    const url=URL.createObjectURL(f);
+    return `<div class="img-thumb">
+      <img src="${url}" alt="img-${i}">
+      <button class="img-thumb-del" onclick="removeRejImg(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function uploadImagesToSupabase(files,modId,code){
+  const sc=supabase.createClient(SURL,SKEY);
+  const urls=[];
+  for(const file of files){
+    const ext=file.name.split('.').pop()||'jpg';
+    const path=`${modId}/${code}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const {error}=await sc.storage.from('planta-rechazos').upload(path,file,{contentType:file.type,upsert:false});
+    if(!error){
+      const {data:pub}=sc.storage.from('planta-rechazos').getPublicUrl(path);
+      if(pub?.publicUrl) urls.push(pub.publicUrl);
+    } else {
+      console.warn('Upload error',error);
+    }
+  }
+  return urls;
+}
+
+async function submitRejection(){
+  if(!_rejCtx) return;
+  const obs=document.getElementById('rej-obs').value.trim();
+  if(!obs){ toast('Ingresa una observación del problema','err'); return; }
+  const btn=document.getElementById('rej-submit-btn');
+  btn.disabled=true; btn.textContent='Guardando...';
+  const {modId,code,grp}=_rejCtx;
+  const m=allMods.find(x=>x.id===modId);
+  let imgUrls=[];
+  if(_rejFiles.length>0){
+    document.getElementById('rej-upload-progress').classList.remove('hidden');
+    try{ imgUrls=await uploadImagesToSupabase(_rejFiles,modId,code); }
+    catch(e){ console.warn('img upload failed',e); toast('Error subiendo imágenes','err'); }
+    document.getElementById('rej-upload-progress').classList.add('hidden');
+  }
+  closeRejectModal();
+  await _doC3Rech(m,code,grp,obs,imgUrls);
 }
 
 async function toggleNA(modId,code,grp){
@@ -990,7 +1119,7 @@ const ACCION_LABELS = {
   entregado:'📦 Módulo entregado'
 };
 
-async function savePartida(modId,code,newState,newTimes,accion,grp){
+async function savePartida(modId,code,newState,newTimes,accion,grp,observacion=null){
   const m=allMods.find(x=>x.id===modId); if(!m) return;
   const updE={...(m.estados||{}),[code]:newState};
   const updT={...(m.tiempos||{}),[code]:newTimes};
@@ -1004,7 +1133,7 @@ async function savePartida(modId,code,newState,newTimes,accion,grp){
       body:JSON.stringify({
         modulo_id:modId,modulo_nombre:m.nombre,partida:code,
         accion,nuevo_estado:JSON.stringify(newState),
-        observacion:null,usuario:SES.name,user_id:SES.id,
+        observacion,usuario:SES.name,user_id:SES.id,
         rol:PROL||SES.role,timestamp:new Date().toISOString()
       })
     });
@@ -1162,11 +1291,27 @@ function histHtml(rows){
     const dot=ACCION_DOTS[r.accion]||'#7a7f99';
     const label=ACCION_LABELS[r.accion]||r.accion||r.nuevo_estado||'';
     const d=r.timestamp?new Date(r.timestamp).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+    // Parse observation — can be plain text or JSON {text, images}
+    let obsHtml='';
+    if(r.observacion){
+      try{
+        const parsed=JSON.parse(r.observacion);
+        if(parsed.text) obsHtml+=`<div class="hist-obs">📝 ${parsed.text}</div>`;
+        if(parsed.images?.length){
+          obsHtml+=`<div class="hist-imgs">${parsed.images.map(u=>
+            `<a href="${u}" target="_blank" rel="noopener"><img class="hist-img" src="${u}" alt="foto rechazo" loading="lazy"></a>`
+          ).join('')}</div>`;
+        }
+      }catch(e){
+        obsHtml=`<div class="hist-obs">📝 ${r.observacion}</div>`;
+      }
+    }
     return `<div class="hist-item">
       <div class="h-dot" style="background:${dot}"></div>
-      <div>
+      <div style="flex:1;min-width:0">
         <div><strong>${r.partida}</strong> <span style="color:${dot}">${label}</span></div>
         <div class="h-meta">${r.usuario||'Sistema'}${r.rol?' · '+r.rol.replace(/_/g,' '):''} · ${d}</div>
+        ${obsHtml}
       </div>
     </div>`;
   }).join('');
@@ -1193,7 +1338,7 @@ function closeModal(){ document.getElementById('modal').classList.add('hidden');
 document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal') closeModal(); });
 
 // ── WhatsApp + Slack Notifications ───────────────────────────────────────────
-async function sendNotifs(evento, message){
+async function sendNotifs(evento, message, imageUrls=[]){
   // WhatsApp via CallMeBot
   try{
     const r=await fetch(`${SURL}/rest/v1/planta_notif_contacts?active=eq.true&select=phone,callmebot_key,eventos`,{headers:SH});
@@ -1207,7 +1352,7 @@ async function sendNotifs(evento, message){
     fetch(`${SURL}/functions/v1/slack-notify`,{
       method:'POST',
       headers:{...SH,'Content-Type':'application/json'},
-      body:JSON.stringify({evento,message})
+      body:JSON.stringify({evento,message,imageUrls})
     });
   } catch(e){ console.warn('Slack notif error',e); }
 }
@@ -1356,9 +1501,12 @@ function toast(msg,type='ok'){
 }
 
 // ── Keys ──────────────────────────────────────────────────────────────────────
+document.getElementById('rej-modal').addEventListener('click',e=>{ if(e.target.id==='rej-modal') closeRejectModal(); });
+
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    if(!document.getElementById('notif-modal').classList.contains('hidden')) closeNotifModal();
+    if(!document.getElementById('rej-modal').classList.contains('hidden')) closeRejectModal();
+    else if(!document.getElementById('notif-modal').classList.contains('hidden')) closeNotifModal();
     else if(!document.getElementById('modal').classList.contains('hidden')) closeModal();
     else goBack();
   }
