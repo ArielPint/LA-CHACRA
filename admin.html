@@ -449,17 +449,42 @@
       </div>
 
       <div class="form-row">
-        <label class="form-label">Rol en Planta (Control Planta)</label>
-        <select class="form-select" id="fPlantaRol">
-          <option value="">— Sin acceso a Control Planta —</option>
-          <option value="gerente">👔 Gerente (todo)</option>
-          <option value="supervisor_obra_gruesa">🔧 Supervisor Obra Gruesa</option>
-          <option value="supervisor_terminaciones">🏠 Supervisor Terminaciones</option>
-          <option value="supervisor_recepcion">✅ Supervisor Recepción</option>
-          <option value="qc1">🔍 QC1 (Control de calidad 1)</option>
-          <option value="qc2">✔️ QC2 (Control de calidad 2)</option>
-        </select>
-        <p class="form-hint">Define qué pestañas y acciones tiene este usuario en el módulo de Control Planta. Vacío = sin acceso.</p>
+        <label class="form-label">Permisos de marcado — Control Planta</label>
+        <p class="form-hint" style="margin-bottom:10px">Por cada pestaña, indicá qué marcas puede colocar este usuario en las partidas.</p>
+        <table id="plantaMarksTable" style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:6px 8px;color:var(--gray);font-weight:600;border-bottom:1px solid var(--border2)">Pestaña</th>
+              <th style="text-align:center;padding:6px 8px;color:var(--gray);font-weight:600;border-bottom:1px solid var(--border2)">✅ Producción</th>
+              <th style="text-align:center;padding:6px 8px;color:var(--gray);font-weight:600;border-bottom:1px solid var(--border2)">🔍 Calidad</th>
+              <th style="text-align:center;padding:6px 8px;color:var(--gray);font-weight:600;border-bottom:1px solid var(--border2)">👤 Cliente</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:6px 8px">🏗️ Obra Gruesa</td>
+              <td style="text-align:center"><input type="checkbox" id="pm-obra_gruesa-produccion"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-obra_gruesa-calidad"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-obra_gruesa-cliente"></td></tr>
+            <tr><td style="padding:6px 8px">🚿 Sanitario</td>
+              <td style="text-align:center"><input type="checkbox" id="pm-sanitario-produccion"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-sanitario-calidad"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-sanitario-cliente"></td></tr>
+            <tr><td style="padding:6px 8px">⚡ Eléctrico</td>
+              <td style="text-align:center"><input type="checkbox" id="pm-electrico-produccion"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-electrico-calidad"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-electrico-cliente"></td></tr>
+            <tr><td style="padding:6px 8px">🏠 Terminaciones</td>
+              <td style="text-align:center"><input type="checkbox" id="pm-terminaciones-produccion"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-terminaciones-calidad"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-terminaciones-cliente"></td></tr>
+            <tr><td style="padding:6px 8px">✅ Recepción</td>
+              <td style="text-align:center" colspan="3">
+                <label style="display:inline-flex;align-items:center;gap:5px;font-size:.78rem;color:var(--gray)">
+                  <input type="checkbox" id="pm-recepcion-entregado"> Puede marcar módulo como Entregado
+                </label>
+              </td></tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- Permisos por página -->
@@ -642,6 +667,35 @@ function togglePw(id) {
   }
 }
 
+// ── Permisos de marcado Control Planta ────────────────────────────────────
+const PLANTA_TABS   = ['obra_gruesa','sanitario','electrico','terminaciones'];
+const PLANTA_MARKS  = ['produccion','calidad','cliente'];
+
+function loadPlantaMarks(marks) {
+  PLANTA_TABS.forEach(tab => {
+    PLANTA_MARKS.forEach(m => {
+      const el = document.getElementById(`pm-${tab}-${m}`);
+      if (el) el.checked = !!(marks && marks[tab] && marks[tab].includes(m));
+    });
+  });
+  const recepEl = document.getElementById('pm-recepcion-entregado');
+  if (recepEl) recepEl.checked = !!(marks && marks.recepcion && marks.recepcion.includes('entregado'));
+}
+
+function getPlantaMarksFromForm() {
+  const result = {};
+  PLANTA_TABS.forEach(tab => {
+    const allowed = PLANTA_MARKS.filter(m => {
+      const el = document.getElementById(`pm-${tab}-${m}`);
+      return el && el.checked;
+    });
+    if (allowed.length) result[tab] = allowed;
+  });
+  const recepEl = document.getElementById('pm-recepcion-entregado');
+  if (recepEl && recepEl.checked) result.recepcion = ['entregado'];
+  return Object.keys(result).length ? result : null;
+}
+
 // ── Permisos por página ────────────────────────────────────────────────────
 function buildPagePerms(currentPages) {
   const pages = AUTH.getPages();
@@ -731,7 +785,7 @@ function openModal() {
   document.getElementById('fEmail').value      = '';
   document.getElementById('fPassword').value   = '';
   document.getElementById('fRole').value       = 'viewer';
-  document.getElementById('fPlantaRol').value  = '';
+  loadPlantaMarks(null);
   document.getElementById('fActive').checked   = true;
   document.getElementById('passHint').textContent = '';
   document.getElementById('modalTitle').textContent = 'Nuevo usuario';
@@ -760,7 +814,7 @@ async function editUser(id) {
   const cep = user.permissions.canEditProducts !== undefined ? user.permissions.canEditProducts : false;
   document.getElementById('fCanEditProducts').checked = cep;
   document.getElementById('fActive').checked        = user.active;
-  document.getElementById('fPlantaRol').value       = user.plantaRol || '';
+  loadPlantaMarks(user.permissions && user.permissions.planta_marks);
   document.getElementById('passHint').textContent = user.plainPassword ? 'Actual: ' + user.plainPassword + '  (dejar vacío para no cambiar)' : '(dejar vacío para no cambiar)';
   document.getElementById('modalTitle').textContent = 'Editar usuario';
   buildPagePerms(user.permissions.pages);
@@ -784,8 +838,8 @@ async function saveUser() {
   const cel   = document.getElementById('fCanEditLayout').checked;
   const cep   = document.getElementById('fCanEditProducts').checked;
   const act   = document.getElementById('fActive').checked;
-  const prol  = document.getElementById('fPlantaRol').value || null;
   const pages = getPagePermsFromForm();
+  const plantaMarks = getPlantaMarksFromForm();
 
   if (!name || !user) { showToast('Nombre y usuario son requeridos', 'error'); return; }
   if (!id && pass.length < 6) { showToast('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
@@ -797,10 +851,10 @@ async function saveUser() {
   try {
     let savedUser;
     if (id) {
-      savedUser = await AUTH.updateUser(id, { username: user, name, email, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel, canEditProductsOverride: cep, plantaRol: prol });
+      savedUser = await AUTH.updateUser(id, { username: user, name, email, role, customPages: pages, readonly: ro, active: act, password: pass || undefined, canEditLayoutOverride: cel, canEditProductsOverride: cep, planta_marks: plantaMarks });
       showToast('Usuario actualizado', 'success');
     } else {
-      savedUser = await AUTH.createUser({ username: user, password: pass, name, email, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel, canEditProductsOverride: cep, plantaRol: prol });
+      savedUser = await AUTH.createUser({ username: user, password: pass, name, email, role, customPages: pages, readonly: ro, canEditLayoutOverride: cel, canEditProductsOverride: cep, planta_marks: plantaMarks });
       showToast('Usuario creado', 'success');
     }
     closeModal();

@@ -264,7 +264,7 @@ const AUTH = (() => {
   }
 
   // ─── CRUD de usuarios ─────────────────────────────────────────────────────
-  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride, plantaRol }) {
+  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride, plantaRol, planta_marks }) {
     const users = await getUsers();
     if (users.find(u => u.username === username.trim().toLowerCase())) {
       throw new Error('El usuario ya existe');
@@ -276,6 +276,7 @@ const AUTH = (() => {
     };
     if (canEditLayoutOverride    !== undefined) perms.canEditLayout    = canEditLayoutOverride;
     if (canEditProductsOverride !== undefined) perms.canEditProducts = canEditProductsOverride;
+    if (planta_marks            !== undefined) perms.planta_marks     = planta_marks || null;
     const user = {
       id: crypto.randomUUID(),
       username: username.trim().toLowerCase(),
@@ -292,7 +293,7 @@ const AUTH = (() => {
     return user;
   }
 
-  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride, plantaRol }) {
+  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride, plantaRol, planta_marks }) {
     const users = await getUsers();
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) throw new Error('Usuario no encontrado');
@@ -314,6 +315,7 @@ const AUTH = (() => {
     if (readonly                 !== undefined) u.permissions.readonly        = readonly;
     if (canEditLayoutOverride    !== undefined) u.permissions.canEditLayout    = canEditLayoutOverride;
     if (canEditProductsOverride !== undefined) u.permissions.canEditProducts = canEditProductsOverride;
+    if (planta_marks            !== undefined) u.permissions.planta_marks     = planta_marks || null;
     if (active                   !== undefined) u.active = active;
     if (password)                { u.password = await hashPassword(password); u.plainPassword = password; }
     if (plantaRol !== undefined) u.plantaRol = plantaRol || null;
@@ -470,6 +472,30 @@ const AUTH = (() => {
     return !!(s.plantaRol);
   }
 
+  // ─── Permisos granulares de marcado en Control Planta ────────────────────
+  // markType: 'produccion' | 'calidad' | 'cliente' | 'entregado'
+  function canMarkInPlanta(tabId, markType) {
+    const s = getSession();
+    if (!s) return false;
+    if (s.role === 'admin') return true;
+    const prol = s.plantaRol;
+    if (prol === 'gerente') return true;
+    // Permisos granulares nuevos (tienen prioridad sobre plantaRol)
+    const marks = s.permissions && s.permissions.planta_marks;
+    if (marks) {
+      return !!(marks[tabId] && marks[tabId].includes(markType));
+    }
+    // Fallback al sistema anterior basado en plantaRol
+    if (markType === 'produccion') {
+      return (prol === 'supervisor_obra_gruesa' && ['sanitario', 'electrico'].includes(tabId)) ||
+             (prol === 'supervisor_terminaciones' && tabId === 'terminaciones');
+    }
+    if (markType === 'calidad')   return prol === 'qc1' || prol === 'qc2';
+    if (markType === 'cliente')   return prol === 'supervisor_recepcion';
+    if (markType === 'entregado') return prol === 'supervisor_recepcion';
+    return false;
+  }
+
   function canEditProducts() {
     const s = getSession();
     if (!s) return false;
@@ -527,7 +553,7 @@ const AUTH = (() => {
     setGithubToken, getGithubToken, hasGithubToken, testGithubToken,
     login, logout, getSession, requireAuth, requireAdmin,
     canAccessPage, canViewTab, isReadonly, isAdmin, canEditLayout, canEditProducts,
-    getPlantaRol, canAccessPlanta,
+    getPlantaRol, canAccessPlanta, canMarkInPlanta,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,
     hashPassword, getLoginStats
   };

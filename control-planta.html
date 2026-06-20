@@ -688,13 +688,9 @@ const PHASE_LABEL = {
 
 // ── Role permissions ──────────────────────────────────────────────────────────
 function isAdminOrGerente() { return SES.role==='admin'||PROL==='admin'||PROL==='gerente'; }
-function canC1(grp) {
-  if (isAdminOrGerente()) return true;
-  return (PROL==='supervisor_obra_gruesa'  && (grp==='sanitario'||grp==='electrico')) ||
-         (PROL==='supervisor_terminaciones' && grp==='terminaciones');
-}
-function canC2() { return isAdminOrGerente() || PROL==='qc1' || PROL==='qc2'; }
-function canC3() { return isAdminOrGerente() || PROL==='supervisor_recepcion'; }
+function canC1(grp) { return isAdminOrGerente() || AUTH.canMarkInPlanta(grp, 'produccion'); }
+function canC2(grp) { return isAdminOrGerente() || AUTH.canMarkInPlanta(grp || curTab, 'calidad'); }
+function canC3(grp) { return isAdminOrGerente() || AUTH.canMarkInPlanta(grp || curTab, 'cliente'); }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 async function loadAll() {
@@ -896,7 +892,7 @@ async function openMod(id) {
 
 function canMarkEntregado() {
   if(!selMod||selMod.estado_modulo==='entregado') return false;
-  return PROL==='supervisor_recepcion'||PROL==='gerente'||SES.role==='admin';
+  return isAdminOrGerente() || AUTH.canMarkInPlanta('recepcion', 'entregado');
 }
 
 function pendingCount(m) {
@@ -1039,7 +1035,7 @@ function checksHtml(m, code, grp, s) {
   }
 
   // c2 pill
-  const c2can=canC2()&&s.c1;
+  const c2can=canC2(grp)&&s.c1;
   let c2html;
   if(s.c2){
     c2html=`<span class="cpill cp-c2" onclick="toggleC2('${m.id}','${code}','${grp}')" title="✓ Calidad — clic para desmarcar">✓ Cal.</span>`;
@@ -1054,7 +1050,7 @@ function checksHtml(m, code, grp, s) {
   if(s.c3==='aprobado'){
     const undo=isAdminOrGerente()?`onclick="undoC3('${m.id}','${code}','${grp}')"`:'';
     c3html=`<span class="cpill cp-c3ok" ${undo} title="${isAdminOrGerente()?'✓ Aprobado — clic para revertir':'✓ Aprobado por cliente'}">✓ Cliente</span>`;
-  } else if(s.c1&&s.c2&&canC3()){
+  } else if(s.c1&&s.c2&&canC3(grp)){
     c3html=`<div class="c3-btns">
       <button class="c3-btn c3-aprob" onclick="doC3(true,'${m.id}','${code}','${grp}')">✓ Aprob.</button>
       <button class="c3-btn c3-rech"  onclick="doC3(false,'${m.id}','${code}','${grp}')">✗ Rech.</button>
