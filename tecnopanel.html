@@ -295,7 +295,7 @@ iframe {
 }
 #sidebar-overlay.open { display: block; }
 
-/* ── Bottom tab bar ── */
+/* ── Bottom tab strip ── */
 #bottombar {
   display: none;
   height: var(--bottombar-h);
@@ -303,11 +303,21 @@ iframe {
   border-top: 1px solid var(--border);
   flex-shrink: 0;
   z-index: 200;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+#bottombar::-webkit-scrollbar { display: none; }
+#bottombar-inner {
+  display: flex;
+  align-items: stretch;
+  min-width: 100%;
+  height: 100%;
 }
 
 .tab-item {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -315,18 +325,30 @@ iframe {
   gap: 3px;
   cursor: pointer;
   color: var(--muted);
-  font-size: .6rem;
+  font-size: .58rem;
   font-weight: 600;
   user-select: none;
-  transition: color .12s;
-  padding: 6px 4px;
+  transition: color .12s, background .12s;
+  padding: 6px 14px;
   border: none;
   background: none;
-  text-decoration: none;
-  letter-spacing: .01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  position: relative;
 }
-.tab-icon { font-size: 1.2rem; }
+.tab-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--brand);
+  border-radius: 2px 2px 0 0;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.tab-icon { font-size: 1.1rem; }
 .tab-item.active { color: var(--brand); }
+.tab-item.active::after { opacity: 1; }
 .tab-item:active { opacity: .7; }
 
 /* ── Responsive ── */
@@ -456,31 +478,35 @@ iframe {
   </div>
 </div>
 
-<!-- Bottom tab bar (solo móvil) -->
-<div id="bottombar">
-  <button class="tab-item active" id="tab-dashboard" data-sheet="dashboard" onclick="navSelectTab(this)">
-    <span class="tab-icon">🏠</span>
-    <span>Dashboard</span>
-  </button>
-  <button class="tab-item" id="tab-produccion" data-sheet="produccion" onclick="navSelectTab(this)">
-    <span class="tab-icon">📈</span>
-    <span>Producción</span>
-  </button>
-  <button class="tab-item" id="tab-layout" data-sheet="layout" onclick="navSelectTab(this)">
-    <span class="tab-icon">📍</span>
-    <span>Layout</span>
-  </button>
-  <button class="tab-item" id="tab-despacho" data-sheet="despacho" onclick="navSelectTab(this)">
-    <span class="tab-icon">📦</span>
-    <span>Despacho</span>
-  </button>
-  <button class="tab-item" id="tab-more" onclick="toggleSidebarMobile()">
-    <span class="tab-icon">☰</span>
-    <span>Más</span>
-  </button>
-</div>
+<!-- Bottom tab strip (solo móvil) — se llena dinámicamente -->
+<div id="bottombar"><div id="bottombar-inner"></div></div>
 
 <script>
+// ── Tabs internos por página ───────────────────────────────────────────────
+var PAGE_TABS = {
+  dashboard: [
+    { id: 'resumen',    icon: '📊', label: 'Resumen' },
+    { id: 'curva',      icon: '📈', label: 'Curva S' },
+    { id: 'modulos',    icon: '🏗️', label: 'Módulos' },
+    { id: 'compras',    icon: '🛒', label: 'Compras' },
+    { id: 'productos',  icon: '📦', label: 'Productos' },
+    { id: 'stock',      icon: '🗄️', label: 'Stock' },
+    { id: 'despachos',  icon: '🚚', label: 'Despachos' },
+    { id: 'prod-diaria',icon: '📅', label: 'Prod. Diaria' },
+  ],
+  produccion: [
+    { id: 'resumen',  icon: '📊', label: 'Resumen' },
+    { id: 'torres',   icon: '🏗️', label: 'Torres' },
+    { id: 'partidas', icon: '🔧', label: 'Partidas' },
+    { id: 'alertas',  icon: '⚠️', label: 'Alertas' },
+    { id: 'detalle',  icon: '📋', label: 'Detalle' },
+  ],
+  layout:   [],
+  despacho: [],
+};
+
+var currentPage = 'dashboard';
+
 // ── Auth guard ──────────────────────────────────────────────────────────────
 (function(){
   var s = AUTH.requireAuth('login.html');
@@ -507,15 +533,12 @@ iframe {
     if (el3) el3.style.display = 'flex';
   }
 
-  // Ocultar páginas sin acceso
   var pages = ['dashboard','produccion','layout','despacho'];
   var firstVisible = null;
   pages.forEach(function(p) {
     if (!AUTH.canAccessPage(p)) {
       var si = document.getElementById('dd-' + p);
       if (si) si.style.display = 'none';
-      var ti = document.getElementById('tab-' + p);
-      if (ti) ti.style.display = 'none';
     } else if (!firstVisible) {
       firstVisible = p;
     }
@@ -525,15 +548,15 @@ iframe {
     document.getElementById('dd-dashboard').classList.remove('active');
     var ni = document.getElementById('dd-' + firstVisible);
     if (ni) ni.classList.add('active');
-    document.getElementById('tab-dashboard').classList.remove('active');
-    var ti = document.getElementById('tab-' + firstVisible);
-    if (ti) ti.classList.add('active');
     document.querySelectorAll('.sheet').forEach(function(sh){ sh.classList.remove('active'); });
     var sh = document.getElementById('sheet-' + firstVisible);
     if (sh) sh.classList.add('active');
+    currentPage = firstVisible;
     updatePageTitle(firstVisible);
     loadSheet(firstVisible);
   }
+
+  updateBottomTabs(currentPage);
 })();
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
@@ -569,30 +592,63 @@ function navSelect(el) {
   if (!sheet) return;
   document.querySelectorAll('.nav-item').forEach(function(i){ i.classList.remove('active'); });
   el.classList.add('active');
-  document.querySelectorAll('.tab-item').forEach(function(t){ t.classList.remove('active'); });
-  var tab = document.getElementById('tab-' + sheet);
-  if (tab) tab.classList.add('active');
   updatePageTitle(el.dataset.label || sheet);
   showSheet(sheet);
   if (isMobile()) closeSidebarMobile();
 }
 
-function navSelectTab(el) {
-  var sheet = el.dataset.sheet;
-  if (!sheet) return;
-  document.querySelectorAll('.tab-item').forEach(function(t){ t.classList.remove('active'); });
-  el.classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(function(i){ i.classList.remove('active'); });
-  var nav = document.getElementById('dd-' + sheet);
-  if (nav) nav.classList.add('active');
-  var label = el.querySelector('span:last-child');
-  updatePageTitle(label ? label.textContent : sheet);
-  showSheet(sheet);
-}
-
 function updatePageTitle(label) {
   var el = document.getElementById('tb-page-title');
   if (el) el.textContent = label;
+}
+
+// ── Bottom tab strip ────────────────────────────────────────────────────────
+function updateBottomTabs(pageName) {
+  var tabs = PAGE_TABS[pageName] || [];
+  var inner = document.getElementById('bottombar-inner');
+  var bar = document.getElementById('bottombar');
+  if (!inner) return;
+
+  inner.innerHTML = '';
+
+  if (tabs.length === 0) {
+    bar.style.display = isMobile() ? 'none' : '';
+    return;
+  }
+
+  bar.style.display = isMobile() ? 'block' : '';
+
+  // Detectar tab activa en el iframe (si ya cargó)
+  var activeTabId = null;
+  var frame = document.getElementById('frame-' + pageName);
+  if (frame && frame.contentDocument) {
+    var activeEl = frame.contentDocument.querySelector('.tab.active');
+    if (activeEl) activeTabId = activeEl.dataset.tab;
+  }
+  if (!activeTabId && tabs.length) activeTabId = tabs[0].id;
+
+  tabs.forEach(function(t) {
+    var btn = document.createElement('button');
+    btn.className = 'tab-item' + (t.id === activeTabId ? ' active' : '');
+    btn.dataset.tab = t.id;
+    btn.innerHTML = '<span class="tab-icon">' + t.icon + '</span><span>' + t.label + '</span>';
+    btn.addEventListener('click', function() {
+      switchIframeTab(pageName, t.id);
+    });
+    inner.appendChild(btn);
+  });
+}
+
+function switchIframeTab(pageName, tabId) {
+  var frame = document.getElementById('frame-' + pageName);
+  if (frame && frame.contentDocument) {
+    var btn = frame.contentDocument.querySelector('.tab[data-tab="' + tabId + '"]');
+    if (btn) btn.click();
+  }
+  // Actualizar estado activo en el bottom bar
+  document.querySelectorAll('#bottombar-inner .tab-item').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.tab === tabId);
+  });
 }
 
 // ── Sheets ─────────────────────────────────────────────────────────────────
@@ -603,7 +659,9 @@ function showSheet(name) {
   document.querySelectorAll('.sheet').forEach(function(s){ s.classList.remove('active'); });
   var sh = document.getElementById('sheet-' + name);
   if (sh) sh.classList.add('active');
+  currentPage = name;
   loadSheet(name);
+  updateBottomTabs(name);
 }
 
 function loadSheet(name) {
@@ -616,6 +674,8 @@ function loadSheet(name) {
 function iframeLoaded(name) {
   var ov = document.getElementById('load-' + name);
   if (ov) ov.classList.add('done');
+  // Refrescar bottom bar ahora que el iframe ya cargó
+  if (name === currentPage) updateBottomTabs(name);
 }
 
 // ── Acciones ───────────────────────────────────────────────────────────────
