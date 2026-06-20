@@ -681,11 +681,13 @@ function iframeLoaded(name) {
   var ov = document.getElementById('load-' + name);
   if (ov) ov.classList.add('done');
 
-  // Ocultar header y nav interno del iframe (los reemplaza el topbar y bottom bar de tecnopanel)
+  // Ocultar header siempre; nav solo en móvil (en desktop los tabs los muestra el iframe)
   var frame = document.getElementById('frame-' + name);
   if (frame && frame.contentDocument && frame.contentDocument.head) {
     var s = frame.contentDocument.createElement('style');
-    s.textContent = 'header { display:none !important; } nav { display:none !important; }';
+    s.id = 'tp-embedded-style';
+    s.textContent = 'header { display:none !important; }' +
+      (isMobile() ? ' nav { display:none !important; }' : '');
     frame.contentDocument.head.appendChild(s);
   }
 
