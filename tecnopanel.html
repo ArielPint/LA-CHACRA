@@ -6,128 +6,480 @@
 <title>Tecno Panel</title>
 <script src="auth.js"></script>
 <style>
-:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;font-size:14px}
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --accent: #4f8ef7;
+  --brand: #D42B1E;
+  --green: #3ecf8e;
+  --red: #f75f5f;
+  --text: #e8eaf0;
+  --muted: #7a7f99;
+  --border: #2e3350;
+  --sidebar-w: 220px;
+  --topbar-h: 54px;
+  --bottombar-h: 62px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+}
 
 /* ── Topbar ── */
-#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 18px;display:flex;align-items:center;gap:0;flex-shrink:0;height:54px;position:relative;z-index:101}
-.logo-area{display:flex;align-items:center;flex-shrink:0}
-
-/* ── Botón menú ── */
-.tb-menu-btn{display:flex;align-items:center;gap:8px;height:36px;padding:0 13px;margin-left:14px;font-size:.85rem;font-weight:600;color:var(--text);cursor:pointer;border:1px solid var(--border);border-radius:8px;background:var(--surface2);transition:all .15s;flex-shrink:0;white-space:nowrap;user-select:none}
-.tb-menu-btn:hover{border-color:var(--accent)}
-.tb-menu-btn.open{border-color:var(--brand);color:var(--brand)}
-.tb-menu-btn .m-icon{font-size:1rem}
-.tb-menu-btn .m-chevron{font-size:.62rem;color:var(--muted);transition:transform .2s;margin-left:3px}
-.tb-menu-btn.open .m-chevron{transform:rotate(180deg);color:var(--brand)}
-
-/* ── Dropdown ── */
-.tb-dropdown{position:absolute;top:55px;left:0;right:0;background:var(--surface);border-bottom:2px solid var(--border);z-index:100;display:none;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.6)}
-.tb-dropdown.open{display:flex}
-.tb-dd-item{display:flex;align-items:center;gap:12px;padding:13px 24px;font-size:.9rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:1px solid var(--border);transition:all .1s;user-select:none}
-.tb-dd-item:last-child{border-bottom:none}
-.tb-dd-item:hover{background:var(--surface2);color:var(--text)}
-.tb-dd-item.active{color:var(--brand);background:rgba(212,43,30,.07);border-left:3px solid var(--brand);padding-left:21px}
-.tb-dd-sep{height:1px;background:var(--border);margin:4px 0;flex-shrink:0}
-.dd-overlay{position:fixed;inset:0;z-index:99;display:none}
-.dd-overlay.open{display:block}
-
-/* ── Derecha ── */
-.tb-right{display:flex;align-items:center;gap:7px;margin-left:auto;flex-shrink:0}
-.upload-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;font-size:.76rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none;transition:all .15s;white-space:nowrap}
-.upload-btn:hover{color:var(--text);border-color:var(--accent)}
-.auth-badge{font-size:.7rem;background:rgba(255,255,255,.08);padding:3px 9px;border-radius:20px;color:var(--muted);white-space:nowrap}
-.auth-sm-btn{font-size:.72rem;padding:4px 10px;background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s;white-space:nowrap}
-.auth-sm-btn:hover{color:var(--text);border-color:var(--accent)}
-
-/* ── Contenido ── */
-#content{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
-.sheet{display:none;flex:1;flex-direction:column;height:100%}
-.sheet.active{display:flex}
-iframe{border:none;width:100%;flex:1;min-height:0}
-
-/* ── Responsive móvil ── */
-@media (max-width: 600px) {
-  #topbar { padding: 0 10px; height: 50px; }
-  .logo-area span[style] { font-size: 18px !important; }
-  .tb-menu-btn { margin-left: 8px; padding: 0 9px; font-size: .78rem; }
-  .upload-btn { display: none; }
-  .auth-badge { display: none; }
-  .auth-sm-btn { padding: 4px 8px; font-size: .68rem; }
-  .tb-right { gap: 5px; }
+#topbar {
+  height: var(--topbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+  flex-shrink: 0;
+  z-index: 200;
+  position: relative;
 }
+
+.hamburger {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  flex-shrink: 0;
+  transition: border-color .15s;
+}
+.hamburger span {
+  display: block;
+  width: 15px;
+  height: 2px;
+  background: var(--muted);
+  border-radius: 2px;
+  transition: background .15s;
+}
+.hamburger:hover { border-color: var(--accent); }
+.hamburger:hover span { background: var(--text); }
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  flex-shrink: 0;
+}
+.logo-tecno { font-size: 19px; font-weight: 900; color: var(--text); letter-spacing: 1.5px; }
+.logo-panel { font-size: 19px; font-weight: 900; color: var(--brand); letter-spacing: 1.5px; }
+.logo sup { font-size: 9px; color: var(--muted); margin-left: 2px; font-weight: 400; }
+
+.tb-page-title {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--muted);
+  display: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-spacer { flex: 1; }
+
+.tb-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 11px;
+  border-radius: 7px;
+  font-size: .74rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  text-decoration: none;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+
+.auth-badge {
+  font-size: .7rem;
+  background: rgba(255,255,255,.06);
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* ── Body layout ── */
+#body-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  z-index: 150;
+  transition: width .25s cubic-bezier(.4,0,.2,1);
+}
+#sidebar.collapsed { width: 56px; }
+
+.sidebar-nav {
+  flex: 1;
+  padding: 10px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.nav-section {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 16px 4px;
+  white-space: nowrap;
+  transition: opacity .2s;
+}
+#sidebar.collapsed .nav-section { opacity: 0; pointer-events: none; }
+
+.nav-sep { height: 1px; background: var(--border); margin: 8px 10px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: .875rem;
+  font-weight: 500;
+  transition: all .12s;
+  white-space: nowrap;
+  user-select: none;
+  border-left: 3px solid transparent;
+  position: relative;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active {
+  color: var(--brand);
+  background: rgba(212,43,30,.09);
+  border-left-color: var(--brand);
+}
+
+.nav-icon { font-size: 1.05rem; width: 22px; text-align: center; flex-shrink: 0; }
+.nav-label { transition: opacity .2s; }
+
+#sidebar.collapsed .nav-label { opacity: 0; pointer-events: none; }
+#sidebar.collapsed .nav-item {
+  padding: 10px 0;
+  justify-content: center;
+  border-left: 3px solid transparent;
+}
+#sidebar.collapsed .nav-item.active { border-left-color: var(--brand); }
+
+/* Tooltips en sidebar colapsado */
+#sidebar.collapsed .nav-item::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 62px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: .78rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+  z-index: 999;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+}
+#sidebar.collapsed .nav-item:hover::after { opacity: 1; }
+
+/* ── Content ── */
+#content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.sheet {
+  display: none;
+  position: absolute;
+  inset: 0;
+}
+.sheet.active { display: block; }
+
+iframe {
+  border: none;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Loading overlay ── */
+.load-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 10;
+  transition: opacity .35s;
+}
+.load-overlay.done {
+  opacity: 0;
+  pointer-events: none;
+}
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.load-label { font-size: .78rem; color: var(--muted); }
+
+/* ── Mobile sidebar drawer ── */
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 140;
+  backdrop-filter: blur(2px);
+}
+#sidebar-overlay.open { display: block; }
+
+/* ── Bottom tab bar ── */
+#bottombar {
+  display: none;
+  height: var(--bottombar-h);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 200;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: .6rem;
+  font-weight: 600;
+  user-select: none;
+  transition: color .12s;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  text-decoration: none;
+  letter-spacing: .01em;
+}
+.tab-icon { font-size: 1.2rem; }
+.tab-item.active { color: var(--brand); }
+.tab-item:active { opacity: .7; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  #sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    bottom: var(--bottombar-h);
+    width: 260px !important;
+    transform: translateX(-100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    z-index: 150;
+  }
+  #sidebar.mobile-open { transform: translateX(0); }
+
+  #bottombar { display: flex; }
+  .tb-page-title { display: block; }
+  .auth-badge { display: none; }
+
+  .logo-tecno, .logo-panel { font-size: 17px; }
+  #topbar { padding: 0 10px; gap: 8px; }
+}
+
 @media (max-width: 380px) {
   #tp-admin-btn { display: none !important; }
+  .btn-ghost.hide-xs { display: none; }
 }
 </style>
 </head>
 <body>
 
+<!-- Topbar -->
 <div id="topbar">
-  <div class="logo-area">
-    <span style="font-size:24px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:24px;font-weight:900;color:#D42B1E;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:10px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup>
-  </div>
-
-  <button class="tb-menu-btn" id="menuBtn" onclick="toggleMenu()">
-    <span class="m-icon" id="menuIcon">🏠</span>
-    <span id="menuLabel">Dashboard</span>
-    <span class="m-chevron">▾</span>
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="Menú">
+    <span></span><span></span><span></span>
   </button>
 
+  <div class="logo">
+    <span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>®</sup>
+  </div>
+
+  <span class="tb-page-title" id="tb-page-title">Dashboard</span>
+
+  <div class="tb-spacer"></div>
+
   <div class="tb-right">
-    <button class="upload-btn" onclick="recargar()">&#8635; Actualizar datos</button>
+    <button class="btn-ghost hide-xs" onclick="recargar()">↺ Actualizar</button>
     <span class="auth-badge" id="tp-user-badge"></span>
-    <a href="admin.html" class="auth-sm-btn" id="tp-admin-btn" style="display:none">⚙️ Admin</a>
-    <button class="auth-sm-btn" onclick="doLogout()">Salir</button>
+    <a href="admin.html" class="btn-ghost" id="tp-admin-btn" style="display:none">⚙️ Admin</a>
+    <button class="btn-ghost" onclick="doLogout()">Salir</button>
   </div>
 </div>
 
-<div class="dd-overlay" id="ddOverlay" onclick="closeMenu()"></div>
+<!-- Body layout -->
+<div id="body-layout">
 
-<div class="tb-dropdown" id="tbDropdown">
-  <div class="tb-dd-item active" id="dd-dashboard" data-icon="🏠" data-label="Dashboard" onclick="ddSelect(this,'dashboard')">
-    <span>🏠</span> Dashboard
-  </div>
-  <div class="tb-dd-item" id="dd-produccion" data-icon="📈" data-label="Producción" onclick="ddSelect(this,'produccion')">
-    <span>📈</span> Producción
-  </div>
-  <div class="tb-dd-item" id="dd-layout" data-icon="📍" data-label="Layout" onclick="ddSelect(this,'layout')">
-    <span>📍</span> Layout
-  </div>
-  <div class="tb-dd-item" id="dd-despacho" data-icon="📦" data-label="Despacho GD" onclick="ddSelect(this,'despacho')">
-    <span>📦</span> Despacho GD
-  </div>
-  <div class="tb-dd-sep"></div>
-  <div class="tb-dd-item" id="dd-solicitudes" data-icon="📋" data-label="Solicitudes" onclick="window.location.href='solicitudes.html'" style="display:none">
-    <span>📋</span> Solicitudes
-  </div>
-  <div class="tb-dd-item" id="dd-planta" data-icon="🏭" data-label="Control Planta" onclick="openPlanta();closeMenu()" style="display:none">
-    <span>🏭</span> Control Planta
-  </div>
-  <div class="tb-dd-item" id="dd-asistencia" data-icon="👷" data-label="Asistencia" onclick="window.location.href='asistencia.html';closeMenu()" style="display:none">
-    <span>👷</span> Asistencia GeoVictoria
+  <!-- Sidebar overlay (móvil) -->
+  <div id="sidebar-overlay" onclick="closeSidebarMobile()"></div>
+
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+
+      <div class="nav-item active" id="dd-dashboard" data-sheet="dashboard" data-label="Dashboard" onclick="navSelect(this)">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Dashboard</span>
+      </div>
+      <div class="nav-item" id="dd-produccion" data-sheet="produccion" data-label="Producción" onclick="navSelect(this)">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label">Producción</span>
+      </div>
+      <div class="nav-item" id="dd-layout" data-sheet="layout" data-label="Layout" onclick="navSelect(this)">
+        <span class="nav-icon">📍</span>
+        <span class="nav-label">Layout</span>
+      </div>
+      <div class="nav-item" id="dd-despacho" data-sheet="despacho" data-label="Despacho GD" onclick="navSelect(this)">
+        <span class="nav-icon">📦</span>
+        <span class="nav-label">Despacho GD</span>
+      </div>
+
+      <div class="nav-sep"></div>
+      <div class="nav-section">Gestión</div>
+
+      <div class="nav-item" id="dd-solicitudes" data-label="Solicitudes" onclick="window.location.href='solicitudes.html'" style="display:none">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">Solicitudes</span>
+      </div>
+      <div class="nav-item" id="dd-planta" data-label="Control Planta" onclick="openPlanta()" style="display:none">
+        <span class="nav-icon">🏭</span>
+        <span class="nav-label">Control Planta</span>
+      </div>
+      <div class="nav-item" id="dd-asistencia" data-label="Asistencia GeoVictoria" onclick="window.location.href='asistencia.html'" style="display:none">
+        <span class="nav-icon">👷</span>
+        <span class="nav-label">Asistencia GeoVictoria</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <div id="content">
+    <div class="sheet active" id="sheet-dashboard">
+      <div class="load-overlay" id="load-dashboard">
+        <div class="spinner"></div>
+        <span class="load-label">Cargando Dashboard…</span>
+      </div>
+      <iframe id="frame-dashboard" src="dashboard.html" title="Dashboard" onload="iframeLoaded('dashboard')"></iframe>
+    </div>
+    <div class="sheet" id="sheet-produccion">
+      <div class="load-overlay" id="load-produccion">
+        <div class="spinner"></div>
+        <span class="load-label">Cargando Producción…</span>
+      </div>
+      <iframe id="frame-produccion" src="" title="Produccion" onload="iframeLoaded('produccion')"></iframe>
+    </div>
+    <div class="sheet" id="sheet-layout">
+      <div class="load-overlay" id="load-layout">
+        <div class="spinner"></div>
+        <span class="load-label">Cargando Layout…</span>
+      </div>
+      <iframe id="frame-layout" src="" title="Layout" onload="iframeLoaded('layout')"></iframe>
+    </div>
+    <div class="sheet" id="sheet-despacho">
+      <div class="load-overlay" id="load-despacho">
+        <div class="spinner"></div>
+        <span class="load-label">Cargando Despacho GD…</span>
+      </div>
+      <iframe id="frame-despacho" src="" title="Despacho GD" onload="iframeLoaded('despacho')"></iframe>
+    </div>
   </div>
 </div>
 
-<div id="content">
-  <div class="sheet active" id="sheet-dashboard">
-    <iframe id="frame-dashboard" src="dashboard.html" title="Dashboard"></iframe>
-  </div>
-  <div class="sheet" id="sheet-produccion">
-    <iframe id="frame-produccion" src="" title="Produccion"></iframe>
-  </div>
-  <div class="sheet" id="sheet-layout">
-    <iframe id="frame-layout" src="" title="Layout"></iframe>
-  </div>
-  <div class="sheet" id="sheet-despacho">
-    <iframe id="frame-despacho" src="" title="Despacho GD"></iframe>
-  </div>
+<!-- Bottom tab bar (solo móvil) -->
+<div id="bottombar">
+  <button class="tab-item active" id="tab-dashboard" data-sheet="dashboard" onclick="navSelectTab(this)">
+    <span class="tab-icon">🏠</span>
+    <span>Dashboard</span>
+  </button>
+  <button class="tab-item" id="tab-produccion" data-sheet="produccion" onclick="navSelectTab(this)">
+    <span class="tab-icon">📈</span>
+    <span>Producción</span>
+  </button>
+  <button class="tab-item" id="tab-layout" data-sheet="layout" onclick="navSelectTab(this)">
+    <span class="tab-icon">📍</span>
+    <span>Layout</span>
+  </button>
+  <button class="tab-item" id="tab-despacho" data-sheet="despacho" onclick="navSelectTab(this)">
+    <span class="tab-icon">📦</span>
+    <span>Despacho</span>
+  </button>
+  <button class="tab-item" id="tab-more" onclick="toggleSidebarMobile()">
+    <span class="tab-icon">☰</span>
+    <span>Más</span>
+  </button>
 </div>
 
 <script>
-// ── Auth guard ────────────────────────────────────────────────────────────
+// ── Auth guard ──────────────────────────────────────────────────────────────
 (function(){
   var s = AUTH.requireAuth('login.html');
   if (!s) return;
@@ -137,103 +489,160 @@ iframe{border:none;width:100%;flex:1;min-height:0}
 
   if (AUTH.isAdmin()) {
     var ab = document.getElementById('tp-admin-btn');
-    if (ab) ab.style.display = 'inline-block';
+    if (ab) ab.style.display = 'inline-flex';
   }
 
   if (AUTH.canAccessPage('solicitudes')) {
     var el = document.getElementById('dd-solicitudes');
     if (el) el.style.display = 'flex';
   }
-
   if (AUTH.canAccessPlanta()) {
     var el2 = document.getElementById('dd-planta');
     if (el2) el2.style.display = 'flex';
   }
-
   if (AUTH.canAccessPage('geovictoria')) {
     var el3 = document.getElementById('dd-asistencia');
     if (el3) el3.style.display = 'flex';
   }
 
   // Ocultar páginas sin acceso
-  var pages = {dashboard:'dashboard', produccion:'produccion', layout:'layout', despacho:'despacho'};
+  var pages = ['dashboard','produccion','layout','despacho'];
   var firstVisible = null;
-  Object.keys(pages).forEach(function(sheet) {
-    var pid = pages[sheet];
-    if (!AUTH.canAccessPage(pid)) {
-      var el = document.getElementById('dd-' + sheet);
-      if (el) el.style.display = 'none';
+  pages.forEach(function(p) {
+    if (!AUTH.canAccessPage(p)) {
+      var si = document.getElementById('dd-' + p);
+      if (si) si.style.display = 'none';
+      var ti = document.getElementById('tab-' + p);
+      if (ti) ti.style.display = 'none';
     } else if (!firstVisible) {
-      firstVisible = sheet;
+      firstVisible = p;
     }
   });
 
   if (firstVisible && firstVisible !== 'dashboard') {
-    var di = document.getElementById('dd-dashboard');
-    if (di) di.classList.remove('active');
+    document.getElementById('dd-dashboard').classList.remove('active');
     var ni = document.getElementById('dd-' + firstVisible);
-    if (ni) { ni.classList.add('active'); updateMenuBtn(ni); }
+    if (ni) ni.classList.add('active');
+    document.getElementById('tab-dashboard').classList.remove('active');
+    var ti = document.getElementById('tab-' + firstVisible);
+    if (ti) ti.classList.add('active');
     document.querySelectorAll('.sheet').forEach(function(sh){ sh.classList.remove('active'); });
-    var sh2 = document.getElementById('sheet-' + firstVisible);
-    if (sh2) sh2.classList.add('active');
+    var sh = document.getElementById('sheet-' + firstVisible);
+    if (sh) sh.classList.add('active');
+    updatePageTitle(firstVisible);
+    loadSheet(firstVisible);
   }
 })();
 
-// ── Menú ──────────────────────────────────────────────────────────────────
-function toggleMenu() {
-  var dd  = document.getElementById('tbDropdown');
-  var btn = document.getElementById('menuBtn');
-  var ov  = document.getElementById('ddOverlay');
-  var isOpen = dd.classList.contains('open');
-  if (isOpen) { closeMenu(); }
-  else { dd.classList.add('open'); btn.classList.add('open'); ov.classList.add('open'); }
+// ── Sidebar ────────────────────────────────────────────────────────────────
+var sidebarCollapsed = false;
+var isMobile = function(){ return window.innerWidth <= 768; };
+
+function toggleSidebar() {
+  if (isMobile()) {
+    toggleSidebarMobile();
+  } else {
+    sidebarCollapsed = !sidebarCollapsed;
+    document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+  }
 }
 
-function closeMenu() {
-  document.getElementById('tbDropdown').classList.remove('open');
-  document.getElementById('menuBtn').classList.remove('open');
-  document.getElementById('ddOverlay').classList.remove('open');
+function toggleSidebarMobile() {
+  var sb = document.getElementById('sidebar');
+  var ov = document.getElementById('sidebar-overlay');
+  var open = sb.classList.contains('mobile-open');
+  sb.classList.toggle('mobile-open', !open);
+  ov.classList.toggle('open', !open);
 }
 
-function updateMenuBtn(item) {
-  if (!item) return;
-  var txt = item.textContent.trim();
-  document.getElementById('menuIcon').textContent  = item.dataset.icon  || '📄';
-  document.getElementById('menuLabel').textContent = item.dataset.label || txt;
+function closeSidebarMobile() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
-function ddSelect(el, name) {
-  document.querySelectorAll('.tb-dd-item').forEach(function(i){ i.classList.remove('active'); });
+// ── Nav ────────────────────────────────────────────────────────────────────
+function navSelect(el) {
+  var sheet = el.dataset.sheet;
+  if (!sheet) return;
+  document.querySelectorAll('.nav-item').forEach(function(i){ i.classList.remove('active'); });
   el.classList.add('active');
-  updateMenuBtn(el);
-  closeMenu();
-  showSheet(name);
+  document.querySelectorAll('.tab-item').forEach(function(t){ t.classList.remove('active'); });
+  var tab = document.getElementById('tab-' + sheet);
+  if (tab) tab.classList.add('active');
+  updatePageTitle(el.dataset.label || sheet);
+  showSheet(sheet);
+  if (isMobile()) closeSidebarMobile();
 }
 
-// ── Sheets ────────────────────────────────────────────────────────────────
-var prodLoaded = false, layoutLoaded = false, despachoLoaded = false;
+function navSelectTab(el) {
+  var sheet = el.dataset.sheet;
+  if (!sheet) return;
+  document.querySelectorAll('.tab-item').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(i){ i.classList.remove('active'); });
+  var nav = document.getElementById('dd-' + sheet);
+  if (nav) nav.classList.add('active');
+  var label = el.querySelector('span:last-child');
+  updatePageTitle(label ? label.textContent : sheet);
+  showSheet(sheet);
+}
+
+function updatePageTitle(label) {
+  var el = document.getElementById('tb-page-title');
+  if (el) el.textContent = label;
+}
+
+// ── Sheets ─────────────────────────────────────────────────────────────────
+var loaded = { dashboard: true, produccion: false, layout: false, despacho: false };
+var srcs   = { produccion: 'produccion.html', layout: 'layout.html', despacho: 'compras.html' };
 
 function showSheet(name) {
   document.querySelectorAll('.sheet').forEach(function(s){ s.classList.remove('active'); });
-  document.getElementById('sheet-' + name).classList.add('active');
-  if (name === 'produccion' && !prodLoaded) { document.getElementById('frame-produccion').src = 'produccion.html'; prodLoaded = true; }
-  if (name === 'layout'    && !layoutLoaded) { document.getElementById('frame-layout').src = 'layout.html'; layoutLoaded = true; }
-  if (name === 'despacho'  && !despachoLoaded) { document.getElementById('frame-despacho').src = 'compras.html'; despachoLoaded = true; }
+  var sh = document.getElementById('sheet-' + name);
+  if (sh) sh.classList.add('active');
+  loadSheet(name);
 }
 
+function loadSheet(name) {
+  if (!loaded[name] && srcs[name]) {
+    document.getElementById('frame-' + name).src = srcs[name];
+    loaded[name] = true;
+  }
+}
+
+function iframeLoaded(name) {
+  var ov = document.getElementById('load-' + name);
+  if (ov) ov.classList.add('done');
+}
+
+// ── Acciones ───────────────────────────────────────────────────────────────
 function openPlanta() { window.open('control-planta.html', '_blank'); }
-function doLogout(){ AUTH.logout(); window.location.href = 'login.html'; }
+function doLogout() { AUTH.logout(); window.location.href = 'login.html'; }
 
 function recargar() {
-  document.getElementById('frame-dashboard').src = 'dashboard.html';
-  if (prodLoaded) document.getElementById('frame-produccion').src = 'produccion.html';
+  Object.keys(loaded).forEach(function(name) {
+    if (loaded[name]) {
+      var f = document.getElementById('frame-' + name);
+      if (f && f.src) {
+        var ov = document.getElementById('load-' + name);
+        if (ov) ov.classList.remove('done');
+        f.src = f.src;
+      }
+    }
+  });
 }
 
-document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeMenu(); });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSidebarMobile(); });
 
 window.addEventListener('storage', function(e) {
-  if (e.key === 'tp_dashboard_data') { var f=document.getElementById('frame-dashboard'); if(f) f.src=f.src; }
-  if (e.key === 'tp_produccion_data' && prodLoaded) { var f=document.getElementById('frame-produccion'); if(f) f.src=f.src; }
+  if (e.key === 'tp_dashboard_data') {
+    var f = document.getElementById('frame-dashboard');
+    if (f) { document.getElementById('load-dashboard').classList.remove('done'); f.src = f.src; }
+  }
+  if (e.key === 'tp_produccion_data' && loaded.produccion) {
+    var f = document.getElementById('frame-produccion');
+    if (f) { document.getElementById('load-produccion').classList.remove('done'); f.src = f.src; }
+  }
 });
 </script>
 </body>
