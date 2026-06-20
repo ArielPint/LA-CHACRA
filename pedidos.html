@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedido de Materiales · La Chacra</title>
+<script src="auth.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f5a623;--orange:#f7884f;--purple:#a78bfa;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;font-size:14px}
+
+/* ── Topbar ── */
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:0;flex-shrink:0;height:54px}
+.logo-area{display:flex;align-items:center;margin-right:28px;white-space:nowrap}
+.tb-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+.auth-badge{font-size:.72rem;background:rgba(255,255,255,0.08);padding:3px 9px;border-radius:20px;color:var(--muted);white-space:nowrap}
+.auth-sm-btn{font-size:.72rem;padding:4px 10px;background:rgba(255,255,255,0.08);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s;white-space:nowrap}
+.auth-sm-btn:hover{color:var(--text);border-color:var(--accent)}
+
+/* ── Tab nav ── */
+#tab-nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:0;padding:0 24px;flex-shrink:0}
+.tab-btn{padding:0 22px;height:46px;font-size:.85rem;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--brand);border-bottom-color:var(--brand)}
+
+/* ── Main ── */
+#main{flex:1;overflow-y:auto;padding:28px 32px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;margin-bottom:20px}
+.card-title{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+
+/* ── Auto fields ── */
+.auto-fields{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px}
+.auto-field{flex:1;min-width:180px}
+.auto-field label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.auto-value{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:.9rem;cursor:default}
+
+/* ── Form fields ── */
+.field-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.field-group{flex:1;min-width:200px}
+.field-group label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.field-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:.87rem;outline:none;transition:border-color .15s}
+.field-input:focus{border-color:var(--accent)}
+.field-select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:.87rem;outline:none;cursor:pointer}
+.field-select:focus{border-color:var(--accent)}
+
+/* ── Urgencia badges ── */
+.urgencia-selector{display:flex;gap:8px}
+.urg-btn{padding:7px 16px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);transition:all .15s}
+.urg-btn.active-normal{background:rgba(79,142,247,.15);color:var(--accent);border-color:rgba(79,142,247,.4)}
+.urg-btn.active-urgente{background:rgba(247,136,79,.15);color:var(--orange);border-color:rgba(247,136,79,.4)}
+.urg-btn.active-critico{background:rgba(247,95,95,.15);color:var(--red);border-color:rgba(247,95,95,.4)}
+
+/* ── Items table header ── */
+.items-header{display:grid;grid-template-columns:1fr 80px 70px 110px 110px 36px;gap:8px;padding:0 4px 8px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.items-header span{font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.item-row{display:grid;grid-template-columns:1fr 80px 70px 110px 110px 36px;gap:8px;align-items:center;margin-bottom:8px;position:relative}
+
+/* ── Combobox ── */
+.combo-wrap{position:relative}
+.combo-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-size:.85rem;outline:none;transition:border-color .15s}
+.combo-input:focus{border-color:var(--accent)}
+.combo-input.selected{border-color:var(--green)}
+.combo-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1e2235;border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto;z-index:100;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.combo-dropdown.open{display:block}
+.combo-option{padding:8px 12px;cursor:pointer;font-size:.82rem;border-bottom:1px solid rgba(46,51,80,.4);transition:background .1s;line-height:1.3}
+.combo-option:last-child{border-bottom:none}
+.combo-option:hover,.combo-option.highlighted{background:rgba(79,142,247,.12);color:var(--text)}
+.combo-option .opt-code{font-size:.7rem;color:var(--muted);margin-right:6px;font-family:monospace}
+.combo-option .opt-grupo{font-size:.68rem;color:var(--accent);float:right;margin-left:4px}
+
+/* ── Inputs ── */
+.qty-input,.price-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 8px;color:var(--text);font-size:.85rem;outline:none;text-align:center;transition:border-color .15s}
+.qty-input:focus,.price-input:focus{border-color:var(--accent)}
+.subtotal-cell{font-size:.83rem;color:var(--green);text-align:right;padding:8px 6px;font-weight:600;white-space:nowrap}
+.unit-badge{font-size:.75rem;color:var(--muted);text-align:center;padding:4px 0}
+.btn-remove{background:rgba(247,95,95,.1);border:1px solid rgba(247,95,95,.25);border-radius:6px;color:var(--red);cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .15s;flex-shrink:0}
+.btn-remove:hover{background:rgba(247,95,95,.25)}
+
+/* ── Total bar ── */
+.total-bar{display:flex;justify-content:flex-end;align-items:center;gap:18px;padding:12px 16px;background:var(--surface2);border-radius:6px;border:1px solid var(--border);margin-top:12px}
+.total-label{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.total-value{font-size:1.3rem;font-weight:800;color:var(--green)}
+
+/* ── Obs ── */
+.obs-wrap{margin-top:16px}
+.obs-wrap label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase}
+.obs-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;color:var(--text);font-size:.85rem;resize:vertical;min-height:72px;outline:none;font-family:inherit;transition:border-color .15s}
+.obs-input:focus{border-color:var(--accent)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:6px;font-size:.84rem;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:#b81915;transform:translateY(-1px)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-green{background:var(--green);color:#0f1117}
+.btn-green:hover{background:#30b878;transform:translateY(-1px)}
+.btn-sm{padding:5px 12px;font-size:.78rem}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.btn-add{background:transparent;border:1px dashed var(--border);color:var(--muted);width:100%;margin-top:4px;padding:9px;border-radius:6px;cursor:pointer;transition:all .15s;font-size:.83rem}
+.btn-add:hover{border-color:var(--accent);color:var(--accent)}
+.form-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+/* ── Summary / Preview ── */
+.summary-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)}
+.summary-meta .meta-item{font-size:.82rem}
+.summary-meta .meta-label{color:var(--muted);margin-right:6px}
+.data-table{width:100%;border-collapse:collapse;font-size:.84rem}
+.data-table th{padding:9px 12px;text-align:left;font-size:.71rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.data-table td{padding:9px 12px;border-bottom:1px solid rgba(46,51,80,.5)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(255,255,255,.02)}
+.data-table .code-cell{font-family:monospace;font-size:.82rem;color:var(--accent)}
+.data-table .num{text-align:right}
+.data-table .cen{text-align:center}
+.data-table .unit-cell{color:var(--muted);font-size:.78rem}
+
+/* ── History filters ── */
+.hist-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.hist-filter-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-size:.83rem;outline:none;transition:border-color .15s}
+.hist-filter-input:focus{border-color:var(--accent)}
+
+/* ── Status badges ── */
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.71rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.badge-borrador{background:rgba(122,127,153,.15);color:var(--muted)}
+.badge-enviado{background:rgba(79,142,247,.15);color:var(--accent)}
+.badge-aprobado{background:rgba(167,139,250,.15);color:var(--purple)}
+.badge-en_camino{background:rgba(245,166,35,.15);color:var(--yellow)}
+.badge-recibido{background:rgba(62,207,142,.15);color:var(--green)}
+.badge-cancelado{background:rgba(247,95,95,.15);color:var(--red)}
+.badge-urg-normal{background:rgba(79,142,247,.12);color:var(--accent);font-size:.65rem}
+.badge-urg-urgente{background:rgba(247,136,79,.12);color:var(--orange);font-size:.65rem}
+.badge-urg-critico{background:rgba(247,95,95,.12);color:var(--red);font-size:.65rem}
+
+/* ── Expandable rows ── */
+.hist-row{cursor:pointer}
+.hist-detail{display:none;background:var(--surface2)}
+.hist-detail.open{display:table-row}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:1000;display:none}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:1rem;margin-bottom:18px;color:var(--text)}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase}
+.modal-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:.87rem;outline:none;transition:border-color .15s}
+.modal-input:focus{border-color:var(--accent)}
+.modal-select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-size:.87rem;outline:none}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* ── Estado steps (tracker) ── */
+.estado-track{display:flex;align-items:center;gap:0;margin:10px 0}
+.et-step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+.et-step:not(:last-child)::after{content:'';position:absolute;top:12px;left:calc(50% + 10px);right:calc(-50% + 10px);height:2px;background:var(--border)}
+.et-step.done::after{background:var(--green)}
+.et-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:.7rem;z-index:1;position:relative}
+.et-step.done .et-dot{background:var(--green);border-color:var(--green);color:#0f1117}
+.et-step.current .et-dot{background:var(--accent);border-color:var(--accent);color:#fff}
+.et-lbl{font-size:.62rem;color:var(--muted);margin-top:4px;text-align:center;white-space:nowrap}
+.et-step.done .et-lbl,.et-step.current .et-lbl{color:var(--text)}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-size:.84rem;color:var(--text);opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;z-index:2000;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{border-color:var(--green);color:var(--green)}
+#toast.err{border-color:var(--red);color:var(--red)}
+
+/* ── Empty / Spinner ── */
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-icon{font-size:2.5rem;margin-bottom:10px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--brand);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Proveedores tab ── */
+.prov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.prov-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;cursor:pointer;transition:all .15s}
+.prov-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.prov-name{font-size:.9rem;font-weight:700;margin-bottom:4px}
+.prov-info{font-size:.75rem;color:var(--muted)}
+.prov-rut{font-family:monospace;font-size:.78rem;color:var(--accent)}
+
+/* ── Responsive ── */
+@media(max-width:700px){
+  #main{padding:14px}
+  .items-header,.item-row{grid-template-columns:1fr 65px 55px 80px 80px 30px}
+  .auto-fields,.field-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<div id="topbar">
+  <div class="logo-area">
+    <a href="tecnopanel.html" style="text-decoration:none;display:flex;align-items:center;gap:2px">
+      <span style="font-size:22px;font-weight:900;color:#e8eaf0;letter-spacing:1px">TECNO</span><span style="font-size:22px;font-weight:900;color:#D42B1E;letter-spacing:1px">PANEL</span>
+    </a>
+    <span style="color:var(--border);margin:0 10px">·</span>
+    <span style="color:var(--muted);font-size:.85rem;font-weight:600">Pedido de Materiales</span>
+  </div>
+  <div class="tb-right">
+    <span class="auth-badge" id="user-badge"></span>
+    <a href="solicitudes.html" class="auth-sm-btn">📋 Solicitudes</a>
+    <a href="tecnopanel.html" class="auth-sm-btn">← Portal</a>
+    <button class="auth-sm-btn" onclick="AUTH.logout();location.href='login.html'">Salir</button>
+  </div>
+</div>
+
+<!-- ── Tab nav ── -->
+<div id="tab-nav">
+  <button class="tab-btn active" onclick="showTab('form')" id="tab-btn-form">🛒 Nuevo Pedido</button>
+  <button class="tab-btn" onclick="showTab('preview')" id="tab-btn-preview">👁 Vista Previa</button>
+  <button class="tab-btn" onclick="showTab('history')" id="tab-btn-history">📂 Historial</button>
+  <button class="tab-btn" onclick="showTab('proveedores')" id="tab-btn-proveedores" style="display:none">🏭 Proveedores</button>
+</div>
+
+<!-- ── Main ── -->
+<div id="main">
+
+  <!-- ════════ TAB 1: NUEVO PEDIDO ════════ -->
+  <div id="panel-form" class="tab-panel active">
+
+    <!-- Datos automáticos -->
+    <div class="card">
+      <div class="card-title">Datos del pedido</div>
+      <div class="auto-fields">
+        <div class="auto-field">
+          <label>Nº Pedido</label>
+          <div class="auto-value" id="auto-numero" style="color:var(--accent);font-family:monospace;font-weight:700">—</div>
+        </div>
+        <div class="auto-field">
+          <label>Fecha</label>
+          <div class="auto-value" id="auto-fecha">—</div>
+        </div>
+        <div class="auto-field">
+          <label>Solicitante</label>
+          <div class="auto-value" id="auto-user">—</div>
+        </div>
+      </div>
+
+      <!-- Proveedor y urgencia -->
+      <div class="field-row">
+        <div class="field-group" style="flex:2">
+          <label>Proveedor *</label>
+          <div style="display:flex;gap:8px">
+            <select class="field-select" id="select-proveedor" onchange="onProveedorChange(this.value)" style="flex:1">
+              <option value="">— Selecciona proveedor —</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="openModalProveedor()" style="white-space:nowrap;padding:9px 12px" title="Nuevo proveedor">+ Nuevo</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Urgencia</label>
+          <div class="urgencia-selector" id="urgencia-selector">
+            <button class="urg-btn active-normal" onclick="setUrgencia('normal')">📦 Normal</button>
+            <button class="urg-btn" onclick="setUrgencia('urgente')">⚡ Urgente</button>
+            <button class="urg-btn" onclick="setUrgencia('critico')">🔴 Crítico</button>
+          </div>
+        </div>
+        <div class="field-group" style="min-width:160px">
+          <label>Fecha requerida</label>
+          <input class="field-input" type="date" id="fecha-requerida" style="color-scheme:dark">
+        </div>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="card">
+      <div class="card-title">Productos a pedir</div>
+      <div class="items-header">
+        <span>Producto</span>
+        <span style="text-align:center">Cantidad</span>
+        <span style="text-align:center">Unidad</span>
+        <span style="text-align:center">Precio unit. ($)</span>
+        <span style="text-align:right">Subtotal</span>
+        <span></span>
+      </div>
+      <div id="items-list"></div>
+      <button class="btn-add" onclick="addItemRow()">+ Agregar producto</button>
+
+      <!-- Total -->
+      <div class="total-bar" id="total-bar" style="display:none">
+        <span class="total-label">Total estimado:</span>
+        <span class="total-value" id="total-display">$0</span>
+      </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="card" style="margin-bottom:0">
+      <div class="obs-wrap" style="margin-top:0">
+        <label>Observaciones (opcional)</label>
+        <textarea class="obs-input" id="obs-input" placeholder="Condiciones de entrega, referencia de cotización, contacto proveedor, etc."></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="clearForm()">🗑 Limpiar</button>
+      <button class="btn btn-secondary" onclick="saveBorrador()">💾 Guardar borrador</button>
+      <button class="btn btn-primary" onclick="goToPreview()">Ver resumen →</button>
+    </div>
+  </div>
+
+  <!-- ════════ TAB 2: VISTA PREVIA ════════ -->
+  <div id="panel-preview" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Resumen del pedido</div>
+
+      <!-- Tracker de estados -->
+      <div class="estado-track" id="preview-track"></div>
+
+      <div class="summary-meta" id="preview-meta" style="margin-top:16px"></div>
+      <table class="data-table" id="preview-table">
+        <thead>
+          <tr>
+            <th style="width:32px">#</th>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th class="cen">Cantidad</th>
+            <th>Unidad</th>
+            <th class="num">Precio unit.</th>
+            <th class="num">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="preview-tbody"></tbody>
+        <tfoot id="preview-tfoot"></tfoot>
+      </table>
+      <div id="preview-obs-block"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="showTab('form')">← Volver a editar</button>
+      <button class="btn btn-secondary" onclick="submitPedido('borrador')" id="btn-borrador">💾 Guardar borrador</button>
+      <button class="btn btn-green" id="submit-btn" onclick="submitPedido('enviado')">✔ Enviar pedido</button>
+    </div>
+  </div>
+
+  <!-- ════════ TAB 3: HISTORIAL ════════ -->
+  <div id="panel-history" class="tab-panel">
+    <div class="card" style="padding:14px 20px;margin-bottom:16px">
+      <div class="hist-filters">
+        <input class="hist-filter-input" id="hist-search" placeholder="🔍 Buscar por proveedor, producto o N° pedido..." oninput="renderHistory()" style="flex:1;min-width:200px">
+        <input class="hist-filter-input" type="date" id="hist-date" onchange="renderHistory()" style="color-scheme:dark">
+        <select class="hist-filter-input" id="hist-status" onchange="renderHistory()" style="min-width:150px">
+          <option value="">Todos los estados</option>
+          <option value="borrador">Borrador</option>
+          <option value="enviado">Enviado</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="en_camino">En camino</option>
+          <option value="recibido">Recibido</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadHistory()">↻ Actualizar</button>
+      </div>
+    </div>
+    <div id="history-container">
+      <div class="empty"><div class="empty-icon">📂</div><div>Cargando historial...</div></div>
+    </div>
+  </div>
+
+  <!-- ════════ TAB 4: PROVEEDORES (admin) ════════ -->
+  <div id="panel-proveedores" class="tab-panel">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="card-title" style="margin:0">Proveedores registrados</div>
+        <button class="btn btn-primary btn-sm" onclick="openModalProveedor()">+ Nuevo proveedor</button>
+      </div>
+      <div class="prov-grid" id="prov-grid">
+        <div class="empty"><div class="empty-icon">🏭</div><div>Cargando...</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ════════ MODAL: NUEVO PROVEEDOR ════════ -->
+<div class="modal-bg" id="modal-proveedor">
+  <div class="modal">
+    <h3>🏭 Agregar proveedor</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="modal-field" style="grid-column:1/-1">
+        <label>Nombre / Razón social *</label>
+        <input class="modal-input" id="np-nombre" placeholder="Ej: Ferretería Industrial SpA">
+      </div>
+      <div class="modal-field">
+        <label>RUT</label>
+        <input class="modal-input" id="np-rut" placeholder="Ej: 76.123.456-7">
+      </div>
+      <div class="modal-field">
+        <label>Giro / Rubro</label>
+        <input class="modal-input" id="np-giro" placeholder="Ej: Ferretería">
+      </div>
+      <div class="modal-field">
+        <label>Teléfono</label>
+        <input class="modal-input" id="np-telefono" placeholder="+56 9 …">
+      </div>
+      <div class="modal-field">
+        <label>Email</label>
+        <input class="modal-input" id="np-email" type="email" placeholder="compras@proveedor.cl">
+      </div>
+      <div class="modal-field" style="grid-column:1/-1">
+        <label>Dirección</label>
+        <input class="modal-input" id="np-direccion" placeholder="Calle, ciudad">
+      </div>
+      <div class="modal-field" style="grid-column:1/-1">
+        <label>Notas</label>
+        <textarea class="modal-input" id="np-notas" rows="2" placeholder="Condiciones, descuentos, tiempo entrega..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModalProveedor()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProveedor()" id="save-prov-btn">Guardar proveedor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ MODAL: CAMBIAR ESTADO (admin) ════════ -->
+<div class="modal-bg" id="modal-estado">
+  <div class="modal" style="width:400px">
+    <h3 id="modal-estado-title">Actualizar estado</h3>
+    <div class="modal-field">
+      <label>Estado</label>
+      <select class="modal-select" id="nuevo-estado">
+        <option value="borrador">📝 Borrador</option>
+        <option value="enviado">📤 Enviado</option>
+        <option value="aprobado">✅ Aprobado</option>
+        <option value="en_camino">🚚 En camino</option>
+        <option value="recibido">📦 Recibido</option>
+        <option value="cancelado">❌ Cancelado</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Nota (opcional)</label>
+      <textarea class="modal-input" id="estado-nota" rows="2" placeholder="Ej: Recibido conforme el 19/06/2026…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModalEstado()">Cancelar</button>
+      <button class="btn btn-green" onclick="confirmEstado()" id="confirm-estado-btn">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  CONFIG SUPABASE
+// ════════════════════════════════════════════════════
+const SUPA_URL = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const SUPA_HEADERS = {
+  'Content-Type': 'application/json',
+  'apikey': SUPA_KEY,
+  'Authorization': 'Bearer ' + SUPA_KEY
+};
+
+// ════════════════════════════════════════════════════
+//  PRODUCTOS BASE (mismo catálogo que solicitudes)
+// ════════════════════════════════════════════════════
+const PRODUCTOS_BASE = [
+  {codigo:'ACERO-10',descripcion:'Acero corrugado 10mm',unidad:'MTS',grupo:'OBRA GRUESA'},
+  {codigo:'ACERO-12',descripcion:'Acero corrugado 12mm',unidad:'MTS',grupo:'OBRA GRUESA'},
+  {codigo:'ACERO-8',descripcion:'Acero corrugado 8mm',unidad:'MTS',grupo:'OBRA GRUESA'},
+  {codigo:'ALAMBRE',descripcion:'Alambre galvanizado N°16',unidad:'KG',grupo:'OBRA GRUESA'},
+  {codigo:'ANCLAJE-EXP',descripcion:'Anclaje expansivo 3/8"',unidad:'UND',grupo:'FIJACION'},
+  {codigo:'ARENA-FIN',descripcion:'Arena fina (m3)',unidad:'M3',grupo:'OBRA GRUESA'},
+  {codigo:'ARENA-GRUE',descripcion:'Arena gruesa (m3)',unidad:'M3',grupo:'OBRA GRUESA'},
+  {codigo:'BARNIZ-EXT',descripcion:'Barniz exterior 1 galón',unidad:'GAL',grupo:'TERMINACION'},
+  {codigo:'BISAGRA-3',descripcion:'Bisagra 3" acero inox',unidad:'PZA',grupo:'HERRAJE'},
+  {codigo:'BLOQUE-15',descripcion:'Bloque de hormigón 15x20x40',unidad:'UND',grupo:'OBRA GRUESA'},
+  {codigo:'CELOSILLO',descripcion:'Celosillo madera 1x1"',unidad:'MTS',grupo:'MADERA'},
+  {codigo:'CEMENTO',descripcion:'Cemento Portland 25kg',unidad:'UND',grupo:'OBRA GRUESA'},
+  {codigo:'CERAMICA-30',descripcion:'Cerámica piso 30x30cm',unidad:'M2',grupo:'TERMINACION'},
+  {codigo:'CLAVOS-2',descripcion:'Clavos 2" (caja 1kg)',unidad:'CJA',grupo:'FIJACION'},
+  {codigo:'CLAVOS-3',descripcion:'Clavos 3" (caja 1kg)',unidad:'CJA',grupo:'FIJACION'},
+  {codigo:'ELECTROD-6013',descripcion:'Electrodos soldadura 6013 3.2mm',unidad:'KG',grupo:'METAL'},
+  {codigo:'ESMALTE-BL',descripcion:'Esmalte blanco 1 galón',unidad:'GAL',grupo:'TERMINACION'},
+  {codigo:'ESPUMA-PU',descripcion:'Espuma poliuretano expandible',unidad:'UND',grupo:'TERMINACION'},
+  {codigo:'FIERRO-CUAD',descripcion:'Fierro cuadrado 1"',unidad:'MTS',grupo:'METAL'},
+  {codigo:'FIERRO-ESC',descripcion:'Fierro en escuadra 40x40x3',unidad:'MTS',grupo:'METAL'},
+  {codigo:'FIERRO-TUBO',descripcion:'Fierro tubular 40x20mm',unidad:'MTS',grupo:'METAL'},
+  {codigo:'GRAVILLA',descripcion:'Gravilla (m3)',unidad:'M3',grupo:'OBRA GRUESA'},
+  {codigo:'GUANTE-CUE',descripcion:'Guante cuero soldador',unidad:'PZA',grupo:'SEGURIDAD'},
+  {codigo:'IMPERMEABIL',descripcion:'Impermeabilizante acrílico 20kg',unidad:'UND',grupo:'TERMINACION'},
+  {codigo:'LADRILLO-8H',descripcion:'Ladrillo 8 huecos',unidad:'UND',grupo:'OBRA GRUESA'},
+  {codigo:'LIJA-80',descripcion:'Lija grano 80 (pliego)',unidad:'PL',grupo:'TERMINACION'},
+  {codigo:'LIJA-120',descripcion:'Lija grano 120 (pliego)',unidad:'PL',grupo:'TERMINACION'},
+  {codigo:'MADERA-2X4',descripcion:'Madera 2x4" x 3m',unidad:'UND',grupo:'MADERA'},
+  {codigo:'MADERA-1X3',descripcion:'Madera 1x3" x 3m',unidad:'UND',grupo:'MADERA'},
+  {codigo:'MOLDUR-10',descripcion:'Moldura MDF 10cm',unidad:'MTS',grupo:'MADERA'},
+  {codigo:'NIPLE-1',descripcion:'Niple galvanizado 1"',unidad:'UND',grupo:'GRIFERIA'},
+  {codigo:'OSB-18',descripcion:'OSB 18mm 1.22x2.44m',unidad:'PL',grupo:'MADERA'},
+  {codigo:'PASTA-MURO',descripcion:'Pasta muro 30kg',unidad:'UND',grupo:'TERMINACION'},
+  {codigo:'PERFIL-C',descripcion:'Perfil C 89mm (canal)',unidad:'MTS',grupo:'METAL'},
+  {codigo:'PERFIL-U',descripcion:'Perfil U 89mm (riel)',unidad:'MTS',grupo:'METAL'},
+  {codigo:'PINTURA-BL',descripcion:'Pintura látex blanca 20L',unidad:'UND',grupo:'TERMINACION'},
+  {codigo:'PISC-100',descripcion:'Piscola 100mm PVC',unidad:'MTS',grupo:'GRIFERIA'},
+  {codigo:'PLASTICO-NEG',descripcion:'Plástico negro calibre 250',unidad:'M2',grupo:'OBRA GRUESA'},
+  {codigo:'PLYWOOD-15',descripcion:'Plywood fenólico 15mm',unidad:'PL',grupo:'MADERA'},
+  {codigo:'PORCELANATO',descripcion:'Porcelanato 60x60cm',unidad:'M2',grupo:'TERMINACION'},
+  {codigo:'PUERTA-INT',descripcion:'Puerta interior MDF 70x200',unidad:'UND',grupo:'MADERA'},
+  {codigo:'REJILLA-ALU',descripcion:'Rejilla aluminio 20x20cm',unidad:'UND',grupo:'GRIFERIA'},
+  {codigo:'SILICON-TRANS',descripcion:'Silicón transparente 300ml',unidad:'UND',grupo:'TERMINACION'},
+  {codigo:'TARUGO-PL',descripcion:'Tarugo plástico 6mm (bolsa 100u)',unidad:'CJA',grupo:'FIJACION'},
+  {codigo:'TEJA-ZINC',descripcion:'Teja zinc ondulada 0.35mm',unidad:'PL',grupo:'CUBIERTA'},
+  {codigo:'TORNILLO-AUT',descripcion:'Tornillo autoperforante 8x1" (caja)',unidad:'CJA',grupo:'FIJACION'},
+  {codigo:'TORNILLO-MDF',descripcion:'Tornillo MDF 3x25mm (caja)',unidad:'CJA',grupo:'FIJACION'},
+  {codigo:'TUBERIA-PVC',descripcion:'Tubería PVC 4" x 6m',unidad:'UND',grupo:'GRIFERIA'},
+  {codigo:'UNION-EMB',descripcion:'Unión embutida 1/2"',unidad:'UND',grupo:'GRIFERIA'},
+  {codigo:'VENTANA-AL',descripcion:'Ventana aluminio 100x120cm',unidad:'UND',grupo:'ALUMINIO'},
+  {codigo:'YESO',descripcion:'Yeso en polvo 25kg',unidad:'UND',grupo:'TERMINACION'},
+];
+
+// ════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════
+let SESSION = null;
+let rowCounter = 0;
+let currentUrgencia = 'normal';
+let historyData = [];
+let proveedores = [];
+let customProducts = [];
+let allProducts = [...PRODUCTOS_BASE];
+let editingEstadoId = null;
+let comboTimeout = {};
+
+// ════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════
+(async () => {
+  SESSION = AUTH.getSession();
+  if (!SESSION) { location.href = 'login.html'; return; }
+
+  document.getElementById('user-badge').textContent = SESSION.name + ' · ' + SESSION.role;
+
+  const now = new Date();
+  document.getElementById('auto-fecha').textContent = now.toLocaleDateString('es-CL', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+  document.getElementById('auto-user').textContent = SESSION.name;
+
+  // Número de pedido provisional
+  document.getElementById('auto-numero').textContent = 'PED-' + now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-…';
+
+  // Pestaña Proveedores visible a admin
+  if (SESSION.role === 'admin') {
+    document.getElementById('tab-btn-proveedores').style.display = '';
+  }
+
+  // Fecha requerida: +7 días por defecto
+  const fr = new Date(); fr.setDate(fr.getDate() + 7);
+  document.getElementById('fecha-requerida').value = fr.toISOString().slice(0,10);
+
+  await Promise.all([loadProveedores(), loadCustomProducts()]);
+  addItemRow();
+  loadHistory();
+})();
+
+// ════════════════════════════════════════════════════
+//  PROVEEDORES
+// ════════════════════════════════════════════════════
+async function loadProveedores() {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/proveedores?activo=eq.true&select=*&order=nombre.asc`, {
+      headers: SUPA_HEADERS
+    });
+    if (r.ok) proveedores = await r.json();
+  } catch(e) { proveedores = []; }
+  populateProveedorSelect();
+  renderProvGrid();
+}
+
+function populateProveedorSelect() {
+  const sel = document.getElementById('select-proveedor');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Selecciona proveedor —</option>';
+  proveedores.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.nombre + (p.rut ? ' · ' + p.rut : '');
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
+function onProveedorChange(id) {
+  // Podrías auto-rellenar contacto, etc.
+}
+
+function renderProvGrid() {
+  const grid = document.getElementById('prov-grid');
+  if (!proveedores.length) {
+    grid.innerHTML = '<div class="empty"><div class="empty-icon">🏭</div><div>No hay proveedores. Agrega el primero.</div></div>';
+    return;
+  }
+  grid.innerHTML = proveedores.map(p => `
+    <div class="prov-card" onclick="">
+      <div class="prov-name">${escHtml(p.nombre)}</div>
+      ${p.rut ? `<div class="prov-rut">${escHtml(p.rut)}</div>` : ''}
+      ${p.giro ? `<div class="prov-info">${escHtml(p.giro)}</div>` : ''}
+      ${p.telefono ? `<div class="prov-info">📞 ${escHtml(p.telefono)}</div>` : ''}
+      ${p.email ? `<div class="prov-info">✉ ${escHtml(p.email)}</div>` : ''}
+      ${p.notas ? `<div class="prov-info" style="margin-top:6px;color:var(--muted);font-style:italic;font-size:.72rem">${escHtml(p.notas)}</div>` : ''}
+    </div>`).join('');
+}
+
+function openModalProveedor() {
+  ['np-nombre','np-rut','np-giro','np-telefono','np-email','np-direccion','np-notas'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('modal-proveedor').classList.add('open');
+  setTimeout(() => document.getElementById('np-nombre').focus(), 50);
+}
+
+function closeModalProveedor() {
+  document.getElementById('modal-proveedor').classList.remove('open');
+}
+
+async function saveProveedor() {
+  const nombre = document.getElementById('np-nombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio.', 'err'); return; }
+
+  const payload = {
+    nombre,
+    rut: document.getElementById('np-rut').value.trim() || null,
+    giro: document.getElementById('np-giro').value.trim() || null,
+    telefono: document.getElementById('np-telefono').value.trim() || null,
+    email: document.getElementById('np-email').value.trim() || null,
+    direccion: document.getElementById('np-direccion').value.trim() || null,
+    notas: document.getElementById('np-notas').value.trim() || null,
+    activo: true,
+    creado_por: SESSION.username
+  };
+
+  const btn = document.getElementById('save-prov-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/proveedores`, {
+      method: 'POST',
+      headers: { ...SUPA_HEADERS, 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const [newP] = await r.json();
+    proveedores.push(newP);
+    proveedores.sort((a,b) => a.nombre.localeCompare(b.nombre));
+    populateProveedorSelect();
+    renderProvGrid();
+    // Auto-seleccionar
+    document.getElementById('select-proveedor').value = newP.id;
+    closeModalProveedor();
+    toast('✔ Proveedor guardado.', 'ok');
+  } catch(e) {
+    // Si la tabla no existe aún, igual guardamos localmente
+    const fakeId = 'local-' + Date.now();
+    const fakeP = { ...payload, id: fakeId };
+    proveedores.push(fakeP);
+    proveedores.sort((a,b) => a.nombre.localeCompare(b.nombre));
+    populateProveedorSelect();
+    renderProvGrid();
+    document.getElementById('select-proveedor').value = fakeId;
+    closeModalProveedor();
+    toast('Proveedor guardado localmente (tabla pendiente en Supabase).', 'ok');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar proveedor';
+  }
+}
+
+// ════════════════════════════════════════════════════
+//  PRODUCTOS CUSTOM
+// ════════════════════════════════════════════════════
+async function loadCustomProducts() {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/productos_custom?activo=eq.true&select=*`, {
+      headers: SUPA_HEADERS
+    });
+    if (r.ok) {
+      customProducts = await r.json();
+      const baseMap = {};
+      PRODUCTOS_BASE.forEach(p => { baseMap[p.codigo.toUpperCase()] = p; });
+      customProducts.forEach(p => { baseMap[p.codigo.toUpperCase()] = p; });
+      allProducts = Object.values(baseMap).sort((a,b) => a.descripcion.localeCompare(b.descripcion));
+    }
+  } catch(e) {}
+}
+
+function searchProducts(query) {
+  if (!query || query.length < 1) return allProducts.slice(0, 40);
+  const q = query.toLowerCase();
+  return allProducts.filter(p =>
+    p.descripcion.toLowerCase().includes(q) ||
+    p.codigo.toLowerCase().includes(q) ||
+    (p.grupo && p.grupo.toLowerCase().includes(q))
+  ).slice(0, 50);
+}
+
+// ════════════════════════════════════════════════════
+//  URGENCIA
+// ════════════════════════════════════════════════════
+function setUrgencia(val) {
+  currentUrgencia = val;
+  document.querySelectorAll('.urg-btn').forEach(b => {
+    b.className = 'urg-btn';
+    if ((val === 'normal' && b.textContent.includes('Normal')) ||
+        (val === 'urgente' && b.textContent.includes('Urgente')) ||
+        (val === 'critico' && b.textContent.includes('Crítico'))) {
+      b.className = 'urg-btn active-' + val;
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════
+//  ITEMS / COMBOBOX
+// ════════════════════════════════════════════════════
+function addItemRow() {
+  const id = ++rowCounter;
+  const list = document.getElementById('items-list');
+  const div = document.createElement('div');
+  div.className = 'item-row';
+  div.id = 'row-' + id;
+  div.dataset.codigo = '';
+  div.dataset.descripcion = '';
+  div.dataset.unidad = '';
+
+  div.innerHTML = `
+    <div class="combo-wrap">
+      <input class="combo-input" id="combo-input-${id}" placeholder="Buscar producto..."
+        autocomplete="off"
+        oninput="onComboInput(${id}, this.value)"
+        onfocus="onComboFocus(${id})"
+        onblur="onComboBlur(${id})"
+        onkeydown="onComboKey(event, ${id})">
+      <div class="combo-dropdown" id="combo-dd-${id}"></div>
+    </div>
+    <input class="qty-input" id="qty-${id}" type="number" min="1" step="0.01" placeholder="0"
+      oninput="updateSubtotal(${id})">
+    <div class="unit-badge" id="unit-${id}">—</div>
+    <input class="price-input" id="price-${id}" type="number" min="0" step="0.01" placeholder="0"
+      oninput="updateSubtotal(${id})">
+    <div class="subtotal-cell" id="sub-${id}">—</div>
+    <button class="btn-remove" onclick="removeRow(${id})" title="Eliminar">✕</button>`;
+
+  list.appendChild(div);
+}
+
+function removeRow(id) {
+  const el = document.getElementById('row-' + id);
+  if (el) el.remove();
+  if (document.getElementById('items-list').children.length === 0) addItemRow();
+  updateTotal();
+}
+
+function onComboInput(id, val) {
+  clearTimeout(comboTimeout[id]);
+  comboTimeout[id] = setTimeout(() => showDropdown(id, val), 120);
+  const row = document.getElementById('row-' + id);
+  row.dataset.codigo = '';
+  row.dataset.descripcion = '';
+  document.getElementById('combo-input-' + id).classList.remove('selected');
+}
+
+function onComboFocus(id) {
+  showDropdown(id, document.getElementById('combo-input-' + id).value);
+}
+
+function onComboBlur(id) {
+  setTimeout(() => {
+    const dd = document.getElementById('combo-dd-' + id);
+    if (dd) dd.classList.remove('open');
+  }, 180);
+}
+
+function onComboKey(e, id) {
+  const dd = document.getElementById('combo-dd-' + id);
+  const items = dd.querySelectorAll('.combo-option');
+  let cur = [...items].findIndex(el => el.classList.contains('highlighted'));
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = Math.min(cur + 1, items.length - 1);
+    items.forEach(el => el.classList.remove('highlighted'));
+    if (items[next]) items[next].classList.add('highlighted');
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = Math.max(cur - 1, 0);
+    items.forEach(el => el.classList.remove('highlighted'));
+    if (items[prev]) items[prev].classList.add('highlighted');
+  } else if (e.key === 'Enter' || e.key === 'Tab') {
+    const hi = dd.querySelector('.highlighted');
+    if (hi) { e.preventDefault(); hi.click(); }
+  } else if (e.key === 'Escape') {
+    dd.classList.remove('open');
+  }
+}
+
+function showDropdown(id, query) {
+  const dd = document.getElementById('combo-dd-' + id);
+  const results = searchProducts(query);
+  dd.innerHTML = '';
+  results.forEach(p => {
+    const opt = document.createElement('div');
+    opt.className = 'combo-option';
+    const grupoTag = p.grupo ? `<span class="opt-grupo">${p.grupo}</span>` : '';
+    opt.innerHTML = `<span class="opt-code">[${p.codigo}]</span>${grupoTag}${escHtml(p.descripcion)}`;
+    opt.onmousedown = () => selectProduct(id, p);
+    dd.appendChild(opt);
+  });
+  dd.classList.toggle('open', dd.children.length > 0);
+}
+
+function selectProduct(id, p) {
+  const inp = document.getElementById('combo-input-' + id);
+  inp.value = p.descripcion;
+  inp.classList.add('selected');
+  const row = document.getElementById('row-' + id);
+  row.dataset.codigo = p.codigo;
+  row.dataset.descripcion = p.descripcion;
+  row.dataset.unidad = p.unidad;
+  document.getElementById('unit-' + id).textContent = p.unidad;
+  document.getElementById('combo-dd-' + id).classList.remove('open');
+  document.getElementById('qty-' + id).focus();
+}
+
+function updateSubtotal(id) {
+  const qty = parseFloat(document.getElementById('qty-' + id).value) || 0;
+  const price = parseFloat(document.getElementById('price-' + id).value) || 0;
+  const sub = qty * price;
+  document.getElementById('sub-' + id).textContent = sub > 0 ? fmtCLP(sub) : '—';
+  updateTotal();
+}
+
+function updateTotal() {
+  const rows = document.querySelectorAll('#items-list .item-row');
+  let total = 0;
+  let hasPrices = false;
+  rows.forEach(row => {
+    const id = row.id.replace('row-','');
+    const qty = parseFloat(document.getElementById('qty-' + id)?.value) || 0;
+    const price = parseFloat(document.getElementById('price-' + id)?.value) || 0;
+    if (price > 0) hasPrices = true;
+    total += qty * price;
+  });
+  const bar = document.getElementById('total-bar');
+  bar.style.display = hasPrices ? 'flex' : 'none';
+  document.getElementById('total-display').textContent = fmtCLP(total);
+}
+
+function fmtCLP(n) {
+  return '$' + Math.round(n).toLocaleString('es-CL');
+}
+
+// ════════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('tab-btn-' + name).classList.add('active');
+  if (name === 'history') loadHistory();
+  if (name === 'proveedores') renderProvGrid();
+}
+
+// ════════════════════════════════════════════════════
+//  VALID ITEMS
+// ════════════════════════════════════════════════════
+function getValidItems() {
+  const rows = document.querySelectorAll('#items-list .item-row');
+  const items = [];
+  rows.forEach(row => {
+    const codigo = row.dataset.codigo;
+    const descripcion = row.dataset.descripcion;
+    const unidad = row.dataset.unidad;
+    const id = row.id.replace('row-','');
+    const qty = parseFloat(document.getElementById('qty-' + id)?.value) || 0;
+    const price = parseFloat(document.getElementById('price-' + id)?.value) || 0;
+    if (codigo && descripcion && qty > 0) {
+      items.push({ codigo, descripcion, unidad, cantidad: qty, precio_unitario: price, subtotal: qty * price });
+    }
+  });
+  return items;
+}
+
+function clearForm() {
+  document.getElementById('items-list').innerHTML = '';
+  rowCounter = 0;
+  document.getElementById('select-proveedor').value = '';
+  document.getElementById('fecha-requerida').value = '';
+  document.getElementById('obs-input').value = '';
+  setUrgencia('normal');
+  document.getElementById('total-bar').style.display = 'none';
+  addItemRow();
+}
+
+// ════════════════════════════════════════════════════
+//  PREVIEW
+// ════════════════════════════════════════════════════
+function goToPreview() {
+  const items = getValidItems();
+  if (items.length === 0) { toast('Agrega al menos un producto con cantidad.', 'err'); return; }
+  const provId = document.getElementById('select-proveedor').value;
+  if (!provId) { toast('Selecciona un proveedor.', 'err'); return; }
+
+  const prov = proveedores.find(p => String(p.id) === String(provId));
+  const provName = prov ? prov.nombre : '(desconocido)';
+  const fechaReq = document.getElementById('fecha-requerida').value;
+  const now = new Date();
+  const total = items.reduce((s, it) => s + (it.subtotal || 0), 0);
+  const hasPrices = items.some(it => it.precio_unitario > 0);
+
+  // Tracker
+  renderTracker('borrador');
+
+  // Meta
+  document.getElementById('preview-meta').innerHTML = `
+    <div class="meta-item"><span class="meta-label">Proveedor:</span><strong>${escHtml(provName)}</strong></div>
+    <div class="meta-item"><span class="meta-label">Fecha pedido:</span>${now.toLocaleDateString('es-CL',{weekday:'short',year:'numeric',month:'short',day:'numeric'})}</div>
+    ${fechaReq ? `<div class="meta-item"><span class="meta-label">Fecha requerida:</span>${new Date(fechaReq + 'T00:00:00').toLocaleDateString('es-CL')}</div>` : ''}
+    <div class="meta-item"><span class="meta-label">Urgencia:</span><span class="badge badge-urg-${currentUrgencia}">${currentUrgencia.toUpperCase()}</span></div>
+    <div class="meta-item"><span class="meta-label">N° items:</span>${items.length}</div>
+    ${hasPrices ? `<div class="meta-item"><span class="meta-label">Total estimado:</span><strong style="color:var(--green)">${fmtCLP(total)}</strong></div>` : ''}`;
+
+  // Tabla
+  const tbody = document.getElementById('preview-tbody');
+  tbody.innerHTML = items.map((it, i) => `<tr>
+    <td class="cen" style="color:var(--muted)">${i+1}</td>
+    <td class="code-cell">${escHtml(it.codigo)}</td>
+    <td>${escHtml(it.descripcion)}</td>
+    <td class="cen">${it.cantidad}</td>
+    <td class="unit-cell">${escHtml(it.unidad)}</td>
+    <td class="num">${it.precio_unitario > 0 ? fmtCLP(it.precio_unitario) : '—'}</td>
+    <td class="num" style="color:var(--green);font-weight:600">${it.subtotal > 0 ? fmtCLP(it.subtotal) : '—'}</td>
+  </tr>`).join('');
+
+  // Pie con total
+  document.getElementById('preview-tfoot').innerHTML = hasPrices ? `
+    <tr style="border-top:2px solid var(--border)">
+      <td colspan="5"></td>
+      <td style="padding:10px 12px;font-size:.78rem;color:var(--muted);text-align:right;font-weight:700;text-transform:uppercase">TOTAL</td>
+      <td style="padding:10px 12px;font-size:1.05rem;font-weight:800;color:var(--green);text-align:right">${fmtCLP(total)}</td>
+    </tr>` : '';
+
+  // Observaciones
+  const obs = document.getElementById('obs-input').value.trim();
+  document.getElementById('preview-obs-block').innerHTML = obs
+    ? `<div class="obs-wrap"><label>Observaciones</label><div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:.84rem;color:var(--muted)">${escHtml(obs)}</div></div>`
+    : '';
+
+  showTab('preview');
+}
+
+function renderTracker(currentEstado) {
+  const steps = ['borrador','enviado','aprobado','en_camino','recibido'];
+  const labels = {borrador:'Borrador',enviado:'Enviado',aprobado:'Aprobado',en_camino:'En camino',recibido:'Recibido'};
+  const icons = {borrador:'📝',enviado:'📤',aprobado:'✅',en_camino:'🚚',recibido:'📦'};
+  const curIdx = steps.indexOf(currentEstado);
+  document.getElementById('preview-track').innerHTML = steps.map((s, i) => `
+    <div class="et-step${i < curIdx ? ' done' : i === curIdx ? ' current' : ''}">
+      <div class="et-dot">${i <= curIdx ? icons[s] : (i+1)}</div>
+      <div class="et-lbl">${labels[s]}</div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════
+//  SUBMIT
+// ════════════════════════════════════════════════════
+async function saveBorrador() {
+  const items = getValidItems();
+  if (items.length === 0) { toast('Agrega al menos un producto.', 'err'); return; }
+  await _doSubmit('borrador');
+}
+
+async function submitPedido(estado) {
+  const items = getValidItems();
+  if (items.length === 0) { toast('Sin productos válidos.', 'err'); return; }
+
+  const provId = document.getElementById('select-proveedor').value;
+  if (!provId) { toast('Selecciona un proveedor.', 'err'); return; }
+
+  const btn = document.getElementById(estado === 'enviado' ? 'submit-btn' : 'btn-borrador');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+  const prov = proveedores.find(p => String(p.id) === String(provId));
+  const total = items.reduce((s, it) => s + (it.subtotal || 0), 0);
+  const fechaReq = document.getElementById('fecha-requerida').value || null;
+  const now = new Date();
+  const numero = 'PED-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(Math.floor(Math.random()*9000)+1000);
+
+  const payload = {
+    numero_pedido: numero,
+    usuario_id: SESSION.id,
+    username: SESSION.username,
+    nombre: SESSION.name,
+    proveedor_id: provId.startsWith('local-') ? null : provId,
+    proveedor_nombre: prov ? prov.nombre : null,
+    items,
+    urgencia: currentUrgencia,
+    fecha_requerida: fechaReq,
+    observacion: document.getElementById('obs-input').value.trim() || null,
+    total_estimado: total > 0 ? total : null,
+    estado
+  };
+
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/pedidos`, {
+      method: 'POST',
+      headers: { ...SUPA_HEADERS, 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    document.getElementById('auto-numero').textContent = numero;
+    toast(estado === 'enviado' ? '✔ Pedido enviado correctamente.' : '💾 Borrador guardado.', 'ok');
+    clearForm();
+    await loadHistory();
+    setTimeout(() => showTab('history'), 1200);
+  } catch(e) {
+    toast('Error al guardar: ' + e.message + ' (¿Tabla "pedidos" creada en Supabase?)', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = estado === 'enviado' ? '✔ Enviar pedido' : '💾 Guardar borrador';
+  }
+}
+
+async function _doSubmit(estado) {
+  const provId = document.getElementById('select-proveedor').value;
+  await submitPedido(estado);
+}
+
+// ════════════════════════════════════════════════════
+//  HISTORIAL
+// ════════════════════════════════════════════════════
+async function loadHistory() {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/pedidos?select=*&order=created_at.desc`, {
+      headers: SUPA_HEADERS
+    });
+    if (r.ok) historyData = await r.json();
+    else historyData = [];
+  } catch(e) { historyData = []; }
+  renderHistory();
+}
+
+function renderHistory() {
+  const search = (document.getElementById('hist-search')?.value || '').toLowerCase();
+  const dateFilter = document.getElementById('hist-date')?.value || '';
+  const statusFilter = document.getElementById('hist-status')?.value || '';
+  const isAdmin = SESSION.role === 'admin';
+
+  let data = historyData;
+  if (!isAdmin) data = data.filter(s => s.usuario_id === SESSION.id);
+  if (search) data = data.filter(s =>
+    (s.proveedor_nombre || '').toLowerCase().includes(search) ||
+    (s.numero_pedido || '').toLowerCase().includes(search) ||
+    (s.nombre || '').toLowerCase().includes(search) ||
+    (s.items || []).some(it =>
+      it.descripcion.toLowerCase().includes(search) ||
+      it.codigo.toLowerCase().includes(search)
+    )
+  );
+  if (dateFilter) data = data.filter(s => s.created_at && s.created_at.startsWith(dateFilter));
+  if (statusFilter) data = data.filter(s => s.estado === statusFilter);
+
+  const container = document.getElementById('history-container');
+
+  if (data.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div>No hay pedidos${search || dateFilter || statusFilter ? ' que coincidan' : ''}.</div></div>`;
+    return;
+  }
+
+  container.innerHTML = `<div class="card" style="padding:0;overflow:hidden">
+    <table class="data-table">
+      <thead><tr>
+        <th style="width:32px"></th>
+        <th>Nº Pedido</th>
+        <th>Proveedor</th>
+        <th>Urgencia</th>
+        <th class="num">Total</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        ${isAdmin ? '<th>Acciones</th>' : ''}
+      </tr></thead>
+      <tbody>${data.map(s => histRow(s, isAdmin)).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function histRow(s, isAdmin) {
+  const fecha = new Date(s.created_at).toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const badge = statusBadge(s.estado);
+  const urgBadge = s.urgencia ? `<span class="badge badge-urg-${s.urgencia}">${s.urgencia}</span>` : '—';
+  const items = s.items || [];
+  const total = s.total_estimado ? fmtCLP(s.total_estimado) : '—';
+  const detailId = 'det-' + s.id;
+
+  const detailRows = items.map((it, i) => `
+    <tr style="font-size:.79rem">
+      <td class="cen" style="padding:4px 12px;color:var(--muted)">${i+1}</td>
+      <td class="code-cell" style="padding:4px 12px">${escHtml(it.codigo)}</td>
+      <td style="padding:4px 12px">${escHtml(it.descripcion)}</td>
+      <td class="cen" style="padding:4px 12px">${it.cantidad}</td>
+      <td class="unit-cell" style="padding:4px 12px">${escHtml(it.unidad)}</td>
+      <td class="num" style="padding:4px 12px">${it.precio_unitario > 0 ? fmtCLP(it.precio_unitario) : '—'}</td>
+      <td class="num" style="padding:4px 12px;color:var(--green);font-weight:600">${it.subtotal > 0 ? fmtCLP(it.subtotal) : '—'}</td>
+    </tr>`).join('');
+
+  const obsRow = s.observacion
+    ? `<tr><td colspan="7" style="padding:6px 12px;font-size:.77rem;color:var(--muted)">📝 ${escHtml(s.observacion)}</td></tr>`
+    : '';
+
+  const adminActions = isAdmin ? `
+    <td>
+      <button class="btn btn-sm" style="background:rgba(79,142,247,.15);color:var(--accent);border:1px solid rgba(79,142,247,.3);font-size:.72rem"
+        onclick="openModalEstado('${s.id}','${escHtml(s.estado || '')}');event.stopPropagation()">
+        ✏ Estado
+      </button>
+    </td>` : '';
+
+  return `
+    <tr class="hist-row" onclick="toggleDetail('${detailId}')">
+      <td style="color:var(--muted);font-size:.8rem;text-align:center" id="arrow-${detailId}">▶</td>
+      <td style="font-family:monospace;font-size:.8rem;color:var(--accent)">${escHtml(s.numero_pedido || '—')}</td>
+      <td style="font-size:.84rem;font-weight:600">${escHtml(s.proveedor_nombre || '—')}</td>
+      <td>${urgBadge}</td>
+      <td class="num" style="font-weight:700">${total}</td>
+      <td style="font-size:.82rem;color:var(--muted)">${fecha}</td>
+      <td>${badge}</td>
+      ${adminActions}
+    </tr>
+    <tr id="${detailId}" class="hist-detail">
+      <td colspan="${isAdmin ? 8 : 7}" style="padding:0">
+        <div style="margin:0 12px 12px;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--border)">
+          <table class="data-table" style="margin:0">
+            <thead><tr style="font-size:.68rem">
+              <th class="cen">#</th><th>Código</th><th>Descripción</th>
+              <th class="cen">Cant.</th><th>Unidad</th><th class="num">Precio unit.</th><th class="num">Subtotal</th>
+            </tr></thead>
+            <tbody>${detailRows}${obsRow}</tbody>
+          </table>
+        </div>
+      </td>
+    </tr>`;
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+  const arrow = document.getElementById('arrow-' + id);
+  if (arrow) arrow.textContent = el.classList.contains('open') ? '▼' : '▶';
+}
+
+function statusBadge(estado) {
+  const map = {
+    borrador:'badge-borrador', enviado:'badge-enviado', aprobado:'badge-aprobado',
+    en_camino:'badge-en_camino', recibido:'badge-recibido', cancelado:'badge-cancelado'
+  };
+  const labels = {
+    borrador:'Borrador', enviado:'Enviado', aprobado:'Aprobado',
+    en_camino:'En camino', recibido:'Recibido', cancelado:'Cancelado'
+  };
+  return `<span class="badge ${map[estado] || ''}">${labels[estado] || estado || '—'}</span>`;
+}
+
+// ════════════════════════════════════════════════════
+//  MODAL CAMBIAR ESTADO
+// ════════════════════════════════════════════════════
+function openModalEstado(id, estadoActual) {
+  editingEstadoId = id;
+  document.getElementById('modal-estado-title').textContent = 'Actualizar estado del pedido';
+  document.getElementById('nuevo-estado').value = estadoActual || 'enviado';
+  document.getElementById('estado-nota').value = '';
+  document.getElementById('modal-estado').classList.add('open');
+}
+
+function closeModalEstado() {
+  document.getElementById('modal-estado').classList.remove('open');
+  editingEstadoId = null;
+}
+
+async function confirmEstado() {
+  if (!editingEstadoId) return;
+  const estado = document.getElementById('nuevo-estado').value;
+  const nota = document.getElementById('estado-nota').value.trim();
+
+  const btn = document.getElementById('confirm-estado-btn');
+  btn.disabled = true; btn.textContent = 'Actualizando...';
+
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/pedidos?id=eq.${editingEstadoId}`, {
+      method: 'PATCH',
+      headers: { ...SUPA_HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ estado, nota_estado: nota || null })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    toast('✔ Estado actualizado.', 'ok');
+    closeModalEstado();
+    loadHistory();
+  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  finally { btn.disabled = false; btn.textContent = 'Actualizar'; }
+}
+
+// ════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = ''; }, 3500);
+}
+
+// Cerrar modales con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('modal-proveedor').classList.remove('open');
+    closeModalEstado();
+  }
+});
+</script>
+</body>
+</html>
