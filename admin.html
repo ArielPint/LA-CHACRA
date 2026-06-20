@@ -11,17 +11,21 @@
   :root {
     --green:   #cd1c18;
     --green2:  #a81512;
-    --green3:  #fff0f0;
-    --red:     #c0392b;
-    --red2:    #fff0f0;
-    --blue:    #2563eb;
-    --blue2:   #eff6ff;
-    --gray:    #6b7280;
-    --border:  #e5e7eb;
-    --bg:      #f3f4f6;
+    --green3:  rgba(205,28,24,0.12);
+    --red:     #e05252;
+    --red2:    rgba(224,82,82,0.12);
+    --blue:    #4f8ef7;
+    --blue2:   rgba(79,142,247,0.13);
+    --gray:    #7a7f99;
+    --border:  #2e3350;
+    --bg:      #0f1117;
+    --surface: #1a1d27;
+    --surface2:#12151f;
+    --text:    #e8eaf0;
+    --text2:   #9ca3b8;
   }
 
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #111; min-height: 100vh; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
   /* ── Header ── */
   header {
@@ -45,9 +49,9 @@
   .page { max-width: 1600px; margin: 28px auto; padding: 0 22px; }
 
   /* ── Cards ── */
-  .card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 20px; overflow: hidden; }
+  .card { background: var(--surface); border-radius: 12px; box-shadow: 0 1px 8px rgba(0,0,0,0.25); margin-bottom: 20px; overflow: hidden; border: 1px solid var(--border); }
   .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; border-bottom: 1px solid var(--border); }
-  .card-header h2 { font-size: 0.95rem; font-weight: 700; }
+  .card-header h2 { font-size: 0.95rem; font-weight: 700; color: var(--text); }
   .card-header span { font-size: 0.76rem; color: var(--gray); }
   .card-body { padding: 0; }
   .card-body.scrollable { overflow-x: auto; }
@@ -56,38 +60,39 @@
   /* ── Tabla ── */
   table { width: 100%; border-collapse: collapse; }
   th { text-align: left; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray); padding: 0 12px 10px; border-bottom: 1px solid var(--border); }
-  td { padding: 10px 12px; font-size: 0.85rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  td { padding: 10px 12px; font-size: 0.85rem; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #fafafa; }
+  tr:hover td { background: rgba(255,255,255,0.04); }
 
   .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
-  .badge-admin    { background: #fef3c7; color: #92400e; }
-  .badge-editor   { background: #ede9fe; color: #5b21b6; }
+  .badge-admin    { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .badge-editor   { background: rgba(139,92,246,0.15); color: #a78bfa; }
   .badge-operador { background: var(--blue2); color: var(--blue); }
-  .badge-viewer   { background: #f3f4f6; color: #555; }
-  .badge-on  { background: #d1fae5; color: #065f46; }
-  .badge-off { background: #fee2e2; color: #991b1b; }
+  .badge-viewer   { background: rgba(255,255,255,0.07); color: var(--gray); }
+  .badge-on  { background: rgba(52,211,153,0.13); color: #34d399; }
+  .badge-off { background: rgba(248,113,113,0.13); color: #f87171; }
 
-  .page-chip { display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin: 1px 2px; background: #e0f2fe; color: #0369a1; }
-  .tab-chip  { display: inline-block; font-size: 0.65rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; margin: 1px 1px; background: #e0f2fe; color: #0369a1; }
+  .page-chip { display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin: 1px 2px; background: rgba(79,142,247,0.15); color: var(--blue); }
+  .tab-chip  { display: inline-block; font-size: 0.65rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; margin: 1px 1px; background: rgba(79,142,247,0.15); color: var(--blue); }
 
   /* ── Botones ── */
   .btn { padding: 6px 13px; border-radius: 6px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
   .btn:active { opacity: 0.8; }
   .btn-primary { background: var(--green); color: white; }
   .btn-primary:hover { background: var(--green2); }
-  .btn-danger  { background: var(--red2); color: var(--red); border: 1px solid #f5c6c6; }
-  .btn-danger:hover { background: #ffe0e0; }
-  .btn-edit    { background: var(--blue2); color: var(--blue); border: 1px solid #bfdbfe; }
+  .btn-danger  { background: var(--red2); color: var(--red); border: 1px solid rgba(224,82,82,0.3); }
+  .btn-danger:hover { background: rgba(224,82,82,0.2); }
+  .btn-edit    { background: var(--blue2); color: var(--blue); border: 1px solid rgba(79,142,247,0.3); }
+  .btn-edit:hover { background: rgba(79,142,247,0.2); }
   .btn-sm { padding: 3px 9px; font-size: 0.73rem; }
   .btn-group { display: flex; gap: 5px; }
 
   /* ── Modal ── */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 1000; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
   .modal-overlay.open { display: flex; }
-  .modal { background: white; border-radius: 14px; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
-  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: white; z-index: 1; border-radius: 14px 14px 0 0; }
-  .modal-header h3 { font-size: 1rem; font-weight: 700; }
+  .modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid var(--border); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1; border-radius: 14px 14px 0 0; }
+  .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text); }
   .modal-close { background: none; border: none; font-size: 1.2rem; color: var(--gray); cursor: pointer; }
   .modal-body { padding: 18px 22px; }
   .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--border); }
@@ -95,18 +100,19 @@
   /* ── Form ── */
   .form-row { margin-bottom: 14px; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .form-label { display: block; font-size: 0.72rem; font-weight: 700; color: #444; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
-  .form-input, .form-select { width: 100%; padding: 8px 11px; border: 2px solid var(--border); border-radius: 7px; font-size: 0.88rem; color: #111; outline: none; transition: border-color 0.2s; background: #fafafa; }
-  .form-input:focus, .form-select:focus { border-color: var(--green); background: white; }
+  .form-label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--text2); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .form-input, .form-select { width: 100%; padding: 8px 11px; border: 2px solid var(--border); border-radius: 7px; font-size: 0.88rem; color: var(--text); outline: none; transition: border-color 0.2s; background: var(--surface2); }
+  .form-input:focus, .form-select:focus { border-color: var(--green); background: var(--surface2); }
+  .form-select option { background: var(--surface); }
   .form-hint { font-size: 0.7rem; color: var(--gray); margin-top: 3px; }
 
   /* ── Sección de permisos por página ── */
-  .section-label { font-size: 0.72rem; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+  .section-label { font-size: 0.72rem; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
   .perm-page { border: 2px solid var(--border); border-radius: 9px; margin-bottom: 10px; overflow: hidden; transition: border-color 0.2s; }
   .perm-page.enabled { border-color: var(--green); }
-  .perm-page-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fafafa; cursor: pointer; user-select: none; }
+  .perm-page-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255,255,255,0.03); cursor: pointer; user-select: none; }
   .perm-page.enabled .perm-page-header { background: var(--green3); }
-  .perm-page-title { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; font-weight: 700; }
+  .perm-page-title { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; font-weight: 700; color: var(--text); }
   .perm-page-body { padding: 10px 14px; border-top: 1px solid var(--border); display: none; }
   .perm-page.open .perm-page-body { display: block; }
   .tabs-grid-sm { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -114,17 +120,19 @@
     display: flex; align-items: center; gap: 5px;
     padding: 5px 10px; border: 1.5px solid var(--border);
     border-radius: 6px; cursor: pointer; font-size: 0.78rem;
+    color: var(--text2);
     transition: border-color 0.15s, background 0.15s;
   }
-  .tab-check-sm:has(input:checked) { border-color: var(--green); background: var(--green3); }
+  .tab-check-sm:has(input:checked) { border-color: var(--green); background: var(--green3); color: var(--text); }
   .tab-check-sm input { accent-color: var(--green); }
   .all-none-btns { display: flex; gap: 6px; margin-bottom: 6px; }
-  .btn-all-none { font-size: 0.7rem; padding: 2px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; color: var(--gray); }
-  .btn-all-none:hover { color: #111; }
+  .btn-all-none { font-size: 0.7rem; padding: 2px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; color: var(--gray); }
+  .btn-all-none:hover { color: var(--text); }
 
   /* ── Toggle switch ── */
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
-  .toggle-label { font-size: 0.85rem; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 0.85rem; color: var(--text); }
   .toggle-label small { display: block; font-size: 0.7rem; color: var(--gray); margin-top: 1px; }
   .switch { position: relative; width: 38px; height: 21px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
@@ -134,25 +142,25 @@
   .switch input:checked + .slider::before { transform: translateX(17px); }
 
   /* ── Info ── */
-  .info-box { background: var(--blue2); border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #1e40af; margin-bottom: 18px; display: flex; gap: 8px; }
+  .info-box { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.25); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #93c5fd; margin-bottom: 18px; display: flex; gap: 8px; }
   .empty-state { text-align: center; padding: 28px; color: var(--gray); font-size: 0.88rem; }
 
   /* ── Roles ref ── */
   .roles-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .role-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
-  .role-card h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 5px; }
+  .role-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--surface2); }
+  .role-card h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 5px; color: var(--text); }
   .role-card ul { list-style: none; font-size: 0.75rem; color: var(--gray); }
   .role-card ul li { margin-bottom: 2px; }
   .role-card ul li::before { content: '• '; }
 
   /* ── Timestamp ── */
   .ts { font-size: 0.72rem; color: var(--gray); white-space: nowrap; }
-  .ts strong { display: block; color: #111; font-size: 0.78rem; font-weight: 600; }
+  .ts strong { display: block; color: var(--text); font-size: 0.78rem; font-weight: 600; }
 
   /* ── Row flash after save ── */
   @keyframes rowFlash {
-    0%   { background: #d1fae5; }
-    60%  { background: #d1fae5; }
+    0%   { background: rgba(52,211,153,0.12); }
+    60%  { background: rgba(52,211,153,0.12); }
     100% { background: transparent; }
   }
   tr.just-saved td { animation: rowFlash 2.2s ease forwards; }
@@ -160,8 +168,8 @@
   /* ── Save confirmation badge ── */
   .save-confirm {
     display: none; align-items: center; gap: 6px;
-    background: #d1fae5; border: 1px solid #6ee7b7;
-    color: #065f46; border-radius: 7px;
+    background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.3);
+    color: #34d399; border-radius: 7px;
     padding: 10px 16px; font-size: 0.83rem; font-weight: 600;
     margin-bottom: 16px;
   }
@@ -211,23 +219,25 @@
     td { font-size: 0.78rem; padding: 8px 10px; }
     th { font-size: 0.65rem; padding: 0 10px 8px; }
   }
-  .sync-block h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; color: #111; }
+  .sync-block h3 { font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; color: var(--text); }
   .sync-block p  { font-size: 0.78rem; color: var(--gray); margin-bottom: 10px; line-height: 1.5; }
-  .sync-textarea { width: 100%; height: 96px; font-size: 0.7rem; font-family: monospace; border: 2px solid var(--border); border-radius: 7px; padding: 8px; resize: none; outline: none; background: #fafafa; transition: border-color 0.2s; }
-  .sync-textarea:focus { border-color: var(--green); background: white; }
-  .sync-textarea[readonly] { color: #444; cursor: text; }
+  .sync-textarea { width: 100%; height: 96px; font-size: 0.7rem; font-family: monospace; border: 2px solid var(--border); border-radius: 7px; padding: 8px; resize: none; outline: none; background: var(--surface2); color: var(--text); transition: border-color 0.2s; }
+  .sync-textarea:focus { border-color: var(--green); }
+  .sync-textarea[readonly] { color: var(--text2); cursor: text; }
+  .sync-textarea::placeholder { color: var(--gray); }
 
   /* ── GitHub config card ── */
   .gh-status { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
-  .gh-status.ok      { background: #d1fae5; color: #065f46; }
-  .gh-status.missing { background: #fef3c7; color: #92400e; }
-  .gh-status.error   { background: #fee2e2; color: #991b1b; }
+  .gh-status.ok      { background: rgba(52,211,153,0.13); color: #34d399; }
+  .gh-status.missing { background: rgba(251,191,36,0.13); color: #fbbf24; }
+  .gh-status.error   { background: rgba(248,113,113,0.13); color: #f87171; }
   .token-input-wrap { display: flex; gap: 8px; margin-top: 10px; }
-  .token-input-wrap input { flex: 1; padding: 8px 11px; border: 2px solid var(--border); border-radius: 7px; font-size: 0.85rem; outline: none; font-family: monospace; background: #fafafa; transition: border-color .2s; }
-  .token-input-wrap input:focus { border-color: var(--green); background: white; }
+  .token-input-wrap input { flex: 1; padding: 8px 11px; border: 2px solid var(--border); border-radius: 7px; font-size: 0.85rem; outline: none; font-family: monospace; background: var(--surface2); color: var(--text); transition: border-color .2s; }
+  .token-input-wrap input:focus { border-color: var(--green); }
+  .token-input-wrap input::placeholder { color: var(--gray); }
   .gh-steps { margin-top: 12px; font-size: 0.76rem; color: var(--gray); line-height: 1.7; }
   .gh-steps a { color: var(--blue); }
-  .gh-warn { background: #fef9c3; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #78350f; margin-bottom: 16px; display: none; }
+  .gh-warn { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #fbbf24; margin-bottom: 16px; display: none; }
   .gh-warn.show { display: block; }
 
   /* ── Toggle contraseña ── */
@@ -274,7 +284,7 @@
       <span class="gh-status missing" id="ghStatusBadge">⚠ Sin configurar</span>
     </div>
     <div class="card-body" style="padding:18px 22px">
-      <p style="font-size:0.82rem;color:#444;margin-bottom:4px">
+      <p style="font-size:0.82rem;color:var(--text2);margin-bottom:4px">
         Los usuarios se guardan en <code style="background:#f3f4f6;padding:1px 5px;border-radius:3px">users.json</code> del repositorio GitHub.
         Al guardar aquí, todos los equipos ven los cambios en su próximo login.
       </p>
@@ -492,7 +502,7 @@
 
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="closeModal()" style="background:#f3f4f6;color:#444">Cancelar</button>
+      <button class="btn" onclick="closeModal()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border)">Cancelar</button>
       <button class="btn btn-primary" id="btnSave" onclick="saveUser()">Guardar</button>
     </div>
   </div>
@@ -566,8 +576,8 @@ async function renderTable(highlightId) {
     // Estadísticas de Supabase
     const stats = loginStats[u.id];
     const countBadge = stats
-      ? `<span title="Último: ${new Date(stats.lastLogin).toLocaleString('es-CL')}" style="display:inline-block;background:#e0f2fe;color:#0369a1;border-radius:12px;padding:2px 10px;font-size:0.78rem;font-weight:700;cursor:default">${stats.count}</span>`
-      : '<span style="color:#bbb;font-size:0.72rem">0</span>';
+      ? `<span title="Último: ${new Date(stats.lastLogin).toLocaleString('es-CL')}" style="display:inline-block;background:rgba(79,142,247,0.15);color:var(--blue);border-radius:12px;padding:2px 10px;font-size:0.78rem;font-weight:700;cursor:default">${stats.count}</span>`
+      : '<span style="color:var(--gray);font-size:0.72rem">0</span>';
 
     // Último ingreso: preferir Supabase (más preciso), fallback a lastLogin de GitHub
     const lastLoginTs = stats ? new Date(stats.lastLogin).getTime() : (u.lastLogin || null);
@@ -589,16 +599,16 @@ async function renderTable(highlightId) {
     const flash  = highlightId === u.id ? ' class="just-saved"' : '';
     return `<tr data-uid="${u.id}"${flash}>
       <td>
-        <strong>${u.name}</strong>${isSelf ? ' <span style="font-size:0.68rem;color:#aaa">(tú)</span>' : ''}
-        ${u.email ? `<div style="font-size:0.7rem;color:#9ca3af;margin-top:2px">${u.email}</div>` : ''}
+        <strong>${u.name}</strong>${isSelf ? ' <span style="font-size:0.68rem;color:var(--gray)">(tú)</span>' : ''}
+        ${u.email ? `<div style="font-size:0.7rem;color:var(--gray);margin-top:2px">${u.email}</div>` : ''}
       </td>
-      <td style="font-family:monospace;color:#666;font-size:0.8rem">${u.username}</td>
+      <td style="font-family:monospace;color:var(--text2);font-size:0.8rem">${u.username}</td>
       <td>${roleBadge}</td>
-      <td>${pageChips || '<span style="color:#bbb;font-size:0.75rem">Sin acceso</span>'}</td>
+      <td>${pageChips || '<span style="color:var(--gray);font-size:0.75rem">Sin acceso</span>'}</td>
       <td>${modoBadge} ${layoutBadge} ${productsBadge} ${plantaBadge}</td>
       <td>${activoBadge}</td>
-      <td style="white-space:nowrap">${u.plainPassword ? `<span id="pw-${u.id}" style="font-family:monospace;font-size:0.8rem;color:#888;letter-spacing:2px">••••••</span><button class="btn-pw-toggle" id="pw-btn-${u.id}" onclick="togglePw('${u.id}')" title="Ver/ocultar contraseña">👁</button>` : '<span style="color:#bbb;font-size:0.72rem">—</span>'}</td>
-      <td>${lastLoginTs ? fmtDate(lastLoginTs) : '<span style="color:#bbb;font-size:0.72rem">Nunca</span>'}</td>
+      <td style="white-space:nowrap">${u.plainPassword ? `<span id="pw-${u.id}" style="font-family:monospace;font-size:0.8rem;color:var(--gray);letter-spacing:2px">••••••</span><button class="btn-pw-toggle" id="pw-btn-${u.id}" onclick="togglePw('${u.id}')" title="Ver/ocultar contraseña">👁</button>` : '<span style="color:var(--gray);font-size:0.72rem">—</span>'}</td>
+      <td>${lastLoginTs ? fmtDate(lastLoginTs) : '<span style="color:var(--gray);font-size:0.72rem">Nunca</span>'}</td>
       <td style="text-align:center">${countBadge}</td>
       <td>${fmtDate(u.updatedAt || u.createdAt)}</td>
       <td><div class="btn-group">
@@ -617,14 +627,14 @@ function togglePw(id) {
   if (!span) return;
   if (span.dataset.shown === '1') {
     span.textContent  = '••••••';
-    span.style.color  = '#888';
+    span.style.color  = 'var(--gray)';
     span.style.letterSpacing = '2px';
     span.dataset.shown = '0';
     btn.classList.remove('active');
     btn.title = 'Ver contraseña';
   } else {
     span.textContent  = pwMap[id] || '?';
-    span.style.color  = '#333';
+    span.style.color  = 'var(--text)';
     span.style.letterSpacing = 'normal';
     span.dataset.shown = '1';
     btn.classList.add('active');
