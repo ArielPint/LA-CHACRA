@@ -7,7 +7,7 @@
     "name": "Ariel",
     "active": true,
     "createdAt": 1749600000000,
-    "updatedAt": 1781785502601,
+    "updatedAt": 1781923932064,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -58,14 +58,15 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
             "obra_gruesa",
+            "sanitario",
+            "electrico",
             "terminaciones",
             "recepcion"
           ]
         },
         "geovictoria": {
-          "access": false,
+          "access": true,
           "tabs": []
         }
       },
@@ -135,10 +136,11 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
             "obra_gruesa",
             "terminaciones",
-            "recepcion"
+            "recepcion",
+            "sanitario",
+            "electrico"
           ]
         },
         "geovictoria": {
@@ -210,10 +212,11 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
             "obra_gruesa",
             "terminaciones",
-            "recepcion"
+            "recepcion",
+            "sanitario",
+            "electrico"
           ]
         },
         "geovictoria": {
@@ -284,10 +287,11 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
             "obra_gruesa",
             "terminaciones",
-            "recepcion"
+            "recepcion",
+            "sanitario",
+            "electrico"
           ]
         },
         "geovictoria": {
@@ -359,10 +363,11 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
             "obra_gruesa",
             "terminaciones",
-            "recepcion"
+            "recepcion",
+            "sanitario",
+            "electrico"
           ]
         },
         "geovictoria": {
@@ -433,10 +438,11 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
             "obra_gruesa",
             "terminaciones",
-            "recepcion"
+            "recepcion",
+            "sanitario",
+            "electrico"
           ]
         },
         "geovictoria": {
@@ -508,10 +514,11 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
             "obra_gruesa",
             "terminaciones",
-            "recepcion"
+            "recepcion",
+            "sanitario",
+            "electrico"
           ]
         },
         "geovictoria": {
@@ -582,10 +589,11 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
             "obra_gruesa",
             "terminaciones",
-            "recepcion"
+            "recepcion",
+            "sanitario",
+            "electrico"
           ]
         },
         "geovictoria": {
@@ -645,8 +653,9 @@
         "planta": {
           "access": true,
           "tabs": [
-            "corte",
-            "obra_gruesa"
+            "obra_gruesa",
+            "sanitario",
+            "electrico"
           ]
         },
         "geovictoria": {
