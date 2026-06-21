@@ -329,7 +329,6 @@
             <th>Páginas con acceso</th>
             <th>Modo</th>
             <th>Estado</th>
-            <th>Contraseña</th>
             <th>Último ingreso</th>
             <th>Ingresos</th>
             <th>Última modificación</th>
@@ -541,9 +540,6 @@
 const session = AUTH.requireAdmin('tecnopanel.html');
 if (session) document.getElementById('headerUser').textContent = session.name + ' · Admin';
 
-// Mapa de contraseñas (poblado en cada renderTable)
-const pwMap = {};
-
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmtDate(ts) {
   if (!ts) return '<span class="ts">—</span>';
@@ -563,7 +559,7 @@ function fmtDate(ts) {
 // ── Render tabla ──────────────────────────────────────────────────────────
 async function renderTable(highlightId) {
   const tbody = document.getElementById('usersTableBody');
-  tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Cargando usuarios...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Cargando usuarios...</td></tr>';
 
   const [users, loginStats] = await Promise.all([
     AUTH.getUsers(),
@@ -573,7 +569,7 @@ async function renderTable(highlightId) {
   document.getElementById('userCount').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
 
   if (users.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" class="empty-state">Sin usuarios.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Sin usuarios.</td></tr>';
     return;
   }
 
@@ -607,19 +603,17 @@ async function renderTable(highlightId) {
     // Último ingreso: preferir Supabase (más preciso), fallback a lastLogin de GitHub
     const lastLoginTs = stats ? new Date(stats.lastLogin).getTime() : (u.lastLogin || null);
 
-    // Botón enviar credenciales por email
+    // Botón enviar credenciales por email (solo URL y usuario — sin contraseña)
     const ACCESS_URL = 'https://arielpint.github.io/LA-CHACRA/login.html';
-    const emailBody = `Hola ${u.name},%0D%0A%0D%0ATe compartimos tus credenciales de acceso al sistema La Chacra:%0D%0A%0D%0A` +
-      `Acceso: ${ACCESS_URL}%0D%0AUsuario: ${u.username}%0D%0AContrase%C3%B1a: ${encodeURIComponent(u.plainPassword || '')}%0D%0A%0D%0A` +
+    const emailBody = `Hola ${u.name},%0D%0A%0D%0ATe compartimos tus datos de acceso al sistema La Chacra:%0D%0A%0D%0A` +
+      `Acceso: ${ACCESS_URL}%0D%0AUsuario: ${u.username}%0D%0A%0D%0A` +
       `Saludos,%0D%0AAdministraci%C3%B3n La Chacra`;
     const mailtoHref = u.email
       ? `mailto:${u.email}?subject=Acceso%20La%20Chacra&body=${emailBody}`
       : '';
     const sendBtn = u.email
-      ? `<a class="btn btn-edit btn-sm" href="${mailtoHref}" title="Enviar credenciales a ${u.email}">📧 Enviar</a>`
+      ? `<a class="btn btn-edit btn-sm" href="${mailtoHref}" title="Enviar acceso a ${u.email}">📧 Enviar</a>`
       : `<button class="btn btn-sm" style="background:#f3f4f6;color:#bbb;cursor:default" title="Sin email registrado" disabled>📧</button>`;
-
-    if (u.plainPassword) pwMap[u.id] = u.plainPassword;
     const isSelf = u.username === session.username;
     const flash  = highlightId === u.id ? ' class="just-saved"' : '';
     return `<tr data-uid="${u.id}"${flash}>
@@ -632,7 +626,6 @@ async function renderTable(highlightId) {
       <td>${pageChips || '<span style="color:var(--gray);font-size:0.75rem">Sin acceso</span>'}</td>
       <td>${modoBadge} ${layoutBadge} ${productsBadge} ${plantaBadge}</td>
       <td>${activoBadge}</td>
-      <td style="white-space:nowrap">${u.plainPassword ? `<span id="pw-${u.id}" style="font-family:monospace;font-size:0.8rem;color:var(--gray);letter-spacing:2px">••••••</span><button class="btn-pw-toggle" id="pw-btn-${u.id}" onclick="togglePw('${u.id}')" title="Ver/ocultar contraseña">👁</button>` : '<span style="color:var(--gray);font-size:0.72rem">—</span>'}</td>
       <td>${lastLoginTs ? fmtDate(lastLoginTs) : '<span style="color:var(--gray);font-size:0.72rem">Nunca</span>'}</td>
       <td style="text-align:center">${countBadge}</td>
       <td>${fmtDate(u.updatedAt || u.createdAt)}</td>
@@ -643,28 +636,6 @@ async function renderTable(highlightId) {
       </div></td>
     </tr>`;
   }).join('');
-}
-
-// ── Toggle contraseña ─────────────────────────────────────────────────────
-function togglePw(id) {
-  const span = document.getElementById('pw-' + id);
-  const btn  = document.getElementById('pw-btn-' + id);
-  if (!span) return;
-  if (span.dataset.shown === '1') {
-    span.textContent  = '••••••';
-    span.style.color  = 'var(--gray)';
-    span.style.letterSpacing = '2px';
-    span.dataset.shown = '0';
-    btn.classList.remove('active');
-    btn.title = 'Ver contraseña';
-  } else {
-    span.textContent  = pwMap[id] || '?';
-    span.style.color  = 'var(--text)';
-    span.style.letterSpacing = 'normal';
-    span.dataset.shown = '1';
-    btn.classList.add('active');
-    btn.title = 'Ocultar contraseña';
-  }
 }
 
 // ── Permisos de marcado Control Planta ────────────────────────────────────
@@ -815,7 +786,7 @@ async function editUser(id) {
   document.getElementById('fCanEditProducts').checked = cep;
   document.getElementById('fActive').checked        = user.active;
   loadPlantaMarks(user.permissions && user.permissions.planta_marks);
-  document.getElementById('passHint').textContent = user.plainPassword ? 'Actual: ' + user.plainPassword + '  (dejar vacío para no cambiar)' : '(dejar vacío para no cambiar)';
+  document.getElementById('passHint').textContent = '(dejar vacío para no cambiar)';
   document.getElementById('modalTitle').textContent = 'Editar usuario';
   buildPagePerms(user.permissions.pages);
   document.getElementById('modalOverlay').classList.add('open');
