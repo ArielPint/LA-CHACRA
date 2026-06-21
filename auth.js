@@ -1,51 +1,62 @@
 /**
  * auth.js — Sistema de autenticación y autorización
- * La Chacra · Usuarios almacenados en GitHub (users.json)
+ * La Chacra · Usuarios almacenados en Supabase Auth + user_profiles
  *
- * Roles: admin | operador | viewer
- * Permisos por página y pestaña
+ * Roles: admin | operador | viewer | editor
+ * Credenciales gestionadas por Supabase (bcrypt interno)
  */
 
 const AUTH = (() => {
 
-  // ─── Config GitHub ────────────────────────────────────────────────────────
-  const REPO_OWNER = 'ArielPint';
-  const REPO_NAME  = 'LA-CHACRA';
-  const USERS_FILE = 'users.json';
-  const RAW_URL    = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${USERS_FILE}`;
-  const API_URL    = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${USERS_FILE}`;
-
   // ─── Config Supabase ──────────────────────────────────────────────────────
-  const SUPA_URL  = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
-  const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+  const SUPA_URL   = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+  const SUPA_KEY   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+  const MANAGE_URL = `${SUPA_URL}/functions/v1/manage-users`;
 
-  // ─── Claves localStorage ──────────────────────────────────────────────────
-  const SESSION_KEY    = 'lachacra_session';
-  const CACHE_KEY      = 'lachacra_users_cache';
-  const TOKEN_KEY      = 'lachacra_gh_token';
-  const CACHE_TTL      = 2 * 60 * 1000; // 2 minutos
-  const SESSION_TTL    = 8 * 60 * 60 * 1000; // 8 horas
+  // ─── Claves localStorage / sessionStorage ─────────────────────────────────
+  const SESSION_KEY        = 'lachacra_session';
   const LOGIN_ATTEMPTS_KEY = 'lachacra_login_attempts';
-  const MAX_ATTEMPTS   = 5;
-  const LOCKOUT_MS     = 5 * 60 * 1000; // 5 minutos
+  const MAX_ATTEMPTS       = 5;
+  const LOCKOUT_MS         = 5 * 60 * 1000;  // 5 minutos
+  const SESSION_TTL        = 8 * 60 * 60 * 1000; // 8 horas
 
-  // In-memory cache (válida durante la sesión del tab)
-  let _mem = null;
-  let _memTs = 0;
+  // ─── Supabase client (lazy, usa sessionStorage) ──────────────────────────
+  let _sb = null;
+
+  async function _client() {
+    if (_sb) return _sb;
+    if (!window.supabase) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+        s.onload = res;
+        s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+    _sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+      auth: {
+        storage: window.sessionStorage,
+        persistSession: true,
+        autoRefreshToken: true
+      }
+    });
+    return _sb;
+  }
 
   // ─── Mapa de páginas y pestañas ───────────────────────────────────────────
   const PAGE_MAP = {
     dashboard: {
       label: 'Dashboard',
       tabs: {
-        resumen:   'Resumen',
-        curva:     'Curva S',
-        modulos:   'Módulos',
-        compras:   'Compras',
-        productos: 'Productos',
-        stock:     'Stock',
+        resumen:      'Resumen',
+        curva:        'Curva S',
+        modulos:      'Módulos',
+        compras:      'Compras',
+        productos:    'Productos',
+        stock:        'Stock',
         despachos:    'Despachos',
-        'prod-diaria': 'Prod. Diaria'
+        'prod-diaria':'Prod. Diaria'
       }
     },
     produccion: {
@@ -92,7 +103,7 @@ const AUTH = (() => {
     },
     geovictoria: {
       label: 'Asistencia GeoVictoria',
-      restricted: true,   // acceso desactivado por defecto; debe habilitarse explícitamente
+      restricted: true,
       tabs: {}
     }
   };
@@ -100,7 +111,6 @@ const AUTH = (() => {
   function defaultPagePerms() {
     const pages = {};
     for (const [pid, pdef] of Object.entries(PAGE_MAP)) {
-      // Páginas restringidas (restricted: true) se desactivan por defecto
       const access = !pdef.restricted;
       pages[pid] = { access, tabs: access ? Object.keys(pdef.tabs) : [] };
     }
@@ -114,26 +124,15 @@ const AUTH = (() => {
     viewer:   { label: 'Solo Lectura',   readonly: true,  canEditLayout: false, pages: () => defaultPagePerms() }
   };
 
-  // ─── Hash SHA-256 ─────────────────────────────────────────────────────────
-  async function hashPassword(password) {
-    const enc = new TextEncoder();
-    const buf = await crypto.subtle.digest('SHA-256', enc.encode(password));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
   // ─── Migración de permisos ────────────────────────────────────────────────
   function migratePermissions(perms) {
     if (perms && perms.pages && typeof perms.pages === 'object') {
-      // Forward-migrate: añadir páginas nuevas del PAGE_MAP que aún no existen en perms
       for (const [pid, pdef] of Object.entries(PAGE_MAP)) {
         if (!perms.pages[pid]) {
-          // Páginas restringidas (restricted: true) se agregan con acceso desactivado
           const access = !pdef.restricted;
           perms.pages[pid] = { access, tabs: access ? Object.keys(pdef.tabs || {}) : [] };
         }
       }
-      // Migración de pestañas planta: corregir set de tabs (sanitario y electrico
-      // no existían en el PAGE_MAP anterior; 'corte' ya no es una tab válida)
       if (perms.pages.planta && Array.isArray(perms.pages.planta.tabs)) {
         const pt = perms.pages.planta.tabs;
         const ci = pt.indexOf('corte');
@@ -147,218 +146,154 @@ const AUTH = (() => {
     return newPerms;
   }
 
-  function _normalize(users) {
-    return users.map(u => ({ ...u, permissions: migratePermissions(u.permissions) }));
+  // ─── Mapeo perfil DB → objeto usuario ─────────────────────────────────────
+  function _profileToUser(p) {
+    return {
+      id:          p.id,
+      username:    p.username,
+      name:        p.name,
+      email:       p.email || '',
+      role:        p.role,
+      active:      p.active,
+      createdAt:   new Date(p.created_at).getTime(),
+      updatedAt:   new Date(p.updated_at).getTime(),
+      lastLogin:   p.last_login ? new Date(p.last_login).getTime() : null,
+      permissions: migratePermissions(p.permissions || {}),
+      plantaRol:   p.planta_rol || null
+    };
   }
 
-  // ─── Fallback por defecto ─────────────────────────────────────────────────
-  function _defaultAdmin() {
-    return [{
-      id: '00000000-0000-0000-0000-000000000001',
-      username: 'admin',
-      password: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9',
-      role: 'admin', name: 'Administrador', active: true,
-      createdAt: 1749600000000, updatedAt: 1749600000000,
-      permissions: { pages: defaultPagePerms(), readonly: false }
-    }];
+  // ─── Obtener access token de la sesión activa ─────────────────────────────
+  async function _getAccessToken() {
+    const sb = await _client();
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
+    return session.access_token;
   }
 
-  // ─── Obtener usuarios (remoto → cache → fallback) ─────────────────────────
-  // Decodifica la respuesta base64 de la GitHub API con soporte UTF-8
-  function _decodeGithubContent(b64) {
-    const binary = atob(b64.replace(/\n/g, ''));
-    const bytes  = Uint8Array.from(binary, c => c.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
+  // ─── getUsers ─────────────────────────────────────────────────────────────
+  async function getUsers() {
+    const sb = await _client();
+    const { data, error } = await sb
+      .from('user_profiles')
+      .select('*')
+      .order('created_at');
+    if (error) throw error;
+    return data.map(_profileToUser);
   }
 
-  async function getUsers({ force = false } = {}) {
-    const now = Date.now();
-    // 1. In-memory (más rápido, mismo tab)
-    if (!force && _mem && (now - _memTs) < CACHE_TTL) return _mem;
-    // 2. Remoto
-    try {
-      let users;
-      if (force) {
-        // Login/forzado → GitHub API (siempre fresca, sin caché CDN de Fastly)
-        // Esto evita que cambios de permisos recientes no se vean al hacer login
-        const token = localStorage.getItem(TOKEN_KEY);
-        const headers = { Accept: 'application/vnd.github+json' };
-        if (token) headers['Authorization'] = 'Bearer ' + token;
-        const resp = await fetch(API_URL, { headers });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const data = await resp.json();
-        users = _normalize(JSON.parse(_decodeGithubContent(data.content)));
-      } else {
-        // Uso normal → raw URL (más rápido, sin autenticación)
-        const resp = await fetch(RAW_URL + '?_=' + now);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        users = _normalize(await resp.json());
-      }
-      // Mergear lastLogin del cache local si es más reciente que lo que tiene GitHub
-      // (ocurre cuando el write a GitHub falló por falta de token)
-      try {
-        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-        if (Array.isArray(cached.users)) {
-          const localLastLogin = {};
-          cached.users.forEach(u => { if (u.lastLogin) localLastLogin[u.id] = u.lastLogin; });
-          users.forEach(u => {
-            if (localLastLogin[u.id] && (!u.lastLogin || localLastLogin[u.id] > u.lastLogin)) {
-              u.lastLogin = localLastLogin[u.id];
-            }
-          });
-        }
-      } catch (_) {}
-      _mem = users;
-      _memTs = now;
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ users, ts: now }));
-      return users;
-    } catch (_e) {
-      // 3. Cache localStorage
-      try {
-        const c = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-        if (Array.isArray(c.users) && c.users.length > 0) {
-          _mem = _normalize(c.users);
-          _memTs = c.ts || 0;
-          return _mem;
-        }
-      } catch (_) {}
-      // 4. Fallback admin por defecto
-      _mem = _defaultAdmin();
-      _memTs = now;
-      return _mem;
-    }
-  }
-
-  // ─── Guardar usuarios (GitHub API + cache) ────────────────────────────────
-  async function saveUsers(users) {
-    // Actualizar caches inmediatamente
-    _mem = users;
-    _memTs = Date.now();
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ users, ts: _memTs }));
-    // Escribir en GitHub
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) throw new Error('Token de GitHub no configurado. Ve a Admin → Configuración.');
-    // Obtener SHA actual del archivo
-    const headResp = await fetch(API_URL, {
-      headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' }
-    });
-    const sha = headResp.ok ? (await headResp.json()).sha : undefined;
-    // Codificar contenido en base64 (soporta Unicode)
-    const json = JSON.stringify(users, null, 2);
-    const bytes = new TextEncoder().encode(json);
-    const bin = Array.from(bytes, b => String.fromCodePoint(b)).join('');
-    const content = btoa(bin);
-    const putResp = await fetch(API_URL, {
-      method: 'PUT',
-      headers: {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        Accept: 'application/vnd.github+json'
-      },
-      body: JSON.stringify({
-        message: 'Update users [skip ci]',
-        content,
-        ...(sha ? { sha } : {})
-      })
-    });
-    if (!putResp.ok) {
-      const err = await putResp.json().catch(() => ({}));
-      throw new Error(err.message || 'GitHub API error ' + putResp.status);
-    }
-  }
-
-  // ─── CRUD de usuarios ─────────────────────────────────────────────────────
+  // ─── createUser (via Edge Function con service_role) ─────────────────────
   async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride, plantaRol, planta_marks }) {
-    const users = await getUsers();
-    if (users.find(u => u.username === username.trim().toLowerCase())) {
-      throw new Error('El usuario ya existe');
-    }
     const roleDef = DEFAULT_ROLES[role] || DEFAULT_ROLES.viewer;
-    const perms = {
+    const permissions = {
       pages: customPages || roleDef.pages(),
       readonly: readonly !== undefined ? readonly : roleDef.readonly
     };
-    if (canEditLayoutOverride    !== undefined) perms.canEditLayout    = canEditLayoutOverride;
-    if (canEditProductsOverride !== undefined) perms.canEditProducts = canEditProductsOverride;
-    if (planta_marks            !== undefined) perms.planta_marks     = planta_marks || null;
-    const user = {
-      id: crypto.randomUUID(),
-      username: username.trim().toLowerCase(),
-      password: await hashPassword(password),
-      email: email ? email.trim().toLowerCase() : '',
-      role, name: name || username, active: true,
-      createdAt: Date.now(), updatedAt: Date.now(),
-      permissions: perms,
-      plantaRol: plantaRol || null
-    };
-    users.push(user);
-    await saveUsers(users);
-    return user;
+    if (canEditLayoutOverride   !== undefined) permissions.canEditLayout    = canEditLayoutOverride;
+    if (canEditProductsOverride !== undefined) permissions.canEditProducts = canEditProductsOverride;
+    if (planta_marks            !== undefined) permissions.planta_marks     = planta_marks || null;
+
+    const token = await _getAccessToken();
+    const resp = await fetch(MANAGE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPA_KEY
+      },
+      body: JSON.stringify({
+        action: 'create',
+        username: username.trim().toLowerCase(),
+        password,
+        name: name || username,
+        email: email ? email.trim().toLowerCase() : '',
+        role,
+        permissions,
+        planta_rol: plantaRol || null
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al crear usuario');
+    }
+    return _profileToUser(await resp.json());
   }
 
+  // ─── updateUser ───────────────────────────────────────────────────────────
   async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride, plantaRol, planta_marks }) {
-    const users = await getUsers();
-    const idx = users.findIndex(u => u.id === id);
-    if (idx === -1) throw new Error('Usuario no encontrado');
-    const u = users[idx];
-    if (username  !== undefined) u.username = username.trim().toLowerCase();
-    if (name      !== undefined) u.name = name;
-    if (email     !== undefined) u.email = email ? email.trim().toLowerCase() : '';
-    if (role      !== undefined) {
-      u.role = role;
+    const sb = await _client();
+
+    const { data: current, error: fetchErr } = await sb
+      .from('user_profiles').select('*').eq('id', id).single();
+    if (fetchErr || !current) throw new Error('Usuario no encontrado');
+
+    const perms = { ...current.permissions };
+    let newRole = current.role;
+
+    if (role !== undefined) {
+      newRole = role;
       if (customPages === undefined && readonly === undefined) {
         const rDef = DEFAULT_ROLES[role] || DEFAULT_ROLES.viewer;
-        u.permissions.pages    = rDef.pages();
-        u.permissions.readonly = rDef.readonly;
-        // Resetear canEditLayout al default del rol
-        delete u.permissions.canEditLayout;
+        perms.pages    = rDef.pages();
+        perms.readonly = rDef.readonly;
+        delete perms.canEditLayout;
       }
     }
-    if (customPages              !== undefined) u.permissions.pages          = customPages;
-    if (readonly                 !== undefined) u.permissions.readonly        = readonly;
-    if (canEditLayoutOverride    !== undefined) u.permissions.canEditLayout    = canEditLayoutOverride;
-    if (canEditProductsOverride !== undefined) u.permissions.canEditProducts = canEditProductsOverride;
-    if (planta_marks            !== undefined) u.permissions.planta_marks     = planta_marks || null;
-    if (active                   !== undefined) u.active = active;
-    if (password)                { u.password = await hashPassword(password); }
-    if (plantaRol !== undefined) u.plantaRol = plantaRol || null;
-    u.updatedAt = Date.now();
-    await saveUsers(users);
-    return u;
-  }
+    if (customPages              !== undefined) perms.pages          = customPages;
+    if (readonly                 !== undefined) perms.readonly        = readonly;
+    if (canEditLayoutOverride    !== undefined) perms.canEditLayout    = canEditLayoutOverride;
+    if (canEditProductsOverride  !== undefined) perms.canEditProducts = canEditProductsOverride;
+    if (planta_marks             !== undefined) perms.planta_marks     = planta_marks || null;
 
-  async function deleteUser(id) {
-    const users = await getUsers();
-    await saveUsers(users.filter(u => u.id !== id));
-  }
+    const updates = { role: newRole, permissions: perms, updated_at: new Date().toISOString() };
+    if (username  !== undefined) updates.username  = username.trim().toLowerCase();
+    if (name      !== undefined) updates.name       = name;
+    if (email     !== undefined) updates.email      = email ? email.trim().toLowerCase() : '';
+    if (active    !== undefined) updates.active     = active;
+    if (plantaRol !== undefined) updates.planta_rol = plantaRol || null;
 
-  // ─── Token GitHub ──────────────────────────────────────────────────────────
-  function setGithubToken(token) {
-    if (token) localStorage.setItem(TOKEN_KEY, token.trim());
-    else localStorage.removeItem(TOKEN_KEY);
-  }
-  function getGithubToken()  { return localStorage.getItem(TOKEN_KEY) || ''; }
-  function hasGithubToken()  { return !!getGithubToken(); }
+    const { error: updateErr } = await sb.from('user_profiles').update(updates).eq('id', id);
+    if (updateErr) throw updateErr;
 
-  async function testGithubToken(token) {
-    const resp = await fetch(API_URL, {
-      headers: { Authorization: 'Bearer ' + token.trim(), Accept: 'application/vnd.github+json' }
-    });
-    if (resp.status === 401) throw new Error('Token inválido');
-    if (resp.status === 403) throw new Error('Sin permisos de escritura');
-    if (resp.status === 404) throw new Error('Repositorio no encontrado');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    // Verificar que tiene permisos de escritura
-    if (!data.permissions || !data.permissions.push) {
-      // Puede ser que permissions no esté en la respuesta de contents, intentar write
+    if (password) {
+      const token = await _getAccessToken();
+      const resp = await fetch(MANAGE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'apikey': SUPA_KEY },
+        body: JSON.stringify({ action: 'update_password', userId: id, password })
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || 'Error al actualizar contraseña');
+      }
     }
-    return true;
+
+    const { data: updated } = await sb.from('user_profiles').select('*').eq('id', id).single();
+    return _profileToUser(updated);
   }
 
-  // ─── Registro de eventos de login (Supabase) ─────────────────────────────
+  // ─── deleteUser (via Edge Function) ──────────────────────────────────────
+  async function deleteUser(id) {
+    const token = await _getAccessToken();
+    const resp = await fetch(MANAGE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'apikey': SUPA_KEY },
+      body: JSON.stringify({ action: 'delete', userId: id })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || 'Error al eliminar usuario');
+    }
+  }
+
+  // ─── GitHub stubs (API compat — ya no se usa GitHub para usuarios) ────────
+  function setGithubToken() {}
+  function getGithubToken()  { return ''; }
+  function hasGithubToken()  { return true; }
+  async function testGithubToken() { return true; }
+
+  // ─── Registro de eventos de login (Supabase) ──────────────────────────────
   function recordLoginEvent(user) {
-    // keepalive: true → el fetch sobrevive la navegación de página
     fetch(`${SUPA_URL}/rest/v1/login_events`, {
       method: 'POST',
       keepalive: true,
@@ -368,15 +303,11 @@ const AUTH = (() => {
         'Authorization': 'Bearer ' + SUPA_KEY,
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({
-        user_id:  user.id,
-        username: user.username,
-        name:     user.name
-      })
-    }).catch(() => {}); // silencioso — no bloquea el login
+      body: JSON.stringify({ user_id: user.id, username: user.username, name: user.name })
+    }).catch(() => {});
   }
 
-  // ─── Rate limiting de login ───────────────────────────────────────────────
+  // ─── Rate limiting de login (client-side) ────────────────────────────────
   function _checkLoginRateLimit(username) {
     try {
       const raw = JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{}');
@@ -386,10 +317,8 @@ const AUTH = (() => {
         const secs = Math.ceil((entry.lockedUntil - now) / 1000);
         throw new Error(`Demasiados intentos. Esperá ${secs} segundos.`);
       }
-      return raw;
     } catch (e) {
       if (e.message.startsWith('Demasiados')) throw e;
-      return {};
     }
   }
 
@@ -412,45 +341,65 @@ const AUTH = (() => {
     } catch (_) {}
   }
 
-  // ─── Sesión ───────────────────────────────────────────────────────────────
+  // ─── Login ────────────────────────────────────────────────────────────────
   async function login(username, password) {
     const user_lc = username.trim().toLowerCase();
-    // Verificar rate limit antes de tocar la red
-    const attempts = _checkLoginRateLimit(user_lc);
-    // Forzar fetch fresco en login (ignorar cache de mem)
-    const users = await getUsers({ force: true });
-    const user  = users.find(u => u.username === user_lc);
-    if (!user || !user.active) {
+    _checkLoginRateLimit(user_lc);
+
+    const sb = await _client();
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: `${user_lc}@lachacra.internal`,
+      password
+    });
+
+    if (error || !data.user) {
       _recordLoginAttempt(user_lc, false);
       throw new Error('Usuario o contraseña incorrectos');
     }
-    const hash = await hashPassword(password);
-    if (hash !== user.password) {
+
+    const { data: profile, error: pErr } = await sb
+      .from('user_profiles').select('*').eq('id', data.user.id).single();
+
+    if (pErr || !profile || !profile.active) {
+      await sb.auth.signOut();
       _recordLoginAttempt(user_lc, false);
       throw new Error('Usuario o contraseña incorrectos');
     }
+
     _recordLoginAttempt(user_lc, true);
+
     const session = {
-      id: user.id, username: user.username, name: user.name,
-      role: user.role, permissions: user.permissions, loginAt: Date.now(),
-      plantaRol: user.plantaRol || null
+      id:          profile.id,
+      username:    profile.username,
+      name:        profile.name,
+      role:        profile.role,
+      permissions: migratePermissions(profile.permissions || {}),
+      loginAt:     Date.now(),
+      plantaRol:   profile.planta_rol || null
     };
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    // Actualizar lastLogin en GitHub (silencioso, no bloquea el login)
-    user.lastLogin = session.loginAt;
-    saveUsers(users).catch(() => {});
-    // Registrar evento en Supabase (funciona desde cualquier dispositivo)
-    recordLoginEvent(user);
+
+    // Fire and forget
+    sb.from('user_profiles')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', profile.id)
+      .then(() => {});
+
+    recordLoginEvent(session);
     return session;
   }
 
-  function logout() { sessionStorage.removeItem(SESSION_KEY); }
+  // ─── Logout ───────────────────────────────────────────────────────────────
+  function logout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    if (_sb) _sb.auth.signOut().catch(() => {});
+  }
 
+  // ─── getSession (síncrono — lee de sessionStorage) ────────────────────────
   function getSession() {
     try {
       const s = JSON.parse(sessionStorage.getItem(SESSION_KEY));
       if (!s) return null;
-      // Expirar sesión tras SESSION_TTL (8 horas)
       if (s.loginAt && (Date.now() - s.loginAt) > SESSION_TTL) {
         sessionStorage.removeItem(SESSION_KEY);
         return null;
@@ -481,7 +430,7 @@ const AUTH = (() => {
   function canAccessPage(pageId) {
     const s = getSession();
     if (!s) return false;
-    if (s.role === 'admin') return true; // admin siempre tiene acceso a todas las páginas
+    if (s.role === 'admin') return true;
     const pg = s.permissions.pages && s.permissions.pages[pageId];
     return pg ? !!pg.access : false;
   }
@@ -508,7 +457,6 @@ const AUTH = (() => {
     const s = getSession();
     if (!s) return false;
     const roleDef = DEFAULT_ROLES[s.role];
-    // Verificar permiso explícito en permisos del usuario o por rol
     if (s.permissions && s.permissions.canEditLayout !== undefined) return !!s.permissions.canEditLayout;
     return roleDef ? !!roleDef.canEditLayout : false;
   }
@@ -525,20 +473,14 @@ const AUTH = (() => {
     return !!(s.plantaRol);
   }
 
-  // ─── Permisos granulares de marcado en Control Planta ────────────────────
-  // markType: 'produccion' | 'calidad' | 'cliente' | 'entregado'
   function canMarkInPlanta(tabId, markType) {
     const s = getSession();
     if (!s) return false;
     if (s.role === 'admin') return true;
     const prol = s.plantaRol;
     if (prol === 'gerente') return true;
-    // Permisos granulares nuevos (tienen prioridad sobre plantaRol)
     const marks = s.permissions && s.permissions.planta_marks;
-    if (marks) {
-      return !!(marks[tabId] && marks[tabId].includes(markType));
-    }
-    // Fallback al sistema anterior basado en plantaRol
+    if (marks) return !!(marks[tabId] && marks[tabId].includes(markType));
     if (markType === 'produccion') {
       return (prol === 'supervisor_obra_gruesa' && ['sanitario', 'electrico'].includes(tabId)) ||
              (prol === 'supervisor_terminaciones' && tabId === 'terminaciones');
@@ -553,7 +495,6 @@ const AUTH = (() => {
     const s = getSession();
     if (!s) return false;
     if (s.role === 'admin') return true;
-    // Permiso explícito por usuario (canEditProducts: true/false en permissions)
     if (s.permissions && s.permissions.canEditProducts !== undefined) return !!s.permissions.canEditProducts;
     return false;
   }
@@ -567,37 +508,37 @@ const AUTH = (() => {
   function getAllTabs()             { return Object.keys(PAGE_MAP.layout.tabs); }
 
   // ─── Estadísticas de login (Supabase) ────────────────────────────────────
-  // Devuelve { [user_id]: { count, lastLogin } } para todos los usuarios
   async function getLoginStats() {
     try {
-      const resp = await fetch(
-        `${SUPA_URL}/rest/v1/login_events?select=user_id,logged_at&order=logged_at.desc`,
-        { headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY } }
-      );
-      if (!resp.ok) return {};
-      const rows = await resp.json();
+      const sb = await _client();
+      const { data } = await sb
+        .from('login_events')
+        .select('user_id,logged_at')
+        .order('logged_at', { ascending: false });
+      if (!data) return {};
       const stats = {};
-      rows.forEach(r => {
-        if (!stats[r.user_id]) {
-          stats[r.user_id] = { count: 0, lastLogin: r.logged_at };
-        }
+      data.forEach(r => {
+        if (!stats[r.user_id]) stats[r.user_id] = { count: 0, lastLogin: r.logged_at };
         stats[r.user_id].count++;
       });
       return stats;
-    } catch (_) { return {}; }
+    } catch { return {}; }
   }
 
   // ─── Exportar / Importar ──────────────────────────────────────────────────
-  async function exportUsers() { return JSON.stringify(await getUsers()); }
+  async function exportUsers() {
+    return JSON.stringify(await getUsers(), null, 2);
+  }
 
-  async function importUsers(jsonString) {
-    const arr = JSON.parse(jsonString);
-    if (!Array.isArray(arr) || arr.length === 0) throw new Error('Formato inválido');
-    arr.forEach(u => {
-      if (!u.id || !u.username || !u.password) throw new Error('Estructura incorrecta');
-    });
-    await saveUsers(arr);
-    return arr.length;
+  async function importUsers() {
+    throw new Error('Importación directa no disponible. Usá el panel Admin para crear usuarios.');
+  }
+
+  // hashPassword mantenido por compat de API (no se usa para almacenamiento)
+  async function hashPassword(password) {
+    const enc = new TextEncoder();
+    const buf = await crypto.subtle.digest('SHA-256', enc.encode(password));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
   return {
