@@ -542,7 +542,7 @@
     "name": "Javiera Olivos",
     "active": true,
     "createdAt": 1781646216342,
-    "updatedAt": 1781646216342,
+    "updatedAt": 1782000010336,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -590,10 +590,10 @@
           "access": true,
           "tabs": [
             "obra_gruesa",
-            "terminaciones",
-            "recepcion",
             "sanitario",
-            "electrico"
+            "electrico",
+            "terminaciones",
+            "recepcion"
           ]
         },
         "geovictoria": {
@@ -603,7 +603,21 @@
       },
       "readonly": false,
       "canEditLayout": false,
-      "canEditProducts": false
+      "canEditProducts": false,
+      "planta_marks": {
+        "obra_gruesa": [
+          "cliente"
+        ],
+        "sanitario": [
+          "cliente"
+        ],
+        "electrico": [
+          "cliente"
+        ],
+        "terminaciones": [
+          "cliente"
+        ]
+      }
     },
     "plantaRol": "supervisor_recepcion"
   },
