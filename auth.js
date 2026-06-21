@@ -20,10 +20,14 @@ const AUTH = (() => {
   const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
 
   // ─── Claves localStorage ──────────────────────────────────────────────────
-  const SESSION_KEY = 'lachacra_session';
-  const CACHE_KEY   = 'lachacra_users_cache';
-  const TOKEN_KEY   = 'lachacra_gh_token';
-  const CACHE_TTL   = 2 * 60 * 1000; // 2 minutos
+  const SESSION_KEY    = 'lachacra_session';
+  const CACHE_KEY      = 'lachacra_users_cache';
+  const TOKEN_KEY      = 'lachacra_gh_token';
+  const CACHE_TTL      = 2 * 60 * 1000; // 2 minutos
+  const SESSION_TTL    = 8 * 60 * 60 * 1000; // 8 horas
+  const LOGIN_ATTEMPTS_KEY = 'lachacra_login_attempts';
+  const MAX_ATTEMPTS   = 5;
+  const LOCKOUT_MS     = 5 * 60 * 1000; // 5 minutos
 
   // In-memory cache (válida durante la sesión del tab)
   let _mem = null;
@@ -281,7 +285,6 @@ const AUTH = (() => {
       id: crypto.randomUUID(),
       username: username.trim().toLowerCase(),
       password: await hashPassword(password),
-      plainPassword: password,
       email: email ? email.trim().toLowerCase() : '',
       role, name: name || username, active: true,
       createdAt: Date.now(), updatedAt: Date.now(),
@@ -317,7 +320,7 @@ const AUTH = (() => {
     if (canEditProductsOverride !== undefined) u.permissions.canEditProducts = canEditProductsOverride;
     if (planta_marks            !== undefined) u.permissions.planta_marks     = planta_marks || null;
     if (active                   !== undefined) u.active = active;
-    if (password)                { u.password = await hashPassword(password); u.plainPassword = password; }
+    if (password)                { u.password = await hashPassword(password); }
     if (plantaRol !== undefined) u.plantaRol = plantaRol || null;
     u.updatedAt = Date.now();
     await saveUsers(users);
@@ -366,22 +369,67 @@ const AUTH = (() => {
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
-        user_id:    user.id,
-        username:   user.username,
-        name:       user.name,
-        user_agent: navigator.userAgent
+        user_id:  user.id,
+        username: user.username,
+        name:     user.name
       })
     }).catch(() => {}); // silencioso — no bloquea el login
   }
 
+  // ─── Rate limiting de login ───────────────────────────────────────────────
+  function _checkLoginRateLimit(username) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{}');
+      const entry = raw[username] || { count: 0, firstAt: 0, lockedUntil: 0 };
+      const now = Date.now();
+      if (entry.lockedUntil && now < entry.lockedUntil) {
+        const secs = Math.ceil((entry.lockedUntil - now) / 1000);
+        throw new Error(`Demasiados intentos. Esperá ${secs} segundos.`);
+      }
+      return raw;
+    } catch (e) {
+      if (e.message.startsWith('Demasiados')) throw e;
+      return {};
+    }
+  }
+
+  function _recordLoginAttempt(username, success) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LOGIN_ATTEMPTS_KEY) || '{}');
+      if (success) {
+        delete raw[username];
+      } else {
+        const now = Date.now();
+        const entry = raw[username] || { count: 0, firstAt: now, lockedUntil: 0 };
+        entry.count++;
+        if (entry.count >= MAX_ATTEMPTS) {
+          entry.lockedUntil = now + LOCKOUT_MS;
+          entry.count = 0;
+        }
+        raw[username] = entry;
+      }
+      localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify(raw));
+    } catch (_) {}
+  }
+
   // ─── Sesión ───────────────────────────────────────────────────────────────
   async function login(username, password) {
+    const user_lc = username.trim().toLowerCase();
+    // Verificar rate limit antes de tocar la red
+    const attempts = _checkLoginRateLimit(user_lc);
     // Forzar fetch fresco en login (ignorar cache de mem)
     const users = await getUsers({ force: true });
-    const user  = users.find(u => u.username === username.trim().toLowerCase());
-    if (!user || !user.active) throw new Error('Usuario o contraseña incorrectos');
+    const user  = users.find(u => u.username === user_lc);
+    if (!user || !user.active) {
+      _recordLoginAttempt(user_lc, false);
+      throw new Error('Usuario o contraseña incorrectos');
+    }
     const hash = await hashPassword(password);
-    if (hash !== user.password) throw new Error('Usuario o contraseña incorrectos');
+    if (hash !== user.password) {
+      _recordLoginAttempt(user_lc, false);
+      throw new Error('Usuario o contraseña incorrectos');
+    }
+    _recordLoginAttempt(user_lc, true);
     const session = {
       id: user.id, username: user.username, name: user.name,
       role: user.role, permissions: user.permissions, loginAt: Date.now(),
@@ -402,6 +450,11 @@ const AUTH = (() => {
     try {
       const s = JSON.parse(sessionStorage.getItem(SESSION_KEY));
       if (!s) return null;
+      // Expirar sesión tras SESSION_TTL (8 horas)
+      if (s.loginAt && (Date.now() - s.loginAt) > SESSION_TTL) {
+        sessionStorage.removeItem(SESSION_KEY);
+        return null;
+      }
       s.permissions = migratePermissions(s.permissions);
       return s;
     } catch { return null; }
