@@ -165,7 +165,7 @@
     "name": "Esteban Seguel",
     "active": true,
     "createdAt": 1781217531184,
-    "updatedAt": 1781638759562,
+    "updatedAt": 1782000036950,
     "permissions": {
       "pages": {
         "dashboard": {
@@ -213,10 +213,10 @@
           "access": true,
           "tabs": [
             "obra_gruesa",
-            "terminaciones",
-            "recepcion",
             "sanitario",
-            "electrico"
+            "electrico",
+            "terminaciones",
+            "recepcion"
           ]
         },
         "geovictoria": {
@@ -226,7 +226,24 @@
       },
       "readonly": false,
       "canEditLayout": false,
-      "canEditProducts": false
+      "canEditProducts": false,
+      "planta_marks": {
+        "obra_gruesa": [
+          "cliente"
+        ],
+        "sanitario": [
+          "cliente"
+        ],
+        "electrico": [
+          "cliente"
+        ],
+        "terminaciones": [
+          "cliente"
+        ],
+        "recepcion": [
+          "entregado"
+        ]
+      }
     },
     "email": "eseguel@tecnopanel.cl",
     "plantaRol": "qc2"
