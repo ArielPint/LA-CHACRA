@@ -435,6 +435,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div class="notif-tabs">
       <button class="notif-tab active" id="ntab-wa" onclick="switchNotifTab('wa')">💬 WhatsApp</button>
       <button class="notif-tab" id="ntab-slack" onclick="switchNotifTab('slack')">🟢 Slack</button>
+      <button class="notif-tab" id="ntab-tg" onclick="switchNotifTab('tg')">✈️ Telegram</button>
     </div>
     <!-- Panel WhatsApp -->
     <div id="npanel-wa">
@@ -477,6 +478,28 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <div class="m-actions">
         <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
         <button class="btn btn-pri" onclick="saveSlackChannel()">➕ Agregar</button>
+      </div>
+    </div>
+    <!-- Panel Telegram -->
+    <div id="npanel-tg" class="hidden">
+      <div id="tg-chats-list"><div class="loading"><div class="spinner"></div></div></div>
+      <hr style="border-color:var(--border);margin:14px 0">
+      <div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Agregar chat</div>
+      <div class="form-row"><label class="form-label">Nombre</label><input class="form-input" id="tg-name" placeholder="Ej: #produccion"></div>
+      <div class="form-row"><label class="form-label">Bot Token (<a href="https://t.me/BotFather" target="_blank" style="color:var(--accent);font-size:.72rem">obtener con @BotFather ↗</a>)</label><input class="form-input" id="tg-token" placeholder="123456789:AAF..."></div>
+      <div class="form-row"><label class="form-label">Chat ID (<a href="https://t.me/userinfobot" target="_blank" style="color:var(--accent);font-size:.72rem">obtener con @userinfobot ↗</a>)</label><input class="form-input" id="tg-chatid" placeholder="-1001234567890"></div>
+      <div class="form-row">
+        <label class="form-label">Notificar cuando:</label>
+        <div class="ev-checks">
+          <label class="ev-check"><input type="checkbox" id="tg-ev-c1" value="check1_done"> ✅ Producción lista</label>
+          <label class="ev-check"><input type="checkbox" id="tg-ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
+          <label class="ev-check"><input type="checkbox" id="tg-ev-c3ok" value="check3_approved"> 👤 Cliente aprueba</label>
+          <label class="ev-check"><input type="checkbox" id="tg-ev-c3rej" value="check3_rejected"> ❌ Cliente rechaza</label>
+        </div>
+      </div>
+      <div class="m-actions">
+        <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
+        <button class="btn btn-pri" onclick="saveTelegramChat()">➕ Agregar</button>
       </div>
     </div>
   </div>
@@ -1517,17 +1540,26 @@ async function sendNotifs(evento, message, imageUrls=[]){
       body:JSON.stringify({evento,message,imageUrls})
     });
   } catch(e){ console.warn('Slack notif error',e); }
+  // Telegram via Edge Function
+  try{
+    fetch(`${SURL}/functions/v1/telegram-notify`,{
+      method:'POST',
+      headers:{...SH,'Content-Type':'application/json'},
+      body:JSON.stringify({evento,message,imageUrls})
+    });
+  } catch(e){ console.warn('Telegram notif error',e); }
 }
 
 // ── Notification modal ────────────────────────────────────────────────────────
 const EV_LABEL={'check1_done':'Producción','check2_done':'Calidad','check3_approved':'Cliente aprueba','check3_rejected':'Cliente rechaza'};
 
 function switchNotifTab(tab){
-  ['wa','slack'].forEach(t=>{
+  ['wa','slack','tg'].forEach(t=>{
     document.getElementById('ntab-'+t).classList.toggle('active',t===tab);
     document.getElementById('npanel-'+t).classList.toggle('hidden',t!==tab);
   });
   if(tab==='slack') refreshSlackList();
+  if(tab==='tg') refreshTelegramList();
 }
 
 async function openNotifModal(){
@@ -1652,6 +1684,64 @@ async function toggleSlackActive(id, active){
     body:JSON.stringify({active})
   });
   await refreshSlackList();
+}
+
+// ── Telegram chats ─────────────────────────────────────────────────────────────
+async function refreshTelegramList(){
+  const el=document.getElementById('tg-chats-list');
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const r=await fetch(`${SURL}/rest/v1/planta_telegram_chats?order=created_at.asc`,{headers:SH});
+    const chats=await r.json();
+    el.innerHTML=chats.length?chats.map(c=>`
+      <div class="notif-contact">
+        <div class="nc-top">
+          <div>
+            <div class="nc-name">✈️ ${c.nombre}</div>
+            <div style="font-size:.72rem;color:var(--muted);font-family:monospace">chat: ${c.chat_id}${!c.active?' · ⚫ inactivo':''}</div>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <button class="sm-btn" onclick="toggleTelegramActive('${c.id}',${!c.active})">${c.active?'Desactivar':'Activar'}</button>
+            <button class="del-btn" onclick="deleteTelegramChat('${c.id}')">✕</button>
+          </div>
+        </div>
+        <div class="nc-tags">${(c.eventos||[]).map(ev=>`<span class="nc-tag">${EV_LABEL[ev]||ev}</span>`).join('')}</div>
+      </div>`).join(''):'<div style="color:var(--muted);font-size:.82rem;padding:8px 0">Sin chats configurados.</div>';
+  } catch(e){ el.innerHTML='<div style="color:var(--red)">Error cargando chats.</div>'; }
+}
+
+async function saveTelegramChat(){
+  const nombre=document.getElementById('tg-name').value.trim();
+  const bot_token=document.getElementById('tg-token').value.trim();
+  const chat_id=document.getElementById('tg-chatid').value.trim();
+  if(!nombre||!bot_token||!chat_id){ toast('Completa nombre, token y chat ID','err'); return; }
+  const evs=['tg-ev-c1','tg-ev-c2','tg-ev-c3ok','tg-ev-c3rej']
+    .filter(id=>document.getElementById(id).checked)
+    .map(id=>document.getElementById(id).value);
+  try{
+    await fetch(`${SURL}/rest/v1/planta_telegram_chats`,{
+      method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({nombre,bot_token,chat_id,eventos:evs,active:true})
+    });
+    ['tg-name','tg-token','tg-chatid'].forEach(id=>document.getElementById(id).value='');
+    ['tg-ev-c1','tg-ev-c2','tg-ev-c3ok','tg-ev-c3rej'].forEach(id=>document.getElementById(id).checked=false);
+    toast('Chat Telegram agregado','ok');
+    await refreshTelegramList();
+  } catch(e){ toast('Error al guardar chat','err'); }
+}
+
+async function deleteTelegramChat(id){
+  if(!confirm('¿Eliminar este chat?')) return;
+  await fetch(`${SURL}/rest/v1/planta_telegram_chats?id=eq.${id}`,{method:'DELETE',headers:SH});
+  await refreshTelegramList();
+}
+
+async function toggleTelegramActive(id, active){
+  await fetch(`${SURL}/rest/v1/planta_telegram_chats?id=eq.${id}`,{
+    method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+    body:JSON.stringify({active})
+  });
+  await refreshTelegramList();
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────────
