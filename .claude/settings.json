@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__18f05b3f-42c9-497c-b858-4a0595f21e72__apply_migration",
+      "mcp__18f05b3f-42c9-497c-b858-4a0595f21e72__list_migrations",
+      "mcp__18f05b3f-42c9-497c-b858-4a0595f21e72__execute_sql",
+      "mcp__18f05b3f-42c9-497c-b858-4a0595f21e72__deploy_edge_function",
+      "mcp__18f05b3f-42c9-497c-b858-4a0595f21e72__get_project",
+      "mcp__18f05b3f-42c9-497c-b858-4a0595f21e72__list_tables",
+      "mcp__18f05b3f-42c9-497c-b858-4a0595f21e72__list_migrations"
+    ]
+  }
+}
