@@ -1,18 +1,4 @@
--- Función helper sin recursión: verifica si el usuario actual es admin
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-STABLE
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_profiles
-    WHERE id = auth.uid() AND role = 'admin' AND active = true
-  );
-$$;
-
--- Tabla de perfiles y permisos
+-- Tabla de perfiles y permisos (debe ir antes que is_admin para que la función pueda referenciarla)
 CREATE TABLE IF NOT EXISTS public.user_profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   username    TEXT UNIQUE NOT NULL,
@@ -28,6 +14,20 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
 );
 
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- Función helper sin recursión: verifica si el usuario actual es admin
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_profiles
+    WHERE id = auth.uid() AND role = 'admin' AND active = true
+  );
+$$;
 
 -- Usuarios autenticados pueden leer todos los perfiles
 CREATE POLICY "profiles_read" ON public.user_profiles
