@@ -283,7 +283,24 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="card"><h3>Top 20 — menor alcance individual (módulos)</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-alcance"></canvas></div></div>
   </div>
 
+  <!-- Pérdidas en proceso -->
+  <div class="sec-title" id="stock-perdidas-title" style="display:none">Materiales con pérdidas en proceso</div>
+  <div class="card" id="card-perdidas" style="display:none;margin-bottom:16px">
+    <div class="tbl-wrap"><table id="tbl-perdidas"><thead></thead><tbody></tbody></table></div>
+  </div>
+
   <div class="sec-title">Detalle stock</div>
+  <div class="filter-bar">
+    <label>Buscar:</label><input id="stock-search" type="text" placeholder="material, código...">
+    <label>Estado:</label>
+    <select id="stock-estado">
+      <option value="">Todos</option>
+      <option value="critico">Crítico (&lt;5 mód)</option>
+      <option value="bajo">Bajo (5–14 mód)</option>
+      <option value="ok">OK (≥15 mód)</option>
+    </select>
+    <label>Tipo:</label><select id="stock-tipo"><option value="">Todos los tipos</option></select>
+  </div>
   <div class="card"><div class="tbl-wrap"><table id="tbl-stock"><thead></thead><tbody></tbody></table></div></div>
 </div>
 
@@ -1707,12 +1724,27 @@ function renderProductos(){
 // ═══════════════════════════════════════════════
 // STOCK
 // ═══════════════════════════════════════════════
+// ── Stock helpers ──────────────────────────────
+let _stockData=[];
+function _stockEstado(alc){ return alc<5?'critico':alc<15?'bajo':'ok'; }
+function _stockTipoLabel(x){
+  // Prefer a non-empty, non-numeric desc; fall back to material name
+  const d=(x.desc||'').trim();
+  return d&&!/^\d+$/.test(d)?d:(x.material||'Sin tipo').trim();
+}
+function _stockModConstruidos(s){
+  // Use the maximum value found across all rows (most reliable)
+  const vals=s.map(x=>x.modConstruidos).filter(v=>v!=null&&v>0);
+  return vals.length?Math.max(...vals):null;
+}
+
 function renderStock(){
-  const s=DATA.stock||[];
+  _stockData=DATA.stock||[];
+  const s=_stockData;
   const totalValor=s.reduce((a,x)=>a+(x.valorStock||0),0);
   const totalPerdi=s.reduce((a,x)=>a+(x.valorPerdida||0),0);
   const criticos=s.filter(x=>(x.alcanceMod||0)<5).length;
-  const modConstruidos=s.find(x=>x.modConstruidos)?.modConstruidos??null;
+  const modConstruidos=_stockModConstruidos(s);
 
   document.getElementById('kpi-stock').innerHTML=kpiHTML([
     {lbl:'Materiales en stock',   val:fmt(s.length),       cls:'c-blue'},
@@ -1722,17 +1754,15 @@ function renderStock(){
     {lbl:'Val. pérdidas/proceso', val:fmtM(totalPerdi),    cls:totalPerdi>0?'c-yellow':''},
   ]);
 
-  // ── Agrupar por tipo (desc) ──
+  // ── Agrupar por tipo (campo desc normalizado) ──
   const tipoMap={};
   s.forEach(x=>{
-    const t=x.desc||'Sin desc';
+    const t=_stockTipoLabel(x);
     if(!tipoMap[t]) tipoMap[t]={alcs:[],val:0,critico:0,bajo:0,ok:0};
     if(x.alcanceMod!=null) tipoMap[t].alcs.push(x.alcanceMod);
     tipoMap[t].val+=(x.valorStock||0);
-    const alc=x.alcanceMod||0;
-    if(alc<5) tipoMap[t].critico++;
-    else if(alc<15) tipoMap[t].bajo++;
-    else tipoMap[t].ok++;
+    const estado=_stockEstado(x.alcanceMod||0);
+    tipoMap[t][estado]++;
   });
   const tipos=Object.keys(tipoMap).sort();
   const cobAvg=tipos.map(t=>{const a=tipoMap[t].alcs;return a.length?+(a.reduce((s,v)=>s+v,0)/a.length).toFixed(2):0;});
@@ -1741,13 +1771,35 @@ function renderStock(){
   const bajoArr=tipos.map(t=>tipoMap[t].bajo);
   const okArr  =tipos.map(t=>tipoMap[t].ok);
 
-  // Chart 1: cobertura promedio por tipo
-  barChart('ch-cob-tipo', tipos, [{
-    label:'Cobertura prom. (mód.)',
-    data: cobAvg,
-    backgroundColor: cobAvg.map(v=>v<5?'rgba(248,81,73,.82)':v<15?'rgba(210,153,34,.78)':'rgba(63,185,80,.78)'),
-    borderRadius:5
-  }], {horizontal:true});
+  // Chart 1: cobertura promedio por tipo — tooltip con nombre completo
+  killChart('ch-cob-tipo');
+  (()=>{
+    const ctx=document.getElementById('ch-cob-tipo')?.getContext('2d'); if(!ctx) return;
+    CHARTS['ch-cob-tipo']=new Chart(ctx,{
+      type:'bar',
+      data:{labels:tipos,datasets:[{
+        label:'Cobertura prom. (mód.)',data:cobAvg,
+        backgroundColor:cobAvg.map(v=>v<5?'rgba(248,81,73,.82)':v<15?'rgba(210,153,34,.78)':'rgba(63,185,80,.78)'),
+        borderRadius:5
+      }]},
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        layout:{padding:{right:60}},
+        plugins:{
+          legend:{display:false},
+          datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
+          tooltip:{callbacks:{
+            title:items=>[tipos[items[0].dataIndex]],
+            label:c=>` Cobertura: ${c.parsed.x.toFixed(2)} módulos`
+          }}
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',font:{size:10}},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  })();
 
   // Chart 2: donut valor por tipo
   doughnutChart('ch-val-tipo', tipos, valTipo,
@@ -1762,22 +1814,106 @@ function renderStock(){
     {label:'OK (≥15 mód)',      data:okArr,   backgroundColor:'rgba(63,185,80,.75)',  borderRadius:3}
   ], {legend:true});
 
-  // Chart 4: top 20 menor alcance individual
+  // Chart 4: top 20 menor alcance — tooltip con nombre completo y código
   const sorted=[...s].sort((a,b)=>(a.alcanceMod||0)-(b.alcanceMod||0)).slice(0,20);
-  barChart('ch-alcance',sorted.map(x=>(x.desc||x.material||'').substring(0,22)),[{
-    label:'Alcance (mód.)',data:sorted.map(x=>+(x.alcanceMod||0).toFixed(2)),
-    backgroundColor:sorted.map(x=>(x.alcanceMod||0)<5?'rgba(248,81,73,.8)':(x.alcanceMod||0)<15?'rgba(210,153,34,.75)':'rgba(63,185,80,.75)'),
-    borderRadius:5
-  }],{horizontal:true});
+  killChart('ch-alcance');
+  (()=>{
+    const ctx=document.getElementById('ch-alcance')?.getContext('2d'); if(!ctx) return;
+    const fullNames=sorted.map(x=>x.desc||x.material||'—');
+    const codes=sorted.map(x=>x.codigo||x.material||'');
+    CHARTS['ch-alcance']=new Chart(ctx,{
+      type:'bar',
+      data:{labels:sorted.map(x=>(x.desc||x.material||'').substring(0,22)),datasets:[{
+        label:'Alcance (mód.)',
+        data:sorted.map(x=>+(x.alcanceMod||0).toFixed(2)),
+        backgroundColor:sorted.map(x=>(x.alcanceMod||0)<5?'rgba(248,81,73,.8)':(x.alcanceMod||0)<15?'rgba(210,153,34,.75)':'rgba(63,185,80,.75)'),
+        borderRadius:5
+      }]},
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        layout:{padding:{right:60}},
+        plugins:{
+          legend:{display:false},
+          datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
+          tooltip:{callbacks:{
+            title:items=>[fullNames[items[0].dataIndex]+(codes[items[0].dataIndex]?' ['+codes[items[0].dataIndex]+']':'')],
+            label:c=>` Alcance: ${c.parsed.x.toFixed(2)} módulos`
+          }}
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',font:{size:10}},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  })();
+
+  // ── Poblar selector de tipos ──
+  const tipoSel=document.getElementById('stock-tipo');
+  if(tipoSel){
+    const cur=tipoSel.value;
+    tipoSel.innerHTML='<option value="">Todos los tipos</option>'+tipos.map(t=>`<option value="${t}">${t}</option>`).join('');
+    if(cur&&tipos.includes(cur)) tipoSel.value=cur;
+  }
+
+  // ── Tabla de pérdidas ──
+  const conPerdida=s.filter(x=>(x.valorPerdida||0)>0).sort((a,b)=>(b.valorPerdida||0)-(a.valorPerdida||0));
+  const titleP=document.getElementById('stock-perdidas-title');
+  const cardP=document.getElementById('card-perdidas');
+  if(conPerdida.length){
+    if(titleP) titleP.style.display='';
+    if(cardP)  cardP.style.display='';
+    document.querySelector('#tbl-perdidas thead').innerHTML=
+      `<tr><th>Código</th><th>Material</th><th>Stock físico</th><th>Pérdida (ud)</th><th>Val. pérdida</th><th>Val. unitario</th></tr>`;
+    document.querySelector('#tbl-perdidas tbody').innerHTML=conPerdida.map(x=>`<tr>
+      <td style="color:var(--muted);font-size:.78rem">${x.codigo||'—'}</td>
+      <td title="${x.desc||x.material||''}">${(x.desc||x.material||'—').substring(0,45)}</td>
+      <td class="num">${fmt(x.stockFisico)}</td>
+      <td class="num" style="color:var(--yellow)">${x.perdida!=null?x.perdida.toFixed(2):'—'}</td>
+      <td class="num" style="color:var(--red)">${fmtM(x.valorPerdida)}</td>
+      <td class="num">${fmtM(x.valorUN)}</td>
+    </tr>`).join('');
+  } else {
+    if(titleP) titleP.style.display='none';
+    if(cardP)  cardP.style.display='none';
+  }
+
+  // ── Tabla detalle stock ──
+  renderStockTable();
+
+  // Conectar filtros (solo una vez)
+  ['stock-search','stock-estado','stock-tipo'].forEach(id=>{
+    const el=document.getElementById(id); if(!el||el._stockBound) return;
+    el._stockBound=true;
+    el.addEventListener('input', renderStockTable);
+    el.addEventListener('change', renderStockTable);
+  });
+}
+
+function renderStockTable(){
+  const s=_stockData;
+  const q=(document.getElementById('stock-search')?.value||'').toLowerCase().trim();
+  const est=document.getElementById('stock-estado')?.value||'';
+  const tipo=document.getElementById('stock-tipo')?.value||'';
+
+  const filtered=[...s].filter(x=>{
+    if(est && _stockEstado(x.alcanceMod||0)!==est) return false;
+    if(tipo && _stockTipoLabel(x)!==tipo) return false;
+    if(q){
+      const hay=(x.codigo||'')+(x.desc||'')+(x.material||'');
+      if(!hay.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>(a.alcanceMod??999)-(b.alcanceMod??999));
 
   document.querySelector('#tbl-stock thead').innerHTML=
-    `<tr><th>Material</th><th>Stock físico</th><th>Consumo</th><th>Consumo/mód</th><th>Alcance (mód)</th><th>Val. unitario</th><th>Valor stock</th><th>Estado</th></tr>`;
-  document.querySelector('#tbl-stock tbody').innerHTML=
-    [...s].sort((a,b)=>(a.alcanceMod??999)-(b.alcanceMod??999)).map(x=>{
+    `<tr><th>Código</th><th>Material</th><th>Stock físico</th><th>Consumo</th><th>Consumo/mód</th><th>Alcance (mód)</th><th>Val. unitario</th><th>Valor stock</th><th>Estado</th></tr>`;
+  document.querySelector('#tbl-stock tbody').innerHTML=filtered.map(x=>{
     const alc=x.alcanceMod||0;
     const badge=alc<5?'<span class="badge b-red">Crítico</span>':alc<15?'<span class="badge b-yellow">Bajo</span>':'<span class="badge b-green">OK</span>';
     return`<tr>
-      <td>${(x.desc||x.material||'—').substring(0,40)}</td>
+      <td style="color:var(--muted);font-size:.78rem">${x.codigo||'—'}</td>
+      <td title="${x.desc||x.material||''}">${(x.desc||x.material||'—').substring(0,40)}</td>
       <td class="num">${fmt(x.stockFisico)}</td>
       <td class="num">${fmt(x.consumo)}</td>
       <td class="num">${x.consumoMod!=null?x.consumoMod.toFixed(2):'—'}</td>
@@ -1786,7 +1922,7 @@ function renderStock(){
       <td class="num">${fmtM(x.valorStock)}</td>
       <td>${badge}</td>
     </tr>`;
-  }).join('');
+  }).join('')||(filtered.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">Sin resultados</td></tr>':'');
 }
 
 // ═══════════════════════════════════════════════
