@@ -269,6 +269,14 @@ tbody tr:hover td{background:var(--surface2)}
 
 <!-- STOCK -->
 <div class="page" id="page-stock">
+  <div class="filter-bar" style="margin-bottom:16px;align-items:center">
+    <span style="font-size:.78rem;font-weight:700;color:var(--text);white-space:nowrap">📅 Semana:</span>
+    <select id="stock-semana-sel" style="min-width:160px"><option value="">Todas las semanas</option></select>
+    <button id="stock-semana-prev" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.82rem">◀</button>
+    <button id="stock-semana-next" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.82rem">▶</button>
+    <button id="stock-semana-last" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.78rem;font-weight:600">Última</button>
+    <span id="stock-semana-lbl" style="font-size:.78rem;color:var(--muted);margin-left:4px"></span>
+  </div>
   <div class="kpi-row" id="kpi-stock"></div>
 
   <!-- Fila 1: cobertura + valor por tipo -->
@@ -1725,7 +1733,10 @@ function renderProductos(){
 // STOCK
 // ═══════════════════════════════════════════════
 // ── Stock helpers ──────────────────────────────
-let _stockData=[];
+let _stockData=[];       // datos de la semana activa (o todos)
+let _stockAllData=[];    // todos los datos sin filtro de semana
+let _stockSemanas=[];    // [{ts, lbl}] ordenadas asc
+
 function _stockEstado(alc){ return alc<5?'critico':alc<15?'bajo':'ok'; }
 function _stockTipoLabel(x){
   // Prefer a non-empty, non-numeric desc; fall back to material name
@@ -1738,8 +1749,73 @@ function _stockModConstruidos(s){
   return vals.length?Math.max(...vals):null;
 }
 
+function _stockBuildSemanas(){
+  _stockAllData=DATA.stock||[];
+  // Recopilar semanas únicas (lunes de cada semana)
+  const seen=new Set();
+  _stockAllData.forEach(x=>{
+    const d=parseDate(x.fecha); if(!d||isNaN(d)) return;
+    const ts=weekKey(d);
+    seen.add(ts);
+  });
+  _stockSemanas=[...seen].sort((a,b)=>a-b).map(ts=>({ts,lbl:'Semana '+weekLabel(ts)}));
+
+  const sel=document.getElementById('stock-semana-sel'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todas las semanas</option>'+
+    _stockSemanas.map(w=>`<option value="${w.ts}">${w.lbl}</option>`).join('');
+  // Seleccionar la semana más reciente por defecto
+  if(!cur && _stockSemanas.length){
+    sel.value=String(_stockSemanas[_stockSemanas.length-1].ts);
+  } else if(cur){
+    sel.value=cur;
+  }
+  _stockApplySemana();
+}
+
+function _stockApplySemana(){
+  const sel=document.getElementById('stock-semana-sel');
+  const ts=sel?+sel.value||0:0;
+  const lbl=document.getElementById('stock-semana-lbl');
+  if(ts){
+    _stockData=_stockAllData.filter(x=>{
+      const d=parseDate(x.fecha); if(!d||isNaN(d)) return false;
+      return weekKey(d)===ts;
+    });
+    if(lbl){ const w=_stockSemanas.find(s=>s.ts===ts); lbl.textContent=w?w.lbl:''; }
+  } else {
+    _stockData=[..._stockAllData];
+    if(lbl) lbl.textContent='';
+  }
+  _stockRenderCharts();
+}
+
 function renderStock(){
-  _stockData=DATA.stock||[];
+  _stockBuildSemanas();
+
+  // Conectar botones de navegación (una sola vez)
+  const sel=document.getElementById('stock-semana-sel');
+  const btnPrev=document.getElementById('stock-semana-prev');
+  const btnNext=document.getElementById('stock-semana-next');
+  const btnLast=document.getElementById('stock-semana-last');
+  if(sel && !sel._stockBound){
+    sel._stockBound=true;
+    sel.addEventListener('change', _stockApplySemana);
+    if(btnPrev) btnPrev.addEventListener('click',()=>{
+      const i=_stockSemanas.findIndex(s=>s.ts===+sel.value);
+      if(i>0){ sel.value=String(_stockSemanas[i-1].ts); _stockApplySemana(); }
+    });
+    if(btnNext) btnNext.addEventListener('click',()=>{
+      const i=_stockSemanas.findIndex(s=>s.ts===+sel.value);
+      if(i<_stockSemanas.length-1){ sel.value=String(_stockSemanas[i+1].ts); _stockApplySemana(); }
+    });
+    if(btnLast) btnLast.addEventListener('click',()=>{
+      if(_stockSemanas.length){ sel.value=String(_stockSemanas[_stockSemanas.length-1].ts); _stockApplySemana(); }
+    });
+  }
+}
+
+function _stockRenderCharts(){
   const s=_stockData;
   const totalValor=s.reduce((a,x)=>a+(x.valorStock||0),0);
   const totalPerdi=s.reduce((a,x)=>a+(x.valorPerdida||0),0);
