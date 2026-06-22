@@ -387,7 +387,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <button class="ph-btn on" id="pf-all" onclick="setPF('all')">Todos</button>
         <button class="ph-btn pf-fab" id="pf-fabricacion" onclick="setPF('fabricacion')">🔧 Fab.</button>
         <button class="ph-btn pf-cal" id="pf-calidad" onclick="setPF('calidad')">🔍 Cal.</button>
-        <button class="ph-btn pf-cli" id="pf-cliente" onclick="setPF('cliente')">👤 Cliente</button>
+        <button class="ph-btn pf-cli" id="pf-cliente" onclick="setPF('cliente')">🔍 Auditoría</button>
         <button class="ph-btn pf-ent" id="pf-entregado" onclick="setPF('entregado')">✅ Ent.</button>
       </div>
       <div id="mod-list" style="flex:1;overflow-y:auto"></div>
@@ -405,7 +405,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div style="max-width:1200px;margin:0 auto">
       <div class="grid-header">
         <div class="grid-title">✅ Recepción de Módulos</div>
-        <div class="grid-sub">Módulos con todas las partidas aprobadas por cliente</div>
+        <div class="grid-sub">Módulos con todas las partidas aprobadas por Auditoría</div>
       </div>
       <div id="recep-filter" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px"></div>
       <div class="recep-grid" id="recep-grid">
@@ -450,8 +450,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <div class="ev-checks">
           <label class="ev-check"><input type="checkbox" id="ev-c1" value="check1_done"> ✅ Producción lista</label>
           <label class="ev-check"><input type="checkbox" id="ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
-          <label class="ev-check"><input type="checkbox" id="ev-c3ok" value="check3_approved"> 👤 Cliente aprueba</label>
-          <label class="ev-check"><input type="checkbox" id="ev-c3rej" value="check3_rejected"> ❌ Cliente rechaza</label>
+          <label class="ev-check"><input type="checkbox" id="ev-c3ok" value="check3_approved"> 🔍 Auditoría aprueba</label>
+          <label class="ev-check"><input type="checkbox" id="ev-c3rej" value="check3_rejected"> ❌ Auditoría rechaza</label>
         </div>
       </div>
       <div class="m-actions">
@@ -471,8 +471,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <div class="ev-checks">
           <label class="ev-check"><input type="checkbox" id="sc-ev-c1" value="check1_done"> ✅ Producción lista</label>
           <label class="ev-check"><input type="checkbox" id="sc-ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
-          <label class="ev-check"><input type="checkbox" id="sc-ev-c3ok" value="check3_approved"> 👤 Cliente aprueba</label>
-          <label class="ev-check"><input type="checkbox" id="sc-ev-c3rej" value="check3_rejected"> ❌ Cliente rechaza</label>
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c3ok" value="check3_approved"> 🔍 Auditoría aprueba</label>
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c3rej" value="check3_rejected"> ❌ Auditoría rechaza</label>
         </div>
       </div>
       <div class="m-actions">
@@ -513,9 +513,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <button class="sm-btn" onclick="closeRejectModal()">✕</button>
     </div>
     <div id="rej-partida-info" style="font-size:.82rem;color:var(--muted);margin-bottom:14px;background:rgba(247,95,95,.08);border:1px solid rgba(247,95,95,.2);border-radius:6px;padding:8px 11px"></div>
-    <div style="font-size:.74rem;color:var(--muted);margin-bottom:12px">Esto reiniciará todos los checks (Producción, Calidad y Cliente). Se deberá ejecutar todo de nuevo.</div>
+    <div style="font-size:.74rem;color:var(--muted);margin-bottom:12px">Esto reiniciará todos los checks (Producción, Calidad y Auditoría). Se deberá ejecutar todo de nuevo.</div>
     <div class="form-row">
-      <label class="form-label">Observación del cliente *</label>
+      <label class="form-label">Observación de Auditoría *</label>
       <textarea class="form-input" id="rej-obs" rows="4" placeholder="Describe el problema encontrado..." style="resize:vertical;min-height:90px"></textarea>
     </div>
     <div class="form-row">
@@ -705,7 +705,7 @@ function getPhase(m) {
 const PHASE_LABEL = {
   fabricacion:{l:'🔧 Fabricación',cls:'ph-fabricacion'},
   calidad:    {l:'🔍 Calidad',    cls:'ph-calidad'},
-  cliente:    {l:'👤 Cliente',    cls:'ph-cliente'},
+  cliente:    {l:'🔍 Auditoría',  cls:'ph-cliente'},
   entregado:  {l:'✅ Entregado',  cls:'ph-entregado'}
 };
 
@@ -857,7 +857,7 @@ function renderList() {
     const cnt=allTM.filter(m=>(tf==='all'||m.tipo===tf)&&getPhase(m)===ph).length;
     const el=document.getElementById('pf-'+ph);
     if(el){
-      const labels={fabricacion:'🔧 Fab.',calidad:'🔍 Cal.',cliente:'👤 Cliente',entregado:'✅ Ent.'};
+      const labels={fabricacion:'🔧 Fab.',calidad:'🔍 Cal.',cliente:'🔍 Auditoría',entregado:'✅ Ent.'};
       el.textContent=labels[ph]+(cnt>0?` (${cnt})`:'');
     }
   });
@@ -996,7 +996,7 @@ function partsHtml(tab) {
   };
 
   const legend=`<div style="font-size:.68rem;color:var(--muted);margin-bottom:9px;display:flex;gap:14px">
-    <span>⬜ Producción</span><span style="color:var(--purple)">⬜ Calidad</span><span style="color:var(--green)">⬜ Cliente</span>
+    <span>⬜ Producción</span><span style="color:var(--purple)">⬜ Calidad</span><span style="color:var(--green)">⬜ Auditoría</span>
   </div>`;
 
   let h=`<div class="sec-title">${label}</div>${legend}`;
@@ -1072,16 +1072,16 @@ function checksHtml(m, code, grp, s) {
   let c3html;
   if(s.c3==='aprobado'){
     const undo=isAdminOrGerente()?`onclick="undoC3('${m.id}','${code}','${grp}')"`:'';
-    c3html=`<span class="cpill cp-c3ok" ${undo} title="${isAdminOrGerente()?'✓ Aprobado — clic para revertir':'✓ Aprobado por cliente'}">✓ Cliente</span>`;
+    c3html=`<span class="cpill cp-c3ok" ${undo} title="${isAdminOrGerente()?'✓ Aprobado — clic para revertir':'✓ Aprobado por Auditoría'}">✓ Aud.</span>`;
   } else if(s.c1&&s.c2&&canC3(grp)){
     c3html=`<div class="c3-btns">
       <button class="c3-btn c3-aprob" onclick="doC3(true,'${m.id}','${code}','${grp}')">✓ Aprob.</button>
       <button class="c3-btn c3-rech"  onclick="doC3(false,'${m.id}','${code}','${grp}')">✗ Rech.</button>
     </div>`;
   } else if(s.c1&&s.c2){
-    c3html=`<span class="cpill cp-pend" title="Pendiente revisión cliente">⏳ Cliente</span>`;
+    c3html=`<span class="cpill cp-pend" title="Pendiente revisión Auditoría">⏳ Aud.</span>`;
   } else {
-    c3html=`<span class="cpill cp-pend" title="Completar Producción y Calidad primero">— Cliente</span>`;
+    c3html=`<span class="cpill cp-pend" title="Completar Producción y Calidad primero">— Aud.</span>`;
   }
 
   // N/A option for admin
@@ -1136,13 +1136,13 @@ async function toggleC2(modId, code, grp) {
   const s=pS(m,code);
   if(isNA(s)||!s.c1||!canC2()) return;
   if(s.c2&&s.c3&&!isAdminOrGerente()){
-    toast('Cliente ya revisó — solo gerencia puede desmarcar','err'); return;
+    toast('Auditoría ya revisó — solo gerencia puede desmarcar','err'); return;
   }
   if(s.c2){
     if(s.c3){
       pendConfirm={fn:()=>_doToggleC2(m,code,grp,s)};
       showConfirm('¿Desmarcar Calidad?',
-        'Esto también desmarcará la aprobación del Cliente.',
+        'Esto también desmarcará la aprobación de Auditoría.',
         [['Cancelar',null,'btn-ghost'],['Confirmar',()=>{ _doToggleC2(m,code,grp,s); closeModal(); },'btn-rej']]);
       return;
     }
@@ -1151,7 +1151,7 @@ async function toggleC2(modId, code, grp) {
     const t=m.tiempos||{};
     const newT={...(t[code]||{}),t2:new Date().toISOString()};
     await savePartida(modId,code,{c1:true,c2:true,c3:s.c3},newT,'check_cal',grp);
-    await sendNotifs('check2_done',`🔍 [CALIDAD OK] ${code} en ${m.nombre} (${m.torre}) — Pendiente revisión Cliente`);
+    await sendNotifs('check2_done',`🔍 [CALIDAD OK] ${code} en ${m.nombre} (${m.torre}) — Pendiente revisión Auditoría`);
   }
 }
 
@@ -1167,7 +1167,7 @@ function doC3(approve, modId, code, grp) {
   if(!s.c1||!s.c2||s.c3||!canC3()) return;
   if(approve){
     showConfirm('¿Aprobar partida?',
-      `${code} · La partida quedará como aprobada por el cliente.`,
+      `${code} · La partida quedará como aprobada por Auditoría.`,
       [['Cancelar',null,'btn-ghost'],['✓ Aprobar',async()=>{ closeModal(); await _doC3Aprob(m,code,grp); },'btn-ok']]);
   } else {
     openRejectModal(modId, code, grp);
@@ -1179,13 +1179,13 @@ async function _doC3Aprob(m,code,grp){
   const t=m.tiempos||{};
   const newT={...(t[code]||{}),t3:new Date().toISOString()};
   await savePartida(m.id,code,{c1:true,c2:true,c3:'aprobado'},newT,'cliente_aprueba',grp);
-  await sendNotifs('check3_approved',`✅ [CLIENTE APRUEBA] ${code} en ${m.nombre} (${m.torre})`);
+  await sendNotifs('check3_approved',`✅ [AUDITORÍA APRUEBA] ${code} en ${m.nombre} (${m.torre})`);
 }
 
 async function _doC3Rech(m,code,grp,obs='',imgUrls=[]){
   const obsData=imgUrls.length?JSON.stringify({text:obs,images:imgUrls}):(obs||null);
   await savePartida(m.id,code,{c1:false,c2:false,c3:null},{},'cliente_rechaza',grp,obsData);
-  let msg=`❌ [CLIENTE RECHAZA] ${code} en ${m.nombre} (${m.torre}) — Requiere nueva ejecución`;
+  let msg=`❌ [AUDITORÍA RECHAZA] ${code} en ${m.nombre} (${m.torre}) — Requiere nueva ejecución`;
   if(obs) msg+=`\n📝 *Observación:* ${obs}`;
   await sendNotifs('check3_rejected',msg,imgUrls);
 }
@@ -1193,8 +1193,8 @@ async function _doC3Rech(m,code,grp,obs='',imgUrls=[]){
 function undoC3(modId,code,grp){
   if(!isAdminOrGerente()) return;
   const m=allMods.find(x=>x.id===modId); if(!m) return;
-  showConfirm('¿Revertir aprobación de cliente?',
-    `${code} · Vuelve a estado Calidad aprobada, pendiente cliente.`,
+  showConfirm('¿Revertir aprobación de Auditoría?',
+    `${code} · Vuelve a estado Calidad aprobada, pendiente Auditoría.`,
     [['Cancelar',null,'btn-ghost'],['Revertir',async()=>{ closeModal();
       const t=m.tiempos||{};
       const newT={...(t[code]||{})}; delete newT.t3;
@@ -1299,8 +1299,8 @@ async function toggleNA(modId,code,grp){
 const ACCION_LABELS = {
   check_prod:'✓ Producción',uncheck_prod:'✗ Producción desmarcado',
   check_cal:'✓ Calidad',uncheck_cal:'✗ Calidad desmarcado',
-  cliente_aprueba:'✓ Cliente aprueba',cliente_rechaza:'✗ Cliente rechaza — reiniciado',
-  undo_c3:'↩ Aprobación cliente revertida',toggle_na:'◌ No Aplica toggle',
+  cliente_aprueba:'✓ Auditoría aprueba',cliente_rechaza:'✗ Auditoría rechaza — reiniciado',
+  undo_c3:'↩ Aprobación Auditoría revertida',toggle_na:'◌ No Aplica toggle',
   entregado:'📦 Módulo entregado'
 };
 
@@ -1359,7 +1359,7 @@ function doEntregadoForzar(){
   const pc=pendingCount(selMod);
   showConfirm(
     '⚠️ Módulo con partidas pendientes',
-    `Este módulo tiene ${pc} partida${pc>1?'s':''} sin aprobación de cliente. ¿Marcarlo como Entregado de todas formas?`,
+    `Este módulo tiene ${pc} partida${pc>1?'s':''} sin aprobación de Auditoría. ¿Marcarlo como Entregado de todas formas?`,
     [['Cancelar',null,'btn-ghost'],['Entregar igual',async()=>{ closeModal(); await doEntregado(); },'btn-ok']]
   );
 }
@@ -1551,7 +1551,7 @@ async function sendNotifs(evento, message, imageUrls=[]){
 }
 
 // ── Notification modal ────────────────────────────────────────────────────────
-const EV_LABEL={'check1_done':'Producción','check2_done':'Calidad','check3_approved':'Cliente aprueba','check3_rejected':'Cliente rechaza'};
+const EV_LABEL={'check1_done':'Producción','check2_done':'Calidad','check3_approved':'Auditoría aprueba','check3_rejected':'Auditoría rechaza'};
 
 function switchNotifTab(tab){
   ['wa','slack','tg'].forEach(t=>{
