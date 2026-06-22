@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Chacra · Admin de Permisos</title>
 <script src="auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="excel-export.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -276,12 +278,13 @@
   </div>
 
   <!-- Tabla de usuarios -->
-  <div class="card">
+  <div class="card" id="card-users">
     <div class="card-header">
       <div>
         <h2>Usuarios</h2>
         <span id="userCount"></span>
       </div>
+      <button class="btn btn-secondary" onclick="exportContainerTableToExcel('card-users','usuarios')">⬇ Excel</button>
       <button class="btn btn-primary" onclick="openModal()">+ Nuevo usuario</button>
     </div>
     <div class="card-body scrollable">

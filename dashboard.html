@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Chacra – Dashboard</title><!-- v2.1 -->
 <script src="xlsx.min.js"></script>
+<script src="excel-export.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="auth.js"></script>
@@ -225,7 +226,7 @@ tbody tr:hover td{background:var(--surface2)}
     <label>Torre:</label><select id="mod-torre"></select>
     <label>Estado:</label><select id="mod-estado"></select>
   </div>
-  <div class="card"><div class="tbl-wrap"><table id="tbl-modulos"><thead></thead><tbody></tbody></table></div></div>
+  <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-modulos','modulos')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-modulos"><thead></thead><tbody></tbody></table></div></div>
 </div>
 
 <!-- COMPRAS -->
@@ -246,7 +247,7 @@ tbody tr:hover td{background:var(--surface2)}
     <label>Buscar:</label><input id="gd-search" type="text" placeholder="material, GD, OC...">
     <label>Mes:</label><select id="gd-mes"></select>
   </div>
-  <div class="card"><div class="tbl-wrap"><table id="tbl-gd"><thead></thead><tbody></tbody></table></div></div>
+  <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-gd','guias-despacho')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-gd"><thead></thead><tbody></tbody></table></div></div>
 </div>
 
 <!-- PRODUCTOS -->
@@ -264,7 +265,7 @@ tbody tr:hover td{background:var(--surface2)}
     <label>Buscar:</label><input id="prod-search" type="text" placeholder="nombre, código...">
     <label>Tipo:</label><select id="prod-critico"></select>
   </div>
-  <div class="card"><div class="tbl-wrap"><table id="tbl-productos"><thead></thead><tbody></tbody></table></div></div>
+  <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-productos','productos')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-productos"><thead></thead><tbody></tbody></table></div></div>
 </div>
 
 <!-- STOCK -->
@@ -294,6 +295,7 @@ tbody tr:hover td{background:var(--surface2)}
   <!-- Pérdidas en proceso -->
   <div class="sec-title" id="stock-perdidas-title" style="display:none">Materiales con pérdidas en proceso</div>
   <div class="card" id="card-perdidas" style="display:none;margin-bottom:16px">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-perdidas','perdidas')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div>
     <div class="tbl-wrap"><table id="tbl-perdidas"><thead></thead><tbody></tbody></table></div>
   </div>
 
@@ -309,7 +311,7 @@ tbody tr:hover td{background:var(--surface2)}
     </select>
     <label>Tipo:</label><select id="stock-tipo"><option value="">Todos los tipos</option></select>
   </div>
-  <div class="card"><div class="tbl-wrap"><table id="tbl-stock"><thead></thead><tbody></tbody></table></div></div>
+  <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-stock','stock')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-stock"><thead></thead><tbody></tbody></table></div></div>
 </div>
 
 <!-- DESPACHOS -->
@@ -375,6 +377,7 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="card">
     <h3>Detalle por fecha</h3>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-prod-diaria','produccion-diaria')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div>
     <div class="tbl-wrap"><table id="tbl-prod-diaria"><thead></thead><tbody></tbody></table></div>
   </div>
 </div>

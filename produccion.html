@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tecno Panel — Producción</title>
 <script src="xlsx.min.js"></script>
+<script src="excel-export.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="auth.js"></script>
 <style>
@@ -159,10 +160,10 @@ tbody tr:hover td{background:var(--surface2)}
     <label>Partida:</label><select id="a-part"></select>
   </div>
   <div class="kpi-row" id="kpi-alertas"></div>
-  <div class="card"><h3>Módulos con mayor retraso</h3><div class="tbl-wrap"><table id="tbl-retraso"><thead></thead><tbody></tbody></table></div></div>
+  <div class="card"><h3>Módulos con mayor retraso<button class="card-toggle" style="right:44px" onclick="exportTableToExcel('tbl-retraso','modulos-retraso')">⬇ Excel</button></h3><div class="tbl-wrap"><table id="tbl-retraso"><thead></thead><tbody></tbody></table></div></div>
   <div class="grid-2">
-    <div class="card"><h3>Sin movimiento ≥ 7 días</h3><div class="tbl-wrap"><table id="tbl-sinmov"><thead></thead><tbody></tbody></table></div></div>
-    <div class="card"><h3>Término planificado vencido</h3><div class="tbl-wrap"><table id="tbl-venc"><thead></thead><tbody></tbody></table></div></div>
+    <div class="card"><h3>Sin movimiento ≥ 7 días<button class="card-toggle" style="right:44px" onclick="exportTableToExcel('tbl-sinmov','sin-movimiento')">⬇ Excel</button></h3><div class="tbl-wrap"><table id="tbl-sinmov"><thead></thead><tbody></tbody></table></div></div>
+    <div class="card"><h3>Término planificado vencido<button class="card-toggle" style="right:44px" onclick="exportTableToExcel('tbl-venc','termino-vencido')">⬇ Excel</button></h3><div class="tbl-wrap"><table id="tbl-venc"><thead></thead><tbody></tbody></table></div></div>
   </div>
   <div class="card">
     <h3>M&#243;dulos pendientes por partida espec&#237;fica</h3>
@@ -170,6 +171,7 @@ tbody tr:hover td{background:var(--surface2)}
       <label>Torre:</label><select id="ap-torre"></select>
       <label>Partida:</label><select id="ap-partida"></select>
       <span id="ap-count" style="font-size:.8rem;color:var(--muted);margin-left:8px"></span>
+      <button class="card-toggle" style="position:static;margin-left:8px" onclick="exportTableToExcel('tbl-ap','modulos-pendientes-partida')">⬇ Excel</button>
     </div>
     <div class="tbl-wrap"><table id="tbl-ap" class="sortable"><thead></thead><tbody></tbody></table></div>
   </div>
@@ -181,7 +183,7 @@ tbody tr:hover td{background:var(--surface2)}
     <label>Estado:</label><select id="f-est"></select>
     <input id="f-q" placeholder="Buscar m&#243;dulo...">
   </div>
-  <div class="card"><h3>Detalle m&#243;dulo a m&#243;dulo</h3><div class="tbl-wrap"><table id="tbl-det"><thead></thead><tbody></tbody></table></div></div>
+  <div class="card"><h3>Detalle m&#243;dulo a m&#243;dulo<button class="card-toggle" style="right:44px" onclick="exportTableToExcel('tbl-det','detalle-modulos')">⬇ Excel</button></h3><div class="tbl-wrap"><table id="tbl-det"><thead></thead><tbody></tbody></table></div></div>
 </div>
 <script>
 if(Chart.defaults.plugins && Chart.defaults.plugins.datalabels) Chart.defaults.plugins.datalabels.display = false;

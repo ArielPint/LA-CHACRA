@@ -6,6 +6,8 @@
 <title>Asistencia GeoVictoria — La Chacra</title>
 <script src="auth.js"></script>
 <script src="geovictoria.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="excel-export.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
@@ -159,6 +161,7 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="card-header">
         <span class="card-title">Personas actualmente en el predio</span>
         <span id="presencia-time" style="font-size:.72rem;color:var(--muted)"></span>
+        <button class="btn-ghost" onclick="exportContainerTableToExcel('presencia-body','presencia')">⬇ Excel</button>
       </div>
       <div class="filter-bar">
         <input id="f-presencia" type="text" placeholder="Buscar por nombre o RUT…" oninput="filterPresencia()">
@@ -184,6 +187,7 @@ tbody tr:hover td{background:var(--surface2)}
         <input type="date" id="att-to">
         <input type="text" id="att-users" placeholder="RUTs (opcional, si no hay grupo)" style="min-width:240px">
         <button class="sm-btn primary" onclick="loadAttendance()">Consultar</button>
+        <button class="sm-btn" onclick="exportContainerTableToExcel('attendance-body','asistencia')">⬇ Excel</button>
       </div>
       <div id="attendance-body">
         <div class="empty-msg">
@@ -210,6 +214,7 @@ tbody tr:hover td{background:var(--surface2)}
         <span class="filter-lbl">Hasta</span>
         <input type="date" id="res-to">
         <button class="sm-btn primary" onclick="loadResumen()">Consultar</button>
+        <button class="sm-btn" onclick="exportContainerTableToExcel('resumen-body','resumen-asistencia')">⬇ Excel</button>
       </div>
       <div id="resumen-body">
         <div class="empty-msg">
@@ -226,6 +231,7 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="card-header">
         <span class="card-title">Nómina de trabajadores GeoVictoria</span>
         <button class="sm-btn" onclick="loadWorkers()">↻ Recargar</button>
+        <button class="sm-btn" onclick="exportContainerTableToExcel('workers-body','trabajadores')">⬇ Excel</button>
       </div>
       <div class="filter-bar">
         <input id="f-workers" type="text" placeholder="Buscar por nombre, RUT o grupo…" oninput="filterWorkers()">

@@ -6,6 +6,7 @@
 <title>Despacho GD — La Chacra</title>
 <script src="auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="excel-export.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7c05f;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -120,6 +121,7 @@ tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
   </select>
   <button class="btn btn-sm" onclick="clearFilters()">✕ Limpiar</button>
   <span id="count-lbl" style="font-size:.75rem;color:var(--muted);margin-left:auto"></span>
+  <button class="btn btn-sm" onclick="exportTableToExcel('main-table','despacho-GD')" title="Descargar Excel">⬇ Excel</button>
 </div>
 
 <div id="tbl-wrap">

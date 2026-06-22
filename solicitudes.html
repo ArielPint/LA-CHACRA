@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solicitud de Materiales · La Chacra</title>
 <script src="auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="excel-export.js"></script>
 <style>
 :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f5a623;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:8px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -254,6 +256,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     </div>
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="showTab('form')">← Volver a editar</button>
+      <button class="btn btn-secondary" onclick="exportTableToExcel('preview-table','solicitud')">⬇ Excel</button>
       <button class="btn btn-green" id="submit-btn" onclick="submitSolicitud()">✔ Enviar solicitud</button>
     </div>
   </div>
@@ -283,6 +286,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <div class="card-title" style="margin:0">Catálogo de productos</div>
+        <button class="btn btn-secondary btn-sm" onclick="exportTableToExcel('catalog-table','catalogo-productos')">⬇ Excel</button>
         <button class="btn btn-primary btn-sm" onclick="openAddProduct()">+ Nuevo producto</button>
       </div>
       <div style="margin-bottom:12px">
