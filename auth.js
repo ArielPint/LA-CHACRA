@@ -534,6 +534,13 @@ const AUTH = (() => {
     throw new Error('Importación directa no disponible. Usá el panel Admin para crear usuarios.');
   }
 
+  // ─── Cambio de contraseña propio (usuario logueado) ──────────────────────
+  async function changeOwnPassword(newPassword) {
+    const sb = await _client();
+    const { error } = await sb.auth.updateUser({ password: newPassword });
+    if (error) throw new Error(error.message);
+  }
+
   // hashPassword mantenido por compat de API (no se usa para almacenamiento)
   async function hashPassword(password) {
     const enc = new TextEncoder();
@@ -545,7 +552,7 @@ const AUTH = (() => {
     getUsers, createUser, updateUser, deleteUser,
     exportUsers, importUsers,
     setGithubToken, getGithubToken, hasGithubToken, testGithubToken,
-    login, logout, getSession, requireAuth, requireAdmin,
+    login, logout, getSession, requireAuth, requireAdmin, changeOwnPassword,
     canAccessPage, canViewTab, isReadonly, isAdmin, canEditLayout, canEditProducts,
     getPlantaRol, canAccessPlanta, canMarkInPlanta,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,

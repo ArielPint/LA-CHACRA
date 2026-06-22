@@ -126,7 +126,26 @@ body {
   color: var(--muted);
   border: 1px solid var(--border);
   white-space: nowrap;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
 }
+.auth-badge:hover { border-color: var(--accent); color: var(--text); }
+
+/* Modal cambio de contraseña */
+.pwd-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+.pwd-overlay.open { display: flex; }
+.pwd-box { background: #1a1d2e; border: 1px solid #2a2d3e; border-radius: 14px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.pwd-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #2a2d3e; }
+.pwd-header h3 { font-size: .95rem; font-weight: 700; color: var(--text); margin: 0; }
+.pwd-close { background: none; border: none; font-size: 1.1rem; color: var(--muted); cursor: pointer; }
+.pwd-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.pwd-body label { font-size: .75rem; color: var(--muted); display: block; margin-bottom: 4px; }
+.pwd-body input { width: 100%; background: #0f1117; border: 1px solid #2a2d3e; border-radius: 8px; padding: 9px 12px; color: var(--text); font-size: .875rem; box-sizing: border-box; }
+.pwd-body input:focus { outline: none; border-color: var(--accent); }
+.pwd-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid #2a2d3e; }
+.pwd-msg { font-size: .8rem; padding: 8px 12px; border-radius: 6px; display: none; }
+.pwd-msg.ok  { background: rgba(34,197,94,.12); color: #4ade80; display: block; }
+.pwd-msg.err { background: rgba(239,68,68,.12); color: #f87171; display: block; }
 
 /* ── Body layout ── */
 #body-layout {
@@ -397,7 +416,7 @@ body.sidebar-open iframe { visibility: hidden; }
 
   <div class="tb-right">
     <button class="btn-ghost hide-xs" onclick="recargar()">↺ Actualizar</button>
-    <span class="auth-badge" id="tp-user-badge"></span>
+    <span class="auth-badge" id="tp-user-badge" onclick="openPwdModal()" title="Cambiar contraseña"></span>
     <a href="admin.html" class="btn-ghost" id="tp-admin-btn" style="display:none">⚙️ Admin</a>
     <button class="btn-ghost" onclick="doLogout()">Salir</button>
   </div>
@@ -722,6 +741,69 @@ window.addEventListener('storage', function(e) {
     var f = document.getElementById('frame-produccion');
     if (f) { document.getElementById('load-produccion').classList.remove('done'); f.src = f.src; }
   }
+});
+</script>
+
+<!-- Modal: cambio de contraseña propio -->
+<div class="pwd-overlay" id="pwdOverlay" onclick="if(event.target===this)closePwdModal()">
+  <div class="pwd-box">
+    <div class="pwd-header">
+      <h3>🔑 Cambiar contraseña</h3>
+      <button class="pwd-close" onclick="closePwdModal()">✕</button>
+    </div>
+    <div class="pwd-body">
+      <div class="pwd-msg" id="pwdMsg"></div>
+      <div>
+        <label>Nueva contraseña</label>
+        <input type="password" id="pwdNew" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      </div>
+      <div>
+        <label>Confirmar contraseña</label>
+        <input type="password" id="pwdConfirm" placeholder="Repetir contraseña" autocomplete="new-password">
+      </div>
+    </div>
+    <div class="pwd-footer">
+      <button class="btn-ghost" onclick="closePwdModal()">Cancelar</button>
+      <button class="btn-ghost" id="pwdSaveBtn" onclick="savePwd()" style="border-color:var(--accent);color:var(--accent)">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openPwdModal() {
+  document.getElementById('pwdNew').value = '';
+  document.getElementById('pwdConfirm').value = '';
+  var m = document.getElementById('pwdMsg');
+  m.className = 'pwd-msg'; m.textContent = '';
+  document.getElementById('pwdOverlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('pwdNew').focus(); }, 80);
+}
+function closePwdModal() {
+  document.getElementById('pwdOverlay').classList.remove('open');
+}
+async function savePwd() {
+  var np = document.getElementById('pwdNew').value.trim();
+  var cp = document.getElementById('pwdConfirm').value.trim();
+  var msg = document.getElementById('pwdMsg');
+  var btn = document.getElementById('pwdSaveBtn');
+  msg.className = 'pwd-msg'; msg.textContent = '';
+  if (np.length < 8) { msg.className = 'pwd-msg err'; msg.textContent = 'Mínimo 8 caracteres.'; return; }
+  if (np !== cp)     { msg.className = 'pwd-msg err'; msg.textContent = 'Las contraseñas no coinciden.'; return; }
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    await AUTH.changeOwnPassword(np);
+    msg.className = 'pwd-msg ok'; msg.textContent = '✓ Contraseña actualizada correctamente.';
+    document.getElementById('pwdNew').value = '';
+    document.getElementById('pwdConfirm').value = '';
+    setTimeout(closePwdModal, 1800);
+  } catch(e) {
+    msg.className = 'pwd-msg err'; msg.textContent = e.message || 'Error al cambiar la contraseña.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar';
+  }
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closePwdModal();
 });
 </script>
 </body>
