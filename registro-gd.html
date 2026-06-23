@@ -423,6 +423,7 @@ let gdOCMap       = {};
 let _sbClient     = null;
 let activeSuggIdx = null; // idx of product line showing suggestions
 let suggTimeout   = null;
+let _lineCounter  = 0;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 (function(){
@@ -737,7 +738,7 @@ function setCv(id,text,val,neutral){
 
 // ── Modo nuevo: multi-producto ─────────────────────────────────────────────────
 function addProductLine(){
-  productLines.push({ idx:Date.now()+Math.random(), codigo:'', descripcion:'', unidad:'', tipo:'', ppto:0, cant_sol:'', devol:0, valor_total_item:'' });
+  productLines.push({ idx:++_lineCounter, codigo:'', descripcion:'', unidad:'', tipo:'', ppto:0, cant_sol:'', devol:0, valor_total_item:'' });
   renderProductLines();
 }
 function removeProductLine(idx){
@@ -863,7 +864,8 @@ function onPLNum(idx,field,val){
 function updatePLCalc(idx){
   const line=productLines.find(l=>l.idx===idx);
   if(!line) return;
-  const el=document.querySelector(`#pl-${idx} .pl-calc`);
+  const card=document.getElementById('pl-'+idx);
+  const el=card?card.querySelector('.pl-calc'):null;
   if(el) el.innerHTML=getPLCalc(line);
   recalcMultiMonto();
 }
