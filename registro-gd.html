@@ -466,9 +466,17 @@ async function loadProductos(){
 }
 async function loadData(){
   const sb = await sbClient();
-  const {data,error} = await sb.from('registro_compras').select('*').order('fecha_guia',{ascending:false});
-  if (error) throw new Error(error.message);
-  registros = data||[];
+  const PAGE = 1000;
+  let all = [], from = 0, done = false;
+  while (!done) {
+    const {data,error} = await sb.from('registro_compras').select('*')
+      .order('fecha_guia',{ascending:false}).range(from, from+PAGE-1);
+    if (error) throw new Error(error.message);
+    all = all.concat(data||[]);
+    if (!data || data.length < PAGE) done = true;
+    else from += PAGE;
+  }
+  registros = all;
 }
 async function loadResponsables(){
   const sb = await sbClient();
