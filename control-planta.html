@@ -815,16 +815,20 @@ function mobileBackToList() {
 function renderGrid() {
   const stats={};
   allMods.forEach(m=>{
-    if(!stats[m.torre]) stats[m.torre]={s:0,h:0,ent:0};
+    if(!stats[m.torre]) stats[m.torre]={s:0,h:0,ent:0,totalW:0,doneW:0};
     const st=stats[m.torre];
     m.tipo==='seco'?st.s++:st.h++;
     if(m.estado_modulo==='entregado') st.ent++;
+    const all=Object.values(PARTIDAS).flat();
+    const rel=all.filter(p=>!isNA(pS(m,p.c)));
+    st.totalW+=rel.reduce((s,p)=>s+(p.w||1),0);
+    st.doneW+=rel.filter(p=>isDone(pS(m,p.c))).reduce((s,p)=>s+(p.w||1),0);
   });
   const keys=Object.keys(stats).sort((a,b)=>parseInt(a.replace(/\D/g,''))-parseInt(b.replace(/\D/g,'')));
   document.getElementById('torres-grid').innerHTML = keys.map(t=>{
     const s=stats[t];
     const total=s.s+s.h;
-    const pct=total>0?Math.round(s.ent/total*100):0;
+    const pct=s.totalW>0?Math.round(s.doneW/s.totalW*100):0;
     return `<div class="torre-card${curTorre===t?' sel':''}" onclick="selectTorre('${t}')">
       <div class="torre-name">🏗️ ${t}</div>
       <div class="torre-chips">
