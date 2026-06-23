@@ -659,11 +659,12 @@ function toggleResumen(){
 
 function renderResumen(){
   const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  // Agrupar por año+mes
+  // Agrupar por año+mes usando fecha_sol (igual que el pivot Excel)
   const groups={};
   registros.forEach(r=>{
-    if(!r.fecha_guia) return;
-    const d=new Date(r.fecha_guia+'T12:00:00');
+    const fecha=r.fecha_sol||r.fecha_guia;
+    if(!fecha) return;
+    const d=new Date(fecha+'T12:00:00');
     const key=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
     if(!groups[key]) groups[key]={year:d.getFullYear(),mes:d.getMonth()+1,gds:new Set(),items:0,monto:0,desvArr:[]};
     groups[key].gds.add(r.gd);
