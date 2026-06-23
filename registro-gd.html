@@ -78,14 +78,25 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
 .gd-chip{display:inline-block;background:rgba(79,142,247,.12);color:var(--accent);border-radius:4px;padding:2px 6px;font-size:.67rem;font-weight:700;margin:1px 2px}
 
 /* Responsables */
-#resp-wrap{flex:1;overflow:auto;padding:18px}
-.resp-list{max-width:500px;display:flex;flex-direction:column;gap:8px}
-.resp-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px}
-.resp-item .resp-name{flex:1;font-size:.85rem;font-weight:600}
-.resp-item .resp-inactive{color:var(--muted);font-size:.72rem}
-.resp-add-row{display:flex;gap:8px;max-width:500px;margin-bottom:16px}
-.resp-add-row input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:.85rem;outline:none}
-.resp-add-row input:focus{border-color:var(--accent)}
+#resp-wrap{flex:1;overflow:auto;padding:18px 20px}
+.resp-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.resp-toolbar h3{font-size:.82rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;flex:1}
+.grupos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.grupo-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.grupo-card-hdr{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(79,142,247,.06);border-bottom:1px solid var(--border)}
+.grupo-card-hdr .g-name{flex:1;font-size:.85rem;font-weight:700;color:var(--text)}
+.grupo-card-hdr .g-inactive{font-size:.68rem;color:var(--muted);font-style:italic}
+.grupo-card-hdr .g-count{font-size:.68rem;background:rgba(79,142,247,.15);color:var(--accent);padding:1px 6px;border-radius:10px;font-weight:700}
+.grupo-card-body{padding:8px 14px 10px}
+.resp-member{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.resp-member:last-child{border-bottom:none}
+.resp-member .rm-name{flex:1;font-size:.8rem;color:var(--text)}
+.resp-member .rm-inactive{font-size:.66rem;color:var(--muted);font-style:italic;margin-left:2px}
+.grupo-card-footer{padding:8px 14px;border-top:1px solid var(--border)}
+.resp-add-inline{display:flex;gap:6px}
+.resp-add-inline input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:.78rem;outline:none}
+.resp-add-inline input:focus{border-color:var(--accent)}
+.grupo-ungrouped .grupo-card-hdr{background:rgba(122,127,153,.06)}
 
 /* Drawer */
 #overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99;display:none}
@@ -254,12 +265,11 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
   <!-- TAB 3: Responsables -->
   <div class="tab-pane" id="pane-responsables">
     <div id="resp-wrap">
-      <h3 style="font-size:.85rem;color:var(--muted);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Lista de Responsables</h3>
-      <div class="resp-add-row">
-        <input type="text" id="resp-nuevo-nombre" placeholder="Nombre del responsable…" onkeydown="if(event.key==='Enter') addResponsable()">
-        <button class="btn btn-primary btn-sm" onclick="addResponsable()">+ Agregar</button>
+      <div class="resp-toolbar">
+        <h3>Grupos y Responsables</h3>
+        <button class="btn btn-primary btn-sm" onclick="openGrupoModal()">+ Nuevo grupo</button>
       </div>
-      <div class="resp-list" id="resp-list"></div>
+      <div class="grupos-grid" id="grupos-grid"></div>
     </div>
   </div>
 
@@ -401,6 +411,7 @@ const MES_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','
 let registros     = [];
 let productos     = [];
 let responsables  = [];
+let grupos        = [];
 let ordenesCompra = [];
 let ocGuias       = [];
 let editId        = null;
@@ -460,8 +471,12 @@ async function loadData(){
 }
 async function loadResponsables(){
   const sb = await sbClient();
-  const {data} = await sb.from('responsables').select('*').order('nombre');
-  responsables = data||[];
+  const [rData, gData] = await Promise.all([
+    sb.from('responsables').select('*').order('nombre'),
+    sb.from('grupos').select('*').order('nombre')
+  ]);
+  responsables = rData.data||[];
+  grupos = gData.data||[];
   populateRespSelect();
 }
 async function loadOC(){
@@ -481,7 +496,22 @@ function populateRespSelect(){
   const sel=document.getElementById('f_resp');
   const cur=sel.value;
   sel.innerHTML='<option value="">— Seleccionar —</option>';
-  responsables.filter(r=>r.activo).forEach(r=>{ const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; sel.appendChild(op); });
+  // Grouped
+  const activos=responsables.filter(r=>r.activo);
+  grupos.filter(g=>g.activo).forEach(g=>{
+    const members=activos.filter(r=>r.grupo_id===g.id);
+    if(!members.length) return;
+    const og=document.createElement('optgroup'); og.label=g.nombre;
+    members.forEach(r=>{ const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
+    sel.appendChild(og);
+  });
+  // Sin grupo
+  const sinGrupo=activos.filter(r=>!r.grupo_id);
+  if(sinGrupo.length){
+    const og=document.createElement('optgroup'); og.label='Sin grupo';
+    sinGrupo.forEach(r=>{ const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
+    sel.appendChild(og);
+  }
   if(cur) sel.value=cur;
 }
 
@@ -994,16 +1024,93 @@ async function deleteOC(){
   finally{btn.disabled=false;}
 }
 
-// ── Responsables ──────────────────────────────────────────────────────────────
+// ── Responsables & Grupos ─────────────────────────────────────────────────────
 function renderResponsables(){
-  const list=document.getElementById('resp-list');
-  if(!responsables.length){list.innerHTML='<p style="color:var(--muted);font-size:.8rem">Sin responsables cargados.</p>';return;}
-  list.innerHTML=responsables.map(r=>`<div class="resp-item"><span class="resp-name">${esc(r.nombre)}${!r.activo?'<span class="resp-inactive"> (inactivo)</span>':''}</span><button class="btn btn-sm" onclick="toggleResp(${r.id},${r.activo})">${r.activo?'Desactivar':'Activar'}</button><button class="btn btn-sm btn-danger" onclick="deleteResp(${r.id})">🗑</button></div>`).join('');
+  const grid=document.getElementById('grupos-grid');
+  const cards=[];
+
+  // Una card por grupo activo
+  grupos.forEach(g=>{
+    const members=responsables.filter(r=>r.grupo_id===g.id);
+    cards.push(buildGrupoCard(g, members));
+  });
+
+  // Card para sin grupo
+  const sinGrupo=responsables.filter(r=>!r.grupo_id);
+  if(sinGrupo.length){
+    cards.push(`<div class="grupo-card grupo-ungrouped">
+      <div class="grupo-card-hdr">
+        <span class="g-name" style="color:var(--muted)">Sin grupo</span>
+        <span class="g-count">${sinGrupo.length}</span>
+      </div>
+      <div class="grupo-card-body">${sinGrupo.map(r=>memberRow(r)).join('')}</div>
+    </div>`);
+  }
+
+  if(!cards.length){ grid.innerHTML='<p style="color:var(--muted);font-size:.82rem">Aún no hay grupos. Creá uno con "+ Nuevo grupo".</p>'; return; }
+  grid.innerHTML=cards.join('');
 }
-async function addResponsable(){
-  const inp=document.getElementById('resp-nuevo-nombre'), nombre=inp.value.trim();
-  if(!nombre) return;
-  try{ const sb=await sbClient(); const {error}=await sb.from('responsables').insert({nombre,activo:true}); if(error) throw new Error(error.message); inp.value=''; await loadResponsables(); renderResponsables(); toast('Agregado ✓','ok'); }
+
+function buildGrupoCard(g, members){
+  const activos=members.filter(r=>r.activo).length;
+  return `<div class="grupo-card">
+    <div class="grupo-card-hdr">
+      <span class="g-name">${esc(g.nombre)}${!g.activo?'<span class="g-inactive"> (inactivo)</span>':''}</span>
+      <span class="g-count">${activos}/${members.length}</span>
+      <button class="act-btn" onclick="editGrupo(${g.id})" title="Editar grupo">✏️</button>
+      <button class="act-btn" onclick="deleteGrupo(${g.id})" title="Eliminar grupo">🗑</button>
+    </div>
+    <div class="grupo-card-body">
+      ${members.length ? members.map(r=>memberRow(r)).join('') : '<span style="font-size:.75rem;color:var(--muted)">Sin personas aún.</span>'}
+    </div>
+    <div class="grupo-card-footer">
+      <div class="resp-add-inline">
+        <input type="text" id="ri-${g.id}" placeholder="Nombre persona…" onkeydown="if(event.key==='Enter') addResponsable(${g.id})">
+        <button class="btn btn-sm btn-primary" onclick="addResponsable(${g.id})">+ Agregar</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function memberRow(r){
+  return `<div class="resp-member">
+    <span class="rm-name">${esc(r.nombre)}${!r.activo?'<span class="rm-inactive"> (inactivo)</span>':''}</span>
+    <button class="act-btn btn-sm" onclick="toggleResp(${r.id},${r.activo})" title="${r.activo?'Desactivar':'Activar'}">${r.activo?'⏸':'▶'}</button>
+    <button class="act-btn btn-sm" onclick="deleteResp(${r.id})" title="Eliminar">🗑</button>
+  </div>`;
+}
+
+// Modal grupo (reutiliza un prompt simple)
+function openGrupoModal(id){
+  const g=id?grupos.find(x=>x.id===id):null;
+  const nombre=prompt(id?'Nuevo nombre del grupo:':'Nombre del grupo:', g?g.nombre:'');
+  if(nombre===null||!nombre.trim()) return;
+  if(id) updateGrupo(id, nombre.trim());
+  else    createGrupo(nombre.trim());
+}
+function editGrupo(id){ openGrupoModal(id); }
+
+async function createGrupo(nombre){
+  try{ const sb=await sbClient(); const {error}=await sb.from('grupos').insert({nombre,activo:true}); if(error) throw new Error(error.message); await loadResponsables(); renderResponsables(); toast('Grupo creado ✓','ok'); }
+  catch(e){toast('Error: '+e.message,'err');}
+}
+async function updateGrupo(id, nombre){
+  try{ const sb=await sbClient(); const {error}=await sb.from('grupos').update({nombre}).eq('id',id); if(error) throw new Error(error.message); await loadResponsables(); renderResponsables(); toast('Grupo actualizado ✓','ok'); }
+  catch(e){toast('Error: '+e.message,'err');}
+}
+async function deleteGrupo(id){
+  const g=grupos.find(x=>x.id===id);
+  const members=responsables.filter(r=>r.grupo_id===id);
+  if(members.length&&!confirm(`El grupo "${g?g.nombre:id}" tiene ${members.length} persona(s). ¿Eliminar igual? Las personas quedarán sin grupo.`)) return;
+  try{ const sb=await sbClient(); const {error}=await sb.from('grupos').delete().eq('id',id); if(error) throw new Error(error.message); await loadResponsables(); renderResponsables(); toast('Grupo eliminado','ok'); }
+  catch(e){toast('Error: '+e.message,'err');}
+}
+
+async function addResponsable(grupoId){
+  const inp=document.getElementById('ri-'+grupoId);
+  if(!inp) return;
+  const nombre=inp.value.trim(); if(!nombre) return;
+  try{ const sb=await sbClient(); const {error}=await sb.from('responsables').insert({nombre,activo:true,grupo_id:grupoId}); if(error) throw new Error(error.message); inp.value=''; await loadResponsables(); renderResponsables(); toast('Persona agregada ✓','ok'); }
   catch(e){toast('Error: '+e.message,'err');}
 }
 async function toggleResp(id,activo){
@@ -1011,7 +1118,7 @@ async function toggleResp(id,activo){
   catch(e){toast('Error: '+e.message,'err');}
 }
 async function deleteResp(id){
-  if(!confirm('¿Eliminar este responsable?')) return;
+  if(!confirm('¿Eliminar esta persona?')) return;
   try{ const sb=await sbClient(); const {error}=await sb.from('responsables').delete().eq('id',id); if(error) throw new Error(error.message); await loadResponsables(); renderResponsables(); toast('Eliminado','ok'); }
   catch(e){toast('Error: '+e.message,'err');}
 }
