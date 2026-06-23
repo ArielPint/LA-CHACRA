@@ -134,6 +134,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .c3-aprob{border-color:var(--green);color:var(--green);background:rgba(62,207,142,.08)}
 .c3-aprob:hover{background:rgba(62,207,142,.2)}
 .c3-rech{border-color:var(--red);color:var(--red);background:rgba(247,95,95,.08)}
+.c3-admin-aprob{border-color:#a78bfa;color:#a78bfa;background:rgba(167,139,250,.08)}
+.c3-admin-aprob:hover{background:rgba(167,139,250,.22)}
 .c3-rech:hover{background:rgba(247,95,95,.2)}
 
 /* HISTORIAL */
@@ -1088,7 +1090,11 @@ function checksHtml(m, code, grp, s) {
   const naBtn=isAdminOrGerente()&&!s.c1&&!s.c2?
     `<span class="cpill cp-na" onclick="toggleNA('${m.id}','${code}','${grp}')" title="Marcar como N/A" style="cursor:pointer">N/A</span>`:'';
 
-  return c1html+c2html+c3html+naBtn;
+  // Botón "Aprobado" solo para admin cuando la partida no está completada
+  const adminAprob=isAdminOrGerente()&&!isDone(s)&&!isNA(s)?
+    `<button class="c3-btn c3-admin-aprob" onclick="aprobarAdmin('${m.id}','${code}','${grp}')" title="Admin: marcar las 3 etapas como aprobadas">⚡ Aprobado</button>`:'';
+
+  return c1html+c2html+c3html+naBtn+adminAprob;
 }
 
 function resetDP() {
@@ -1188,6 +1194,23 @@ async function _doC3Rech(m,code,grp,obs='',imgUrls=[]){
   let msg=`❌ [AUDITORÍA RECHAZA] ${code} en ${m.nombre} (${m.torre}) — Requiere nueva ejecución`;
   if(obs) msg+=`\n📝 *Observación:* ${obs}`;
   await sendNotifs('check3_rejected',msg,imgUrls);
+}
+
+async function aprobarAdmin(modId,code,grp){
+  if(!isAdminOrGerente()) return;
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  const s=pS(m,code);
+  if(isDone(s)||isNA(s)) return;
+  showConfirm('⚡ Aprobar partida completa',
+    `${code} · Se marcarán Producción, Calidad y Auditoría como aprobadas.`,
+    [['Cancelar',null,'btn-ghost'],['✓ Aprobar todo',async()=>{
+      closeModal();
+      const t=m.tiempos||{};
+      const now=new Date().toISOString();
+      const newT={...(t[code]||{}),t1:s.c1?(t[code]||{}).t1||now:now,t2:s.c2?(t[code]||{}).t2||now:now,t3:now};
+      await savePartida(modId,code,{c1:true,c2:true,c3:'aprobado'},newT,'admin_aprueba',grp);
+      await sendNotifs('check3_approved',`⚡ [ADMIN APRUEBA] ${code} en ${m.nombre} (${m.torre})`);
+    },'btn-ok']]);
 }
 
 function undoC3(modId,code,grp){
