@@ -12,7 +12,7 @@
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;display:flex;flex-direction:column}
 
-/* ── Header ── */
+/* Header */
 #hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 18px;height:48px;display:flex;align-items:center;gap:10px;flex-shrink:0}
 #hdr h1{font-size:.95rem;font-weight:700;white-space:nowrap}
 .hdr-badge{font-size:.68rem;background:rgba(255,255,255,.07);padding:2px 8px;border-radius:20px;color:var(--muted)}
@@ -25,15 +25,28 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .btn-danger{border-color:var(--red);color:var(--red)}
 .btn-danger:hover{background:rgba(247,95,95,.1)}
 .btn-sm{padding:3px 9px;font-size:.72rem}
+.btn-green{background:var(--green);color:#0f1117;border-color:var(--green)}
+.btn-green:hover{background:#2db87a;border-color:#2db87a;color:#0f1117}
 
-/* ── Stats ── */
+/* Tab nav */
+#tab-nav{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.tab-btn{padding:10px 20px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* Tab content */
+#tab-content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.tab-pane{display:none;flex:1;overflow:hidden;flex-direction:column}
+.tab-pane.active{display:flex}
+
+/* Stats */
 #stats{display:flex;gap:10px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
 .stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;min-width:130px}
 .stat .lbl{font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
 .stat .val{font-size:1.3rem;font-weight:800}
 .sc-blue .val{color:var(--accent)}.sc-green .val{color:var(--green)}.sc-yellow .val{color:var(--yellow)}.sc-red .val{color:var(--brand)}
 
-/* ── Toolbar ── */
+/* Toolbar */
 #toolbar{display:flex;align-items:center;gap:7px;padding:8px 18px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
 #toolbar input,#toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:.77rem;outline:none;min-width:0}
 #toolbar input:focus,#toolbar select:focus{border-color:var(--accent)}
@@ -41,8 +54,7 @@ input[type="date"]{color-scheme:dark}
 .tsep{width:1px;height:20px;background:var(--border);margin:0 2px;flex-shrink:0}
 .tlbl{font-size:.7rem;color:var(--muted);white-space:nowrap}
 
-
-/* ── Table ── */
+/* Table */
 #tbl-wrap{flex:1;overflow:auto;padding:0 18px 18px}
 table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1600px}
 thead th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:.64rem;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2;user-select:none}
@@ -51,7 +63,6 @@ thead th.c,td.c{text-align:center}
 tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
 tbody tr:hover{background:rgba(255,255,255,.03)}
 tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
-tbody td.nowrap{max-width:none}
 .chip{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.67rem;font-weight:700}
 .chip-critico{background:rgba(212,43,30,.15);color:var(--brand)}
 .chip-normal{background:rgba(79,142,247,.12);color:var(--accent)}
@@ -62,19 +73,38 @@ tbody td.nowrap{max-width:none}
 .no-data{text-align:center;padding:48px;color:var(--muted);font-size:.88rem}
 .act-btn{background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;font-size:.8rem;color:var(--muted);transition:all .12s}
 .act-btn:hover{background:var(--surface2);color:var(--text)}
-.gd-sum-row td{background:rgba(79,142,247,.04);font-weight:700;color:var(--accent);border-top:1px solid rgba(79,142,247,.2)}
 
-/* ── Overlay & Drawer ── */
+/* OC Tab */
+#oc-toolbar{display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+#oc-wrap{flex:1;overflow:auto;padding:0 18px 18px}
+.oc-table{width:100%;border-collapse:collapse;margin-top:8px;min-width:800px}
+.oc-table thead th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:.64rem;text-transform:uppercase;letter-spacing:.4px;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2}
+.oc-table tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+.oc-table tbody tr:hover{background:rgba(255,255,255,.03)}
+.oc-table tbody td{padding:7px 10px;font-size:.8rem}
+.gd-chip{display:inline-block;background:rgba(79,142,247,.12);color:var(--accent);border-radius:4px;padding:2px 6px;font-size:.67rem;font-weight:700;margin:1px 2px}
+
+/* Responsables Tab */
+#resp-wrap{flex:1;overflow:auto;padding:18px}
+.resp-list{max-width:500px;display:flex;flex-direction:column;gap:8px}
+.resp-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px}
+.resp-item .resp-name{flex:1;font-size:.85rem;font-weight:600}
+.resp-item .resp-inactive{color:var(--muted);font-size:.72rem}
+.resp-add-row{display:flex;gap:8px;max-width:500px;margin-bottom:16px}
+.resp-add-row input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:.85rem;outline:none}
+.resp-add-row input:focus{border-color:var(--accent)}
+
+/* Overlay & Drawer */
 #overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99;display:none}
 #overlay.show{display:block}
-#drawer{position:fixed;right:0;top:0;bottom:0;width:560px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:100}
-#drawer.open{transform:translateX(0)}
-#drw-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
-#drw-hdr h2{font-size:.92rem;font-weight:700;flex:1}
-#drw-body{flex:1;overflow-y:auto;padding:18px 20px}
-#drw-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-shrink:0}
+.drawer{position:fixed;right:0;top:0;bottom:0;width:560px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:100}
+.drawer.open{transform:translateX(0)}
+.drw-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.drw-hdr h2{font-size:.92rem;font-weight:700;flex:1}
+.drw-body{flex:1;overflow-y:auto;padding:18px 20px}
+.drw-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-shrink:0}
 
-/* ── Form ── */
+/* Form */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .fg{display:flex;flex-direction:column;gap:4px}
 .fg.wide{grid-column:1/-1}
@@ -82,6 +112,7 @@ tbody td.nowrap{max-width:none}
 .fg input,.fg select,.fg textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:7px;font-size:.83rem;outline:none;transition:border-color .15s;color-scheme:dark;width:100%}
 .fg input:focus,.fg select:focus{border-color:var(--accent);background:var(--bg)}
 .fg input[readonly],.fg textarea[readonly]{color:var(--muted);background:var(--bg);cursor:default;border-style:dashed}
+.fg select option{background:var(--surface2)}
 .fg .hint{font-size:.65rem;color:var(--muted);margin-top:2px}
 .form-divider{grid-column:1/-1;border:none;border-top:1px solid var(--border);margin:4px 0}
 .auto-tag{font-size:.62rem;background:rgba(79,142,247,.15);color:var(--accent);padding:2px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
@@ -92,20 +123,29 @@ tbody td.nowrap{max-width:none}
 .calc-item label{font-size:.63rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
 .calc-item .cval{font-size:.88rem;font-weight:700;color:var(--text);font-family:'Consolas',monospace}
 .calc-item .cval.pos{color:var(--red)}.calc-item .cval.neg{color:var(--green)}.calc-item .cval.muted{color:var(--muted)}
-.monto-gd-box{grid-column:1/-1;background:rgba(62,207,142,.05);border:1px solid rgba(62,207,142,.15);border-radius:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+.monto-gd-box{grid-column:1/-1;background:rgba(62,207,142,.05);border:1px solid rgba(62,207,142,.15);border-radius:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:12px}
 .monto-gd-box .mg-label{font-size:.72rem;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
 .monto-gd-box .mg-val{font-size:1.15rem;font-weight:800;color:var(--green);font-family:'Consolas',monospace}
 .codigo-row{display:flex;gap:6px;align-items:flex-end}
 .codigo-row input{flex:1}
 #prod-suggestions{position:absolute;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.4);min-width:320px}
 .sugg-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);transition:background .1s}
-.sugg-item:hover{background:var(--surface)}
+.sugg-item:hover,.sugg-item.active{background:var(--surface)}
 .sugg-item .sc{font-size:.68rem;color:var(--muted);margin-bottom:2px}
 .sugg-item .sd{font-size:.8rem;color:var(--text)}
 .sugg-item .su{font-size:.68rem;color:var(--accent);margin-left:6px}
 .prod-wrap{position:relative}
 
-/* ── Toast ── */
+/* GD chips en OC drawer */
+.gd-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:32px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:6px 8px}
+.gd-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(79,142,247,.15);color:var(--accent);border-radius:4px;padding:3px 8px;font-size:.75rem;font-weight:700}
+.gd-tag-rm{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.8rem;line-height:1;padding:0 2px}
+.gd-tag-rm:hover{color:var(--red)}
+.gd-add-row{display:flex;gap:6px;margin-top:8px}
+.gd-add-row input{flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.82rem;outline:none}
+.gd-add-row input:focus{border-color:var(--accent)}
+
+/* Toast */
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 18px;border-radius:8px;font-size:.81rem;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1}
 #toast.ok{border-color:var(--green)}
@@ -113,7 +153,6 @@ tbody td.nowrap{max-width:none}
 #loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:var(--muted)}
 .spinner-sm{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-
 </style>
 </head>
 <body>
@@ -124,232 +163,246 @@ tbody td.nowrap{max-width:none}
   <span class="hdr-badge" id="user-badge"></span>
   <div class="hdr-right">
     <button class="btn btn-sm" onclick="exportExcel()" title="Exportar Excel">↓ Excel</button>
-    <button class="btn btn-primary btn-sm" onclick="openDrawer(null)" id="btn-nuevo">+ Nueva entrada</button>
+    <button class="btn btn-primary btn-sm" id="btn-nuevo" onclick="openDrawer(null)">+ Nueva entrada</button>
   </div>
 </div>
 
-
-<!-- Stats -->
-<div id="stats">
-  <div class="stat sc-blue"><div class="lbl">Total GDs</div><div class="val" id="st-gds">—</div></div>
-  <div class="stat sc-green"><div class="lbl">Monto total</div><div class="val" id="st-monto">—</div></div>
-  <div class="stat sc-yellow"><div class="lbl">Ítems mes actual</div><div class="val" id="st-items">—</div></div>
-  <div class="stat sc-red"><div class="lbl">% Desviación prom.</div><div class="val" id="st-desv">—</div></div>
+<!-- Tab nav -->
+<div id="tab-nav">
+  <button class="tab-btn active" onclick="showTab('registro')">📋 Registro</button>
+  <button class="tab-btn" onclick="showTab('oc')">📄 Órdenes de Compra</button>
+  <button class="tab-btn" onclick="showTab('responsables')">👥 Responsables</button>
 </div>
 
-<!-- Toolbar -->
-<div id="toolbar">
-  <span class="tlbl">Filtros:</span>
-  <input type="text" id="f-buscar" placeholder="Código, descripción…" style="width:160px" oninput="renderTable()">
-  <input type="text" id="f-gd" placeholder="GD" style="width:80px" oninput="renderTable()">
-  <input type="text" id="f-resp" placeholder="Responsable" style="width:110px" oninput="renderTable()">
-  <input type="date" id="f-desde" style="width:130px" oninput="renderTable()">
-  <span class="tlbl">al</span>
-  <input type="date" id="f-hasta" style="width:130px" oninput="renderTable()">
-  <div class="tsep"></div>
-  <select id="f-tipo" onchange="renderTable()">
-    <option value="">Todos los tipos</option>
-    <option value="PRODUCTO CRITICO">Crítico</option>
-    <option value="NO CRITICO">No crítico</option>
-  </select>
-  <div class="tsep"></div>
-  <button class="btn btn-sm" onclick="clearFilters()">✕ Limpiar</button>
-  <span style="margin-left:auto;font-size:.72rem;color:var(--muted)" id="count-label"></span>
-</div>
+<!-- Tab content -->
+<div id="tab-content">
 
-<!-- Table -->
-<div id="tbl-wrap">
-  <div id="loading"><span class="spinner-sm"></span>Cargando datos…</div>
-  <table id="main-table" style="display:none">
-    <thead>
-      <tr>
-        <th style="width:36px"></th>
-        <th>Fecha Guía</th>
-        <th>Fecha Sol.</th>
-        <th>Obs. Módulo</th>
-        <th class="c">GD</th>
-        <th>OC</th>
-        <th>Código</th>
-        <th style="min-width:180px">Descripción</th>
-        <th class="c">UND</th>
-        <th class="r">Cant. Sol.</th>
-        <th class="r">Devol.</th>
-        <th class="r">Cant. Rec.</th>
-        <th class="r">Valor Unit.</th>
-        <th class="r">Valor Total GD</th>
-        <th class="r">Valor Ppto.</th>
-        <th class="r">Dif. Unit.</th>
-        <th class="r">Dif. Total</th>
-        <th class="r">% Dif.</th>
-        <th>Responsable</th>
-        <th class="c">Tipo</th>
-        <th class="r" style="color:var(--green)">Monto GD</th>
-      </tr>
-    </thead>
-    <tbody id="tbl-body"></tbody>
-  </table>
-</div>
+  <!-- TAB 1: Registro -->
+  <div class="tab-pane active" id="pane-registro">
+    <div id="stats">
+      <div class="stat sc-blue"><div class="lbl">Total GDs</div><div class="val" id="st-gds">—</div></div>
+      <div class="stat sc-green"><div class="lbl">Monto total</div><div class="val" id="st-monto">—</div></div>
+      <div class="stat sc-yellow"><div class="lbl">Ítems mes actual</div><div class="val" id="st-items">—</div></div>
+      <div class="stat sc-red"><div class="lbl">% Desviación prom.</div><div class="val" id="st-desv">—</div></div>
+    </div>
+    <div id="toolbar">
+      <span class="tlbl">Filtros:</span>
+      <input type="text" id="f-buscar" placeholder="Código, descripción…" style="width:160px" oninput="renderTable()">
+      <input type="text" id="f-gd" placeholder="N° GD" style="width:80px" oninput="renderTable()">
+      <input type="text" id="f-resp" placeholder="Responsable" style="width:110px" oninput="renderTable()">
+      <input type="date" id="f-desde" style="width:130px" oninput="renderTable()">
+      <span class="tlbl">al</span>
+      <input type="date" id="f-hasta" style="width:130px" oninput="renderTable()">
+      <div class="tsep"></div>
+      <select id="f-tipo" onchange="renderTable()">
+        <option value="">Todos los tipos</option>
+        <option value="PRODUCTO CRITICO">Crítico</option>
+        <option value="NO CRITICO">No crítico</option>
+      </select>
+      <div class="tsep"></div>
+      <button class="btn btn-sm" onclick="clearFilters()">✕ Limpiar</button>
+      <span style="margin-left:auto;font-size:.72rem;color:var(--muted)" id="count-label"></span>
+    </div>
+    <div id="tbl-wrap">
+      <div id="loading"><span class="spinner-sm"></span>Cargando datos…</div>
+      <table id="main-table" style="display:none">
+        <thead>
+          <tr>
+            <th style="width:36px"></th>
+            <th>Fecha Guía</th>
+            <th>Fecha Sol.</th>
+            <th>Obs. Módulo</th>
+            <th class="c">GD</th>
+            <th>OC</th>
+            <th>Código</th>
+            <th style="min-width:180px">Descripción</th>
+            <th class="c">UND</th>
+            <th class="r">Cant. Sol.</th>
+            <th class="r">Devol.</th>
+            <th class="r">Cant. Rec.</th>
+            <th class="r">Valor Total Item</th>
+            <th class="r">Valor Unit.</th>
+            <th class="r">Valor Ppto.</th>
+            <th class="r">Dif. Unit.</th>
+            <th class="r">Dif. Total</th>
+            <th class="r">% Dif.</th>
+            <th>Responsable</th>
+            <th class="c">Tipo</th>
+            <th class="r" style="color:var(--green)">Monto GD</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 2: Órdenes de Compra -->
+  <div class="tab-pane" id="pane-oc">
+    <div id="oc-toolbar">
+      <span style="font-size:.78rem;color:var(--muted)">Administrá las OC y sus guías asociadas</span>
+      <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openOCDrawer(null)">+ Nueva OC</button>
+    </div>
+    <div id="oc-wrap">
+      <table class="oc-table">
+        <thead>
+          <tr>
+            <th style="width:36px"></th>
+            <th>N° OC</th>
+            <th>Proveedor</th>
+            <th>Fecha</th>
+            <th class="r">Monto</th>
+            <th>GDs asociadas</th>
+            <th>Notas</th>
+          </tr>
+        </thead>
+        <tbody id="oc-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3: Responsables -->
+  <div class="tab-pane" id="pane-responsables">
+    <div id="resp-wrap">
+      <h3 style="font-size:.85rem;color:var(--muted);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Lista de Responsables</h3>
+      <div class="resp-add-row">
+        <input type="text" id="resp-nuevo-nombre" placeholder="Nombre del responsable…" onkeydown="if(event.key==='Enter') addResponsable()">
+        <button class="btn btn-primary btn-sm" onclick="addResponsable()">+ Agregar</button>
+      </div>
+      <div class="resp-list" id="resp-list"></div>
+    </div>
+  </div>
+
+</div><!-- /tab-content -->
 
 <!-- Overlay -->
-<div id="overlay" onclick="closeDrawer()"></div>
+<div id="overlay" onclick="closeAllDrawers()"></div>
 
-<!-- Drawer -->
-<div id="drawer">
-  <div id="drw-hdr">
+<!-- Drawer: Registro GD -->
+<div class="drawer" id="drawer-reg">
+  <div class="drw-hdr">
     <h2 id="drw-title">Nueva entrada</h2>
     <button class="btn btn-sm btn-danger" id="btn-delete" style="display:none" onclick="deleteRecord()">🗑 Eliminar</button>
     <button class="btn btn-sm" onclick="closeDrawer()">✕</button>
   </div>
-  <div id="drw-body">
+  <div class="drw-body">
     <div class="form-grid">
-
-      <!-- Fechas -->
+      <div class="fg"><label>Fecha Guía</label><input type="date" id="f_fecha_guia" oninput="onFechaChange()"></div>
+      <div class="fg"><label>Fecha Solicitud</label><input type="date" id="f_fecha_sol"></div>
+      <div class="fg"><label>N° GD (Guía Despacho)</label><input type="text" id="f_gd" placeholder="Ej: 295517" oninput="onGdChange()"></div>
       <div class="fg">
-        <label>Fecha Guía</label>
-        <input type="date" id="f_fecha_guia" oninput="onFechaChange()">
+        <label>OC asociada <span class="auto-tag">auto</span></label>
+        <input type="text" id="f_oc_display" readonly placeholder="(se asigna en pestaña OC)">
       </div>
-      <div class="fg">
-        <label>Fecha Solicitud</label>
-        <input type="date" id="f_fecha_sol">
-      </div>
-
-      <!-- GD / OC -->
-      <div class="fg">
-        <label>N° GD (Guía Despacho)</label>
-        <input type="text" id="f_gd" placeholder="Ej: 295517" oninput="onGdChange()">
-      </div>
-      <div class="fg">
-        <label>OC (Orden de Compra)</label>
-        <input type="text" id="f_oc" placeholder="Ej: 5284">
-      </div>
-
-      <!-- Observación -->
-      <div class="fg wide">
-        <label>Obs. Módulo</label>
-        <input type="text" id="f_obs" placeholder="Ej: PILOTO, MR-01, GP-02…">
-      </div>
-
-      <!-- Código con autocompletar -->
+      <div class="fg wide"><label>Obs. Módulo</label><input type="text" id="f_obs" placeholder="Ej: PILOTO, MR-01, GP-02…"></div>
       <div class="fg wide">
         <label>Código Producto</label>
         <div class="prod-wrap">
           <div class="codigo-row">
             <input type="text" id="f_codigo" placeholder="Ej: 304101" oninput="onCodigoInput()" onkeydown="onCodigoKey(event)" autocomplete="off">
-            <button class="btn btn-sm" type="button" onclick="clearProducto()" title="Limpiar producto">✕</button>
+            <button class="btn btn-sm" type="button" onclick="clearProducto()" title="Limpiar">✕</button>
           </div>
           <div id="prod-suggestions" style="display:none"></div>
         </div>
       </div>
-
-      <!-- Descripción / Unidad / Tipo (auto) -->
-      <div class="fg wide">
-        <label>Descripción <span class="auto-tag">auto</span></label>
-        <input type="text" id="f_desc" readonly placeholder="Se completa al ingresar código">
-      </div>
-      <div class="fg">
-        <label>Unidad <span class="auto-tag">auto</span></label>
-        <input type="text" id="f_unidad" readonly placeholder="—">
-      </div>
-      <div class="fg">
-        <label>Tipo <span class="auto-tag">auto</span></label>
-        <input type="text" id="f_tipo" readonly placeholder="—">
-      </div>
-
+      <div class="fg wide"><label>Descripción <span class="auto-tag">auto</span></label><input type="text" id="f_desc" readonly placeholder="Se completa al ingresar código"></div>
+      <div class="fg"><label>Unidad <span class="auto-tag">auto</span></label><input type="text" id="f_unidad" readonly placeholder="—"></div>
+      <div class="fg"><label>Tipo <span class="auto-tag">auto</span></label><input type="text" id="f_tipo" readonly placeholder="—"></div>
       <hr class="form-divider">
-
-      <!-- Cantidades -->
-      <div class="fg">
-        <label>Cantidad Solicitada</label>
-        <input type="number" id="f_cant_sol" min="0" step="any" placeholder="0" oninput="recalc()">
-      </div>
-      <div class="fg">
-        <label>Devolución</label>
-        <input type="number" id="f_devol" min="0" step="any" placeholder="0" value="0" oninput="recalc()">
-      </div>
-
-      <!-- Precio -->
-      <div class="fg">
-        <label>Valor x Unidad (GD)</label>
-        <input type="number" id="f_valor_und" min="0" step="any" placeholder="0" oninput="recalc()">
-      </div>
-      <div class="fg">
+      <div class="fg"><label>Cantidad Solicitada</label><input type="number" id="f_cant_sol" min="0" step="any" placeholder="0" oninput="recalc()"></div>
+      <div class="fg"><label>Devolución</label><input type="number" id="f_devol" min="0" step="any" placeholder="0" value="0" oninput="recalc()"></div>
+      <div class="fg wide"><label>Valor Total Item GD ($)</label><input type="number" id="f_valor_total_item" min="0" step="any" placeholder="Monto total pagado por este ítem" oninput="recalc()"></div>
+      <div class="fg wide">
         <label>Responsable</label>
-        <input type="text" id="f_resp" placeholder="Nombre del responsable">
+        <select id="f_resp"><option value="">— Seleccionar —</option></select>
       </div>
-
-      <!-- Sección calculada -->
       <div class="calc-section">
         <div class="calc-title">⚙ Campos calculados</div>
         <div class="calc-grid">
-          <div class="calc-item">
-            <label>Cant. Recibida</label>
-            <div class="cval" id="c_cant_rec">—</div>
-          </div>
-          <div class="calc-item">
-            <label>Mes</label>
-            <div class="cval muted" id="c_mes">—</div>
-          </div>
-          <div class="calc-item">
-            <label>Valor Ppto. (catálogo)</label>
-            <div class="cval muted" id="c_ppto">—</div>
-          </div>
-          <div class="calc-item">
-            <label>Valor Total GD Ítem</label>
-            <div class="cval" id="c_valor_total">—</div>
-          </div>
-          <div class="calc-item">
-            <label>Dif. Valor Unitario</label>
-            <div class="cval" id="c_dif_und">—</div>
-          </div>
-          <div class="calc-item">
-            <label>Dif. Valor Total Pagado</label>
-            <div class="cval" id="c_dif_total">—</div>
-          </div>
-          <div class="calc-item">
-            <label>% Diferencia</label>
-            <div class="cval" id="c_pct">—</div>
-          </div>
-          <div class="calc-item">
-            <label>&nbsp;</label>
-            <div></div>
-          </div>
+          <div class="calc-item"><label>Cant. Recibida</label><div class="cval muted" id="c_cant_rec">—</div></div>
+          <div class="calc-item"><label>Mes</label><div class="cval muted" id="c_mes">—</div></div>
+          <div class="calc-item"><label>Valor Unitario (Total÷Rec.)</label><div class="cval muted" id="c_valor_und">—</div></div>
+          <div class="calc-item"><label>Valor Ppto. (catálogo)</label><div class="cval muted" id="c_ppto">—</div></div>
+          <div class="calc-item"><label>Dif. Valor Unitario</label><div class="cval" id="c_dif_und">—</div></div>
+          <div class="calc-item"><label>Dif. Valor Total</label><div class="cval" id="c_dif_total">—</div></div>
+          <div class="calc-item"><label>% Diferencia</label><div class="cval" id="c_pct">—</div></div>
+          <div class="calc-item"><label>&nbsp;</label><div></div></div>
         </div>
-
-        <div class="monto-gd-box" style="margin-top:12px">
+        <div class="monto-gd-box">
           <span class="mg-label">💰 Monto Total GD <span id="gd-label-badge" style="font-size:.7rem;opacity:.7"></span></span>
           <span class="mg-val" id="c_monto_gd">—</span>
         </div>
       </div>
-
-    </div><!-- /form-grid -->
-  </div><!-- /drw-body -->
-  <div id="drw-foot">
+    </div>
+  </div>
+  <div class="drw-foot">
     <span id="drw-save-msg" style="font-size:.75rem;color:var(--muted)"></span>
     <button class="btn" onclick="closeDrawer()">Cancelar</button>
     <button class="btn btn-primary" id="btn-save" onclick="saveRecord()">Guardar</button>
   </div>
 </div>
 
+<!-- Drawer: OC -->
+<div class="drawer" id="drawer-oc">
+  <div class="drw-hdr">
+    <h2 id="oc-drw-title">Nueva OC</h2>
+    <button class="btn btn-sm btn-danger" id="oc-btn-delete" style="display:none" onclick="deleteOC()">🗑 Eliminar</button>
+    <button class="btn btn-sm" onclick="closeOCDrawer()">✕</button>
+  </div>
+  <div class="drw-body">
+    <div class="form-grid">
+      <div class="fg"><label>N° Orden de Compra</label><input type="text" id="oc_numero" placeholder="Ej: 5284"></div>
+      <div class="fg"><label>Fecha</label><input type="date" id="oc_fecha" style="color-scheme:dark"></div>
+      <div class="fg wide"><label>Proveedor</label><input type="text" id="oc_proveedor" placeholder="Nombre del proveedor"></div>
+      <div class="fg"><label>Monto OC ($)</label><input type="number" id="oc_monto" min="0" step="any" placeholder="0"></div>
+      <div class="fg wide"><label>Notas</label><input type="text" id="oc_notas" placeholder="Observaciones…"></div>
+      <div class="fg wide">
+        <label>GDs asociadas</label>
+        <div class="gd-tags" id="oc-gd-tags"></div>
+        <div class="gd-add-row">
+          <input type="text" id="oc-gd-input" placeholder="N° Guía… (Enter para agregar)" onkeydown="if(event.key==='Enter'){event.preventDefault();addGDToOC()}">
+          <button class="btn btn-sm btn-primary" onclick="addGDToOC()">+ Agregar GD</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="drw-foot">
+    <span id="oc-save-msg" style="font-size:.75rem;color:var(--muted)"></span>
+    <button class="btn" onclick="closeOCDrawer()">Cancelar</button>
+    <button class="btn btn-primary" id="oc-btn-save" onclick="saveOC()">Guardar</button>
+  </div>
+</div>
 
 <!-- Toast -->
 <div id="toast"></div>
 
 <script>
-// ── Constantes ────────────────────────────────────────────────────────────────
 const SUPA_URL  = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
 const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
-const TABLE     = 'registro_compras';
 const PROD_URL  = 'https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/productos.json';
 const MES_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-// ── Estado ────────────────────────────────────────────────────────────────────
-let registros = [];
-let productos = [];
-let editId    = null;
-let prodMap   = {};
-let _sbClient = null;
+let registros     = [];
+let productos     = [];
+let responsables  = [];
+let ordenesCompra = [];
+let ocGuias       = [];   // [{oc_id, gd}]
+let editId        = null;
+let editOCId      = null;
+let ocGDs         = [];   // GDs pendientes en el drawer OC
+let prodMap       = {};
+let gdOCMap       = {};   // gd → numero OC
+let _sbClient     = null;
 
-// ── Supabase client ───────────────────────────────────────────────────────────
+// ── Auth guard ────────────────────────────────────────────────────────────────
+(function(){
+  const s = AUTH.requireAuth('login.html');
+  if (!s) return;
+  const badge = document.getElementById('user-badge');
+  if (badge) badge.textContent = s.name + ' · ' + s.role;
+  init();
+})();
+
+// ── Supabase ──────────────────────────────────────────────────────────────────
 async function sbClient(){
   if (_sbClient) return _sbClient;
   if (!window.supabase){
@@ -361,71 +414,94 @@ async function sbClient(){
     });
   }
   _sbClient = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
-    auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true }
+    auth:{ storage: window.sessionStorage, persistSession: true, autoRefreshToken: true }
   });
   return _sbClient;
 }
 
-// ── Auth guard ────────────────────────────────────────────────────────────────
-(function(){
-  const s = AUTH.requireAuth('login.html');
-  if (!s) return;
-  const badge = document.getElementById('user-badge');
-  if (badge) badge.textContent = s.name + ' · ' + s.role;
-  init();
-})();
-
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 async function init(){
   try {
-    await Promise.all([loadProductos(), loadData()]);
+    await Promise.all([loadProductos(), loadData(), loadResponsables(), loadOC()]);
+    buildGdOCMap();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('main-table').style.display = 'table';
     renderTable();
     updateStats();
+    renderOC();
+    renderResponsables();
   } catch(e){
-    document.getElementById('loading').innerHTML = '<span style="color:var(--red)">⚠ Error al cargar datos. ' + e.message + '</span>';
+    document.getElementById('loading').innerHTML = '<span style="color:var(--red)">⚠ Error: ' + e.message + '</span>';
   }
 }
 
-// ── Productos ─────────────────────────────────────────────────────────────────
+// ── Carga de datos ────────────────────────────────────────────────────────────
 async function loadProductos(){
   const r = await fetch(PROD_URL + '?v=' + Date.now());
-  if (!r.ok) throw new Error('No se pudo cargar catálogo de productos');
+  if (!r.ok) throw new Error('No se pudo cargar catálogo');
   productos = await r.json();
   prodMap = {};
   productos.forEach(p => { prodMap[String(p.codigo).trim()] = p; });
 }
 
-// ── Datos Supabase ────────────────────────────────────────────────────────────
 async function loadData(){
   const sb = await sbClient();
-  const { data, error } = await sb
-    .from(TABLE)
-    .select('*')
-    .order('fecha_guia', { ascending: false });
+  const { data, error } = await sb.from('registro_compras').select('*').order('fecha_guia', { ascending: false });
   if (error) throw new Error(error.message);
   registros = data || [];
 }
 
-async function saveRecord_DB(record, isNew){
+async function loadResponsables(){
   const sb = await sbClient();
-  if (isNew){
-    const { error } = await sb.from(TABLE).insert(record);
-    if (error) throw new Error(error.message);
-  } else {
-    const { error } = await sb.from(TABLE).update(record).eq('id', record.id);
-    if (error) throw new Error(error.message);
-  }
+  const { data, error } = await sb.from('responsables').select('*').order('nombre');
+  if (error) return;
+  responsables = data || [];
+  populateRespSelect();
 }
 
-async function deleteRecord_DB(id){
+async function loadOC(){
   const sb = await sbClient();
-  const { error } = await sb.from(TABLE).delete().eq('id', id);
-  if (error) throw new Error(error.message);
+  const [ocRes, ogRes] = await Promise.all([
+    sb.from('ordenes_compra').select('*').order('fecha', { ascending: false }),
+    sb.from('oc_guias').select('*')
+  ]);
+  ordenesCompra = ocRes.data || [];
+  ocGuias       = ogRes.data || [];
 }
 
-// ── Tabla ─────────────────────────────────────────────────────────────────────
+function buildGdOCMap(){
+  gdOCMap = {};
+  ocGuias.forEach(og => {
+    const oc = ordenesCompra.find(o => o.id === og.oc_id);
+    if (oc) gdOCMap[String(og.gd)] = oc.numero;
+  });
+}
+
+function populateRespSelect(){
+  const sel = document.getElementById('f_resp');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Seleccionar —</option>';
+  responsables.filter(r => r.activo).forEach(r => {
+    const op = document.createElement('option');
+    op.value = r.nombre;
+    op.textContent = r.nombre;
+    sel.appendChild(op);
+  });
+  if (cur) sel.value = cur;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function showTab(name){
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pane-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  const hdrBtns = document.querySelector('.hdr-right');
+  document.getElementById('btn-nuevo').style.display = name === 'registro' ? '' : 'none';
+  document.querySelector('[onclick="exportExcel()"]').style.display = name === 'registro' ? '' : 'none';
+}
+
+// ── Tabla Registro ────────────────────────────────────────────────────────────
 function getFiltered(){
   const buscar = document.getElementById('f-buscar').value.trim().toLowerCase();
   const gd     = document.getElementById('f-gd').value.trim();
@@ -433,15 +509,14 @@ function getFiltered(){
   const desde  = document.getElementById('f-desde').value;
   const hasta  = document.getElementById('f-hasta').value;
   const tipo   = document.getElementById('f-tipo').value;
-
   return registros.filter(r => {
-    if (gd && String(r.gd) !== gd) return false;
-    if (resp && !r.responsable.toLowerCase().includes(resp)) return false;
+    if (gd    && String(r.gd) !== gd) return false;
+    if (resp  && !(r.responsable||'').toLowerCase().includes(resp)) return false;
     if (desde && r.fecha_guia < desde) return false;
     if (hasta && r.fecha_guia > hasta) return false;
-    if (tipo && r.tipo_producto !== tipo) return false;
+    if (tipo  && r.tipo_producto !== tipo) return false;
     if (buscar){
-      const hay = (String(r.codigo)+r.descripcion+r.obs_modulo+r.oc).toLowerCase();
+      const hay = (String(r.codigo)+' '+(r.descripcion||'')+' '+(r.obs_modulo||'')).toLowerCase();
       if (!hay.includes(buscar)) return false;
     }
     return true;
@@ -454,21 +529,17 @@ function renderTable(){
   document.getElementById('count-label').textContent = `${filtered.length} de ${registros.length} registros`;
 
   if (!filtered.length){
-    tbody.innerHTML = `<tr><td colspan="21" class="no-data">Sin registros. ${registros.length ? 'Ajusta los filtros.' : 'Agrega la primera entrada con + Nueva entrada.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="21" class="no-data">${registros.length ? 'Sin resultados — ajustá los filtros.' : 'Sin registros. Usá + Nueva entrada.'}</td></tr>`;
     return;
   }
 
-  // Calcular monto total por GD
   const montoGD = {};
   registros.forEach(r => {
-    const vt = calcValorTotal(r);
-    if (!montoGD[r.gd]) montoGD[r.gd] = 0;
-    montoGD[r.gd] += vt;
+    const vt = getValorTotalItem(r);
+    montoGD[r.gd] = (montoGD[r.gd]||0) + vt;
   });
 
-  // Agrupar por GD para mostrar subtotales
-  const gdOrder = [];
-  const gdGroups = {};
+  const gdOrder = [], gdGroups = {};
   filtered.forEach(r => {
     if (!gdGroups[r.gd]){ gdGroups[r.gd] = []; gdOrder.push(r.gd); }
     gdGroups[r.gd].push(r);
@@ -476,34 +547,34 @@ function renderTable(){
 
   let html = '';
   gdOrder.forEach(gd => {
-    gdGroups[gd].forEach((r, idx) => {
-      const vt  = calcValorTotal(r);
-      const cr  = calcCantRec(r);
-      const pct = calcPct(r);
-      const difT = calcDifTotal(r);
-
-      const pctClass = pct > 0 ? 'dif-pos' : pct < 0 ? 'dif-neg' : 'dif-zero';
-      const difClass = difT > 0 ? 'dif-pos' : difT < 0 ? 'dif-neg' : 'dif-zero';
-
+    gdGroups[gd].forEach(r => {
+      const vti   = getValorTotalItem(r);
+      const vund  = calcValorUnd(r);
+      const cr    = calcCantRec(r);
+      const pct   = calcPct(r);
+      const difT  = calcDifTotal(r);
+      const pctCl = pct > 0 ? 'dif-pos' : pct < 0 ? 'dif-neg' : 'dif-zero';
+      const difCl = difT > 0 ? 'dif-pos' : difT < 0 ? 'dif-neg' : 'dif-zero';
+      const ocNum = gdOCMap[String(r.gd)] || '—';
       html += `<tr>
         <td class="c"><button class="act-btn" onclick="openDrawer('${r.id}')" title="Editar">✏️</button></td>
         <td>${fmtDate(r.fecha_guia)}</td>
         <td>${fmtDate(r.fecha_sol)}</td>
         <td>${esc(r.obs_modulo||'')}</td>
         <td class="c mono">${esc(r.gd||'')}</td>
-        <td>${esc(r.oc||'')}</td>
+        <td class="mono">${esc(ocNum)}</td>
         <td class="mono">${esc(r.codigo||'')}</td>
         <td title="${esc(r.descripcion||'')}">${esc(r.descripcion||'')}</td>
         <td class="c">${esc(r.unidad||'')}</td>
         <td class="r">${fmt0(r.cantidad_sol)}</td>
         <td class="r">${r.devolucion ? fmt0(r.devolucion) : '—'}</td>
         <td class="r">${fmt0(cr)}</td>
-        <td class="r">${fmtNum(r.valor_und)}</td>
-        <td class="r">${fmtNum(vt)}</td>
-        <td class="r muted">${fmtNum(r.valor_ppto)}</td>
-        <td class="r ${difClass}">${fmtNum(calcDifUnd(r))}</td>
-        <td class="r ${difClass}">${fmtNum(difT)}</td>
-        <td class="r ${pctClass}">${pct !== null ? pct.toFixed(1)+'%' : '—'}</td>
+        <td class="r" style="font-weight:600">${fmtNum(vti)}</td>
+        <td class="r">${fmtNum(vund)}</td>
+        <td class="r" style="color:var(--muted)">${fmtNum(r.valor_ppto)}</td>
+        <td class="r ${difCl}">${fmtNum(calcDifUnd(r))}</td>
+        <td class="r ${difCl}">${fmtNum(difT)}</td>
+        <td class="r ${pctCl}">${pct !== null ? pct.toFixed(1)+'%' : '—'}</td>
         <td>${esc(r.responsable||'')}</td>
         <td class="c">${tipoChip(r.tipo_producto)}</td>
         <td class="r" style="color:var(--green);font-weight:700">${fmtNum(montoGD[r.gd])}</td>
@@ -513,147 +584,132 @@ function renderTable(){
   tbody.innerHTML = html;
 }
 
-// ── Cálculos ─────────────────────────────────────────────────────────────────
-function calcCantRec(r){ return (r.cantidad_sol||0) - (r.devolucion||0); }
-function calcValorTotal(r){ return calcCantRec(r) * (r.valor_und||0); }
-function calcDifUnd(r){ return (r.valor_und||0) - (r.valor_ppto||0); }
+// ── Cálculos ──────────────────────────────────────────────────────────────────
+function getValorTotalItem(r){
+  if (r.valor_total_item != null && r.valor_total_item !== '') return parseFloat(r.valor_total_item)||0;
+  return (parseFloat(r.valor_und)||0) * calcCantRec(r);
+}
+function calcCantRec(r){ return (parseFloat(r.cantidad_sol)||0) - (parseFloat(r.devolucion)||0); }
+function calcValorUnd(r){
+  const cr = calcCantRec(r);
+  if (!cr) return 0;
+  return getValorTotalItem(r) / cr;
+}
+function calcDifUnd(r){ return calcValorUnd(r) - (parseFloat(r.valor_ppto)||0); }
 function calcDifTotal(r){
   const cr = calcCantRec(r);
-  return calcValorTotal(r) - cr * (r.valor_ppto||0);
+  return getValorTotalItem(r) - cr * (parseFloat(r.valor_ppto)||0);
 }
 function calcPct(r){
-  const base = calcCantRec(r) * (r.valor_ppto||0);
+  const base = calcCantRec(r) * (parseFloat(r.valor_ppto)||0);
   if (!base) return null;
   return calcDifTotal(r) / base * 100;
 }
-function calcMontoGD(gd){
-  return registros.filter(r => String(r.gd) === String(gd)).reduce((s,r) => s + calcValorTotal(r), 0);
-}
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// ── Stats ──────────────────────────────────────────────────────────────────────
 function updateStats(){
-  const gds = new Set(registros.map(r => r.gd)).size;
-  const monto = registros.reduce((s,r) => s + calcValorTotal(r), 0);
-  const mes = new Date().getMonth() + 1;
-  const itemsMes = registros.filter(r => r.mes == mes).length;
-  const desv = registros.filter(r => calcPct(r) !== null);
-  const avgDesv = desv.length ? desv.reduce((s,r) => s + calcPct(r), 0) / desv.length : 0;
-
-  document.getElementById('st-gds').textContent = gds;
+  const gds   = new Set(registros.map(r => r.gd)).size;
+  const monto = registros.reduce((s,r) => s + getValorTotalItem(r), 0);
+  const mes   = new Date().getMonth() + 1;
+  const items = registros.filter(r => r.mes == mes).length;
+  const desv  = registros.filter(r => calcPct(r) !== null);
+  const avg   = desv.length ? desv.reduce((s,r) => s + calcPct(r), 0) / desv.length : 0;
+  document.getElementById('st-gds').textContent   = gds;
   document.getElementById('st-monto').textContent = fmtCompact(monto);
-  document.getElementById('st-items').textContent = itemsMes;
-  document.getElementById('st-desv').textContent = avgDesv.toFixed(1) + '%';
+  document.getElementById('st-items').textContent = items;
+  document.getElementById('st-desv').textContent  = avg.toFixed(1) + '%';
 }
 
-// ── Drawer ───────────────────────────────────────────────────────────────────
+// ── Drawer Registro ────────────────────────────────────────────────────────────
 function openDrawer(id){
   editId = id;
   const isNew = !id;
   document.getElementById('drw-title').textContent = isNew ? 'Nueva entrada' : 'Editar entrada';
   document.getElementById('btn-delete').style.display = isNew ? 'none' : 'inline-flex';
   document.getElementById('drw-save-msg').textContent = '';
-
   if (isNew){
     const hoy = new Date().toISOString().split('T')[0];
-    setField('f_fecha_guia', hoy);
-    setField('f_fecha_sol', hoy);
-    setField('f_gd', '');
-    setField('f_oc', '');
-    setField('f_obs', '');
-    setField('f_codigo', '');
-    setField('f_desc', '');
-    setField('f_unidad', '');
-    setField('f_tipo', '');
-    setField('f_cant_sol', '');
-    setField('f_devol', '0');
-    setField('f_valor_und', '');
-    setField('f_resp', '');
+    setF('f_fecha_guia', hoy); setF('f_fecha_sol', hoy);
+    setF('f_gd',''); setF('f_obs','');
+    setF('f_codigo',''); setF('f_desc',''); setF('f_unidad',''); setF('f_tipo','');
+    setF('f_cant_sol',''); setF('f_devol','0');
+    setF('f_valor_total_item','');
+    document.getElementById('f_resp').value = '';
+    document.getElementById('f_oc_display').value = '';
   } else {
     const r = registros.find(x => x.id === id);
-    if (!r){ toast('Registro no encontrado','err'); return; }
-    setField('f_fecha_guia', r.fecha_guia||'');
-    setField('f_fecha_sol', r.fecha_sol||'');
-    setField('f_gd', r.gd||'');
-    setField('f_oc', r.oc||'');
-    setField('f_obs', r.obs_modulo||'');
-    setField('f_codigo', r.codigo||'');
-    setField('f_desc', r.descripcion||'');
-    setField('f_unidad', r.unidad||'');
-    setField('f_tipo', r.tipo_producto||'');
-    setField('f_cant_sol', r.cantidad_sol||'');
-    setField('f_devol', r.devolucion||0);
-    setField('f_valor_und', r.valor_und||'');
-    setField('f_resp', r.responsable||'');
+    if (!r){ toast('No encontrado','err'); return; }
+    setF('f_fecha_guia', r.fecha_guia||'');
+    setF('f_fecha_sol',  r.fecha_sol||'');
+    setF('f_gd',         r.gd||'');
+    setF('f_obs',        r.obs_modulo||'');
+    setF('f_codigo',     r.codigo||'');
+    setF('f_desc',       r.descripcion||'');
+    setF('f_unidad',     r.unidad||'');
+    setF('f_tipo',       r.tipo_producto||'');
+    setF('f_cant_sol',   r.cantidad_sol||'');
+    setF('f_devol',      r.devolucion||0);
+    setF('f_valor_total_item', r.valor_total_item != null ? r.valor_total_item : (r.valor_und * calcCantRec(r))||'');
+    document.getElementById('f_resp').value = r.responsable||'';
+    document.getElementById('f_oc_display').value = gdOCMap[String(r.gd)] || '';
   }
   recalc();
   document.getElementById('overlay').classList.add('show');
-  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-reg').classList.add('open');
   hideSugg();
 }
-
 function closeDrawer(){
   document.getElementById('overlay').classList.remove('show');
-  document.getElementById('drawer').classList.remove('open');
-  hideSugg();
-  editId = null;
+  document.getElementById('drawer-reg').classList.remove('open');
+  hideSugg(); editId = null;
 }
 
-// ── Formulario ───────────────────────────────────────────────────────────────
-function setField(id, val){ document.getElementById(id).value = val; }
-function getField(id){ return document.getElementById(id).value.trim(); }
+// ── Form helpers ──────────────────────────────────────────────────────────────
+function setF(id, val){ document.getElementById(id).value = val; }
+function getF(id){ return document.getElementById(id).value.trim(); }
 
-function onFechaChange(){
-  recalc();
-}
-
+function onFechaChange(){ recalc(); }
 function onGdChange(){
-  const gd = getField('f_gd');
+  const gd = getF('f_gd');
   document.getElementById('gd-label-badge').textContent = gd ? `GD ${gd}` : '';
+  document.getElementById('f_oc_display').value = gdOCMap[gd] || '';
   recalc();
 }
 
 function recalc(){
-  const cantSol  = parseFloat(getField('f_cant_sol'))  || 0;
-  const devol    = parseFloat(getField('f_devol'))     || 0;
-  const valorUnd = parseFloat(getField('f_valor_und')) || 0;
-  const fechaG   = getField('f_fecha_guia');
-  const gd       = getField('f_gd');
+  const cantSol  = parseFloat(getF('f_cant_sol'))        || 0;
+  const devol    = parseFloat(getF('f_devol'))           || 0;
+  const valTotal = parseFloat(getF('f_valor_total_item'))|| 0;
+  const fechaG   = getF('f_fecha_guia');
+  const gd       = getF('f_gd');
+  const codigo   = getF('f_codigo');
+  const prod     = prodMap[codigo] || null;
+  const ppto     = prod ? prod.ppto : (editId ? (registros.find(r=>r.id===editId)||{}).valor_ppto||0 : 0);
 
-  // CODIGO → ppto
-  const codigo = getField('f_codigo');
-  const prod   = prodMap[codigo] || null;
-  const ppto   = prod ? prod.ppto : (editId ? (registros.find(r=>r.id===editId)||{}).valor_ppto||0 : 0);
+  const cantRec = cantSol - devol;
+  const valUnd  = cantRec ? valTotal / cantRec : 0;
+  const difUnd  = valUnd - ppto;
+  const difTot  = valTotal - cantRec * ppto;
+  const pct     = (cantRec * ppto) ? (difTot / (cantRec * ppto) * 100) : null;
 
-  const cantRec  = cantSol - devol;
-  const valTotal = cantRec * valorUnd;
-  const difUnd   = valorUnd - ppto;
-  const difTot   = valTotal - cantRec * ppto;
-  const pct      = (cantRec * ppto) ? (difTot / (cantRec * ppto) * 100) : null;
-
-  // Mes
   let mes = '—';
-  if (fechaG){
-    const d = new Date(fechaG + 'T12:00:00');
-    mes = MES_NAMES[d.getMonth()] + ' ' + d.getFullYear();
-  }
+  if (fechaG){ const d = new Date(fechaG+'T12:00:00'); mes = MES_NAMES[d.getMonth()]+' '+d.getFullYear(); }
 
-  // Monto GD (incluyendo el item actual si es edición)
   let montoGD = 0;
   if (gd){
     montoGD = registros
       .filter(r => String(r.gd) === gd && r.id !== editId)
-      .reduce((s,r) => s + calcValorTotal(r), 0);
-    montoGD += valTotal; // incluye el item actual
+      .reduce((s,r) => s + getValorTotalItem(r), 0);
+    montoGD += valTotal;
   }
 
-  // Actualizar displays
-  setCalc('c_cant_rec', cantRec, null);
-  setCalc('c_mes', mes, null, true);
-  setCalc('c_ppto', ppto ? fmtNum(ppto) : '—', null, true);
-  setCalc('c_valor_total', valTotal ? fmtNum(valTotal) : '—', null, true);
-  setCalc('c_dif_und', difUnd ? fmtNum(difUnd) : '—', difUnd, false);
-  setCalc('c_dif_total', difTot ? fmtNum(difTot) : '—', difTot, false);
-  setCalc('c_pct', pct !== null ? pct.toFixed(2)+'%' : '—', pct, false);
+  setCalc('c_cant_rec',  fmt0(cantRec),                    null,  true);
+  setCalc('c_mes',       mes,                               null,  true);
+  setCalc('c_valor_und', valUnd ? fmtNum(valUnd) : '—',    null,  true);
+  setCalc('c_ppto',      ppto   ? fmtNum(ppto)   : '—',    null,  true);
+  setCalc('c_dif_und',   difUnd ? fmtNum(difUnd) : '—',    difUnd, false);
+  setCalc('c_dif_total', difTot ? fmtNum(difTot) : '—',    difTot, false);
+  setCalc('c_pct',       pct !== null ? pct.toFixed(2)+'%':'—', pct, false);
   document.getElementById('c_monto_gd').textContent = gd ? fmtNum(montoGD) : '—';
   document.getElementById('gd-label-badge').textContent = gd ? `GD ${gd}` : '';
 }
@@ -666,217 +722,314 @@ function setCalc(id, text, val, neutral){
     if (val > 0) el.classList.add('pos');
     else if (val < 0) el.classList.add('neg');
     else el.classList.add('muted');
-  } else if (neutral){
-    el.classList.add('muted');
-  }
+  } else { el.classList.add('muted'); }
 }
 
-// ── Autocomplete ─────────────────────────────────────────────────────────────
+// ── Autocomplete producto ──────────────────────────────────────────────────────
 let suggTimeout = null;
 function onCodigoInput(){
   clearTimeout(suggTimeout);
-  const q = getField('f_codigo');
+  const q = getF('f_codigo');
   hideSugg();
-  if (q.length < 1){ clearProducto(); return; }
-
-  // Intento exact match primero
-  if (prodMap[q]){
-    applyProduct(prodMap[q]);
-    return;
-  }
-
-  suggTimeout = setTimeout(() => {
+  if (!q){ clearProducto(); return; }
+  if (prodMap[q]){ applyProduct(prodMap[q]); return; }
+  suggTimeout = setTimeout(()=>{
     const ql = q.toLowerCase();
     const matches = productos.filter(p =>
-      String(p.codigo).toLowerCase().includes(ql) ||
-      p.descripcion.toLowerCase().includes(ql)
-    ).slice(0, 12);
-
-    if (!matches.length){ hideSugg(); return; }
-    showSugg(matches);
+      String(p.codigo).toLowerCase().includes(ql) || p.descripcion.toLowerCase().includes(ql)
+    ).slice(0,12);
+    if (matches.length) showSugg(matches); else hideSugg();
   }, 200);
 }
-
 function onCodigoKey(e){
   const box = document.getElementById('prod-suggestions');
   const items = box.querySelectorAll('.sugg-item');
   const active = box.querySelector('.sugg-item.active');
-  if (e.key === 'ArrowDown'){
-    e.preventDefault();
-    if (!active && items[0]) { items[0].classList.add('active'); items[0].scrollIntoView({block:'nearest'}); }
-    else if (active && active.nextElementSibling){ active.classList.remove('active'); active.nextElementSibling.classList.add('active'); active.nextElementSibling.scrollIntoView({block:'nearest'}); }
-  } else if (e.key === 'ArrowUp'){
-    e.preventDefault();
-    if (active && active.previousElementSibling){ active.classList.remove('active'); active.previousElementSibling.classList.add('active'); active.previousElementSibling.scrollIntoView({block:'nearest'}); }
-  } else if (e.key === 'Enter' || e.key === 'Tab'){
-    if (active){ e.preventDefault(); active.click(); }
-  } else if (e.key === 'Escape'){
-    hideSugg();
-  }
+  if (e.key==='ArrowDown'){ e.preventDefault(); if (!active&&items[0]) items[0].classList.add('active'); else if (active&&active.nextElementSibling){ active.classList.remove('active'); active.nextElementSibling.classList.add('active'); } }
+  else if (e.key==='ArrowUp'){ e.preventDefault(); if (active&&active.previousElementSibling){ active.classList.remove('active'); active.previousElementSibling.classList.add('active'); } }
+  else if (e.key==='Enter'||e.key==='Tab'){ if (active){ e.preventDefault(); active.click(); } }
+  else if (e.key==='Escape') hideSugg();
 }
-
 function showSugg(list){
   const box = document.getElementById('prod-suggestions');
-  box.innerHTML = list.map(p => `
-    <div class="sugg-item" onclick="applyProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">
-      <div class="sc">${esc(String(p.codigo))} <span class="su">${esc(p.unidad||'')}</span></div>
-      <div class="sd">${esc(p.descripcion)}</div>
-    </div>`).join('');
+  box.innerHTML = list.map(p=>`<div class="sugg-item" onclick="applyProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})"><div class="sc">${esc(String(p.codigo))} <span class="su">${esc(p.unidad||'')}</span></div><div class="sd">${esc(p.descripcion)}</div></div>`).join('');
   box.style.display = 'block';
 }
+function hideSugg(){ const b=document.getElementById('prod-suggestions'); b.style.display='none'; b.innerHTML=''; }
+function applyProduct(p){ setF('f_codigo',p.codigo); setF('f_desc',p.descripcion); setF('f_unidad',p.unidad||''); setF('f_tipo',p.tipo||''); hideSugg(); recalc(); document.getElementById('f_cant_sol').focus(); }
+function clearProducto(){ setF('f_codigo',''); setF('f_desc',''); setF('f_unidad',''); setF('f_tipo',''); hideSugg(); recalc(); }
+document.addEventListener('click', e => { if (!e.target.closest('.prod-wrap')) hideSugg(); });
 
-function hideSugg(){
-  const box = document.getElementById('prod-suggestions');
-  box.style.display = 'none';
-  box.innerHTML = '';
-}
-
-function applyProduct(p){
-  setField('f_codigo', p.codigo);
-  setField('f_desc', p.descripcion);
-  setField('f_unidad', p.unidad||'');
-  setField('f_tipo', p.tipo||'');
-  hideSugg();
-  recalc();
-  document.getElementById('f_cant_sol').focus();
-}
-
-function clearProducto(){
-  setField('f_codigo', '');
-  setField('f_desc', '');
-  setField('f_unidad', '');
-  setField('f_tipo', '');
-  hideSugg();
-  recalc();
-}
-
-document.addEventListener('click', e => {
-  if (!e.target.closest('.prod-wrap')) hideSugg();
-});
-
-// ── Guardar ───────────────────────────────────────────────────────────────────
+// ── Guardar / Eliminar Registro ───────────────────────────────────────────────
 async function saveRecord(){
   const btn = document.getElementById('btn-save');
   const msg = document.getElementById('drw-save-msg');
+  const fechaG   = getF('f_fecha_guia');
+  const gd       = getF('f_gd');
+  const codigo   = getF('f_codigo');
+  const cantSol  = parseFloat(getF('f_cant_sol'));
+  const valTotal = parseFloat(getF('f_valor_total_item'));
 
-  const fechaG  = getField('f_fecha_guia');
-  const fechaS  = getField('f_fecha_sol');
-  const gd      = getField('f_gd');
-  const codigo  = getField('f_codigo');
-  const cantSol = parseFloat(getField('f_cant_sol'));
-  const valorUnd= parseFloat(getField('f_valor_und'));
+  if (!fechaG)                   { msg.textContent='⚠ Ingresa Fecha Guía.';         msg.style.color='var(--red)'; return; }
+  if (!gd)                       { msg.textContent='⚠ Ingresa N° GD.';              msg.style.color='var(--red)'; return; }
+  if (!codigo)                   { msg.textContent='⚠ Ingresa Código de producto.';  msg.style.color='var(--red)'; return; }
+  if (isNaN(cantSol)||cantSol<0) { msg.textContent='⚠ Cantidad inválida.';           msg.style.color='var(--red)'; return; }
 
-  if (!fechaG)                    { msg.textContent = '⚠ Ingresa Fecha Guía.';            msg.style.color='var(--red)'; return; }
-  if (!gd)                        { msg.textContent = '⚠ Ingresa N° GD.';                 msg.style.color='var(--red)'; return; }
-  if (!codigo)                    { msg.textContent = '⚠ Ingresa un Código.';              msg.style.color='var(--red)'; return; }
-  if (isNaN(cantSol)||cantSol<0)  { msg.textContent = '⚠ Cantidad solicitada inválida.';  msg.style.color='var(--red)'; return; }
-
-  const devol    = parseFloat(getField('f_devol')) || 0;
+  const devol    = parseFloat(getF('f_devol'))||0;
   const cantRec  = cantSol - devol;
-  const prod     = prodMap[codigo] || null;
+  const vti      = isNaN(valTotal) ? 0 : valTotal;
+  const valUnd   = cantRec ? vti/cantRec : 0;
+  const prod     = prodMap[codigo]||null;
   const ppto     = prod ? prod.ppto : 0;
-  const fechaMes = fechaG ? new Date(fechaG+'T12:00:00').getMonth()+1 : null;
+  const fechaMes = new Date(fechaG+'T12:00:00').getMonth()+1;
   const isNew    = !editId;
   const session  = AUTH.getSession ? AUTH.getSession() : null;
 
   const record = {
-    id:            editId || genId(),
-    fecha_guia:    fechaG || null,
-    fecha_sol:     fechaS || null,
-    obs_modulo:    getField('f_obs'),
-    mes:           fechaMes,
-    gd:            gd,
-    oc:            getField('f_oc'),
-    codigo:        codigo,
-    descripcion:   getField('f_desc'),
-    unidad:        getField('f_unidad'),
-    tipo_producto: getField('f_tipo'),
-    cantidad_sol:  cantSol,
-    devolucion:    devol,
-    cantidad_rec:  cantRec,
-    valor_und:     isNaN(valorUnd) ? 0 : valorUnd,
-    valor_ppto:    ppto,
-    responsable:   getField('f_resp'),
-    updated_at:    new Date().toISOString(),
-    created_by:    session ? session.name : ''
+    id:               editId||genId(),
+    fecha_guia:       fechaG||null,
+    fecha_sol:        getF('f_fecha_sol')||null,
+    obs_modulo:       getF('f_obs'),
+    mes:              fechaMes,
+    gd,
+    oc:               gdOCMap[gd]||'',
+    codigo,
+    descripcion:      getF('f_desc'),
+    unidad:           getF('f_unidad'),
+    tipo_producto:    getF('f_tipo'),
+    cantidad_sol:     cantSol,
+    devolucion:       devol,
+    cantidad_rec:     cantRec,
+    valor_total_item: vti,
+    valor_und:        valUnd,
+    valor_ppto:       ppto,
+    responsable:      document.getElementById('f_resp').value,
+    updated_at:       new Date().toISOString(),
+    created_by:       session ? session.name : ''
   };
   if (isNew) record.created_at = new Date().toISOString();
 
-  btn.disabled = true;
-  msg.style.color = 'var(--muted)';
-  msg.textContent = '⏳ Guardando…';
-
+  btn.disabled = true; msg.style.color='var(--muted)'; msg.textContent='⏳ Guardando…';
   try {
-    await saveRecord_DB(record, isNew);
+    const sb = await sbClient();
+    if (isNew){ const {error} = await sb.from('registro_compras').insert(record); if (error) throw new Error(error.message); }
+    else       { const {error} = await sb.from('registro_compras').update(record).eq('id',record.id); if (error) throw new Error(error.message); }
     await loadData();
-    msg.textContent = '';
-    toast(isNew ? 'Registro guardado ✓' : 'Registro actualizado ✓', 'ok');
-    renderTable();
-    updateStats();
-    closeDrawer();
-  } catch(e){
-    msg.style.color = 'var(--red)';
-    msg.textContent = '⚠ ' + e.message;
-  } finally {
-    btn.disabled = false;
-  }
+    msg.textContent=''; toast(isNew?'Guardado ✓':'Actualizado ✓','ok');
+    renderTable(); updateStats(); closeDrawer();
+  } catch(e){ msg.style.color='var(--red)'; msg.textContent='⚠ '+e.message; }
+  finally { btn.disabled=false; }
 }
 
 async function deleteRecord(){
   if (!editId) return;
-  if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
-  const btn = document.getElementById('btn-save');
-  btn.disabled = true;
+  if (!confirm('¿Eliminar este registro?')) return;
+  const btn = document.getElementById('btn-save'); btn.disabled=true;
   try {
-    await deleteRecord_DB(editId);
-    await loadData();
-    toast('Registro eliminado','ok');
-    renderTable();
-    updateStats();
-    closeDrawer();
-  } catch(e){
-    toast('Error al eliminar: ' + e.message, 'err');
-  } finally {
-    btn.disabled = false;
+    const sb = await sbClient();
+    const {error} = await sb.from('registro_compras').delete().eq('id',editId);
+    if (error) throw new Error(error.message);
+    await loadData(); toast('Eliminado','ok'); renderTable(); updateStats(); closeDrawer();
+  } catch(e){ toast('Error: '+e.message,'err'); }
+  finally { btn.disabled=false; }
+}
+
+// ── OC Tab ────────────────────────────────────────────────────────────────────
+function renderOC(){
+  const tbody = document.getElementById('oc-body');
+  if (!ordenesCompra.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="no-data">Sin órdenes de compra. Usá + Nueva OC.</td></tr>';
+    return;
   }
+  tbody.innerHTML = ordenesCompra.map(oc => {
+    const gds = ocGuias.filter(og => og.oc_id === oc.id).map(og => `<span class="gd-chip">${esc(og.gd)}</span>`).join('');
+    return `<tr>
+      <td><button class="act-btn" onclick="openOCDrawer('${oc.id}')" title="Editar">✏️</button></td>
+      <td class="mono" style="font-weight:700">${esc(oc.numero||'')}</td>
+      <td>${esc(oc.proveedor||'')}</td>
+      <td>${fmtDate(oc.fecha)}</td>
+      <td class="r">${fmtNum(oc.monto)}</td>
+      <td>${gds||'<span style="color:var(--muted);font-size:.72rem">Sin GDs</span>'}</td>
+      <td style="color:var(--muted);font-size:.78rem">${esc(oc.notas||'')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function openOCDrawer(id){
+  editOCId = id;
+  const isNew = !id;
+  document.getElementById('oc-drw-title').textContent = isNew ? 'Nueva OC' : 'Editar OC';
+  document.getElementById('oc-btn-delete').style.display = isNew ? 'none' : 'inline-flex';
+  document.getElementById('oc-save-msg').textContent = '';
+  ocGDs = [];
+  if (isNew){
+    setF('oc_numero',''); setF('oc_fecha',''); setF('oc_proveedor','');
+    setF('oc_monto',''); setF('oc_notas','');
+  } else {
+    const oc = ordenesCompra.find(o => o.id === id);
+    if (!oc){ toast('No encontrado','err'); return; }
+    setF('oc_numero',     oc.numero||'');
+    setF('oc_fecha',      oc.fecha||'');
+    setF('oc_proveedor',  oc.proveedor||'');
+    setF('oc_monto',      oc.monto||'');
+    setF('oc_notas',      oc.notas||'');
+    ocGDs = ocGuias.filter(og => og.oc_id === id).map(og => og.gd);
+  }
+  renderOCGDs();
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('drawer-oc').classList.add('open');
+}
+function closeOCDrawer(){
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('drawer-oc').classList.remove('open');
+  editOCId=null; ocGDs=[];
+}
+
+function renderOCGDs(){
+  const box = document.getElementById('oc-gd-tags');
+  box.innerHTML = ocGDs.map(gd=>`<span class="gd-tag">${esc(gd)}<button class="gd-tag-rm" onclick="removeGDFromOC('${esc(gd)}')" title="Quitar">✕</button></span>`).join('');
+}
+function addGDToOC(){
+  const inp = document.getElementById('oc-gd-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (!ocGDs.includes(val)) ocGDs.push(val);
+  inp.value='';
+  renderOCGDs();
+}
+function removeGDFromOC(gd){ ocGDs = ocGDs.filter(g => g !== gd); renderOCGDs(); }
+
+async function saveOC(){
+  const btn = document.getElementById('oc-btn-save');
+  const msg = document.getElementById('oc-save-msg');
+  const numero = getF('oc_numero');
+  if (!numero){ msg.textContent='⚠ Ingresa N° OC.'; msg.style.color='var(--red)'; return; }
+
+  const isNew   = !editOCId;
+  const session = AUTH.getSession ? AUTH.getSession() : null;
+  const record  = {
+    id:         editOCId||genId(),
+    numero,
+    proveedor:  getF('oc_proveedor'),
+    fecha:      getF('oc_fecha')||null,
+    monto:      parseFloat(getF('oc_monto'))||0,
+    notas:      getF('oc_notas'),
+    created_by: session ? session.name : ''
+  };
+  if (isNew) record.created_at = new Date().toISOString();
+
+  btn.disabled=true; msg.style.color='var(--muted)'; msg.textContent='⏳ Guardando…';
+  try {
+    const sb = await sbClient();
+    if (isNew){ const {error} = await sb.from('ordenes_compra').insert(record); if (error) throw new Error(error.message); }
+    else       { const {error} = await sb.from('ordenes_compra').update(record).eq('id',record.id); if (error) throw new Error(error.message); }
+    // Sincronizar oc_guias
+    await sb.from('oc_guias').delete().eq('oc_id', record.id);
+    if (ocGDs.length){
+      const rows = ocGDs.map(gd => ({ oc_id: record.id, gd }));
+      const {error} = await sb.from('oc_guias').insert(rows);
+      if (error) throw new Error(error.message);
+    }
+    await loadOC(); buildGdOCMap();
+    msg.textContent=''; toast(isNew?'OC guardada ✓':'OC actualizada ✓','ok');
+    renderOC(); renderTable(); closeOCDrawer();
+  } catch(e){ msg.style.color='var(--red)'; msg.textContent='⚠ '+e.message; }
+  finally { btn.disabled=false; }
+}
+
+async function deleteOC(){
+  if (!editOCId) return;
+  if (!confirm('¿Eliminar esta OC y sus asociaciones con GDs?')) return;
+  const btn = document.getElementById('oc-btn-save'); btn.disabled=true;
+  try {
+    const sb = await sbClient();
+    const {error} = await sb.from('ordenes_compra').delete().eq('id',editOCId);
+    if (error) throw new Error(error.message);
+    await loadOC(); buildGdOCMap();
+    toast('OC eliminada','ok'); renderOC(); renderTable(); closeOCDrawer();
+  } catch(e){ toast('Error: '+e.message,'err'); }
+  finally { btn.disabled=false; }
+}
+
+// ── Responsables Tab ──────────────────────────────────────────────────────────
+function renderResponsables(){
+  const list = document.getElementById('resp-list');
+  if (!responsables.length){
+    list.innerHTML = '<p style="color:var(--muted);font-size:.8rem">Sin responsables cargados.</p>';
+    return;
+  }
+  list.innerHTML = responsables.map(r=>`
+    <div class="resp-item">
+      <span class="resp-name">${esc(r.nombre)}${!r.activo?'<span class="resp-inactive"> (inactivo)</span>':''}</span>
+      <button class="btn btn-sm" onclick="toggleResponsable(${r.id},${r.activo})">${r.activo?'Desactivar':'Activar'}</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteResponsable(${r.id})">🗑</button>
+    </div>`).join('');
+}
+
+async function addResponsable(){
+  const inp = document.getElementById('resp-nuevo-nombre');
+  const nombre = inp.value.trim();
+  if (!nombre) return;
+  try {
+    const sb = await sbClient();
+    const {error} = await sb.from('responsables').insert({ nombre, activo: true });
+    if (error) throw new Error(error.message);
+    inp.value='';
+    await loadResponsables();
+    renderResponsables();
+    toast('Responsable agregado ✓','ok');
+  } catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+async function toggleResponsable(id, activo){
+  try {
+    const sb = await sbClient();
+    const {error} = await sb.from('responsables').update({ activo: !activo }).eq('id',id);
+    if (error) throw new Error(error.message);
+    await loadResponsables(); renderResponsables();
+  } catch(e){ toast('Error: '+e.message,'err'); }
+}
+
+async function deleteResponsable(id){
+  if (!confirm('¿Eliminar este responsable?')) return;
+  try {
+    const sb = await sbClient();
+    const {error} = await sb.from('responsables').delete().eq('id',id);
+    if (error) throw new Error(error.message);
+    await loadResponsables(); renderResponsables();
+    toast('Eliminado','ok');
+  } catch(e){ toast('Error: '+e.message,'err'); }
 }
 
 // ── Exportar Excel ────────────────────────────────────────────────────────────
 function exportExcel(){
   const montoGD = {};
-  registros.forEach(r => {
-    if (!montoGD[r.gd]) montoGD[r.gd] = 0;
-    montoGD[r.gd] += calcValorTotal(r);
-  });
-
+  registros.forEach(r => { montoGD[r.gd] = (montoGD[r.gd]||0) + getValorTotalItem(r); });
   const rows = registros.map(r => ({
-    'FECHA GUIA':               r.fecha_guia,
-    'FECHA SOLICITUD':          r.fecha_sol,
-    'OBS. MODULO':              r.obs_modulo,
-    'MES':                      r.mes,
-    'CODIGO':                   r.codigo,
-    'DESCRIPCION MATERIALES':   r.descripcion,
-    'UNIDAD DE MEDIDA':         r.unidad,
-    'CANTIDAD SOLICITADA':      r.cantidad_sol,
-    'DEVOLUCIÓN':               r.devolucion,
-    'CANTIDAD RECIBIDA':        calcCantRec(r),
-    'VALOR X UN (GD)':          r.valor_und,
-    'VALOR TOTAL GD POR ITEM':  calcValorTotal(r),
-    'VALOR PPTO':               r.valor_ppto,
-    'DIF. VALOR UND.':          calcDifUnd(r),
-    'DIF VALOR TOTAL PAGADO':   calcDifTotal(r),
-    'DIF %':                    calcPct(r) !== null ? calcPct(r)/100 : '',
-    'GD':                       r.gd,
-    'RESPONSABLE':              r.responsable,
-    'MONTO TOTAL GD':           montoGD[r.gd] || 0,
-    'OC':                       r.oc,
-    'TIPO PRODUCTO':            r.tipo_producto,
-    'CREADO POR':               r.created_by,
-    'FECHA CREACIÓN':           r.created_at
+    'FECHA GUIA':             r.fecha_guia,
+    'FECHA SOLICITUD':        r.fecha_sol,
+    'OBS. MODULO':            r.obs_modulo,
+    'MES':                    r.mes,
+    'GD':                     r.gd,
+    'OC':                     gdOCMap[String(r.gd)]||r.oc||'',
+    'CODIGO':                 r.codigo,
+    'DESCRIPCION':            r.descripcion,
+    'UNIDAD':                 r.unidad,
+    'CANTIDAD SOLICITADA':    r.cantidad_sol,
+    'DEVOLUCIÓN':             r.devolucion,
+    'CANTIDAD RECIBIDA':      calcCantRec(r),
+    'VALOR TOTAL ITEM GD':    getValorTotalItem(r),
+    'VALOR X UN':             calcValorUnd(r),
+    'VALOR PPTO':             r.valor_ppto,
+    'DIF. VALOR UND.':        calcDifUnd(r),
+    'DIF VALOR TOTAL':        calcDifTotal(r),
+    'DIF %':                  calcPct(r) !== null ? calcPct(r)/100 : '',
+    'RESPONSABLE':            r.responsable,
+    'TIPO PRODUCTO':          r.tipo_producto,
+    'MONTO TOTAL GD':         montoGD[r.gd]||0,
+    'CREADO POR':             r.created_by
   }));
-
   const ws = XLSX.utils.json_to_sheet(rows);
-  // Formato de porcentaje en columna DIF%
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'DETALLE GD');
   XLSX.writeFile(wb, `Registro_GD_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -884,38 +1037,20 @@ function exportExcel(){
 }
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
-function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function fmtDate(d){ if (!d) return '—'; const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; }
-function fmt0(n){ return (n||0).toLocaleString('es-CL'); }
-function fmtNum(n){
-  if (n === null || n === undefined || isNaN(n)) return '—';
-  return '$' + Math.round(n).toLocaleString('es-CL');
-}
-function fmtCompact(n){
-  if (n >= 1e9) return '$' + (n/1e9).toFixed(1) + 'B';
-  if (n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return '$' + (n/1e3).toFixed(0) + 'K';
-  return '$' + Math.round(n).toLocaleString('es-CL');
-}
-function tipoChip(t){
-  if (!t) return '';
-  const critico = t.includes('CRITICO') && !t.includes('NO');
-  return `<span class="chip ${critico?'chip-critico':'chip-normal'}">${t==='PRODUCTO CRITICO'?'Crítico':'No crítico'}</span>`;
-}
+function closeAllDrawers(){ closeDrawer(); closeOCDrawer(); }
 function clearFilters(){
-  ['f-buscar','f-gd','f-resp','f-desde','f-hasta'].forEach(id => document.getElementById(id).value='');
+  ['f-buscar','f-gd','f-resp','f-desde','f-hasta'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-tipo').value='';
   renderTable();
 }
-
-function toast(msg, type){
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'show ' + (type||'');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(()=>{ el.className=''; }, 2800);
-}
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtDate(d){ if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y}`; }
+function fmt0(n){ return (n||0).toLocaleString('es-CL'); }
+function fmtNum(n){ if(n===null||n===undefined||isNaN(n)) return '—'; return '$'+Math.round(n).toLocaleString('es-CL'); }
+function fmtCompact(n){ if(n>=1e9) return '$'+(n/1e9).toFixed(1)+'B'; if(n>=1e6) return '$'+(n/1e6).toFixed(1)+'M'; if(n>=1e3) return '$'+(n/1e3).toFixed(0)+'K'; return '$'+Math.round(n).toLocaleString('es-CL'); }
+function tipoChip(t){ if(!t) return ''; const c=t.includes('CRITICO')&&!t.includes('NO'); return `<span class="chip ${c?'chip-critico':'chip-normal'}">${c?'Crítico':'No crítico'}</span>`; }
+function toast(msg,type){ const el=document.getElementById('toast'); el.textContent=msg; el.className='show '+(type||''); clearTimeout(toast._t); toast._t=setTimeout(()=>{el.className='';},2800); }
 </script>
 </body>
 </html>
