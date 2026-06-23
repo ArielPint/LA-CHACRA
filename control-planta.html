@@ -837,7 +837,7 @@ function renderGrid() {
         ${s.ent>0?`<span class="tchip tchip-e">✓ ${s.ent}</span>`:''}
       </div>
       <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
-      <div class="prog-label">${s.ent}/${total} módulos entregados</div>
+      <div class="prog-label">${pct}% de avance · ${s.ent}/${total} entregados</div>
     </div>`;
   }).join('')||'<div class="loading">Sin datos</div>';
 }
