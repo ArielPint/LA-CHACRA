@@ -34,11 +34,26 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tab-pane{display:none;flex:1;overflow:hidden;flex-direction:column}
 .tab-pane.active{display:flex}
 
-#stats{display:flex;gap:10px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+#stats{display:flex;gap:10px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;align-items:center}
 .stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;min-width:130px}
 .stat .lbl{font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
 .stat .val{font-size:1.3rem;font-weight:800}
+.stat .val.val-full{font-size:.95rem;letter-spacing:-.2px}
 .sc-blue .val{color:var(--accent)}.sc-green .val{color:var(--green)}.sc-yellow .val{color:var(--yellow)}.sc-red .val{color:var(--brand)}
+
+/* Resumen mes/año */
+#resumen-wrap{background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;max-height:0;transition:max-height .3s ease;overflow-y:hidden}
+#resumen-wrap.open{max-height:340px}
+#resumen-inner{padding:10px 18px 14px}
+.resumen-title{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-weight:700}
+#tbl-resumen{border-collapse:collapse;font-size:.78rem;min-width:600px}
+#tbl-resumen th{color:var(--muted);font-size:.63rem;text-transform:uppercase;letter-spacing:.4px;padding:5px 12px;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
+#tbl-resumen th.r,#tbl-resumen td.r{text-align:right}
+#tbl-resumen tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+#tbl-resumen tbody tr:hover{background:rgba(255,255,255,.03)}
+#tbl-resumen tbody td{padding:5px 12px;white-space:nowrap}
+#tbl-resumen tfoot td{border-top:2px solid var(--border);font-weight:800;padding:6px 12px;color:var(--text)}
+.btn-resumen{margin-left:auto;font-size:.72rem}
 
 #toolbar{display:flex;align-items:center;gap:7px;padding:8px 18px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
 #toolbar input,#toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:.77rem;outline:none;min-width:0}
@@ -201,9 +216,32 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
   <div class="tab-pane active" id="pane-registro">
     <div id="stats">
       <div class="stat sc-blue"><div class="lbl">Total GDs</div><div class="val" id="st-gds">—</div></div>
-      <div class="stat sc-green"><div class="lbl">Monto total</div><div class="val" id="st-monto">—</div></div>
+      <div class="stat sc-green"><div class="lbl">Monto total</div><div class="val val-full" id="st-monto">—</div></div>
       <div class="stat sc-yellow"><div class="lbl">Ítems mes actual</div><div class="val" id="st-items">—</div></div>
       <div class="stat sc-red"><div class="lbl">% Desviación prom.</div><div class="val" id="st-desv">—</div></div>
+      <button class="btn btn-sm btn-resumen" id="btn-resumen" onclick="toggleResumen()">📊 Resumen mes/año</button>
+    </div>
+    <div id="resumen-wrap">
+      <div id="resumen-inner">
+        <div class="resumen-title">Resumen por mes y año</div>
+        <table id="tbl-resumen">
+          <thead><tr>
+            <th>Año</th><th>Mes</th>
+            <th class="r">GDs emitidas</th>
+            <th class="r">Ítems</th>
+            <th class="r">Monto total</th>
+            <th class="r">Desviación prom.</th>
+          </tr></thead>
+          <tbody id="resumen-body"></tbody>
+          <tfoot><tr>
+            <td colspan="2" style="color:var(--muted);font-size:.72rem">TOTAL</td>
+            <td class="r" id="res-tot-gds">—</td>
+            <td class="r" id="res-tot-items">—</td>
+            <td class="r" id="res-tot-monto" style="color:var(--green)">—</td>
+            <td class="r" id="res-tot-desv">—</td>
+          </tr></tfoot>
+        </table>
+      </div>
     </div>
     <div id="toolbar">
       <span class="tlbl">Filtros:</span>
@@ -607,9 +645,54 @@ function updateStats(){
   const desv=registros.filter(r=>calcPct(r)!==null);
   const avg=desv.length?desv.reduce((s,r)=>s+calcPct(r),0)/desv.length:0;
   document.getElementById('st-gds').textContent=gds;
-  document.getElementById('st-monto').textContent=fmtCompact(monto);
+  document.getElementById('st-monto').textContent=fmtNum(monto);
   document.getElementById('st-items').textContent=items;
   document.getElementById('st-desv').textContent=avg.toFixed(1)+'%';
+  renderResumen();
+}
+
+function toggleResumen(){
+  const w=document.getElementById('resumen-wrap');
+  w.classList.toggle('open');
+  document.getElementById('btn-resumen').textContent=w.classList.contains('open')?'✕ Cerrar resumen':'📊 Resumen mes/año';
+}
+
+function renderResumen(){
+  const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  // Agrupar por año+mes
+  const groups={};
+  registros.forEach(r=>{
+    if(!r.fecha_guia) return;
+    const d=new Date(r.fecha_guia+'T12:00:00');
+    const key=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+    if(!groups[key]) groups[key]={year:d.getFullYear(),mes:d.getMonth()+1,gds:new Set(),items:0,monto:0,desvArr:[]};
+    groups[key].gds.add(r.gd);
+    groups[key].items++;
+    groups[key].monto+=getVTI(r);
+    const p=calcPct(r); if(p!==null) groups[key].desvArr.push(p);
+  });
+  const keys=Object.keys(groups).sort();
+  let totGds=new Set(),totItems=0,totMonto=0,totDesvArr=[];
+  const rows=keys.map(k=>{
+    const g=groups[k];
+    const avgD=g.desvArr.length?g.desvArr.reduce((a,b)=>a+b,0)/g.desvArr.length:null;
+    const dc=avgD===null?'':avgD>0?'color:var(--red)':'color:var(--green)';
+    g.gds.forEach(x=>totGds.add(x)); totItems+=g.items; totMonto+=g.monto; totDesvArr=totDesvArr.concat(g.desvArr);
+    return `<tr>
+      <td style="color:var(--muted);font-weight:700">${g.year}</td>
+      <td style="font-weight:600">${MES[g.mes-1]}</td>
+      <td class="r" style="color:var(--accent);font-weight:700">${g.gds.size}</td>
+      <td class="r">${g.items}</td>
+      <td class="r" style="color:var(--green);font-weight:700">${fmtNum(g.monto)}</td>
+      <td class="r" style="${dc}">${avgD!==null?avgD.toFixed(1)+'%':'—'}</td>
+    </tr>`;
+  });
+  document.getElementById('resumen-body').innerHTML=rows.join('');
+  const totAvg=totDesvArr.length?totDesvArr.reduce((a,b)=>a+b,0)/totDesvArr.length:null;
+  document.getElementById('res-tot-gds').textContent=totGds.size;
+  document.getElementById('res-tot-items').textContent=totItems;
+  document.getElementById('res-tot-monto').textContent=fmtNum(totMonto);
+  document.getElementById('res-tot-desv').textContent=totAvg!==null?totAvg.toFixed(1)+'%':'—';
 }
 
 // ── Drawer Registro ───────────────────────────────────────────────────────────
