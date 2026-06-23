@@ -622,6 +622,8 @@ function openDrawer(id){
     document.getElementById('f_resp').value='';
     productLines=[];
     addProductLine();
+    document.getElementById('multi-monto-val').textContent='—';
+    document.getElementById('multi-gd-badge').textContent='';
   } else {
     const r=registros.find(x=>x.id===id);
     if(!r){toast('No encontrado','err');return;}
