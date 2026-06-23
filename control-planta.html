@@ -1364,12 +1364,12 @@ function doEntregadoForzar(){
   );
 }
 
-// Marcar todas las partidas pendientes como N/A y luego entregar
+// Marcar todas las partidas pendientes como completadas y luego entregar
 async function completarPendientesNA(){
   const pc=pendingCount(selMod);
   showConfirm(
     '✦ Completar partidas pendientes',
-    `Se marcarán ${pc} partida${pc>1?'s':''} pendiente${pc>1?'s':''} como "No Aplica" y el módulo quedará Entregado. Esta acción no se puede deshacer fácilmente.`,
+    `Se marcarán ${pc} partida${pc>1?'s':''} pendiente${pc>1?'s':''} como "Completada${pc>1?'s':''}" y el módulo quedará Entregado. Esta acción no se puede deshacer fácilmente.`,
     [['Cancelar',null,'btn-ghost'],['Confirmar',async()=>{
       closeModal();
       if(!selMod) return;
@@ -1378,7 +1378,7 @@ async function completarPendientesNA(){
       Object.values(PARTIDAS).flat().forEach(p=>{
         const s=pS(selMod,p.c);
         if(!isNA(s)&&!isDone(s)){
-          updE[p.c]={c1:false,c2:false,c3:'no_aplica'};
+          updE[p.c]={c1:true,c2:true,c3:'aprobado'};
           updT[p.c]={};
         }
       });
