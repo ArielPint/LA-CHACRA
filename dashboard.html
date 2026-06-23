@@ -2138,4 +2138,289 @@ function renderDespachos(){
       borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.15)',
       tension:0.35, pointRadius:4, fill:false},
     {label:'Proyectado', data:allMesKeys.map(k=>proyMes[k]?.sum||0),
-      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba
+      borderColor:'rgba(88,166,255,.9)',       borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)',
+      tension:0.35, pointRadius:4, fill:false}
+  ], {legend:true});
+
+  // ── CHART 1b: Semanal ───────────────────────────────────────────────────
+  const getISOWeek=dt=>{const d=new Date(Date.UTC(dt.getFullYear(),dt.getMonth(),dt.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const yr=d.getUTCFullYear();const w=Math.ceil((((d-new Date(Date.UTC(yr,0,1)))/86400000)+1)/7);return yr+'_'+String(w).padStart(2,'0');};
+  const semLbl=k=>{const[yr,wk]=k.split('_');const jan4=new Date(Date.UTC(+yr,0,4));const mon=new Date(jan4.getTime()+((+wk-1)*7-(jan4.getUTCDay()||7)+1)*86400000);return mon.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});};
+
+  const realSem={};
+  d.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+    if(!filteredMesSet.has(mk)) return;
+    const k=getISOWeek(dt);
+    if(!realSem[k]) realSem[k]={lbl:semLbl(k),mods:new Set(),ts:dt.getTime()};
+    if(x.modulo) realSem[k].mods.add(x.modulo);
+  });
+  Object.values(realSem).forEach(v=>v.count=v.mods.size);
+
+  const proySem={};
+  proy.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+    if(!filteredMesSet.has(mk)) return;
+    const k=getISOWeek(dt);
+    if(!proySem[k]) proySem[k]={lbl:semLbl(k),sum:0,acum:0,ts:dt.getTime()};
+    proySem[k].sum+=(x.modulosDia||0);
+    proySem[k].acum=Math.max(proySem[k].acum,x.modulosAcumulados||0);
+  });
+
+  const allSemKeys=[...new Set([...Object.keys(realSem),...Object.keys(proySem)])].sort();
+  const semLabels=allSemKeys.map(k=>(realSem[k]||proySem[k]).lbl);
+
+  let _acumSem=0;
+  const acumSemData=allSemKeys.map(k=>{_acumSem+=(realSem[k]?.count||0);return _acumSem;});
+
+  lineChart('ch-desp-semana', semLabels, [
+    {label:'Despachado acumulado', data:acumSemData,
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Proyectado acumulado', data:allSemKeys.map(k=>proySem[k]?.acum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Despachado semanal', data:allSemKeys.map(k=>realSem[k]?.count||0),
+      type:'bar', borderColor:'rgba(255,167,38,.9)', backgroundColor:'rgba(255,167,38,.6)'}
+  ], {legend:true});
+
+  // ── CHART 2: Diario ─────────────────────────────────────────────────────
+  const realDia={};
+  d.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const ts=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()).getTime();
+    const lbl=dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    if(!realDia[ts]) realDia[ts]={lbl,mods:new Set()};
+    if(x.modulo) realDia[ts].mods.add(x.modulo);
+  });
+  Object.values(realDia).forEach(v=>v.count=v.mods.size);
+
+  const proyDia={};
+  proy.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const ts=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()).getTime();
+    const lbl=dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    if(!proyDia[ts]) proyDia[ts]={lbl,val:0,acum:0};
+    proyDia[ts].val=x.modulosDia||0;
+    proyDia[ts].acum=Math.max(proyDia[ts].acum,x.modulosAcumulados||0);
+  });
+
+  // Filter daily data by selected months
+  const allDiaKeys=[...new Set([...Object.keys(realDia),...Object.keys(proyDia)])]
+    .map(Number).filter(k=>{
+      const dt=new Date(k); const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+      return filteredMesSet.has(mk);
+    }).sort((a,b)=>a-b);
+  const diaLabels=allDiaKeys.map(k=>(realDia[k]||proyDia[k]).lbl);
+
+  let _acumDia=0;
+  const acumDiaData=allDiaKeys.map(k=>{_acumDia+=(realDia[k]?.count||0);return _acumDia;});
+
+  lineChart('ch-desp-dia', diaLabels, [
+    {label:'Despachado acumulado', data:acumDiaData,
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Proyectado acumulado', data:allDiaKeys.map(k=>proyDia[k]?.acum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Despachado diario', data:allDiaKeys.map(k=>realDia[k]?.count||0),
+      borderColor:'rgba(255,167,38,.9)', backgroundColor:'rgba(255,167,38,.1)',
+      tension:0.35, pointRadius:3, fill:false, borderDash:[5,4]}
+  ], {legend:true});
+
+  // ── TABLA RESUMEN MENSUAL ────────────────────────────────────────────────
+  let acumReal=0, acumPend=0, prevAcumProy=0;
+  const tblRows=filteredMesKeys.map(k=>{
+    const rr=realMes[k]; const pp=proyMes[k];
+    const desp=rr?.count||0;
+    const acumProy=pp?.acum||0;
+    acumReal+=desp;
+
+    // For current month: projected only up to today (not full month)
+    // For past months: full month projection
+    const isCurrentMes=(k===curMesKey);
+    const mesAcumProy=isCurrentMes?(pp?.acumHoy||0):acumProy;
+    const proyMes_only=mesAcumProy-prevAcumProy; // projected for this month only
+    prevAcumProy=mesAcumProy;
+
+    acumPend+=proyMes_only-desp; // carry forward: add this month's deficit/surplus
+    return {lbl:(rr||pp).lbl, proyMes_only, desp, acumProy, acumReal, pendiente:Math.max(0,acumPend)};
+  });
+
+  document.getElementById('tbl-desp-resumen').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:6px 8px">Mes</th>
+        <th style="text-align:right;padding:6px 8px">Proy. mes</th>
+        <th style="text-align:right;padding:6px 8px">Despachado</th>
+        <th style="text-align:right;padding:6px 8px">Pendiente acum.</th>
+        <th style="text-align:right;padding:6px 8px">Acum. proy.</th>
+        <th style="text-align:right;padding:6px 8px">Acum. real</th>
+      </tr></thead>
+      <tbody style="color:var(--text)">${tblRows.map(r=>`<tr>
+        <td style="padding:5px 8px">${r.lbl}</td>
+        <td style="text-align:right;padding:5px 8px">${fmt(r.proyMes_only)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--green)">${fmt(r.desp)}</td>
+        <td style="text-align:right;padding:5px 8px;color:${r.pendiente>0?'var(--red)':'var(--green)'}">${fmt(r.pendiente)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--muted)">${fmt(r.acumProy)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--accent)">${fmt(r.acumReal)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+
+  // ── CHART TORRE/TIPO ────────────────────────────────────────────────────
+  const torrTipoMap={};
+  d.forEach(x=>{const k=x.torre||'?',t=x.tipo||'?';if(!torrTipoMap[k])torrTipoMap[k]={};torrTipoMap[k][t]=(torrTipoMap[k][t]||0)+1;});
+  const tKeys=Object.keys(torrTipoMap);
+  const tipos=[...new Set(d.map(x=>x.tipo).filter(Boolean))];
+  groupedBar('ch-desp-torre',tKeys,tipos.map((tipo,i)=>({
+    label:tipo, data:tKeys.map(t=>torrTipoMap[t][tipo]||0),
+    backgroundColor:['rgba(88,166,255,.8)','rgba(63,185,80,.8)','rgba(227,144,62,.8)'][i%3], borderRadius:5
+  })));
+}
+// ═══════════════════════════════════════════════
+// PRODUCCION DIARIA (Supabase)
+// ═══════════════════════════════════════════════
+const PD_CATS = {
+  obra_gruesa:  {label:'Obra Gruesa',   color:'rgba(79,142,247,.8)',  border:'rgba(79,142,247,1)',  codes:['OG.01','OG.02','OG.03','OG.04','OG.05']},
+  sanitario:    {label:'Sanitario',     color:'rgba(63,207,142,.8)',  border:'rgba(63,207,142,1)',  codes:['SA.01','SA.02','SA.03','SA.04','SA.05']},
+  electrico:    {label:'Eléctrico',     color:'rgba(247,215,79,.8)',  border:'rgba(247,215,79,1)',  codes:['EL.01','EL.02','EL.03','EL.04','EL.05']},
+  terminaciones:{label:'Terminaciones', color:'rgba(188,140,255,.8)', border:'rgba(188,140,255,1)', codes:['TE.01','TE.02','TE.03','TE.04','TE.05','TE.06','TE.07','TE.08','TE.09','TE.10','TE.11','TE.12','TE.13','TE.14','TE.15','TE.16','TE.17','TE.18','TE.19','TE.20','TE.21','TE.22']}
+};
+
+let _pdMods = null;
+let _chPD = null;
+let _pdInited = false;
+
+function _pdIsNA(s){ if(!s) return false; return typeof s==='object'?s.c3==='no_aplica':s==='no_aplica'; }
+function _pdIsDone(s){ if(!s) return false; return typeof s==='object'?s.c3==='aprobado':s==='aprobado'; }
+
+async function _loadPDData(){
+  if(_pdMods!==null) return _pdMods;
+  const st=document.getElementById('pd-status');
+  if(st) st.textContent='Cargando módulos…';
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/planta_modulos?select=id,nombre,torre,tipo,estado_modulo,estados,tiempos&order=orden.asc',
+      {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    _pdMods=await r.json();
+    if(st) st.textContent=_pdMods.length+' módulos';
+  }catch(e){
+    if(st) st.textContent='Error al cargar';
+    _pdMods=[];
+  }
+  return _pdMods;
+}
+
+function _computePDRows(mods){
+  const rows=[];
+  mods.forEach(m=>{
+    const est=m.estados||{}, tim=m.tiempos||{};
+    Object.keys(PD_CATS).forEach(cat=>{
+      const codes=PD_CATS[cat].codes;
+      const rel=codes.filter(c=>!_pdIsNA(est[c]));
+      if(!rel.length) return;
+      if(!rel.every(c=>_pdIsDone(est[c]))) return;
+      let maxD=null;
+      rel.forEach(c=>{ const t=tim[c]; if(t&&t.t3){ const d=t.t3.slice(0,10); if(!maxD||d>maxD) maxD=d; } });
+      if(maxD) rows.push({date:maxD,cat,modulo:m.nombre,torre:m.torre,tipo:m.tipo});
+    });
+  });
+  return rows;
+}
+
+async function renderProdDiaria(){
+  const mods=await _loadPDData();
+  let rows=_computePDRows(mods);
+
+  const desde=document.getElementById('pd-desde').value;
+  const hasta=document.getElementById('pd-hasta').value;
+  if(desde) rows=rows.filter(r=>r.date>=desde);
+  if(hasta) rows=rows.filter(r=>r.date<=hasta);
+
+  const catKeys=Object.keys(PD_CATS);
+  const dateSet=[...new Set(rows.map(r=>r.date))].sort();
+
+  // byDate map
+  const byDate={};
+  dateSet.forEach(d=>{ byDate[d]={}; catKeys.forEach(c=>byDate[d][c]=0); });
+  rows.forEach(r=>{ if(byDate[r.date]) byDate[r.date][r.cat]++; });
+
+  // KPIs
+  const kpiColors=['c-blue','c-green','c-yellow','c-purple'];
+  const kpiEl=document.getElementById('kpi-prod-diaria');
+  if(kpiEl) kpiEl.innerHTML=catKeys.map((c,i)=>{
+    const tot=rows.filter(r=>r.cat===c).length;
+    return `<div class="kpi ${kpiColors[i]}"><div class="kpi-lbl">${PD_CATS[c].label}</div><div class="kpi-val">${tot}</div><div class="kpi-sub">etapas completadas</div></div>`;
+  }).join('')+`<div class="kpi c-orange"><div class="kpi-lbl">Total período</div><div class="kpi-val">${rows.length}</div><div class="kpi-sub">eventos</div></div>`;
+
+  // Chart
+  if(_chPD){ _chPD.destroy(); _chPD=null; }
+  const ctx=document.getElementById('ch-prod-diaria');
+  if(ctx&&dateSet.length){
+    _chPD=new Chart(ctx.getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:dateSet.map(d=>{ const [y,mo,dy]=d.split('-'); return dy+'/'+mo; }),
+        datasets:catKeys.map(c=>({
+          label:PD_CATS[c].label,
+          data:dateSet.map(d=>byDate[d][c]),
+          backgroundColor:PD_CATS[c].color,
+          borderColor:PD_CATS[c].border,
+          borderWidth:1,
+          borderRadius:4
+        }))
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:'#e8eaf0',font:{size:11}}},
+          datalabels:{
+            display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
+            color:'#fff',font:{size:10,weight:'bold'},
+            anchor:'center',align:'center'
+          }
+        },
+        scales:{
+          x:{ticks:{color:'#7a7f99'},grid:{color:'rgba(255,255,255,.05)'},stacked:false},
+          y:{ticks:{color:'#7a7f99',stepSize:1},grid:{color:'rgba(255,255,255,.05)'},beginAtZero:true,stacked:false}
+        }
+      }
+    });
+  } else if(ctx&&!dateSet.length){
+    const c2=ctx.getContext('2d');
+    c2.clearRect(0,0,ctx.width,ctx.height);
+    c2.fillStyle='#7a7f99'; c2.font='14px Segoe UI'; c2.textAlign='center';
+    c2.fillText('Sin datos en el rango seleccionado',ctx.width/2,ctx.height/2);
+  }
+
+  // Table
+  const tbl=document.getElementById('tbl-prod-diaria');
+  if(tbl){
+    tbl.querySelector('thead').innerHTML=`<tr><th>Fecha</th>${catKeys.map(c=>`<th>${PD_CATS[c].label}</th>`).join('')}<th>Total</th></tr>`;
+    tbl.querySelector('tbody').innerHTML=dateSet.length
+      ? dateSet.map(d=>{
+          const tot=catKeys.reduce((s,c)=>s+byDate[d][c],0);
+          return `<tr><td>${d.split('-').reverse().join('/')}</td>${catKeys.map(c=>`<td style="text-align:center">${byDate[d][c]||'—'}</td>`).join('')}<td style="text-align:center;font-weight:700">${tot}</td></tr>`;
+        }).join('')
+      : `<tr><td colspan="${catKeys.length+2}" style="text-align:center;color:var(--muted);padding:20px">Sin datos en el rango seleccionado</td></tr>`;
+  }
+}
+
+// Hook tab click
+(function(){
+  const pdTab=document.querySelector('.tab[data-tab="prod-diaria"]');
+  if(pdTab) pdTab.addEventListener('click',async()=>{
+    if(!_pdInited){
+      _pdInited=true;
+      const now=new Date();
+      document.getElementById('pd-hasta').value=now.toISOString().slice(0,10);
+      const d30=new Date(now); d30.setDate(d30.getDate()-30);
+      document.getElementById('pd-desde').value=d30.toISOString().slice(0,10);
+    }
+    await renderProdDiaria();
+  });
+})();
+
+</script>
+</body>
+</html>
