@@ -669,7 +669,7 @@ function renderResumen(){
     if(!groups[key]) groups[key]={year:d.getFullYear(),mes:d.getMonth()+1,gds:new Set(),items:0,monto:0,desvArr:[]};
     groups[key].gds.add(r.gd);
     groups[key].items++;
-    groups[key].monto+=getVTI(r);
+    groups[key].monto+=(parseFloat(r.valor_total_item)||0);
     const p=calcPct(r); if(p!==null) groups[key].desvArr.push(p);
   });
   const keys=Object.keys(groups).sort();
