@@ -440,22 +440,31 @@ function parseGVDate(s) {
 // Carga grupos desde la API si aún no están en caché, y repopula los selects.
 // No usa flag booleano: _groups.length > 0 es el indicador de caché.
 async function loadGroupFilters() {
+  // Siempre cargar los grupos permitidos hardcodeados (apiv3 puede fallar)
+  const hardcoded = ALLOWED_GROUPS.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+  const placeholder = '<option value="">Todos los grupos</option>';
+  ['att-group', 'res-group'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = placeholder + hardcoded;
+  });
+  // Intentar enriquecer con la API (ignorar error si falla)
   try {
     if (_groups.length === 0) {
       const data = await GeoVictoria.getGroups();
       _groups = Array.isArray(data) ? data : (Array.isArray(data?.Groups) ? data.Groups : []);
     }
-    const options = _groups
-      .filter(g => g.Description && inAllowedGroup(g.Description))
-      .map(g => `<option value="${esc(g.Description)}">${esc(g.Description)}</option>`)
-      .join('');
-    const placeholder = '<option value="">Todos los grupos</option>';
-    ['att-group', 'res-group'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = placeholder + options;
-    });
+    if (_groups.length > 0) {
+      const options = _groups
+        .filter(g => g.Description && inAllowedGroup(g.Description))
+        .map(g => `<option value="${esc(g.Description)}">${esc(g.Description)}</option>`)
+        .join('');
+      ['att-group', 'res-group'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = placeholder + options;
+      });
+    }
   } catch(e) {
-    console.warn('No se pudieron cargar los grupos para el filtro:', e.message);
+    console.warn('Grupos desde API no disponibles, usando lista fija:', e.message);
   }
 }
 
@@ -729,14 +738,22 @@ function renderResumen(users, from, to) {
     return;
   }
 
-  // Detectar si la respuesta incluye info de grupo
+  // Detectar si la respuesta incluye info de grupo y filtrar a grupos permitidos
   const hasGroupInfo = users.some(u => u.GroupDescription || u.Group || u.GroupName);
-  const getGroup = u => (u.GroupDescription || u.Group || u.GroupName || 'Sin grupo').trim();
+  const getGroup = u => (u.GroupDescription || u.Group || u.GroupName || '').trim();
 
-  // Agrupar trabajadores por grupo
+  // Filtrar usuarios a solo los grupos permitidos (si hay info de grupo)
+  const filteredUsers = hasGroupInfo
+    ? users.filter(u => inAllowedGroup(getGroup(u)))
+    : users;
+
+  // Agrupar por grupo (solo los permitidos que tengan datos)
   const groupsSet = hasGroupInfo
-    ? [...new Set(users.map(getGroup))]
+    ? ALLOWED_GROUPS.filter(g => filteredUsers.some(u => getGroup(u) === g))
     : ['Total'];
+
+  // Usar filteredUsers en adelante
+  users = filteredUsers;
 
   // dayMap: 'YYYY-MM-DD' → { date, total: {a,au}, byGroup: { groupName: {a,au,n} } }
   const rangeStart = new Date(from + 'T00:00:00');
@@ -877,10 +894,44 @@ async function loadWorkers() {
   try {
     const data = await GeoVictoria.getWorkers();
     _workers = Array.isArray(data) ? data : [];
-    renderWorkers();
   } catch(e) {
-    body.innerHTML = renderError(e.message);
+    // apiv3 no disponible → reconstruir desde AttendanceBook si hay datos cargados
+    if (_attendanceData.length > 0) {
+      const seen = new Set();
+      _workers = _attendanceData
+        .filter(u => {
+          const grp = u.GroupDescription || u.Group || u.GroupName || '';
+          return inAllowedGroup(grp);
+        })
+        .filter(u => {
+          const id = u.Identifier || u.UserIdentifier;
+          if (!id || seen.has(id)) return false;
+          seen.add(id); return true;
+        })
+        .map(u => ({
+          Name:             u.Name || '',
+          LastName:         u.LastName || '',
+          Identifier:       u.Identifier || u.UserIdentifier || '',
+          Email:            u.Email || '',
+          GroupDescription: u.GroupDescription || u.Group || u.GroupName || '',
+          positionName:     u.positionName || u.Position || '',
+          Enabled:          1,
+          ContractDate:     u.ContractDate || '',
+        }));
+    }
+    if (_workers.length === 0) {
+      body.innerHTML = `<div class="empty-msg">
+        <strong>Nómina no disponible directamente</strong>
+        <p style="margin-top:8px;color:var(--muted)">
+          El endpoint de trabajadores no responde (401).<br>
+          Ve a <strong>Libro de Asistencia</strong>, consulta un rango de fechas y vuelve aquí —
+          los trabajadores se cargarán desde esos datos.
+        </p>
+      </div>`;
+      return;
+    }
   }
+  renderWorkers();
 }
 
 function renderWorkers() {
