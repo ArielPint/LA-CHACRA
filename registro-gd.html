@@ -199,6 +199,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
   <h1>🛒 Registro GD — Compras</h1>
   <span class="hdr-badge" id="user-badge"></span>
   <div class="hdr-right">
+    <button class="btn btn-sm" id="btn-refresh" onclick="refreshData()" title="Recargar datos">↻ Actualizar</button>
     <button class="btn btn-sm" id="btn-excel" onclick="exportExcel()">↓ Excel</button>
     <button class="btn btn-primary btn-sm" id="btn-nuevo" onclick="openDrawer(null)">+ Nueva entrada</button>
   </div>
@@ -649,6 +650,16 @@ function updateStats(){
   document.getElementById('st-items').textContent=items;
   document.getElementById('st-desv').textContent=avg.toFixed(1)+'%';
   renderResumen();
+}
+
+async function refreshData(){
+  const btn=document.getElementById('btn-refresh');
+  btn.disabled=true; btn.textContent='↻ Cargando…';
+  try{
+    await Promise.all([loadData(), loadOC()]);
+    renderTable(); updateStats();
+  } catch(e){ alert('Error al recargar: '+e.message); }
+  finally{ btn.disabled=false; btn.textContent='↻ Actualizar'; }
 }
 
 function toggleResumen(){
