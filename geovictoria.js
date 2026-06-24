@@ -132,20 +132,32 @@ const GeoVictoria = (() => {
     return { ApiKey: getApiKey(), Secret: getSecret(), ...extra };
   }
 
-  // Wrapper para endpoints apiv3: intenta primero con Bearer token (customerapi comparte token),
-  // si falla 401 intenta con OAuth body. Permite que funcione con cualquiera de los dos métodos.
+  // Wrapper para endpoints apiv3: intenta varios esquemas de autenticación.
   async function apiv3Post(path, extra = {}) {
-    // Intento 1: Bearer token (más confiable si Token auth ya funciona)
+    const url = `${baseUrl('apiv3')}${path}`;
+    const isAuthError = msg => msg.includes('401') || msg.includes('404') || msg.includes('400');
+
+    // Intento 1: Bearer token
     try {
       const headers = await tokenHeaders();
-      return await post(`${baseUrl('apiv3')}${path}`, extra, headers);
+      return await post(url, extra, headers);
     } catch (e) {
-      // apiv3 puede devolver 401 o 404 cuando no acepta Bearer token → probar OAuth
-      const msg = e.message || '';
-      if (!msg.includes('401') && !msg.includes('404')) throw e;
+      if (!isAuthError(e.message || '')) throw e;
     }
-    // Intento 2: OAuth body (ApiKey + Secret en el body)
-    return post(`${baseUrl('apiv3')}${path}`, oauthBody(extra));
+    // Intento 2: OAuth body con ApiKey + Secret
+    try {
+      return await post(url, { ApiKey: getApiKey(), Secret: getSecret(), ...extra });
+    } catch (e) {
+      if (!isAuthError(e.message || '')) throw e;
+    }
+    // Intento 3: OAuth body con User + Password (igual que endpoint Login)
+    try {
+      return await post(url, { User: getApiKey(), Password: getSecret(), ...extra });
+    } catch (e) {
+      if (!isAuthError(e.message || '')) throw e;
+    }
+    // Intento 4: OAuth body con ApiKey + ApiSecret
+    return post(url, { ApiKey: getApiKey(), ApiSecret: getSecret(), ...extra });
   }
 
   // ─── LIBRO DE ASISTENCIA ───────────────────────────────────────────────────

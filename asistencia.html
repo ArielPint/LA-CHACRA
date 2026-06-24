@@ -729,38 +729,70 @@ function renderResumen(users, from, to) {
     return;
   }
 
-  // Construir mapa de días con el total de días laborales registrados en la API
-  const dayMap = {}; // 'YYYY-MM-DD' → { date, asistentes, ausentes, registros }
+  // Detectar si la respuesta incluye info de grupo
+  const hasGroupInfo = users.some(u => u.GroupDescription || u.Group || u.GroupName);
+  const getGroup = u => (u.GroupDescription || u.Group || u.GroupName || 'Sin grupo').trim();
 
-  // Inicializar todos los días del rango
+  // Agrupar trabajadores por grupo
+  const groupsSet = hasGroupInfo
+    ? [...new Set(users.map(getGroup))]
+    : ['Total'];
+
+  // dayMap: 'YYYY-MM-DD' → { date, total: {a,au}, byGroup: { groupName: {a,au,n} } }
   const rangeStart = new Date(from + 'T00:00:00');
   const rangeEnd   = new Date(to   + 'T00:00:00');
+  const dayMap = {};
   for (let d = new Date(rangeStart); d <= rangeEnd; d.setDate(d.getDate() + 1)) {
     const key = d.toISOString().slice(0, 10);
-    dayMap[key] = { date: new Date(d), asistentes: 0, ausentes: 0, registros: 0 };
+    const byGroup = {};
+    groupsSet.forEach(g => { byGroup[g] = { a: 0, au: 0, n: 0 }; });
+    dayMap[key] = { date: new Date(d), total: { a: 0, au: 0 }, byGroup };
   }
 
-  // Acumular datos por día desde la respuesta de la API
   users.forEach(user => {
+    const grp = hasGroupInfo ? getGroup(user) : 'Total';
     (user.PlannedInterval || []).forEach(day => {
       const dObj = parseGVDate(day.Date);
       if (!dObj) return;
       const key = dObj.toISOString().slice(0, 10);
-      if (!dayMap[key]) dayMap[key] = { date: dObj, asistentes: 0, ausentes: 0, registros: 0 };
-      dayMap[key].registros++;
-      if (day.Worked  === 'True') dayMap[key].asistentes++;
-      if (day.Absent  === 'True') dayMap[key].ausentes++;
+      if (!dayMap[key]) return;
+      const g = dayMap[key].byGroup[grp] || (dayMap[key].byGroup[grp] = { a: 0, au: 0, n: 0 });
+      g.n++;
+      if (day.Worked === 'True') { g.a++; dayMap[key].total.a++; }
+      if (day.Absent === 'True') { g.au++; dayMap[key].total.au++; }
     });
   });
 
   const totalWorkers = users.length;
   const days         = Object.keys(dayMap).sort();
+  const labels       = days.map(k => dayMap[k].date.toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit'}));
 
-  const labels         = days.map(k => dayMap[k].date.toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit'}));
-  const asistentesData = days.map(k => dayMap[k].asistentes);
-  const ausentesData   = days.map(k => dayMap[k].ausentes);
+  // Colores para grupos
+  const GROUP_COLORS = [
+    { bg: 'rgba(62,207,142,0.65)',  border: '#3ecf8e' },
+    { bg: 'rgba(79,142,247,0.65)',  border: '#4f8ef7' },
+    { bg: 'rgba(247,167,79,0.65)',  border: '#f7a74f' },
+    { bg: 'rgba(188,140,255,0.65)', border: '#bc8cff' },
+  ];
 
-  // Renderizar estructura HTML
+  const datasets = hasGroupInfo
+    ? groupsSet.map((g, i) => ({
+        label: g,
+        data: days.map(k => dayMap[k].byGroup[g]?.a || 0),
+        backgroundColor: (GROUP_COLORS[i] || GROUP_COLORS[0]).bg,
+        borderColor:     (GROUP_COLORS[i] || GROUP_COLORS[0]).border,
+        borderWidth: 1, borderRadius: 4,
+      }))
+    : [
+        { label: 'Asistentes', data: days.map(k => dayMap[k].total.a),  backgroundColor: 'rgba(62,207,142,0.65)', borderColor: '#3ecf8e', borderWidth: 1, borderRadius: 4 },
+        { label: 'Ausentes',   data: days.map(k => dayMap[k].total.au), backgroundColor: 'rgba(247,95,95,0.45)',  borderColor: '#f75f5f', borderWidth: 1, borderRadius: 4 },
+      ];
+
+  // Cabeceras de tabla dinámicas según grupos
+  const groupHeaders = hasGroupInfo
+    ? groupsSet.map(g => `<th class="num">${esc(g)}</th>`).join('')
+    : '';
+
   document.getElementById('resumen-body').innerHTML = `
     <div class="chart-wrap">
       <canvas id="resumen-chart"></canvas>
@@ -769,7 +801,8 @@ function renderResumen(users, from, to) {
       <table>
         <thead><tr>
           <th>Fecha</th>
-          <th class="num">Asistentes</th>
+          ${groupHeaders}
+          <th class="num">Total asistentes</th>
           <th class="num">Ausentes</th>
           <th class="num">Total trabajadores</th>
           <th class="num">% Asistencia</th>
@@ -778,17 +811,20 @@ function renderResumen(users, from, to) {
       </table>
     </div>`;
 
-  // Filas de la tabla
   const tableRows = days.map(k => {
-    const row   = dayMap[k];
-    const total = totalWorkers;
-    const pct   = total > 0 ? ((row.asistentes / total) * 100).toFixed(1) : '0.0';
+    const row    = dayMap[k];
+    const total  = totalWorkers;
+    const pct    = total > 0 ? ((row.total.a / total) * 100).toFixed(1) : '0.0';
     const pctNum = parseFloat(pct);
     const pctColor = pctNum >= 80 ? 'var(--green)' : pctNum >= 50 ? 'var(--yellow)' : 'var(--red)';
+    const groupCells = hasGroupInfo
+      ? groupsSet.map(g => `<td class="num" style="color:var(--accent);font-weight:600">${row.byGroup[g]?.a || 0}</td>`).join('')
+      : '';
     return `<tr>
       <td>${row.date.toLocaleDateString('es-CL', {day:'2-digit', month:'2-digit', year:'numeric'})}</td>
-      <td class="num" style="color:var(--green);font-weight:600">${row.asistentes}</td>
-      <td class="num" style="color:var(--red)">${row.ausentes}</td>
+      ${groupCells}
+      <td class="num" style="color:var(--green);font-weight:600">${row.total.a}</td>
+      <td class="num" style="color:var(--red)">${row.total.au}</td>
       <td class="num">${total}</td>
       <td class="num" style="color:${pctColor};font-weight:700">${pct}%</td>
     </tr>`;
@@ -802,27 +838,7 @@ function renderResumen(users, from, to) {
   const ctx = document.getElementById('resumen-chart').getContext('2d');
   _summaryChart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Asistentes',
-          data: asistentesData,
-          backgroundColor: 'rgba(62,207,142,0.65)',
-          borderColor: '#3ecf8e',
-          borderWidth: 1,
-          borderRadius: 4,
-        },
-        {
-          label: 'Ausentes',
-          data: ausentesData,
-          backgroundColor: 'rgba(247,95,95,0.45)',
-          borderColor: '#f75f5f',
-          borderWidth: 1,
-          borderRadius: 4,
-        }
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
