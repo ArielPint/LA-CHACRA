@@ -1147,7 +1147,14 @@ function renderResumen(){
                 }catch(e){return [];}
               }}},
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
-            datalabels:{display:false}
+            datalabels:{
+            display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
+            color:'#e6edf3',font:{size:10,weight:'600'},
+            anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
+            align:ctx=>ctx.dataset.type==='bar'?'end':'top',
+            offset:2,
+            formatter:v=>(+v).toFixed(1)+'%'
+          }
           },
           scales:{
             x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
@@ -1231,7 +1238,14 @@ function renderResumen(){
           plugins:{
             legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
-            datalabels:{display:false}
+            datalabels:{
+            display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
+            color:'#e6edf3',font:{size:10,weight:'600'},
+            anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
+            align:ctx=>ctx.dataset.type==='bar'?'end':'top',
+            offset:2,
+            formatter:v=>(+v).toFixed(1)+'%'
+          }
           },
           scales:{
             x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
