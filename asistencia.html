@@ -585,29 +585,18 @@ async function loadAttendance() {
     const endDate   = new Date(to   + 'T23:59:59');
     let userIds = [];
 
-    if (groupFilter) {
+    if (users) {
+      // RUTs ingresados manualmente
+      userIds = users.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (groupFilter) {
       // Filtrar por grupo específico
       userIds = await getWorkerIdsForGroup(groupFilter);
       if (userIds.length === 0) {
         body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores en el grupo</strong>El grupo seleccionado no tiene trabajadores con identificador registrado.</div>';
         return;
       }
-    } else if (users) {
-      // RUTs ingresados manualmente
-      userIds = users.split(',').map(s => s.trim()).filter(Boolean);
-    } else {
-      // Todos los grupos permitidos
-      const allIds = [];
-      for (const g of ALLOWED_GROUPS) {
-        const ids = await getWorkerIdsForGroup(g);
-        allIds.push(...ids);
-      }
-      userIds = [...new Set(allIds)];
-      if (userIds.length === 0) {
-        body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores</strong>No se encontraron trabajadores en los grupos Terra Sur, PDuarte y Wedo.</div>';
-        return;
-      }
     }
+    // Si userIds sigue vacío → sin filtro (GeoVictoria devuelve todos)
 
     const data = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
     _attendanceData = Array.isArray(data?.Users) ? data.Users : [];
@@ -701,19 +690,8 @@ async function loadResumen() {
         body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores en el grupo</strong>El grupo seleccionado no tiene trabajadores con identificador registrado.</div>';
         return;
       }
-    } else {
-      // Todos los grupos permitidos
-      const allIds = [];
-      for (const g of ALLOWED_GROUPS) {
-        const ids = await getWorkerIdsForGroup(g);
-        allIds.push(...ids);
-      }
-      userIds = [...new Set(allIds)];
-      if (userIds.length === 0) {
-        body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores</strong>No se encontraron trabajadores en los grupos Terra Sur, PDuarte y Wedo.</div>';
-        return;
-      }
     }
+    // Si userIds sigue vacío → sin filtro (GeoVictoria devuelve todos)
 
     const data  = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
     const users = Array.isArray(data?.Users) ? data.Users : [];
