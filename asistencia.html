@@ -586,28 +586,26 @@ async function loadAttendance() {
     let userIds = [];
 
     if (groupFilter) {
-      // Filtrar por grupo: obtener IDs de los trabajadores del grupo
+      // Filtrar por grupo específico
       userIds = await getWorkerIdsForGroup(groupFilter);
       if (userIds.length === 0) {
         body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores en el grupo</strong>El grupo seleccionado no tiene trabajadores con identificador registrado.</div>';
         return;
       }
+    } else if (users) {
+      // RUTs ingresados manualmente
+      userIds = users.split(',').map(s => s.trim()).filter(Boolean);
     } else {
-      // Sin grupo: usar RUTs ingresados manualmente o los cacheados de "En Predio Ahora"
-      userIds = users ? users.split(',').map(s => s.trim()).filter(Boolean) : [];
+      // Todos los grupos permitidos
+      const allIds = [];
+      for (const g of ALLOWED_GROUPS) {
+        const ids = await getWorkerIdsForGroup(g);
+        allIds.push(...ids);
+      }
+      userIds = [...new Set(allIds)];
       if (userIds.length === 0) {
-        if (_cachedPunchIds.length > 0) {
-          userIds = _cachedPunchIds;
-        } else {
-          body.innerHTML = `<div class="empty-msg">
-            <strong>Selecciona un grupo o ingresa los RUTs</strong>
-            <p style="margin-top:8px;color:var(--muted)">
-              Elige un grupo en el filtro, o ingresa RUTs separados por coma.<br>
-              <em>También puedes cargar "En Predio Ahora" para que los RUTs se completen automáticamente.</em>
-            </p>
-          </div>`;
-          return;
-        }
+        body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores</strong>No se encontraron trabajadores en los grupos Terra Sur, PDuarte y Wedo.</div>';
+        return;
       }
     }
 
@@ -703,17 +701,18 @@ async function loadResumen() {
         body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores en el grupo</strong>El grupo seleccionado no tiene trabajadores con identificador registrado.</div>';
         return;
       }
-    } else if (_cachedPunchIds.length > 0) {
-      userIds = _cachedPunchIds;
     } else {
-      body.innerHTML = `<div class="empty-msg">
-        <strong>Selecciona un grupo</strong>
-        <p style="margin-top:8px;color:var(--muted)">
-          Elige un grupo en el filtro para ver el resumen de asistencia.<br>
-          <em>También puedes cargar primero "En Predio Ahora" para usar esos RUTs.</em>
-        </p>
-      </div>`;
-      return;
+      // Todos los grupos permitidos
+      const allIds = [];
+      for (const g of ALLOWED_GROUPS) {
+        const ids = await getWorkerIdsForGroup(g);
+        allIds.push(...ids);
+      }
+      userIds = [...new Set(allIds)];
+      if (userIds.length === 0) {
+        body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores</strong>No se encontraron trabajadores en los grupos Terra Sur, PDuarte y Wedo.</div>';
+        return;
+      }
     }
 
     const data  = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
