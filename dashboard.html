@@ -397,13 +397,105 @@ const CHARTS = {};
 let DATA = {};
 const SUPA_URL='https://vtrpxsgcbojqgdcsplim.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const SUPA_H={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
 let _supaDesp=[];
 async function loadDespachosSupa(){
   try{
-    const r=await fetch(SUPA_URL+'/rest/v1/despachos_gd?select=*&order=fecha_gd.asc,id.asc',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    const r=await fetch(SUPA_URL+'/rest/v1/despachos_gd?select=*&order=fecha_gd.asc,id.asc',{headers:SUPA_H});
     if(!r.ok)return;
     _supaDesp=await r.json();
   }catch(e){console.warn('despachos supa:',e);}
+}
+
+// ── Compras desde Supabase (reemplaza DETALLE GD del Excel) ───────────────────
+let _supaCompras=[];      // filas de registro_compras normalizadas al shape de detalleGD
+let _presupuestoTotal=null;
+
+async function loadComprasSupa(){
+  try{
+    const PAGE=1000;
+    let all=[],from=0,done=false;
+    while(!done){
+      const r=await fetch(
+        `${SUPA_URL}/rest/v1/registro_compras?select=*&order=fecha_guia.desc,id.asc&limit=${PAGE}&offset=${from}`,
+        {headers:SUPA_H}
+      );
+      if(!r.ok){console.warn('compras supa HTTP',r.status);return;}
+      const chunk=await r.json();
+      all=all.concat(chunk);
+      if(chunk.length<PAGE)done=true; else from+=PAGE;
+    }
+    // Pre-calcular mapa montoGD y totalPpto por gd
+    const montoGDMap={}, totalPptoMap={};
+    all.forEach(r=>{
+      const cantRec=(parseFloat(r.cantidad_sol)||0)-(parseFloat(r.devolucion)||0);
+      const vti=r.valor_total_item!=null&&r.valor_total_item!==''
+        ? parseFloat(r.valor_total_item)||0
+        : (parseFloat(r.valor_und)||0)*cantRec;
+      const gdKey=String(r.gd??'');
+      montoGDMap[gdKey]=(montoGDMap[gdKey]||0)+vti;
+      totalPptoMap[gdKey]=(totalPptoMap[gdKey]||0)+(parseFloat(r.valor_ppto)||0)*cantRec;
+    });
+    _supaCompras=all.map(r=>{
+      const cantRec=(parseFloat(r.cantidad_sol)||0)-(parseFloat(r.devolucion)||0);
+      const valorTotal=r.valor_total_item!=null&&r.valor_total_item!==''
+        ? parseFloat(r.valor_total_item)||0
+        : (parseFloat(r.valor_und)||0)*cantRec;
+      const valorUN=cantRec?valorTotal/cantRec:0;
+      const valorPpto=parseFloat(r.valor_ppto)||0;
+      const difTotal=valorTotal-cantRec*valorPpto;
+      const base=cantRec*valorPpto;
+      const gdKey=String(r.gd??'');
+      const fd=r.fecha_guia?new Date(r.fecha_guia):null;
+      return {
+        fechaGuia:  r.fecha_guia,
+        anioGuia:   fd?fd.getFullYear():null,
+        mes:        r.mes,
+        codigo:     r.codigo,
+        desc:       r.descripcion,
+        desc2:      r.descripcion,   // descripcion es la col G equivalente
+        um:         r.unidad,
+        cant:       parseFloat(r.cantidad_sol)||0,
+        cantRec:    cantRec,
+        valorUN:    valorUN,
+        valorItem:  valorTotal,
+        valorTotal: valorTotal,
+        valorPpto:  valorPpto,
+        difUN:      valorUN-valorPpto,
+        difTotal:   difTotal,
+        difPct:     base ? difTotal/base : null,  // fracción (igual que Excel: /100 para mostrar %)
+        gd:         r.gd,
+        responsable:r.responsable,
+        montoGD:    montoGDMap[gdKey]||0,
+        oc:         r.oc||null,
+        presupuesto:null,  // se inyecta desde _presupuestoTotal abajo
+        totalPpto:  totalPptoMap[gdKey]||0,
+        tipoProd:   r.tipo_producto,
+        _raw:       r
+      };
+    });
+  }catch(e){console.warn('loadComprasSupa:',e);}
+}
+
+async function loadPresupuestoSupa(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/config?key=eq.presupuesto_total&select=value`,{headers:SUPA_H});
+    if(!r.ok)return;
+    const rows=await r.json();
+    if(rows&&rows[0]) _presupuestoTotal=parseFloat(rows[0].value)||null;
+  }catch(e){console.warn('loadPresupuestoSupa:',e);}
+}
+
+// Devuelve el array de compras a usar: Supabase si está cargado, Excel como fallback
+function getCompras(){
+  if(_supaCompras.length){
+    // Inyectar presupuesto total en primera fila para que renderCompras/renderResumen lo encuentren
+    if(_presupuestoTotal!=null&&_supaCompras.length)
+      _supaCompras[0].presupuesto=_presupuestoTotal;
+    return _supaCompras;
+  }
+  // FALLBACK_EXCEL: DATA.detalleGD del archivo LACHACRA.xlsm
+  return DATA.detalleGD||[];
 }
 
 // Check localStorage for pre-loaded data
@@ -418,7 +510,8 @@ async function loadDespachosSupa(){
           var pr = document.getElementById('prompt');
           if(pr) pr.style.display = 'none';
           renderAll();
-          loadDespachosSupa().then(()=>{renderDespachos();renderResumen();});
+          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+            .then(()=>{renderDespachos();renderCompras();renderResumen();});
           var t = document.querySelector('.tab[data-tab="resumen"]');
           if(t) t.click();
           var st = document.getElementById('load-status');
@@ -724,7 +817,8 @@ document.getElementById('file-input').addEventListener('change',function(e){
         document.getElementById('prompt').style.display='none';
         renderAll();
         document.querySelector('.tab[data-tab="resumen"]').click();
-        loadDespachosSupa().then(()=>{renderDespachos();renderResumen();});
+        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+          .then(()=>{renderDespachos();renderCompras();renderResumen();});
         st.textContent='✅ Cargado'; st.className='status-ok';
         // Save to localStorage for biblioteca
         try {
@@ -776,7 +870,8 @@ async function autoLoadFromRepo(){
     try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
     renderAll();
     try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
-    loadDespachosSupa().then(()=>{renderDespachos();renderResumen();});
+    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+      .then(()=>{renderDespachos();renderCompras();renderResumen();});
     showAutoStatus('✅ Datos cargados');
     try{
       localStorage.setItem('tp_dashboard_data',JSON.stringify(DATA));
@@ -1025,8 +1120,8 @@ function renderResumen(){
   const _curvaHoy=(DATA.curva||[]).filter(x=>{const d=parseDate(x.fecha);return d&&!isNaN(d)&&d<=_today;});
   const _lastReal=[..._curvaHoy].reverse().find(x=>x.real!=null&&x.real>0);
   const avFisicoReal=_lastReal?_lastReal.real*100:avProm*100;
-  const totalComprado=(DATA.detalleGD||[]).reduce((s,x)=>s+(x.valorTotal??0),0);
-  const presupuesto=(DATA.detalleGD||[]).find(x=>x.presupuesto)?.presupuesto??null;
+  const totalComprado=getCompras().reduce((s,x)=>s+(x.valorTotal??0),0);
+  const presupuesto=_presupuestoTotal??getCompras().find(x=>x.presupuesto)?.presupuesto??null;
 
   const despachados=new Set((_supaDesp.length?_supaDesp:(DATA.despachos||[])).map(x=>x.modulo).filter(Boolean)).size;
   document.getElementById('kpi-resumen').innerHTML=kpiHTML([
@@ -1063,7 +1158,7 @@ function renderResumen(){
 
   // Compras reales vs Presupuesto por mes – ordered 2025→2026
   const mesReal={}, mesPpto={};
-  (DATA.detalleGD||[]).forEach(g=>{
+  getCompras().forEach(g=>{
     const key=`${g.mes}-${g.anioGuia}`;
     mesReal[key]=(mesReal[key]||0)+(g.valorTotal||0);
     mesPpto[key]=(mesPpto[key]||0)+(g.totalPpto||0);
@@ -1632,7 +1727,7 @@ function renderModulos(){
 // ═══════════════════════════════════════════════
 let GD_ALL=[];
 function renderCompras(){
-  const gd=DATA.detalleGD||[]; GD_ALL=gd;
+  const gd=getCompras(); GD_ALL=gd;
   const total=gd.reduce((s,x)=>s+(x.valorTotal||0),0);
   const totalPpto=gd.reduce((s,x)=>s+(x.totalPpto||0),0);
   const ppto=gd.find(x=>x.presupuesto)?.presupuesto??null;

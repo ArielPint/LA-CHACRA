@@ -1,0 +1,24 @@
+name: Deploy Staging to gh-pages-staging
+
+on:
+  push:
+    branches: [staging/registro-gd-migration]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Deploy to gh-pages-staging branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages-staging
+          publish_dir: .
+          exclude_assets: '.github'
