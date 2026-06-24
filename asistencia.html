@@ -305,6 +305,12 @@ tbody tr:hover td{background:var(--surface2)}
 </div><!-- /content -->
 
 <script>
+// ─── Grupos permitidos ───────────────────────────────────────────────────────
+const ALLOWED_GROUPS = ['Terra Sur', 'PDuarte', 'Wedo'];
+function inAllowedGroup(groupDesc) {
+  return ALLOWED_GROUPS.some(g => g.toLowerCase() === (groupDesc || '').trim().toLowerCase());
+}
+
 // ─── Estado global ──────────────────────────────────────────────────────────
 let _punches        = [];
 let _workers        = [];
@@ -440,7 +446,7 @@ async function loadGroupFilters() {
       _groups = Array.isArray(data) ? data : (Array.isArray(data?.Groups) ? data.Groups : []);
     }
     const options = _groups
-      .filter(g => g.Description)
+      .filter(g => g.Description && inAllowedGroup(g.Description))
       .map(g => `<option value="${esc(g.Description)}">${esc(g.Description)}</option>`)
       .join('');
     const placeholder = '<option value="">Todos los grupos</option>';
@@ -473,7 +479,14 @@ async function loadPresencia() {
   try {
     const punches = await GeoVictoria.getRecentPunches({ resetCheckpoint: true });
     _punches = Array.isArray(punches) ? punches : [];
-    _cachedPunchIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+    // Cargar trabajadores para poder filtrar por grupo en presencia
+    if (_workers.length === 0) {
+      const wData = await GeoVictoria.getWorkers().catch(() => []);
+      _workers = Array.isArray(wData) ? wData : [];
+    }
+    // Solo cachear IDs de trabajadores de grupos permitidos
+    const allowedIds = new Set(_workers.filter(w => inAllowedGroup(w.GroupDescription)).map(w => w.Identifier).filter(Boolean));
+    _cachedPunchIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(id => allowedIds.has(id)))];
     setGVStatus(true);
     renderPresencia();
     document.getElementById('presencia-time').textContent =
@@ -488,9 +501,14 @@ async function loadPresencia() {
 }
 
 function renderPresencia() {
+  const allowedIds = _workers.length > 0
+    ? new Set(_workers.filter(w => inAllowedGroup(w.GroupDescription)).map(w => w.Identifier).filter(Boolean))
+    : null;
+
   const byWorker = {};
   _punches.forEach(p => {
     const id = p.UserIdentifier;
+    if (allowedIds && !allowedIds.has(id)) return;
     if (!byWorker[id] || new Date(p.Date) > new Date(byWorker[id].Date)) {
       byWorker[id] = p;
     }
@@ -856,6 +874,7 @@ function renderWorkers() {
   const st = document.getElementById('f-worker-status').value;
 
   const filtered = _workers.filter(w => {
+    if (!inAllowedGroup(w.GroupDescription)) return false;
     const matchQ = !q ||
       (w.Name || '').toLowerCase().includes(q) ||
       (w.LastName || '').toLowerCase().includes(q) ||
@@ -919,7 +938,7 @@ function renderGroups() {
     return;
   }
 
-  const rows = _groups.map(g => {
+  const rows = _groups.filter(g => inAllowedGroup(g.Description)).map(g => {
     const supervisores = (g.Supervisors || []).map(s => s.Name || s.Identifier).join(', ') || '–';
     const hasGps = g.GpsLatitude && g.GpsLongitude;
     const mapsUrl = hasGps
