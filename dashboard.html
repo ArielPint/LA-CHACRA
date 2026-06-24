@@ -425,16 +425,14 @@ async function loadComprasSupa(){
       all=all.concat(chunk);
       if(chunk.length<PAGE)done=true; else from+=PAGE;
     }
-    // Pre-calcular mapa montoGD y totalPpto por gd
-    const montoGDMap={}, totalPptoMap={};
+    // Pre-calcular mapa montoGD por gd (para el campo montoGD de cada fila)
+    const montoGDMap={};
     all.forEach(r=>{
       const cantRec=(parseFloat(r.cantidad_sol)||0)-(parseFloat(r.devolucion)||0);
       const vti=r.valor_total_item!=null&&r.valor_total_item!==''
         ? parseFloat(r.valor_total_item)||0
         : (parseFloat(r.valor_und)||0)*cantRec;
-      const gdKey=String(r.gd??'');
-      montoGDMap[gdKey]=(montoGDMap[gdKey]||0)+vti;
-      totalPptoMap[gdKey]=(totalPptoMap[gdKey]||0)+(parseFloat(r.valor_ppto)||0)*cantRec;
+      montoGDMap[String(r.gd??'')]=(montoGDMap[String(r.gd??'')]||0)+vti;
     });
     _supaCompras=all.map(r=>{
       const cantRec=(parseFloat(r.cantidad_sol)||0)-(parseFloat(r.devolucion)||0);
@@ -443,9 +441,9 @@ async function loadComprasSupa(){
         : (parseFloat(r.valor_und)||0)*cantRec;
       const valorUN=cantRec?valorTotal/cantRec:0;
       const valorPpto=parseFloat(r.valor_ppto)||0;
-      const difTotal=valorTotal-cantRec*valorPpto;
+      // Excel col Q = ppto - real (positivo = más barato = verde)
+      const difTotal=cantRec*valorPpto-valorTotal;
       const base=cantRec*valorPpto;
-      const gdKey=String(r.gd??'');
       const fd=r.fecha_guia?new Date(r.fecha_guia):null;
       return {
         fechaGuia:  r.fecha_guia,
@@ -461,15 +459,15 @@ async function loadComprasSupa(){
         valorItem:  valorTotal,
         valorTotal: valorTotal,
         valorPpto:  valorPpto,
-        difUN:      valorUN-valorPpto,
+        difUN:      valorPpto-valorUN,   // ppto - real por unidad
         difTotal:   difTotal,
-        difPct:     base ? difTotal/base : null,  // fracción (igual que Excel: /100 para mostrar %)
+        difPct:     base ? difTotal/base : null,  // fracción, igual convención que Excel
         gd:         r.gd,
         responsable:r.responsable,
-        montoGD:    montoGDMap[gdKey]||0,
+        montoGD:    montoGDMap[String(r.gd??'')]||0,
         oc:         r.oc||null,
         presupuesto:null,  // se inyecta desde _presupuestoTotal abajo
-        totalPpto:  totalPptoMap[gdKey]||0,
+        totalPpto:  cantRec*valorPpto,   // aporte ppto de esta fila (= valor_ppto * cantRec)
         tipoProd:   r.tipo_producto,
         _raw:       r
       };
