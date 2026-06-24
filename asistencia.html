@@ -586,17 +586,27 @@ async function loadAttendance() {
     let userIds = [];
 
     if (users) {
-      // RUTs ingresados manualmente
       userIds = users.split(',').map(s => s.trim()).filter(Boolean);
     } else if (groupFilter) {
-      // Filtrar por grupo específico
       userIds = await getWorkerIdsForGroup(groupFilter);
       if (userIds.length === 0) {
         body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores en el grupo</strong>El grupo seleccionado no tiene trabajadores con identificador registrado.</div>';
         return;
       }
+    } else {
+      // Todos los grupos: usar IDs de marcajes del día (la API exige UserIds)
+      userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      if (userIds.length === 0) {
+        body.innerHTML = `<div class="empty-msg">
+          <strong>Carga primero "En Predio Ahora"</strong>
+          <p style="margin-top:8px;color:var(--muted)">
+            Para consultar todos los grupos, ve primero a la pestaña <strong>En Predio Ahora</strong>
+            para cargar los identificadores de trabajadores, luego vuelve aquí y consulta.
+          </p>
+        </div>`;
+        return;
+      }
     }
-    // Si userIds sigue vacío → sin filtro (GeoVictoria devuelve todos)
 
     const data = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
     _attendanceData = Array.isArray(data?.Users) ? data.Users : [];
@@ -690,8 +700,19 @@ async function loadResumen() {
         body.innerHTML = '<div class="empty-msg"><strong>Sin trabajadores en el grupo</strong>El grupo seleccionado no tiene trabajadores con identificador registrado.</div>';
         return;
       }
+    } else {
+      userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      if (userIds.length === 0) {
+        body.innerHTML = `<div class="empty-msg">
+          <strong>Carga primero "En Predio Ahora"</strong>
+          <p style="margin-top:8px;color:var(--muted)">
+            Para consultar todos los grupos, ve primero a la pestaña <strong>En Predio Ahora</strong>
+            para cargar los identificadores de trabajadores, luego vuelve aquí y consulta.
+          </p>
+        </div>`;
+        return;
+      }
     }
-    // Si userIds sigue vacío → sin filtro (GeoVictoria devuelve todos)
 
     const data  = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
     const users = Array.isArray(data?.Users) ? data.Users : [];
