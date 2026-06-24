@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Chacra · Acceso</title>
+<script src="auth.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #cd1c18 0%, #cd1c18 45%, #111111 55%, #111111 100%);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  .login-card {
+    background: white;
+    border-radius: 16px;
+    padding: 48px 44px 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+
+  .logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .logo h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #cd1c18;
+    letter-spacing: -0.5px;
+  }
+  .logo p {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 4px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #222;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fafafa;
+  }
+  input:focus {
+    border-color: #cd1c18;
+    background: white;
+  }
+
+  .btn-login {
+    width: 100%;
+    padding: 13px;
+    background: #cd1c18;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 0.3px;
+  }
+  .btn-login:hover  { background: #a81512; }
+  .btn-login:active { transform: scale(0.99); }
+  .btn-login:disabled { background: #aaa; cursor: not-allowed; }
+
+  .error-msg {
+    display: none;
+    background: #fff0f0;
+    border: 1px solid #f5c6c6;
+    color: #c0392b;
+    padding: 10px 14px;
+    border-radius: 7px;
+    font-size: 0.85rem;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .error-msg.show { display: block; }
+
+  .spinner {
+    display: none;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 0.75rem;
+    color: #bbb;
+  }
+
+  @media (max-width: 480px) {
+    .login-card { padding: 32px 20px 28px; margin: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="logo">
+    <h1>La Chacra</h1>
+    <p>Sistema de producción</p>
+  </div>
+
+  <form id="loginForm">
+    <div class="field">
+      <label for="username">Usuario</label>
+      <input type="text" id="username" placeholder="nombre de usuario" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+    </div>
+    <div class="field">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn-login" id="btnLogin">
+      <span id="btnText">Ingresar</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+    <div class="error-msg" id="errorMsg"></div>
+  </form>
+
+  <p class="footer-note">Acceso restringido · La Chacra</p>
+</div>
+
+<script>
+  // Calcula la URL de destino según los permisos de páginas del usuario
+  function resolveRedirect(session) {
+    const pageMap = { dashboard: 'dashboard.html', produccion: 'produccion.html', layout: 'layout.html' };
+    const accessible = Object.keys(pageMap).filter(pid => {
+      const pg = session.permissions && session.permissions.pages && session.permissions.pages[pid];
+      return pg && pg.access;
+    });
+    // Una sola página accesible → ir directo a ella
+    if (accessible.length === 1) return pageMap[accessible[0]];
+    // Múltiples páginas → portal tecnopanel
+    return 'tecnopanel.html';
+  }
+
+  // Si ya hay sesión activa, redirigir
+  const existing = AUTH.getSession();
+  if (existing) window.location.href = resolveRedirect(existing);
+
+  const form    = document.getElementById('loginForm');
+  const btnText = document.getElementById('btnText');
+  const spinner = document.getElementById('spinner');
+  const errorEl = document.getElementById('errorMsg');
+  const btn     = document.getElementById('btnLogin');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorEl.classList.remove('show');
+    btn.disabled   = true;
+    btnText.style.display = 'none';
+    spinner.style.display = 'block';
+
+    try {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      const session = await AUTH.login(user, pass);
+      window.location.href = resolveRedirect(session);
+    } catch (err) {
+      errorEl.textContent = err.message || 'Error al iniciar sesión';
+      errorEl.classList.add('show');
+      btn.disabled = false;
+      btnText.style.display = 'block';
+      spinner.style.display = 'none';
+    }
+  });
+
+  // Enter en cualquier campo
+  document.getElementById('username').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('password').focus();
+  });
+</script>
+</body>
+</html>

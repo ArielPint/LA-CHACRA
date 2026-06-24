@@ -1,0 +1,2459 @@
+[
+  {
+    "codigo": "407117",
+    "descripcion": "TORNILLO CABEZA PLANA 7MM X 125MM (200 X CAJA) (SDW22500MB)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 585.072053,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "40814X",
+    "descripcion": "CLAVO TORNILLO TC28/32X65 NK JUMBO SCRAIL (SCRAIL-SCREW - 3.600 UND X CAJA)",
+    "desc_corta": "CLAVO TORNILLO",
+    "grupo": "OBRA GRUESA",
+    "ppto": 233358.087912,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "804070",
+    "descripcion": "PISO VINILICO TARKETT PLUS STANDARD E: 2 MM  GRIS CODIGO 494 (46 M2 X ROLLO)",
+    "desc_corta": "TARKETT",
+    "grupo": "",
+    "ppto": 6479.998975,
+    "unidad": "M2",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1703046",
+    "descripcion": "DESAGUE METALICO TINA, RECEPTACULO Y LAVAPLATOS 1 1/2\"",
+    "desc_corta": "DESAGUE 1  1/2",
+    "grupo": "",
+    "ppto": 3138.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801035",
+    "descripcion": "LAVAMANOS VALENCIA PREMIUM COD:CS0055671301CF BLANCO",
+    "desc_corta": "LAVAMANOS",
+    "grupo": "",
+    "ppto": 18126.208333,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808149",
+    "descripcion": "MONOMANDO LAVAPLATOS ASÍS MCPAS",
+    "desc_corta": "MONOMANDO LAVAPLATOS",
+    "grupo": "",
+    "ppto": 20303.2,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801020",
+    "descripcion": "TINA ESMALTADA BLANCA C/ANTIDESLIZANTE DE 1.30X0.70X0.385 MARCA GALA",
+    "desc_corta": "TINA",
+    "grupo": "",
+    "ppto": 30757.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5316481",
+    "descripcion": "ATRIL METALICO PARA LAVADERO -2 PATAS",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 11769.175824,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5316479",
+    "descripcion": "LAVADERO DE PLASTICO  MODELO TQO-15 LTS",
+    "desc_corta": "LAVADERO",
+    "grupo": "",
+    "ppto": 10525.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5316482",
+    "descripcion": "SIFON DE LAVADERO  CORRUGADO  1 1/2\"  BLANCO",
+    "desc_corta": "SIFON LAVADERO",
+    "grupo": "GRIFERIA",
+    "ppto": 1511.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "404184",
+    "descripcion": "ANGULO PVC 32 x 32 x 2.2 x 3.000 MM. BLANCO",
+    "desc_corta": "ANGULO BLANCO",
+    "grupo": "",
+    "ppto": 1754.875731,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "601122",
+    "descripcion": "CATALIZADOR ESMALTE EPOXICO COD:9610007T22",
+    "desc_corta": "CATALIZADOR BALCON",
+    "grupo": "",
+    "ppto": 12000.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "601123",
+    "descripcion": "DILUYENTE EPOXICO COD: 8000015T30",
+    "desc_corta": "DILUYENTE",
+    "grupo": "",
+    "ppto": 11427.75,
+    "unidad": "GAL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "602060",
+    "descripcion": "OLEO SEMIBRILLO RAL-9010 BCO.PURO ( TINETA )",
+    "desc_corta": "OLEO SEMIBRILLO",
+    "grupo": "",
+    "ppto": 63032.0,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "701022",
+    "descripcion": "PLANCHA YESO CARTON RF S/PAPEL DE 1.22 x 3.40 x 15 MM BORDE CUADRADO 40 PLXPALLET (SKU 5002153)",
+    "desc_corta": "VOLCANITA RF",
+    "grupo": "",
+    "ppto": 11163.59851,
+    "unidad": "PL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2502036",
+    "descripcion": "TUBO FLEXIBLE L/HALOG S/GUIA 20mm 1/2 GR ROLLO 100 MTS",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 47856.412698,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302019",
+    "descripcion": "PINO NACIONAL SECO  CEPILLADO DE 1 x 4 x 3.20 MTS (264 PZA X PQTE)",
+    "desc_corta": "PINO 1X4X320",
+    "grupo": "OBRA GRUESA",
+    "ppto": 1660.342954,
+    "unidad": "PZA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5112589",
+    "descripcion": "BROCAS PARA MURO VISLIDER SQR27114 (7-1/4\" Sq Drive #2 Bit)",
+    "desc_corta": "BROCAS VISLIDER",
+    "grupo": "",
+    "ppto": 5090.092308,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302039",
+    "descripcion": "PINO NACIONAL GRADO C-16/C-24 IMPREGNADO DE 2\" X 6\" X 4,00 m",
+    "desc_corta": "PINO 2X6X400",
+    "grupo": "OBRA GRUESA",
+    "ppto": 9825.547956,
+    "unidad": "PZA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "307275",
+    "descripcion": "PINO IPV CALIBRADO G2 45x45x2400mm",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 1482.060064,
+    "unidad": "PZA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "307252",
+    "descripcion": "PINO NACIONAL GRADO G1 CEPILLADO SECO 2X12X320 (41X280)",
+    "desc_corta": "PINO 2X12X320",
+    "grupo": "OBRA GRUESA",
+    "ppto": 16753.020979,
+    "unidad": "PZA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "030210X",
+    "descripcion": "PINO SYP GRADO 2 PRIME DE 2\" x 10\" x 12´ ( 38 x 230 MM )",
+    "desc_corta": "PINO 2X10X12",
+    "grupo": "OBRA GRUESA",
+    "ppto": 17998.0,
+    "unidad": "PZA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1405027",
+    "descripcion": "KIT CERRADURA ACCESO ML/816 SS 2 MANILLAS (SKU: 023037A)",
+    "desc_corta": "CERRADURA ACCESO 2 MANILLAS",
+    "grupo": "TERMINACION",
+    "ppto": 20069.0,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1405026",
+    "descripcion": "KIT CERRADURA ACCESO ML/816 SS 1 MANILLA (SKU:023037)",
+    "desc_corta": "CERRADURA ACCESO 1 MANILLA",
+    "grupo": "TERMINACION",
+    "ppto": 18880.6,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801154",
+    "descripcion": "WC LUGANO DESCARGA MURO COD:CS0010241301CF + SET ANCLAJE",
+    "desc_corta": "WC",
+    "grupo": "TERMINACION",
+    "ppto": 32738.5,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1101971",
+    "descripcion": "KIT PUERTA AMPARO 750 MM PRECOLGADA SIN PERFORAR DERECHA",
+    "desc_corta": "PUERTA INTERIOR",
+    "grupo": "",
+    "ppto": 44950.0,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802005",
+    "descripcion": "ASIENTO WC MODELO UNIVERSAL REDONDO COD:SP0095111301BO (CAPRICE)",
+    "desc_corta": "ASIENTO WC",
+    "grupo": "TERMINACION",
+    "ppto": 3780.408791,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808043",
+    "descripcion": "LLAVE ANGULAR HE 1/2 X HE 1/2 CON FILTRO (WASSER)",
+    "desc_corta": "LLAVE ANGULAR",
+    "grupo": "",
+    "ppto": 2779.727273,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801236",
+    "descripcion": "MONOMANDO LAVAMANOS ANDES CROMADO  (SGLV55693061CF)",
+    "desc_corta": "MONOMANDO LAVAMANOS",
+    "grupo": "GRIFERIA",
+    "ppto": 8938.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801238",
+    "descripcion": "MONOMANDO TINA DUCHA ANDES CROMADO (SGTD55693061CF)",
+    "desc_corta": "MONOMANDO TINA",
+    "grupo": "GRIFERIA",
+    "ppto": 16615.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801011",
+    "descripcion": "PEDESTAL VALENCIA PREMIUM COD:SS0066011301CG  BLANCO",
+    "desc_corta": "PEDESTAL LAVAMANOS",
+    "grupo": "",
+    "ppto": 9242.421769,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1101946",
+    "descripcion": "KIT HDF AMPARO IMPERIAL IZQUIERDA DE 750X2050MM HOJA 700X2000MM MARCO PINO FINGER 30X70 C/3 BISAGRAS",
+    "desc_corta": "PUERTA INTERIOR IZQ",
+    "grupo": "",
+    "ppto": 52385.051282,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1401065",
+    "descripcion": "CERRADURA YALE Y815 OFICINA DORMITORIO  MANILLA/LLAVE/SEGURO",
+    "desc_corta": "CERRADURA LLAVE",
+    "grupo": "TERMINACION",
+    "ppto": 13116.498607,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1105121",
+    "descripcion": "KIT PRECOLGADO PTA.CARA ACERO GALV.6 PANELES BLANCA 45X1000X2050+M.P.FINGER 30X120-DERECHA",
+    "desc_corta": "PUERTA ACCESO DERECHA",
+    "grupo": "TERMINACION",
+    "ppto": 96540.363636,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1105122",
+    "descripcion": "KIT PREC.PTA.CARA ACERO GALV.LISA 1/2 C.BLANCA 45X850X2050 V.TERMOPANEL,M.P.FINGER 30X120-DERECHA",
+    "desc_corta": "PUERTA LOGIA DERECHA",
+    "grupo": "TERMINACION",
+    "ppto": 134750.0,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1901229",
+    "descripcion": "POLIETILENO ALTA DENSIDAD DE 1.80 X 110 MICRAS FOIL ( 2.66 METROS LINEALES X KILO )",
+    "desc_corta": "POLIETILENO",
+    "grupo": "OBRA GRUESA",
+    "ppto": 1896.231737,
+    "unidad": "KG",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "307256",
+    "descripcion": "\"PINO NACIONAL BRUTO IMPREGNADO 1 \"\" X 4\"\" X 3,2MT \"",
+    "desc_corta": "PINO 1X4X320",
+    "grupo": "OBRA GRUESA",
+    "ppto": 1896.957447,
+    "unidad": "PZA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "408013",
+    "descripcion": "PUNTA PARA PUNTILLERA ZN 5000 DE F-50 MM CAJA 5.000 UND",
+    "desc_corta": "PUNTA PUNTILLERA",
+    "grupo": "",
+    "ppto": 2520.47678,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704091",
+    "descripcion": "ESQUINERO CORNIZA INTERIOR  PVC HAYA",
+    "desc_corta": "ESQUINERO INTERIOR",
+    "grupo": "",
+    "ppto": 175.155086,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704107",
+    "descripcion": "ESQUINERO CORNIZA PVC EXTERIOR   HAYA",
+    "desc_corta": "ESQUINERO EXTERIOR",
+    "grupo": "",
+    "ppto": 236.855018,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "617056",
+    "descripcion": "BROCHA EXCELSIOR PROFESIONAL DE  5/8\" x 3\"",
+    "desc_corta": "BROCHA 5/8 X3",
+    "grupo": "",
+    "ppto": 1320.5,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "701183",
+    "descripcion": "MOLDURA PVC ESQUINERA INTERIOR 2.44 P/KEMLITE",
+    "desc_corta": "MOLDURA PVC INTERIOR",
+    "grupo": "",
+    "ppto": 996.5,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "080470X",
+    "descripcion": "MONOFILAMENTO PISO VINILICO GRIS COD: 494 ( ROLLO 50 MTS  )",
+    "desc_corta": "MONOFILAMENTO",
+    "grupo": "",
+    "ppto": 265.858166,
+    "unidad": "ML",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2505059",
+    "descripcion": "EXTRACTOR DE VENTILACION INTELLIVENT + KIT UTA",
+    "desc_corta": "EXTRACTOR",
+    "grupo": "",
+    "ppto": 75790.3125,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "409027",
+    "descripcion": "MOLDURA ALUMINIO NATURAL  5355 TEMBAR LARGO 6.0 METROS",
+    "desc_corta": "MOLDURA ALUMINIO NATURAL",
+    "grupo": "",
+    "ppto": 6469.102847,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "090721x",
+    "descripcion": "MEMBRANA PVC  DE 1.2 MM DE 4,10 MT x  25 MT (102,50 M2/ROLLO)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 5771.998942,
+    "unidad": "M2",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "307263",
+    "descripcion": "PLACA LP SMARTSIDE LAP 30 APA X 4,88 MTS X 9,5 MM.",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 9514.217949,
+    "unidad": "PL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802515",
+    "descripcion": "CELOSIA ALUMINIO MATE 30x30 CMS.",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 2827.251046,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "180150x",
+    "descripcion": "CORTINA DE BAÑO 1.30 x 2.00 MTS. COLOR GRIS INCLUYE ARGOLLAS",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 6798.340713,
+    "unidad": "JGO",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704095",
+    "descripcion": "ESQUINERO PILASTRA PVC HAYA",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 250.001188,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "617007",
+    "descripcion": "LIJA PARA MADERA GRANO 120 (PLIEGO)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 99.963821,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801233",
+    "descripcion": "PORTARROLLO ACERO INOX FONTANA S/TAPA (SAPR80083101CB)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 7404.410072,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801232",
+    "descripcion": "TOALLERO REDONDO FONTANA ACERO INOX (SATR80083101CB)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 6876.333333,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801231",
+    "descripcion": "GANCHO INDIVIDUAL FONTANA ACERO INOX (SAGI80083101CB)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 5708.8,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "040813x",
+    "descripcion": "CLAVO BDC 22X50 BK RING JUMBO COIL (NAIL - 9.000 UND X CAJA)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 41451.848739,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "609007",
+    "descripcion": "DILUYENTE SINTETICO BIDON 5 LTS (6 BID/CAJA)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 8164.982143,
+    "unidad": "BID",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412592",
+    "descripcion": "ANGULO PVC 40 x 40 x 2 x 3.000 MM BLANCO",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 3152.283293,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "080459x",
+    "descripcion": "PISO VINILICO POLYFLOR 2 MM GRIS  COD:3700 (2 X 20  mt = 40 m2 x Rollo)",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 6762.957808,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1103090",
+    "descripcion": "FORRO FRENTE BALCON DS49 80/100  D: 220 MM L: 4000 MM",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 11800.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1103091",
+    "descripcion": "FORRO LATERAL BALCON DS49 100/100 D: 220 MM L: 3000 MM",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 8850.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "CAPA",
+    "descripcion": "CAPA DE TERMINACION AUTONIVELANTE PACE COTE 8 MILS DE ESPESOR + ARIDO EFEC. ANTIDESLIZANTE",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 1.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "PINTURA",
+    "descripcion": "PINTURA IMPERMEABILIZANTE DE POLIURETANO COLOR GRIS",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 1.0,
+    "unidad": "GAL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "cave polflex",
+    "descripcion": "Cave Polflex F Tineta 20Kgs",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 102900.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "VOLCO",
+    "descripcion": "VOLCOGLASS",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 29779.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "KRAFT",
+    "descripcion": "VOLCANWRAP BARRERA DE VAPOR (60 M2/ROLLO)",
+    "desc_corta": "VOLCANWRAP BARRERA DE",
+    "grupo": "OBRA GRUESA",
+    "ppto": 651.5,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "403024",
+    "descripcion": "CONECTOR DENTADO 2X4 (4C2)",
+    "desc_corta": "CONECTOR DENTADO 2X",
+    "grupo": "OBRA GRUESA",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "304012",
+    "descripcion": "CHOLGUAN LISO PLANCHA DE 1.520 x 2.440 x 2.4 MM",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 6004.451578,
+    "unidad": "PL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "404745",
+    "descripcion": "GARGOLA ESPECIAL LATA LARGO 350MM CON REMACHES",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "408017",
+    "descripcion": "CLAVO HELICOIDAL EN ROLLO  2.5 x 50 MM ( CAJA DE 9.000 UNIDADES ).",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412016",
+    "descripcion": "CELOSIA ALUMINIO MATE 40X40 CMS",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412132",
+    "descripcion": "CELOSIA ALUMINIO MATE 20 x 20 CMS",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 1037.486099,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "707023",
+    "descripcion": "CINTA CONSTRUCCION VOLCANWRAP (47,8 MM X 50,29 M) (24 X CAJA)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 16708.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1701154",
+    "descripcion": "GOMA ADAPTADORA PARA SIFON 40 x 32mm MUEBLE SUNSET",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1803044",
+    "descripcion": "KIT PRECOLGADO PTA PREPINTADA 750X2040+M.P.FINGER 38X120 C/CELOSÍA PVC-IZQUIERDA",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 52920.0,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2302044",
+    "descripcion": "GEXACO PLASTO CEM SACO 20 KILO - RETAPE RAPIDO",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 13091.967213,
+    "unidad": "SAC",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2302045",
+    "descripcion": "GEXACO IMPRIMADOR UNIVERSAL BALDE 10 KG",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 25156.025641,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2304008",
+    "descripcion": "SILICONA ALMENDRA NEUTRA COLOR ALMENDRA 300ML",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2304056",
+    "descripcion": "SELLO POLIURETANO SOUDAFLEX 40FC TUBO BLANCO",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 2979.25,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2505426",
+    "descripcion": "SIFON BOTELLA 1 ¼ SALIDA 30CM TUBE WASSER (COD: HJ2010001)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 1683.860215,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2508986",
+    "descripcion": "KIT PRECOLGADO PTA.CARA ACERO GALV.6 PANELES BLANCA 45X1000X2050+M.P.FINGER 38X120-IZQUIERDA",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2508988",
+    "descripcion": "KIT PREC.PTA.CARA ACERO GALV.LISA 1/2 C.BLANCA 45X850X2050 V.TERMOPANEL,M.P.FINGER 38X120-IZQUIERDA",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5316508",
+    "descripcion": "LAVAPLATOS DE SOBREPONER 80X50 CM PARA MONOMANDO C/SECADOR IZQUIERDO",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "081010x",
+    "descripcion": "MONOFILAMENTO PISO VINILICO SAFETRED UNIVERSAL 2M VENUS ( ROLLO 50 MTS)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "RLL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407423",
+    "descripcion": "TORNILLO VOLCANITA CRS 6 x 1 5/8\" ZINCADO",
+    "desc_corta": "TORNILLO CRS 6X1 5/8",
+    "grupo": "OBRA GRUESA",
+    "ppto": 3.388029,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "040801X",
+    "descripcion": "GRAPAS 180/40 NK HZ (10.000 UND X CAJA)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 49030.713303,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2304002",
+    "descripcion": "SILICONA ACETICA C/FUNGICIDA COLOR BLANCO 300 ml",
+    "desc_corta": "",
+    "grupo": "GRIFERIA",
+    "ppto": 1376.471724,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2304003",
+    "descripcion": "SILICONA ACETICA C/FUNGICIDA COLOR TRANSPARENTE 300 ml",
+    "desc_corta": "SELLO FUNGICIDA",
+    "grupo": "",
+    "ppto": 1297.135262,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2302119",
+    "descripcion": "SELLADOR ADHESIVO FIX-ALL HIGH TACK (REEMPLAZO MIR-O-BOND)",
+    "desc_corta": "SELLO",
+    "grupo": "TERMINACION",
+    "ppto": 3670.87504,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "304014",
+    "descripcion": "TERCIADO FENOLICO BC MOLDAJE DE 1,22 X 2,44 X 15 mm (65 PL X PQTE)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 20894.572285,
+    "unidad": "PL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302054",
+    "descripcion": "PINO NACIONAL GRADO C-16/C-24 DE 2\" x 4\" x 2,44 m (41x90mm) (VIVIENDAS SOCIALES)",
+    "desc_corta": "PINO 2X4X2,44",
+    "grupo": "OBRA GRUESA",
+    "ppto": 5713.0,
+    "unidad": "PZA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "2304053",
+    "descripcion": "SILICONA SELLADOR ACRILICO PINTABLE COLOR BLANCA 300 ml",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 866.410153,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1901505",
+    "descripcion": "POLIETILENO ALTA DENSIDAD DE 2.50 X 110 MICRAS FOIL ( 3.83 METROS LINEALES X KILO )",
+    "desc_corta": "POLIETILENO",
+    "grupo": "",
+    "ppto": 1895.0,
+    "unidad": "KG",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "408034",
+    "descripcion": "PUNTA PARA PUNTILLERA DE 30 MM CAJA DE 5.000 UNIDADES",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 1866.950355,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801230",
+    "descripcion": "SOPORTE DE TINA STANDARD D25 H13 ( SB004819130100)",
+    "desc_corta": "SOPORTE TINA",
+    "grupo": "TERMINACION",
+    "ppto": 9309.846154,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1103076",
+    "descripcion": "PERFIL ESQUINERO INTERIOR PVC 8MM BLANCO",
+    "desc_corta": "PERFIL ESQUINERO INTERIOR",
+    "grupo": "OBRA GRUESA",
+    "ppto": 3191.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704079",
+    "descripcion": "CINTA ENMASCARAR PERMACEL DE 2\" 40 X 48 mm",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 755.704882,
+    "unidad": "RLL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1103074",
+    "descripcion": "PERFIL ESQUINERO ENCUENTRO PVC 8MM BLANCO",
+    "desc_corta": "PERFIL ESQUINERO ENCUENTRO",
+    "grupo": "OBRA GRUESA",
+    "ppto": 2427.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1405040",
+    "descripcion": "CEERRADURA BAÑO 815 TUBULAR DAP DUCASSE US32D 45MM ACERO INOX 304",
+    "desc_corta": "CEERRADURA BAÑO 815 TUBULAR",
+    "grupo": "TERMINACION",
+    "ppto": 7568.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1902003",
+    "descripcion": "TYPAR VOLCANWRAP ROLLO DE 2,743 x 45,72 MTS ( 125 M2 x ROLLO ) SKU 7000031",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 150703.97546,
+    "unidad": "RLL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704024",
+    "descripcion": "ESQUINERO CORNIZA EXTERIOR PVC COLOR BLANCO",
+    "desc_corta": "ESQUINERO CORNIZA EXTERIOR",
+    "grupo": "OBRA GRUESA",
+    "ppto": 363.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1610023",
+    "descripcion": "TRAPOS DE ASEO JERSINA BLANCA (BOLSA 1 KILO)",
+    "desc_corta": "TRAPOS DE ASEO",
+    "grupo": "",
+    "ppto": 2109.058542,
+    "unidad": "KG",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "701040",
+    "descripcion": "PLANCHA YESO CARTON RF 1.22x2.44x15 BORDE CUADRADO S/PAPEL ( 2,9768 M2 X PL=70 PLX PQTE) SKU 5001097",
+    "desc_corta": "VOLCANITA RF",
+    "grupo": "OBRA GRUESA",
+    "ppto": 7835.725954,
+    "unidad": "PL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "410045",
+    "descripcion": "CONECTOR DENTADO SIMPSON DE 3\" X 6\" (AS36B / CAJA 232 UND)",
+    "desc_corta": "CONECTOR DENTADO",
+    "grupo": "OBRA GRUESA",
+    "ppto": 368.001361,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1103088",
+    "descripcion": "FORRO LATERAL E:05mm L:1000mm ALUZINC",
+    "desc_corta": "E",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "geotextil",
+    "descripcion": "Geotextil No Tejido 0,20x500Mts 40Grs Altec",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 52900.0,
+    "unidad": "RLL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "408042",
+    "descripcion": "CLAVO HELICOIDAL PROFIX GALV 3.1X65MMX217X18R",
+    "desc_corta": "CLAVO HELICOIDAL PROFIX",
+    "grupo": "OBRA GRUESA",
+    "ppto": 35000.0,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2302098",
+    "descripcion": "COLA FRIA ARTICOL MADERA BALDE 20 KG.",
+    "desc_corta": "COLA FRIA",
+    "grupo": "TERMINACION",
+    "ppto": 21213.0,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302248",
+    "descripcion": "PINO NACIONAL CEPILLADO 4/CARAS SECO DE 2\" X 2\" X 3.20 MT (41 X 41 mm) IMPREGNADO",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 2342.175137,
+    "unidad": "PZA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801735",
+    "descripcion": "BURLETE DE TERMINACION PARA PLATO DUCHA Y BAÑERAS TIRA DE 3 MTS. PVC",
+    "desc_corta": "BURLETE PVC",
+    "grupo": "TERMINACION",
+    "ppto": 3908.493225,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1103086",
+    "descripcion": "FORRO FRENTE E:05mm L:3140mm ALUZINC",
+    "desc_corta": "E",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "701084",
+    "descripcion": "FIBROCEMENTO LISO 1.2 x 2.40 x 22 MM (VOLCAN)",
+    "desc_corta": "FIBROCEMENTO BALCON",
+    "grupo": "OBRA GRUESA",
+    "ppto": 38182.916667,
+    "unidad": "PL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704046",
+    "descripcion": "BUTILLO ROLLO DE 3.2 x 19 x 15.25  MTS",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 9076.062197,
+    "unidad": "RLL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412301",
+    "descripcion": "TORNILLO CABEZA PLANA 7,7MM X 85MM (250 X CAJA) (SDW22338MB)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 388.75977,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "810007",
+    "descripcion": "GUARDAPOLVO PARA RETORNO PISO VINILICO PVC 50 x 3.000 COLOR BLANCO",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 3274.724638,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302249",
+    "descripcion": "PINO NACIONAL SECO  CEPILLADO DE 1 x 4 x 3.20 MTS (264 PZA X PQTE) IMPREGNADO",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 2226.309148,
+    "unidad": "PZA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407185",
+    "descripcion": "TORNILLO ZINCADO 8 x 3\" CRS.",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 6.87832,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "304007",
+    "descripcion": "PLACA OSB STANDARD DE 1.22 x 2.44 x 11.1 MM ( 72 X PAQUETE )",
+    "desc_corta": "OSB 11MM",
+    "grupo": "OBRA GRUESA",
+    "ppto": 11444.353022,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "617057",
+    "descripcion": "BROCHA EXCELSIOR PROFESIONAL 5/8\" x 4\"",
+    "desc_corta": "BROCHA 5/8 X4",
+    "grupo": "",
+    "ppto": 2042.119706,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "030253X",
+    "descripcion": "PINO SYP GRADO 2 PRIME IMPREGNADO DE  3\" x 8\" x 10' (63x184 mm)",
+    "desc_corta": "PINO 3X8X320",
+    "grupo": "OBRA GRUESA",
+    "ppto": 15359.702785,
+    "unidad": "PZA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "302046",
+    "descripcion": "PINO NACIONAL GRADO C-16/C-24 IMPREGNADO DE 2\" X 6\" X 4,00 m (VIVIENDAS SOCIALES)",
+    "desc_corta": "PINO 2X6X400",
+    "grupo": "OBRA GRUESA",
+    "ppto": 10156.598467,
+    "unidad": "PZA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "410046",
+    "descripcion": "CONECTOR DENTADO SIMPSON DE 4\" X 8\" (AS48B /CAJA 129 UND)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 746.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2302024",
+    "descripcion": "ADHESIVO GEXAFLEX 60 ENVASE GALON ( 3.75 LTS)",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 21916.523936,
+    "unidad": "GAL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802659",
+    "descripcion": "CELOSIA BEAGLE 35.5 X 13CM BCO COD:2011100010050",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 2929.463158,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "304002",
+    "descripcion": "PLACA SMART SIDE R-4 SPC-M111 DE 1.220X2.440X11.1 MM (72 PL.POR PALLET )",
+    "desc_corta": "SMARTPANEL",
+    "grupo": "OBRA GRUESA",
+    "ppto": 21246.507153,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "701043",
+    "descripcion": "PLANCHA YESO CARTON VOLCAN RF 1.22 x 3.40 x 15MM WHITE BORDE CUADRADO (40PLXPQ) SKU 5002142",
+    "desc_corta": "VOLCANITA EMPAPELADA CIELO",
+    "grupo": "OBRA GRUESA",
+    "ppto": 22146.362772,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "5316484",
+    "descripcion": "LLAVE DE BOLA JARDIN/LAVAD 1/2\" MANGO ROJO",
+    "desc_corta": "LLAVE DE BOLA AC",
+    "grupo": "GRIFERIA",
+    "ppto": 4372.727273,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1405006",
+    "descripcion": "GOLILLA PVC BLANCA PARA TECHO 27 MM C/TAPA",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 35.19746,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5316483",
+    "descripcion": "LLAVE DE BOLA JARDIN/LAVAD 1/2\" MANGO AZUL",
+    "desc_corta": "LLAVE DE BOLA AF",
+    "grupo": "GRIFERIA",
+    "ppto": 3237.607143,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "408071",
+    "descripcion": "CLAVO HELICOIDAL 31/4 x 80 N-80 (CAJA 4.500 UNIDADES)",
+    "desc_corta": "CLAVO HELICOIDAL",
+    "grupo": "OBRA GRUESA",
+    "ppto": 23200.297872,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "408088",
+    "descripcion": "GRAPA 14X35 T-50 (10.000 X CAJA)",
+    "desc_corta": "GRAPA T50",
+    "grupo": "OBRA GRUESA",
+    "ppto": 17500.092715,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704025",
+    "descripcion": "ESQUINERO GUARDAPOLVO EXTERIOR PVC COLOR BLANCO",
+    "desc_corta": "ESQUINERO GUARDAPOLVO EXTERIOR",
+    "grupo": "OBRA GRUESA",
+    "ppto": 580.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "609008",
+    "descripcion": "DILUYENTE DUCO BOTELLA 1 LT",
+    "desc_corta": "DUCO",
+    "grupo": "",
+    "ppto": 2130.75731,
+    "unidad": "LTS",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "705028",
+    "descripcion": "PLACA FIBROCEMENTO SIMPLISIMA CENIA BEIGE 2400 MM x 1200 MM x 6 MM",
+    "desc_corta": "SIMPLISIMA",
+    "grupo": "OBRA GRUESA",
+    "ppto": 22927.086207,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "601047",
+    "descripcion": "ESMALTE AL AGUA BLANCO SATINADO PLUS UNIVERSAL (TINETA 5 GALONES)",
+    "desc_corta": "ESMALTE AL AGUA",
+    "grupo": "",
+    "ppto": 50286.86,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412280",
+    "descripcion": "HOLDOWN ALTA CARGA HDQ8 CON TORNILLOS SDS 3\"-DHQ8",
+    "desc_corta": "HOLDOWN PB2",
+    "grupo": "OBRA GRUESA",
+    "ppto": 40002.920093,
+    "unidad": "UND",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "407427",
+    "descripcion": "TORNILLO PARA CONECTORES 5MM X 50MM (CAJA 250 UN) (CODIGO SIMPSON: CSA5.0X50)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 22557.545455,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704022",
+    "descripcion": "ESQUINERO CORNIZA INTERIOR PVC COLOR BLANCO",
+    "desc_corta": "ESQUINERO CORNIZA INTERIOR",
+    "grupo": "OBRA GRUESA",
+    "ppto": 306.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412302",
+    "descripcion": "ESCUADRA REFORZADA 105 X 150 X 90 E:3MM (COD: ABR105)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 4742.458667,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407011",
+    "descripcion": "TORNILLO SIMPSON ESTRUCTURAL SDWS22600DB DE 6\" (500 TORN.XPQTE.)",
+    "desc_corta": "TORNILLO SIMPSON 6\"",
+    "grupo": "OBRA GRUESA",
+    "ppto": 473.17524,
+    "unidad": "UND",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "1901008",
+    "descripcion": "AISLAN  GLASS 90 MM 0.375x12 MTS . DENSIDAD 11 KG/M3 (13.5 M2 X BOLSA) SKU 4000147",
+    "desc_corta": "AISLAN GLASS 90MM",
+    "grupo": "OBRA GRUESA",
+    "ppto": 2112.795779,
+    "unidad": "M2",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "304049",
+    "descripcion": "TERCIADO FENOLICO CD DE 1,22 X 2,44 X 15 mm (65 PL X PQTE)",
+    "desc_corta": "TERCIADO FENOLICO",
+    "grupo": "OBRA GRUESA",
+    "ppto": 14982.0,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "304101",
+    "descripcion": "PLACA LP OSB STANDAR 1.22 x2.44 x 9.5 MM APA PT-OECA095  (84 PL.xPAQ)",
+    "desc_corta": "OSB 9.5",
+    "grupo": "OBRA GRUESA",
+    "ppto": 9657.58795,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "412260",
+    "descripcion": "HOLDOWN SUJECIÓN DE SERVICIO PESADO, 14\" ALTO INCLUYE 30 TORNILLOS SDS25212 -HHDQ14",
+    "desc_corta": "HOLDOWN PB1",
+    "grupo": "OBRA GRUESA",
+    "ppto": 87567.442478,
+    "unidad": "UND",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "5309018",
+    "descripcion": "CINTA POLIESTER DE 2\" COLOR VERDE (ROLLO= 100 mt=15 kg)",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 699.999232,
+    "unidad": "MTS",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "602255",
+    "descripcion": "ESMALTE AL AGUA RAL 8011",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 47889.5,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "410126",
+    "descripcion": "CONECTOR DENTADO SIMPSON DE  6\" X 8\"  (AS68B / 88 UND POR CAJA)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 983.618881,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "081009X",
+    "descripcion": "PISO VINILICO SAFETRED UNIVERSAL 2M VENUS (2 x 20 M)",
+    "desc_corta": "PISO TARKET",
+    "grupo": "TERMINACION",
+    "ppto": 11882.387917,
+    "unidad": "M2",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "040748X",
+    "descripcion": "TORNILLO BASTON MURO TRA. 8 X 13/4",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 55858.301887,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412313",
+    "descripcion": "CLAVO HELICOIDAL 3.1X80MM",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 23724.067385,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5314002",
+    "descripcion": "CINTA EMBALAJE TRANSPARENTE",
+    "desc_corta": "CINTA EMBALAJE TRANSPARENTE",
+    "grupo": "",
+    "ppto": 311.919866,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412281",
+    "descripcion": "HOLDOWN TENSIONADOR VARILLA 1/2\" INCLUYE TORNILLOS (20 UN X CAJA)-DTT2Z UND",
+    "desc_corta": "HOLDOWN TENSIONADOR",
+    "grupo": "OBRA GRUESA",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407049",
+    "descripcion": "TORNILLO PARA FIBROCEMENTO PUNTA ESPEDA DE 10 x 13/4\"  COD: K20TFCW (CAJA 1.000 UND )",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 16.202162,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "409011",
+    "descripcion": "NARIZ DE GRADA ALUMINIO 53x28.5x6 5367",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 13713.269504,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302010",
+    "descripcion": "PINO NACIONAL GRADO C-16/C-24 IMPREGNADO DE 2\" X 6\" X 3,20 m (41x138mm)",
+    "desc_corta": "PINO 2X6X320",
+    "grupo": "OBRA GRUESA",
+    "ppto": 6585.133745,
+    "unidad": "PZA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "1808003",
+    "descripcion": "SOPORTE BARRA CORTINA ECONOMICO BLANCO COD:1511110022050",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 167.744858,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "907031",
+    "descripcion": "MEMBRANA PVC NEGRA DE 0.8 MM ESPESOR TERMOFUSIONADA (4,1 ANCHO X 13 MT LARGO) MOD TIPO QB",
+    "desc_corta": "MEMBRANA PVC",
+    "grupo": "OBRA GRUESA",
+    "ppto": 156269.166667,
+    "unidad": "RLL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "407115",
+    "descripcion": "TORNILLOS SDS PARA CONECTORES ¼ X 4 1/2\" - VASTAGO LARGO (100 UN X CAJA) (SDS25412MB)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 547.984,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1103087",
+    "descripcion": "FORRO LATERAL E:05mm L:3140mm ALUZINC",
+    "desc_corta": "E",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "602254",
+    "descripcion": "ESMALTE AL AGUA RAL 8001",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 46060.0,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1902014",
+    "descripcion": "VOLCOGLASS X RH 1,20 x 2,40 x 15MM BORDE",
+    "desc_corta": "VOLCOGLASS",
+    "grupo": "OBRA GRUESA",
+    "ppto": 29779.0,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "2505058",
+    "descripcion": "EXTRACTOR VENTILACION PASIVA JONAS 4 VERSION CUADRADA F C/CELOSIA #150 BLANCO 100MM (COD: 250729)",
+    "desc_corta": "VENTILACIÓN PASIVA",
+    "grupo": "TERMINACION",
+    "ppto": 17870.144068,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "701096",
+    "descripcion": "PLANCHA YESO CARTON VOLCAN RF 122 x 2.44 x 15 LINEN GREY BORDE CUADRADO 70 PLXPALLET SKU 5002205",
+    "desc_corta": "VOCANITA EMPAPELADA MURO",
+    "grupo": "OBRA GRUESA",
+    "ppto": 16019.885685,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "307033",
+    "descripcion": "PILASTRA MDF FOLIO COLOR BLANCO DE 12 x 57 x 2,440  mm",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 1889.053544,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802517",
+    "descripcion": "CELOSIA ALUMINIO MATE 25 x 25 CMS",
+    "desc_corta": "CELOSIA ALUMINIO 25X25",
+    "grupo": "TERMINACION",
+    "ppto": 2312.5,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1405025",
+    "descripcion": "MANILLON C SPAGNA 19X200X300 MM (SKU: 041420)",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 6758.533333,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412630",
+    "descripcion": "CELOSÍA ALUMINIO BLANCO 805X2446 QUIEBRAVISTA GRANDE Y ANGULO PERIMETRAL",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 148200.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "V01",
+    "descripcion": "V01-VENTANA DORMITORIOS 2 PAÑOS.INFERIOR FIJO Y SUPERIOR PROYECTANTE (2050mm X 700 mm)",
+    "desc_corta": "VENTANA V-01",
+    "grupo": "TERMINACION",
+    "ppto": 205500.0,
+    "unidad": "UND",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "V03",
+    "descripcion": "V03- VENTANA BAÑO PROYECTANTE (550X550 MM)",
+    "desc_corta": "VENTANA BAÑO",
+    "grupo": "TERMINACION",
+    "ppto": 101229.0,
+    "unidad": "UND",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "V05",
+    "descripcion": "V05-VENTANA LIVING-COMEDOR CORREDERA BALCONERA (2050 mm X 1600 mm)",
+    "desc_corta": "VENTANA V.05",
+    "grupo": "TERMINACION",
+    "ppto": 350139.0,
+    "unidad": "UND",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "2508992",
+    "descripcion": "MANILLA JUEGO 2816-C 19MM REVERSIBLE SIN BOC.",
+    "desc_corta": "MANILLA JUEGO",
+    "grupo": "",
+    "ppto": 4139.666667,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802162",
+    "descripcion": "TINA DE ACERO ESMALTADA BLANCA ANTIDESLIZANTE 130x70",
+    "desc_corta": "TINA DE ACERO",
+    "grupo": "TERMINACION",
+    "ppto": 42840.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1901086",
+    "descripcion": "AISLAN GLASS 140 MM R100/349 0.375x7.20 MTS DENSIDAD 13 KG/M3 (8.1 M2) COD:4000724",
+    "desc_corta": "AISLAN GLASS 140MM",
+    "grupo": "OBRA GRUESA",
+    "ppto": 3711.587041,
+    "unidad": "M2",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "602256",
+    "descripcion": "IMPRIMANTE 4G",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "307032",
+    "descripcion": "CUBREJUNTA MDF WHITE  DE 5.5 x 40 x 3.600 MM  (VOLCAN) SKU: 1500015",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 2378.375041,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "608013",
+    "descripcion": "PASTA RETAPE NEUTRA WET-PROOF",
+    "desc_corta": "PASTA RETAPE",
+    "grupo": "TERMINACION",
+    "ppto": 8471.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802171",
+    "descripcion": "PORTA ROLLO BENTON CROMO (21BE0000100)",
+    "desc_corta": "PORTA ROLLO BENTON",
+    "grupo": "TERMINACION",
+    "ppto": 3167.794425,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1703006",
+    "descripcion": "SIFON PARA LAVAPLATO DE 1 1/2\" VINILIT SALIDA RECTA DE 50",
+    "desc_corta": "SIFON LAVAPLATO",
+    "grupo": "GRIFERIA",
+    "ppto": 1662.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1206002",
+    "descripcion": "ESPEJO RECTO AL. BLANCO DE 50x70 CMS",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 15783.483871,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808156",
+    "descripcion": "PERCHA SIMPLE YORK 21PL0000104",
+    "desc_corta": "PERCHA SIMPLE YORK",
+    "grupo": "TERMINACION",
+    "ppto": 1943.682353,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802172",
+    "descripcion": "ARGOLLA TOALLA BENTON CROMO (21BE0000101)",
+    "desc_corta": "ARGOLLA TOALLA BENTON",
+    "grupo": "TERMINACION",
+    "ppto": 3029.864865,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2508994",
+    "descripcion": "CUADRADILLO EXPANSION 8X8X70MM",
+    "desc_corta": "CUADRADILLO EXPANSION 8X",
+    "grupo": "",
+    "ppto": 4139.714286,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302048",
+    "descripcion": "PINO NACIONAL ESTRUCTURAL CEPILLADO 4/CARAS  IMPREGNADO DE  2 X 8 X 4.00 (41 x 185 MM ) (VVSS)",
+    "desc_corta": "PINO 2X8X4",
+    "grupo": "OBRA GRUESA",
+    "ppto": 13710.694961,
+    "unidad": "PZA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "2508993",
+    "descripcion": "BOCALLAVE B1 800 ACCESO SATINADO (PAR)",
+    "desc_corta": "BOCALLAVE B1 800 ACCESO",
+    "grupo": "",
+    "ppto": 4139.714286,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2508990",
+    "descripcion": "CERRADURA DE EMB 85000 MULTIPLE C/REC",
+    "desc_corta": "CERRADURA DE EMB",
+    "grupo": "",
+    "ppto": 4139.714286,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2508991",
+    "descripcion": "CILINDRO 03 LLAVE/LLAVE 70MM (35X35) AI",
+    "desc_corta": "CILINDRO 03 LLAVE/LLAVE",
+    "grupo": "",
+    "ppto": 4139.714286,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2302118",
+    "descripcion": "CAVE POLFLEX IMPERMEABILIZANTE , COPD: LCPIMM10020601 BALDE 20 KG",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5316507",
+    "descripcion": "MUEBLE BASE LAVAPLATOS 80X50X86,5 CM EN MELAMINA BLANCA 15 MM",
+    "desc_corta": "MUEBLE LAVAPLATOS",
+    "grupo": "MUEBLERIA",
+    "ppto": 41419.666667,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "4212234",
+    "descripcion": "BARANDA METALICA  3140X1050 MM- SOLUCION BALCON",
+    "desc_corta": "BARANDA BALCON",
+    "grupo": "TERMINACION",
+    "ppto": 124909.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "701015",
+    "descripcion": "PLANCHA YESO CARTON RH DE 1.20 x 2.40 x 12.5 MM BORDE REBAJADO (70PLXPQT)",
+    "desc_corta": "VOLCANITA RH",
+    "grupo": "OBRA GRUESA",
+    "ppto": 9151.297468,
+    "unidad": "PL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2302017",
+    "descripcion": "ADHESIVO VINILICO GEXAFLEX TINETA 20 KG",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 81197.881579,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "617055",
+    "descripcion": "BROCHA EXCELSIOR PROFESIONAL DE 5/8 x 2\"",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 920.353781,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801229",
+    "descripcion": "KIT DESAGÜE Y SIFÓN C/REBALSE PARA TINAS (SC1015690001BS)",
+    "desc_corta": "KIT DESAGUE TINA",
+    "grupo": "GRIFERIA",
+    "ppto": 4675.518519,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "404252",
+    "descripcion": "ANGULO PVC 25x25x3.0 MTS BLANCO",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 1110.043876,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808006",
+    "descripcion": "BARRA CORTINA BAÑO ALUMINIO/PVC  BLANCO L: 1.5 MTS. COD:2014100010050",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 2906.671096,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802176",
+    "descripcion": "\"DESAGUE LAVAMANOS UNIVERSAL PP 1 1/4\"\" CON REJILLA Y TAPON (20ST3058100)\"",
+    "desc_corta": "",
+    "grupo": "GRIFERIA",
+    "ppto": 2199.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802173",
+    "descripcion": "LAVAMANOS DS THEOS (60TH2001000)",
+    "desc_corta": "LAVAMANOS DS THEOS",
+    "grupo": "GRIFERIA",
+    "ppto": 11972.2,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802166",
+    "descripcion": "NEW PRIMA MEZCLADOR PARA LAVAPLATOS CUELLO CISNE APERTURA EN FRIO 8LPM, ESTIU (TS2024022)",
+    "desc_corta": "NEW TS2024022)",
+    "grupo": "",
+    "ppto": 13869.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "408014",
+    "descripcion": "GRAPA 145X35 T-40 (10.000 X CAJA)",
+    "desc_corta": "GRAPA T40",
+    "grupo": "OBRA GRUESA",
+    "ppto": 16182.106762,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802174",
+    "descripcion": "PEDESTAL DS THEOS (60TH2002000)",
+    "desc_corta": "PEDESTAL DS THEOS",
+    "grupo": "",
+    "ppto": 7694.540541,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802175",
+    "descripcion": "UÑETAS INSTLACION LAVAMANOS MURAL C/TORNILLO Y TARUGO (21PB6002032)",
+    "desc_corta": "UÑETAS INSTLACION LAVAMANOS",
+    "grupo": "GRIFERIA",
+    "ppto": 1079.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802165",
+    "descripcion": "NEW PRIMA MEZCLADOR PARA LAVABO APERTURA EN FRIO 8LPM ESTIU (TS2024019)",
+    "desc_corta": "NEW TS2024019)",
+    "grupo": "TERMINACION",
+    "ppto": 9122.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808144",
+    "descripcion": "TAZA WC AURA HORIZONTAL CON FIJACIONES Y SELLO",
+    "desc_corta": "TAZA WC AURA",
+    "grupo": "GRIFERIA",
+    "ppto": 23397.56962,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808145",
+    "descripcion": "ESTANQUE WC AURA CON MECANISMO",
+    "desc_corta": "ESTANQUE WC AURA",
+    "grupo": "GRIFERIA",
+    "ppto": 16189.712963,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808147",
+    "descripcion": "LLAVE ANGULAR 1/2X1/2 Y FLEXIBLE TECHNOFLEX 1/2X15/16 DE 35CM",
+    "desc_corta": "LLAVE ANGULAR 1/2X",
+    "grupo": "GRIFERIA",
+    "ppto": 2215.224044,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802167",
+    "descripcion": "NEW PRIMA MEZCLADOR EXTERIOR TINA/DUCHA INCL. DUCHA SIMPLE, SOPORTE Y FLEXIBLE 1.5M 8LPM, ESTIU (TS2024020)",
+    "desc_corta": "NEW DUCHA SIMPLE, SOPORTE Y FLEXIBLE 1.5M 8LPM, ESTIU (TS2024020)",
+    "grupo": "TERMINACION",
+    "ppto": 14972.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808146",
+    "descripcion": "NUEVO ASIENTO Y TAPA WC AURA P.P. CIERRE ESTÁNDAR",
+    "desc_corta": "NUEVA",
+    "grupo": "GRIFERIA",
+    "ppto": 3318.025157,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802169",
+    "descripcion": "LAVARROPA PLATICO DS THEOS 15L (19ST8073500)",
+    "desc_corta": "LAVARROPA PLATICO DS",
+    "grupo": "GRIFERIA",
+    "ppto": 10719.324324,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802170",
+    "descripcion": "\"SIFON PLASTICO UNIVERSAL 1 1/4\"\" Y 1 1/2\"\" (19ST8073500)\"",
+    "desc_corta": "",
+    "grupo": "GRIFERIA",
+    "ppto": 2043.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1901466",
+    "descripcion": "AISLAN  GLASS 50 MM 0.375x12 MTS . DENSIDAD 14 KG/M3 (13.5 M2 X BOLSA) SKU 4000147",
+    "desc_corta": "AISLAN DENSIDAD 14 KG/M3 (13.5 M2 X BOLSA) SKU 4000147",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "M2",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407795",
+    "descripcion": "SET DE ANCLAJE WC COD:CC0017370001B0 (FANALOZA)",
+    "desc_corta": "SET BALCON",
+    "grupo": "GRIFERIA",
+    "ppto": 1610.93361,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704021",
+    "descripcion": "ESQUINERO PILASTRA PVC COLOR BLANCO",
+    "desc_corta": "ESQUINERO PILASTRA PVC",
+    "grupo": "OBRA GRUESA",
+    "ppto": 487.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302028",
+    "descripcion": "PINO NACIONAL GRADO C-16/C-24 IMPREGNADO DE 2\" x 4\" x x 3,20 m (41x90mm)",
+    "desc_corta": "PINO 2X4X320",
+    "grupo": "OBRA GRUESA",
+    "ppto": 5123.802527,
+    "unidad": "PZA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "1808148",
+    "descripcion": "SELLO INSTALACION WC AURA HORIZONTAL",
+    "desc_corta": "SELLO INSTALACION WC",
+    "grupo": "GRIFERIA",
+    "ppto": 1108.09589,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1805340",
+    "descripcion": "EXTRACTOR DVP4 12W 4 C/SENDOR DE HUMEDAD – HST 220VOLT",
+    "desc_corta": "EXTRT",
+    "grupo": "TERMINACION",
+    "ppto": 19400.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "704092",
+    "descripcion": "ESQUINERO GUARDAPOLVO PVC INTERIOR HAYA",
+    "desc_corta": "ESQUINERO GUARDAPOLVO",
+    "grupo": "TERMINACION",
+    "ppto": 273.474271,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1901038",
+    "descripcion": "AISLAN ROCA 90 MM D: 32 KG/M3 DE 0.375x1.200 MM (5.4 M2) SKU 3000481",
+    "desc_corta": "AISLAN ROCA 90MM",
+    "grupo": "OBRA GRUESA",
+    "ppto": 4197.417875,
+    "unidad": "M2",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "407170",
+    "descripcion": "TORNILLO PARA VOLCANITA CRS 6 x2 1/4 NEGRO DRYWALL",
+    "desc_corta": "TORNILLO CRS 6X2 1/4",
+    "grupo": "OBRA GRUESA",
+    "ppto": 4.880216,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "617016",
+    "descripcion": "RODILLO CHIPORRO LIZCAL DE 7\" PATAGON 18 CMS",
+    "desc_corta": "RODILLO CHIPORRO",
+    "grupo": "",
+    "ppto": 2857.513274,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "307030",
+    "descripcion": "GUARDAPOLVO MDF FOLIO COLOR BLANCO DE 12 x 57 x 3.660",
+    "desc_corta": "GUARDAPOLVO BLANCO",
+    "grupo": "TERMINACION",
+    "ppto": 2729.998856,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "307096",
+    "descripcion": "CUBREJUNTA MDF DE  5.5 x 40 x 2.440 MM.LINEN GREY (VOLCAN SKU 213041)",
+    "desc_corta": "CUBREJUNTA",
+    "grupo": "TERMINACION",
+    "ppto": 2095.350129,
+    "unidad": "TRA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "602258",
+    "descripcion": "TERMINACION TOP COAT 4G",
+    "desc_corta": "TERMINACION TOP COAT",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "140209X",
+    "descripcion": "TOPE DE PUERTA IMPORTADO MODELO 26D",
+    "desc_corta": "TOPE DE PUERTA",
+    "grupo": "TERMINACION",
+    "ppto": 3021.282869,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "307031",
+    "descripcion": "CORNIZA MDF FOLIO COLOR BLANCO MC-8 DE LARGO 3.660",
+    "desc_corta": "CORNIZA BLANCA",
+    "grupo": "TERMINACION",
+    "ppto": 2699.998605,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1803045",
+    "descripcion": "KIT PRECOLGADO PTA PREPINTADA 750X2040+M.P.FINGER 38X120 C/CELOSÍA PVC-DERECHA",
+    "desc_corta": "PUERTA INTERIOR",
+    "grupo": "TERMINACION",
+    "ppto": 52920.0,
+    "unidad": "KIT",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "2508987",
+    "descripcion": "KIT PREC.PTA.CARA ACERO GALV.LISA 1/2 C.BLANCA 45X850X2050 V.TERMOPANEL,M.P.FINGER 38X120-DERECHA (LOGIA)",
+    "desc_corta": "KIT PREC",
+    "grupo": "TERMINACION",
+    "ppto": 145847.0,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "5316509",
+    "descripcion": "LAVAPLATOS DE SOBREPONER 80X50 CM PARA MONOMANDO C/SECADOR DERECHO",
+    "desc_corta": "LAVAPLATOS",
+    "grupo": "GRIFERIA",
+    "ppto": 15433.333333,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1405039",
+    "descripcion": "CERRADURA ACCESO 815 TUBULAR CILINDRO 3 LLAVES DAP DUCASSE US32D 45MM ACERO INOX 304",
+    "desc_corta": "CERRADURA INOX 304",
+    "grupo": "TERMINACION",
+    "ppto": 17998.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407307",
+    "descripcion": "TIRAFONDO HEXAGONO CORRIENTE DE 3/8\" x 4-1/2\"",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 69.472775,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "412249",
+    "descripcion": "TORNILLO DOBLE ROSCA 8MM X 330 MM (50 UNID X CAJA) SWD",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 1719.71907,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802164",
+    "descripcion": "CALEFON 10 LITROS GAS LICUADO TIRO FORZADO",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 138041.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2508169",
+    "descripcion": "KIT DUCTO 60/100MM TIF CAM ABIER-5961599 (5961599)",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 13952.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "404793",
+    "descripcion": "NARIZ GRADA ALUMINIO 5367 DE 53 x 28 x 924 MM (casas Chacra)",
+    "desc_corta": "NARIZ GRADA ALUMINIO",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "404793",
+    "descripcion": "NARIZ GRADA ALUMINIO 5367 DE 53 x 28 x 924 MM (casas Chacra)",
+    "desc_corta": "NARIZ GRADA ALUMINIO",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "410083",
+    "descripcion": "Varilla de anclaje ASTM F1554 Gr36 1/2\" 0,7 m (PB3)",
+    "desc_corta": "Varilla de anclaje",
+    "grupo": "",
+    "ppto": 5167.95,
+    "unidad": "0",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "302044",
+    "descripcion": "PINO NACIONAL ESTRUCTURAL CEPILLADO 4/CARAS  IMPREGNADO DE  2 X 8 X 4.00 (41 x 185 MM ) (60XPAQUETE)",
+    "desc_corta": "PINO 2X8X4",
+    "grupo": "OBRA GRUESA",
+    "ppto": 13725.962534,
+    "unidad": "PZA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "704023",
+    "descripcion": "ESQUINERO GUARDAPOLVO INTERIOR PVC COLOR BLANCO",
+    "desc_corta": "ESQUINERO GUARDAPOLVO INTERIOR",
+    "grupo": "OBRA GRUESA",
+    "ppto": 324.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "602257",
+    "descripcion": "RECUBRIMIENTO INTERMEDIO TEXTURADA 4G",
+    "desc_corta": "RECUBRIMIENTO INTERMEDIO TEXTURADA",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "TIN",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407010",
+    "descripcion": "GOLILLA PLANA CORRIENTE 3/8\" (CODIGO:03-GPFU ENVASE DE 100 UND)",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 11.50126,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "106022",
+    "descripcion": "ESPUMA POLIURETANO EXPANSIVA 750 ml",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 3800.691099,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "040815X",
+    "descripcion": "CLAVO R20 34X100 BK BEA (NAILS - 1.500 UND X CAJA N°BEA 10400470)",
+    "desc_corta": "CLAVO R20",
+    "grupo": "OBRA GRUESA",
+    "ppto": 36939.818182,
+    "unidad": "CJA",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "1610007",
+    "descripcion": "HUAIPE BLANCO BOLSA DE 1 KILO",
+    "desc_corta": "HUAIPE BLANCO BOLSA",
+    "grupo": "",
+    "ppto": 1624.474037,
+    "unidad": "KG",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "410078",
+    "descripcion": "CONECTOR DENTADO SANDE DE 4\" X 8\" (AS48B)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 470.201202,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2508985",
+    "descripcion": "KIT PRECOLGADO PTA.CARA ACERO GALV.6 PANELES BLANCA 45X1000X2050+M.P.FINGER 38X120-DERECHA (ACCESO)",
+    "desc_corta": "KIT PRECOLGADO",
+    "grupo": "TERMINACION",
+    "ppto": 102622.0,
+    "unidad": "KIT",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1802177",
+    "descripcion": "SIFON LAVAMANOS PP 1 1/4'' CON SALIDA RECTA (19ST3082500)",
+    "desc_corta": "SIFOL",
+    "grupo": "GRIFERIA",
+    "ppto": 1471.135135,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407717",
+    "descripcion": "TIRAFONDO HEXAGONO GALVANIZADO 1/2 x 3 1/2\"",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 181.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "140207X",
+    "descripcion": "CERRADURA BAÑO G-3 AC.INOX.MODELO RL100281 LT3576CTL 26D ADJ T LT3500",
+    "desc_corta": "CERRADURA BAÑO",
+    "grupo": "",
+    "ppto": 17428.493506,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "080460x",
+    "descripcion": "MONOFILAMENTO POLYFLOR GRIS COD:3700 50MT",
+    "desc_corta": "MONOFILAMENTO TARKETT",
+    "grupo": "",
+    "ppto": 24029.782609,
+    "unidad": "RLL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801700",
+    "descripcion": "MARCO PUERTA HOME 30X120mm PINO FINGER (2 PIERNAS DE 2.400 MM - 1 CABEZAL DE 1.000 MM)",
+    "desc_corta": "MARCO PUERTA",
+    "grupo": "",
+    "ppto": 13379.859504,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1902013",
+    "descripcion": "VOLCAN WRAP BARRERA DE VAPOR (PAPEL KRAFT LAM C/ POLIETILENO) 1,2X0,5M E: 0,123 MM (6KG 60M2 X RLL)",
+    "desc_corta": "PAPEL KRAFT",
+    "grupo": "OBRA GRUESA",
+    "ppto": 48058.833333,
+    "unidad": "RLL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "601121",
+    "descripcion": "PINTURA EPOXICA POLIPOX 675 GRIS COD:6757040T33",
+    "desc_corta": "PINTURA BALCON",
+    "grupo": "TERMINACION",
+    "ppto": 35000.0,
+    "unidad": "GAL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1003500",
+    "descripcion": "FORRO INICIO F-1 GRIS CENIZA RAL-7040 D:110  L:3.000 (V.SOCIALES)",
+    "desc_corta": "FORRO DE INICIO",
+    "grupo": "OBRA GRUESA",
+    "ppto": 5092.1,
+    "unidad": "TRA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1801155",
+    "descripcion": "ESTANQUE LUGANO DUAL FLUSH BLANCO COD: CS0443301301B0",
+    "desc_corta": "ESTANQUE",
+    "grupo": "TERMINACION",
+    "ppto": 23733.489796,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "040814X",
+    "descripcion": "CLAVO TORNILLO TC28/32X65 NK JUMBO SCRAIL (SCRAIL-SCREW - 3.600 UND X CAJA)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 233358.088123,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1701071",
+    "descripcion": "LLAVE DE PASO CAMPANA 1/2 LC17 6001 FAS",
+    "desc_corta": "",
+    "grupo": "GRIFERIA",
+    "ppto": 7389.98017,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1808083",
+    "descripcion": "MANGUITO RECTO 110MM MOD. TUBE WASSER",
+    "desc_corta": "",
+    "grupo": "TERMINACION",
+    "ppto": 4137.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "2302050",
+    "descripcion": "CINTA SELLADORA FLASHING TAPE 1\" X 75 ft (SKU: 7000751905-4)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 7567.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "XXX",
+    "descripcion": "POLIESTIRENO EXPANDIDO 1220 X 2440 X 30 MM D:20 Kg/m3",
+    "desc_corta": "ESPUMA EXPANSIVA",
+    "grupo": "OBRA GRUESA",
+    "ppto": 9390.0,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  },
+  {
+    "codigo": "COMPRIBAND",
+    "descripcion": "COMPRIBAND 50X10mm L:1m",
+    "desc_corta": "mm",
+    "grupo": "",
+    "ppto": 450.0,
+    "unidad": "RLL",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "4212254",
+    "descripcion": "NICHO PARA 2 CILINDROS DE GAS DE 15 KGS",
+    "desc_corta": "NICHO PARA 2 CILINDROS",
+    "grupo": "TERMINACION",
+    "ppto": 58650.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "1101307",
+    "descripcion": "BURLETE DE GOMA BLANCO VIV IND (PUERTA)",
+    "desc_corta": "BURLETE DE GOMA",
+    "grupo": "TERMINACION",
+    "ppto": 1670.0,
+    "unidad": "ML",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "040802X",
+    "descripcion": "CLAVO BDC 22X50 BK RING (NAIL - 10.500 UND X CAJA)",
+    "desc_corta": "CLAVO BDC",
+    "grupo": "OBRA GRUESA",
+    "ppto": 34959.0,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "407154",
+    "descripcion": "TIRAFONDO HEXAGONO GALVANIZADO DE 1/2 X 4 1/2'",
+    "desc_corta": "TIRAN",
+    "grupo": "OBRA GRUESA",
+    "ppto": 214.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "VENTANAS",
+    "descripcion": "VENTANAS CAMBIO DE PERFILES Y MANILLAS",
+    "desc_corta": "VENTANAS CAMBIO DE",
+    "grupo": "",
+    "ppto": 25238.09,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "GARGOLA",
+    "descripcion": "GARGOLA",
+    "desc_corta": "",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "CANALETA",
+    "descripcion": "CANALETA BALCON",
+    "desc_corta": "CANALETA BALCO",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "410082",
+    "descripcion": "Varilla de anclaje ASTM F1554 Gr36 1\" 0,7 m (PB1)",
+    "desc_corta": "Varilla de anclaje",
+    "grupo": "",
+    "ppto": 12677.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "Hilo 1/2x8\"",
+    "descripcion": "Hilo continuo de 1/2\"x8\" ( VARILLA DE ANCLAJE",
+    "desc_corta": "Hilo continuo de",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "PB3",
+    "descripcion": "Holdown Simpson DTT2Z (PB3)",
+    "desc_corta": "DTT",
+    "grupo": "",
+    "ppto": 7253.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "PB4",
+    "descripcion": "Placa PB4 L 400x150x150 e=5mm",
+    "desc_corta": "Placa PB4 L",
+    "grupo": "",
+    "ppto": 51840.0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "Tirafondo 12x3\"",
+    "descripcion": "Tirafondos 12\"x3\"",
+    "desc_corta": "x3",
+    "grupo": "",
+    "ppto": 0,
+    "unidad": "",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "4212254",
+    "descripcion": "NICHO PARA 2 CILINDROS DE GAS DE 15 KGS",
+    "desc_corta": "NICHO PARA 2 CILINDROS",
+    "grupo": "TERMINACION",
+    "ppto": 58650.0,
+    "unidad": "UND",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "040814X",
+    "descripcion": "CLAVO TORNILLO TC28/32X65 NK JUMBO SCRAIL (SCRAIL-SCREW - 3.600 UND X CAJA)",
+    "desc_corta": "",
+    "grupo": "OBRA GRUESA",
+    "ppto": 233358.088123,
+    "unidad": "CJA",
+    "tipo": "NO CRITICO"
+  },
+  {
+    "codigo": "XXX",
+    "descripcion": "POLIESTIRENO EXPANDIDO 1220 X 2440 X 30 MM D:20 Kg/m3",
+    "desc_corta": "ESPUMA EXPANSIVA",
+    "grupo": "OBRA GRUESA",
+    "ppto": 9390.0,
+    "unidad": "PL",
+    "tipo": "PRODUCTO CRITICO"
+  }
+]

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Despacho GD — La Chacra</title>
+<script src="auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="excel-export.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7c05f;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;display:flex;flex-direction:column}
+
+/* ── Header ── */
+#hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:48px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+#hdr h1{font-size:.98rem;font-weight:700}
+.hdr-badge{font-size:.7rem;background:rgba(255,255,255,.08);padding:2px 8px;border-radius:20px;color:var(--muted)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn{padding:6px 14px;border-radius:6px;font-size:.79rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s}
+.btn:hover{color:var(--text);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#3a7ae8;border-color:#3a7ae8;color:#fff}
+.btn-sm{padding:4px 10px;font-size:.74rem}
+
+/* ── Stats ── */
+#stats{display:flex;gap:12px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:9px 16px;min-width:140px}
+.stat-card .lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.stat-card .val{font-size:1.45rem;font-weight:800}
+.sc-blue .val{color:var(--accent)}.sc-green .val{color:var(--green)}.sc-yellow .val{color:var(--yellow)}.sc-red .val{color:var(--brand)}
+
+/* ── Toolbar ── */
+#toolbar{display:flex;align-items:center;gap:8px;padding:9px 20px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+#toolbar input,#toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:6px;font-size:.78rem;outline:none}
+#toolbar input:focus,#toolbar select:focus{border-color:var(--accent)}
+input[type="date"]{color-scheme:dark}
+.tsep{width:1px;height:22px;background:var(--border);margin:0 4px}
+.tlbl{font-size:.72rem;color:var(--muted);white-space:nowrap}
+
+/* ── Table ── */
+#tbl-wrap{flex:1;overflow-y:auto;padding:0 20px 20px}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+thead th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;padding:7px 9px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2;user-select:none}
+thead th.sortable{cursor:pointer}
+thead th.sortable:hover{color:var(--text)}
+thead th .sort-icon{margin-left:4px;opacity:.3;font-size:.65rem}
+thead th.sort-asc .sort-icon::after{content:'▲';opacity:1;color:var(--accent)}
+thead th.sort-desc .sort-icon::after{content:'▼';opacity:1;color:var(--accent)}
+thead th:not(.sort-asc):not(.sort-desc) .sort-icon::after{content:'⇅'}
+th.r,td.r{text-align:right}
+th.c,td.c{text-align:center}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+tbody td{padding:6px 9px;font-size:.81rem;white-space:nowrap}
+.chip{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600}
+.chip-seco{background:rgba(79,142,247,.15);color:var(--accent)}
+.chip-humedo{background:rgba(62,207,142,.15);color:var(--green)}
+.acum{font-weight:700;color:var(--yellow)}
+.mono{font-family:monospace}
+.no-data{text-align:center;padding:48px;color:var(--muted);font-size:.9rem}
+
+/* ── Overlay & Drawer ── */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99;display:none}
+#overlay.show{display:block}
+#drawer{position:fixed;right:0;top:0;bottom:0;width:520px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:100}
+#drawer.open{transform:translateX(0)}
+#drw-hdr{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+#drw-hdr h2{font-size:.95rem;font-weight:700;flex:1}
+#drw-body{flex:1;overflow-y:auto;padding:20px 22px}
+#drw-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-shrink:0}
+
+/* ── Form inside drawer ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.wide{grid-column:1/-1}
+.fg label{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 11px;border-radius:7px;font-size:.85rem;outline:none;transition:border-color .15s;color-scheme:dark;width:100%}
+.fg input:focus,.fg select:focus{border-color:var(--accent);background:var(--bg)}
+.fg input[readonly]{color:var(--muted);background:var(--bg);cursor:default;border-style:dashed}
+.fg .hint{font-size:.68rem;color:var(--muted);margin-top:2px}
+.form-divider{grid-column:1/-1;border:none;border-top:1px solid var(--border);margin:4px 0}
+.auto-tag{font-size:.65rem;background:rgba(79,142,247,.15);color:var(--accent);padding:2px 6px;border-radius:3px;margin-left:4px;vertical-align:middle}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:9px 20px;border-radius:8px;font-size:.83rem;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1}
+#toast.ok{border-color:var(--green)}
+#toast.err{border-color:var(--red)}
+#loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <h1>📦 Despacho de Módulos GD</h1>
+  <span class="hdr-badge" id="user-badge"></span>
+  <div class="hdr-right">
+    <button class="btn btn-primary" id="nueva-btn" onclick="openDrawer()">+ Nueva Entrada</button>
+    <button class="btn" onclick="loadData()">↻ Recargar</button>
+  </div>
+</div>
+
+<div id="stats">
+  <div class="stat-card sc-blue"><div class="lbl">Total Módulos</div><div class="val" id="st-total">—</div></div>
+  <div class="stat-card sc-green"><div class="lbl">Monto Total Neto</div><div class="val" id="st-monto">—</div></div>
+  <div class="stat-card sc-yellow"><div class="lbl">Despachos Este Mes</div><div class="val" id="st-mes">—</div></div>
+  <div class="stat-card sc-red"><div class="lbl">Último Despacho</div><div class="val" id="st-ultimo" style="font-size:.95rem;padding-top:3px">—</div></div>
+</div>
+
+<div id="toolbar">
+  <input type="text" id="q-s" placeholder="🔍  GD #, módulo, serie…" style="width:200px" oninput="renderTable()">
+  <select id="q-mes" onchange="renderTable()"><option value="">Todos los meses</option></select>
+  <select id="q-torre" onchange="renderTable()"><option value="">Todas las torres</option></select>
+  <select id="q-tipo" onchange="renderTable()">
+    <option value="">Todos los tipos</option>
+    <option value="SECO">SECO</option>
+    <option value="HUMEDO">HÚMEDO</option>
+  </select>
+  <button class="btn btn-sm" onclick="clearFilters()">✕ Limpiar</button>
+  <span id="count-lbl" style="font-size:.75rem;color:var(--muted);margin-left:auto"></span>
+  <button class="btn btn-sm" onclick="exportTableToExcel('main-table','despacho-GD')" title="Descargar Excel">⬇ Excel</button>
+</div>
+
+<div id="tbl-wrap">
+  <div id="loading">Cargando catálogo y registros…</div>
+  <table id="main-table" style="display:none">
+    <thead>
+      <tr>
+        <th class="sortable" onclick="sortBy('fecha_gd')">FECHA GD<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('fecha_despacho')">FECHA DESPACHO<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('gd_numero')">GD #<span class="sort-icon"></span></th>
+        <th>NRO SERIE</th>
+        <th class="c sortable" onclick="sortBy('cantidad')">CANT<span class="sort-icon"></span></th>
+        <th class="r sortable" onclick="sortBy('monto_neto')">MONTO NETO<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('modulo')">MÓDULO<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('torre')">TORRE<span class="sort-icon"></span></th>
+        <th class="sortable" onclick="sortBy('tipo')">TIPO<span class="sort-icon"></span></th>
+        <th class="c sortable" onclick="sortBy('avance')">AVANCE<span class="sort-icon"></span></th>
+        <th class="c">ACUM</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<!-- Overlay -->
+<div id="overlay" onclick="closeDrawer()"></div>
+
+<!-- Drawer: formulario de entrada -->
+<div id="drawer">
+  <div id="drw-hdr">
+    <h2>Nueva Entrada</h2>
+    <button class="btn btn-sm" onclick="closeDrawer()">✕ Cerrar</button>
+  </div>
+  <div id="drw-body">
+    <div class="form-grid">
+
+      <!-- Fechas -->
+      <div class="fg">
+        <label>Fecha GD *</label>
+        <input type="date" id="f-gd">
+      </div>
+      <div class="fg">
+        <label>Fecha Despacho *</label>
+        <input type="date" id="f-desp">
+      </div>
+
+      <!-- GD y Módulo -->
+      <div class="fg">
+        <label>GD # *</label>
+        <input type="text" id="f-gdnum" placeholder="Ej: 44270">
+      </div>
+      <div class="fg">
+        <label>Módulo *</label>
+        <select id="f-mod" onchange="onFormMod()">
+          <option value="">— Seleccionar —</option>
+        </select>
+      </div>
+
+      <hr class="form-divider">
+
+      <!-- Nro Serie (auto) y Cantidad -->
+      <div class="fg">
+        <label>Nro Serie <span class="auto-tag">auto</span></label>
+        <input type="text" id="f-serie" readonly placeholder="—">
+      </div>
+      <div class="fg">
+        <label>Cantidad</label>
+        <input type="number" id="f-cant" value="1" min="1">
+      </div>
+
+      <!-- Monto Neto (full width) -->
+      <div class="fg wide">
+        <label>Monto Neto</label>
+        <input type="number" id="f-monto" placeholder="0" min="0">
+        <span class="hint" id="f-monto-hint"></span>
+      </div>
+
+      <!-- Avance -->
+      <div class="fg">
+        <label>Avance (%)</label>
+        <input type="number" id="f-avance" placeholder="0" min="0" max="100">
+      </div>
+
+      <!-- Torre y Tipo (auto) -->
+      <div class="fg">
+        <label>Torre <span class="auto-tag">auto</span></label>
+        <input type="text" id="f-torre" readonly placeholder="—">
+      </div>
+      <div class="fg">
+        <label>Tipo <span class="auto-tag">auto</span></label>
+        <input type="text" id="f-tipo" readonly placeholder="—">
+      </div>
+
+    </div>
+  </div>
+  <div id="drw-foot">
+    <span id="save-st" style="color:var(--muted);font-size:.78rem"></span>
+    <button class="btn" onclick="closeDrawer()">Cancelar</button>
+    <button class="btn" id="save-otro-btn" onclick="saveForm(true)">Guardar y agregar otro</button>
+    <button class="btn btn-primary" id="save-btn" onclick="saveForm(false)">Guardar</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPA_URL='https://vtrpxsgcbojqgdcsplim.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const XLSURL='https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/ubicaciones.xlsx';
+
+let catalog={};
+let records=[];
+let _optHTML=null;
+let editId=null;
+
+// Sorting state
+let sortCol=null, sortDir='asc';
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+(function(){
+  var s=AUTH.requireAuth('login.html');
+  if(!s)return;
+  var el=document.getElementById('user-badge');
+  if(el)el.textContent=s.name;
+  if(AUTH.isReadonly()){
+    var nb=document.getElementById('nueva-btn');
+    if(nb)nb.style.display='none';
+  }
+})();
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init(){
+  try{
+    await loadCatalog();
+    await loadData();
+  }catch(e){
+    showToast('Error al iniciar: '+e.message,'err');
+    document.getElementById('loading').textContent='Error al cargar. Recargue la página.';
+  }
+}
+
+// ── Module catalog ────────────────────────────────────────────────────────────
+async function loadCatalog(){
+  const res=await fetch(XLSURL);
+  const buf=await res.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array'});
+  const ws=wb.Sheets['BASE']||wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  let hi=rows.findIndex(r=>r.some(c=>/M[ÓO]DULO|SERIE/i.test(String(c))));
+  if(hi<0)hi=0;
+  const hdr=rows[hi].map(c=>String(c).trim().toUpperCase());
+  const ci=name=>hdr.findIndex(h=>h.includes(name));
+  const iT=ci('TORRE'),iM=ci('MÓDULO'),iS=ci('SERIE'),iTp=ci('TIPO');
+  const torres=new Set();
+  for(let i=hi+1;i<rows.length;i++){
+    const r=rows[i];
+    const m=String(r[iM]||'').trim();
+    if(!m.startsWith('M-'))continue;
+    const torre=String(r[iT]||'').trim();
+    catalog[m]={nro_serie:String(r[iS]||'').trim(),torre,tipo:String(r[iTp]||'').trim()};
+    if(torre)torres.add(torre);
+  }
+  // Torre filter
+  const sel=document.getElementById('q-torre');
+  [...torres].sort((a,b)=>{const n=s=>parseInt(s.replace(/\D/g,''))||0;return n(a)-n(b);}).forEach(t=>{
+    const o=document.createElement('option');o.value=t;o.textContent=t;sel.appendChild(o);
+  });
+  // Module select in drawer
+  _optHTML='<option value="">— Seleccionar módulo —</option>'+
+    Object.keys(catalog).sort().map(k=>{
+      const m=catalog[k];
+      return `<option value="${k}" data-s="${m.nro_serie}" data-t="${m.torre}" data-tp="${m.tipo}">${k} · ${m.torre} · ${m.tipo}</option>`;
+    }).join('');
+  document.getElementById('f-mod').innerHTML=_optHTML;
+}
+
+// ── Load records ──────────────────────────────────────────────────────────────
+async function loadData(){
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('main-table').style.display='none';
+  const res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd?select=*&order=fecha_gd.asc,id.asc`,{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  });
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  records=await res.json();
+  // Compute running ACUMULADO on base order (fecha_gd asc, id asc)
+  let acum=0;
+  records.forEach(r=>{acum+=(r.cantidad||1);r._acum=acum;});
+  updateStats();
+  populateMesFilter();
+  renderTable();
+  document.getElementById('loading').style.display='none';
+  document.getElementById('main-table').style.display='table';
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+function updateStats(){
+  const total=records.reduce((s,r)=>s+(r.cantidad||1),0);
+  const monto=records.reduce((s,r)=>s+(parseFloat(r.monto_neto)||0),0);
+  const now=new Date();
+  const mes=records.filter(r=>{
+    if(!r.fecha_gd)return false;
+    const d=new Date(r.fecha_gd+'T00:00:00');
+    return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+  }).reduce((s,r)=>s+(r.cantidad||1),0);
+  const ultimo=records.length?records[records.length-1].fecha_gd:null;
+  document.getElementById('st-total').textContent=total;
+  document.getElementById('st-monto').textContent=fmtM(monto,true);
+  document.getElementById('st-mes').textContent=mes;
+  document.getElementById('st-ultimo').textContent=ultimo?fmtD(ultimo):'—';
+}
+
+// ── Month filter ──────────────────────────────────────────────────────────────
+function populateMesFilter(){
+  const sel=document.getElementById('q-mes');
+  const current=sel.value;
+  // Build sorted unique mes keys from records
+  const keys=new Map();
+  records.forEach(r=>{
+    if(!r.fecha_gd)return;
+    const [y,m]=r.fecha_gd.split('-');
+    const k=`${y}-${m}`;
+    if(!keys.has(k)){
+      const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      keys.set(k,`${MES[parseInt(m)-1]} ${y}`);
+    }
+  });
+  sel.innerHTML='<option value="">Todos los meses</option>';
+  [...keys.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([k,lbl])=>{
+    const o=document.createElement('option');
+    o.value=k;o.textContent=lbl;
+    if(k===current)o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+// ── Sorting ───────────────────────────────────────────────────────────────────
+function sortBy(col){
+  if(sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
+  else{sortCol=col;sortDir='asc';}
+  // Update header classes
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.remove('sort-asc','sort-desc');
+    const fn=th.getAttribute('onclick');
+    if(fn&&fn.includes(`'${col}'`)){
+      th.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
+    }
+  });
+  renderTable();
+}
+
+// ── Render table ──────────────────────────────────────────────────────────────
+function renderTable(){
+  const q=document.getElementById('q-s').value.toLowerCase();
+  const qMes=document.getElementById('q-mes').value;
+  const qTorre=document.getElementById('q-torre').value;
+  const qTipo=document.getElementById('q-tipo').value;
+
+  let filtered=records.filter(r=>{
+    if(q){const hay=[r.gd_numero,r.modulo,r.modulo_nro_serie,r.torre].map(v=>(v||'').toLowerCase()).join(' ');if(!hay.includes(q))return false;}
+    if(qMes&&r.fecha_gd){const[y,m]=r.fecha_gd.split('-');if(`${y}-${m}`!==qMes)return false;}
+    if(qTorre&&r.torre!==qTorre)return false;
+    if(qTipo&&r.tipo!==qTipo)return false;
+    return true;
+  });
+
+  // Sort
+  if(sortCol){
+    filtered=[...filtered].sort((a,b)=>{
+      let va=a[sortCol],vb=b[sortCol];
+      if(va===null||va===undefined)va='';
+      if(vb===null||vb===undefined)vb='';
+      // Numeric columns
+      if(sortCol==='cantidad'||sortCol==='monto_neto'){va=parseFloat(va)||0;vb=parseFloat(vb)||0;}
+      // GD as number
+      if(sortCol==='gd_numero'){va=parseInt(va)||0;vb=parseInt(vb)||0;}
+      const cmp=va<vb?-1:va>vb?1:0;
+      return sortDir==='asc'?cmp:-cmp;
+    });
+  }
+
+  document.getElementById('count-lbl').textContent=
+    filtered.length<records.length?`${filtered.length} de ${records.length} registros`:`${records.length} registros`;
+
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML='';
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="12" class="no-data">Sin registros para los filtros aplicados</td></tr>';
+    return;
+  }
+  const ro=AUTH.isReadonly();
+  filtered.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      `<td>${fmtD(r.fecha_gd)}</td>`+
+      `<td>${fmtD(r.fecha_despacho)}</td>`+
+      `<td class="mono" style="color:var(--accent)">${r.gd_numero||'—'}</td>`+
+      `<td class="mono" style="font-size:.73rem;color:var(--muted)">${r.modulo_nro_serie||'—'}</td>`+
+      `<td class="c">${r.cantidad||1}</td>`+
+      `<td class="r">${fmtM(r.monto_neto)}</td>`+
+      `<td style="font-weight:600">${r.modulo||'—'}</td>`+
+      `<td style="font-size:.73rem;color:var(--muted)">${r.torre||'—'}</td>`+
+      `<td>${tipoChip(r.tipo)}</td>`+
+      `<td class="c">${r.avance!=null?r.avance+'%':'—'}</td>`+
+      `<td class="c acum">${r._acum}</td>`+
+      `<td style="white-space:nowrap">${ro?'':`<button class="btn btn-sm" style="padding:3px 8px;margin-right:4px" onclick="editRecord(${r.id})">Editar</button><button class="btn btn-sm" style="color:var(--red);padding:3px 8px" onclick="delRecord(${r.id})">✕</button>`}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmtD(v){if(!v)return'—';const[y,m,d]=v.split('-');return`${d}-${m}-${y}`;}
+function fmtM(v,short){
+  if(v===null||v===undefined||v==='')return'—';
+  const n=parseFloat(v);if(isNaN(n))return'—';
+  if(short&&n>=1e9)return'$'+(n/1e9).toFixed(1)+'B';
+  if(short&&n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';
+  return'$'+Math.round(n).toLocaleString('es-CL');
+}
+function tipoChip(t){if(!t)return'—';return`<span class="chip ${t==='SECO'?'chip-seco':'chip-humedo'}">${t}</span>`;}
+function clearFilters(){
+  ['q-s','q-mes','q-torre','q-tipo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderTable();
+}
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='show '+(type||'');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3200);
+}
+
+// ── Drawer / Form ─────────────────────────────────────────────────────────────
+function openDrawer(){
+  editId=null;
+  resetForm();
+  document.getElementById('drw-hdr').querySelector('h2').textContent='Nueva Entrada';
+  document.getElementById('save-otro-btn').style.display='';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>{
+    const fg=document.getElementById('f-gd');
+    if(fg&&!fg.value)fg.focus();
+    else document.getElementById('f-gdnum').focus();
+  },280);
+}
+
+function editRecord(id){
+  const r=records.find(x=>x.id===id);
+  if(!r)return;
+  editId=id;
+  resetForm();
+  document.getElementById('f-gd').value=r.fecha_gd||'';
+  document.getElementById('f-desp').value=r.fecha_despacho||'';
+  document.getElementById('f-gdnum').value=r.gd_numero||'';
+  document.getElementById('f-mod').value=r.modulo||'';
+  document.getElementById('f-serie').value=r.modulo_nro_serie||'';
+  document.getElementById('f-cant').value=r.cantidad??1;
+  document.getElementById('f-monto').value=r.monto_neto??'';
+  document.getElementById('f-avance').value=r.avance??'';
+  document.getElementById('f-torre').value=r.torre||'';
+  document.getElementById('f-tipo').value=r.tipo||'';
+  document.getElementById('drw-hdr').querySelector('h2').textContent='Editar Entrada';
+  document.getElementById('save-otro-btn').style.display='none';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('f-gdnum').focus(),280);
+}
+
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  editId=null;
+}
+
+function resetForm(){
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('f-gd').value=today;
+  document.getElementById('f-desp').value=today;
+  document.getElementById('f-gdnum').value='';
+  document.getElementById('f-mod').value='';
+  document.getElementById('f-serie').value='';
+  document.getElementById('f-cant').value='1';
+  document.getElementById('f-monto').value='';
+  document.getElementById('f-monto-hint').textContent='';
+  document.getElementById('f-avance').value='';
+  document.getElementById('f-torre').value='';
+  document.getElementById('f-tipo').value='';
+}
+
+function onFormMod(){
+  const sel=document.getElementById('f-mod');
+  const opt=sel.options[sel.selectedIndex];
+  document.getElementById('f-serie').value=opt.dataset.s||'';
+  document.getElementById('f-torre').value=opt.dataset.t||'';
+  document.getElementById('f-tipo').value=opt.dataset.tp||'';
+  // Hint: show formatted monto from last record of same módulo if any
+  const mod=sel.value;
+  if(mod){
+    const prev=records.filter(r=>r.modulo===mod);
+    if(prev.length){
+      const last=prev[prev.length-1];
+      document.getElementById('f-monto-hint').textContent=
+        `Último monto para ${mod}: ${fmtM(last.monto_neto)}`;
+    }
+  }
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+async function saveForm(keepOpen){
+  const gd=document.getElementById('f-gdnum').value.trim();
+  const mod=document.getElementById('f-mod').value;
+  if(!gd){showToast('GD # es obligatorio','err');document.getElementById('f-gdnum').focus();return;}
+  if(!mod){showToast('Selecciona un módulo','err');document.getElementById('f-mod').focus();return;}
+
+  const sess=AUTH.getSession();
+  const rec={
+    fecha_gd:document.getElementById('f-gd').value||null,
+    fecha_despacho:document.getElementById('f-desp').value||null,
+    gd_numero:gd,
+    modulo_nro_serie:document.getElementById('f-serie').value||null,
+    cantidad:parseInt(document.getElementById('f-cant').value)||1,
+    monto_neto:parseFloat(document.getElementById('f-monto').value)||0,
+    modulo:mod,
+    torre:document.getElementById('f-torre').value||null,
+    tipo:document.getElementById('f-tipo').value||null,
+    avance:document.getElementById('f-avance').value!==''?parseInt(document.getElementById('f-avance').value):null,
+    created_by:sess?sess.name:'anon'
+  };
+
+  const btn=document.getElementById('save-btn');
+  const btn2=document.getElementById('save-otro-btn');
+  const st=document.getElementById('save-st');
+  btn.disabled=true;btn2.disabled=true;st.textContent='Guardando…';
+
+  try{
+    let res;
+    if(editId){
+      res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd?id=eq.${editId}`,{
+        method:'PATCH',
+        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify(rec)
+      });
+    } else {
+      res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd`,{
+        method:'POST',
+        headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify(rec)
+      });
+    }
+    if(!res.ok)throw new Error(await res.text());
+    showToast(editId?'✓ Registro actualizado':'✓ Registro guardado','ok');
+    await loadData();
+    if(!editId&&keepOpen){
+      const fg=document.getElementById('f-gd').value;
+      const fd=document.getElementById('f-desp').value;
+      resetForm();
+      document.getElementById('f-gd').value=fg;
+      document.getElementById('f-desp').value=fd;
+      document.getElementById('f-gdnum').focus();
+    } else {
+      closeDrawer();
+    }
+  }catch(e){
+    showToast('Error: '+e.message,'err');
+  }finally{
+    btn.disabled=false;btn2.disabled=false;st.textContent='';
+  }
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+async function delRecord(id){
+  if(!confirm('¿Eliminar este registro?'))return;
+  const res=await fetch(`${SUPA_URL}/rest/v1/despachos_gd?id=eq.${id}`,{
+    method:'DELETE',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  });
+  if(!res.ok){showToast('Error al eliminar','err');return;}
+  showToast('Registro eliminado','ok');
+  await loadData();
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

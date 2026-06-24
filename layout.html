@@ -1,0 +1,2270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Módulos — Planta Productiva</title>
+<script src="auth.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0f1117;
+    --surface: #1a1d27;
+    --surface2:#12151f;
+    --border:  #2e3350;
+    --text:    #e8eaf0;
+    --text2:   #9ca3b8;
+    --gray:    #7a7f99;
+    --accent:  #cd1c18;
+    --navy:    #1a2c4e;
+  }
+
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+  header {
+    background: #1a1d27;
+    color: white;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  header h1 { font-size: 1.25rem; font-weight: 700; }
+  header .subtitle { font-size: 0.8rem; opacity: 0.55; margin-top: 2px; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .header-user { font-size: 0.78rem; background: rgba(255,255,255,0.07); color: var(--text2); padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); }
+  .btn-header-sm { font-size: 0.76rem; padding: 5px 12px; background: transparent; color: var(--text2); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+  .btn-header-sm:hover { color: var(--text); border-color: #4f8ef7; }
+
+  .tabs {
+    display: flex;
+    background: #1a1d27;
+    padding: 0 24px;
+    gap: 2px;
+    border-bottom: 3px solid var(--accent);
+  }
+  .tab-btn {
+    padding: 11px 20px;
+    border: none;
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    font-size: 0.86rem;
+    font-weight: 500;
+    border-radius: 6px 6px 0 0;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: white; font-weight: 700; }
+
+  .tab-content { display: none; padding: 26px 32px; }
+  .tab-content.active { display: block; }
+
+  .loc-title { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .loc-desc  { font-size: 0.8rem; color: var(--gray); margin-bottom: 18px; }
+
+  /* Legend */
+  .legend { display: flex; gap: 18px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text2); }
+  .legend-dot { width: 13px; height: 13px; border-radius: 3px; }
+  .dot-humedo { background: #2ecc71; }
+  .dot-seco   { background: #3498db; }
+  .dot-empty  { background: var(--surface2); border: 1px dashed var(--border); }
+
+  /* Module card — font-size se setea inline desde JS para escalar con px() */
+  .module-card {
+    border: 2px solid #cc0000;
+    border-radius: 4px;
+    background: var(--surface);
+    padding: 4px 6px 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .module-card.empty {
+    border: 2px dashed var(--border);
+    background: var(--surface2);
+  }
+  .card-header   { display: flex; justify-content: space-between; align-items: flex-start; gap: 3px; }
+  .module-name   { color: #e05252; font-weight: 800; font-size: 1.3em; letter-spacing: 0.2px; line-height: 1.1; }
+  .module-days   { color: var(--text); font-weight: 800; font-size: 1.3em; line-height: 1.1; white-space: nowrap; flex-shrink: 0; }
+  .module-status { font-weight: 700; font-size: 0.82em; margin-top: 2px; }
+  .status-humedo { color: #2ecc71; }
+  .status-seco   { color: #3498db; }
+
+  .progress-wrap { background: rgba(255,255,255,0.08); border-radius: 3px; height: 10px; margin: 3px 0; overflow: hidden; border: 1px solid var(--border); }
+  .progress-bar  { height: 100%; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7em; font-weight: 700; white-space: nowrap; }
+  .pb-low  { background: #e74c3c; }
+  .pb-mid  { background: #f39c12; }
+  .pb-high { background: #2ecc71; }
+
+  /* Stats pill */
+  .stats-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 5px 13px; font-size: 0.78rem; color: var(--text2); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .stat-pill strong { color: var(--text); }
+
+  /* Section wrapper */
+  .section-wrap { border: 2px solid var(--border); border-radius: 6px; padding: 14px 16px; background: var(--surface); box-shadow: 0 2px 8px rgba(0,0,0,0.25); display: inline-block; }
+  .section-title { font-size: 0.78rem; font-weight: 700; color: var(--text2); margin-bottom: 10px; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Multi-section layout */
+  .multi-wrap { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+
+  /* Individual detail tabs — sections fill full available width */
+  #tab-galpon .section-wrap,
+  #tab-carpa-grande .section-wrap,
+  #tab-carpa-chica .section-wrap,
+  #tab-patio .section-wrap { display: block; }
+  #tab-galpon .multi-wrap,
+  #tab-carpa-grande .multi-wrap { align-items: stretch; }
+  #tab-galpon .multi-wrap > *,
+  #tab-carpa-grande .multi-wrap > * { flex: 1; min-width: 0; }
+  /* Patio: sectores apilados verticalmente */
+  #tab-patio .multi-wrap { flex-direction: column; gap: 20px; }
+  #tab-patio .multi-wrap > * { width: 100%; }
+
+  /* Font sizes: más grandes en pestañas de detalle */
+  .module-card { font-size: 10px; }
+  #tab-galpon   .module-card,
+  #tab-carpa-grande .module-card { font-size: clamp(11px, 1.15vw, 17px); }
+  #tab-carpa-chica .module-card,
+  #tab-patio   .module-card { font-size: clamp(10px, 1.0vw, 15px); }
+  #tab-planta  .module-card { font-size: 10px; }
+
+  /* =====================
+     SUMMARY TAB
+  ===================== */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; margin-bottom: 28px; }
+  .summary-card {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--navy);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .summary-card:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,0.4); }
+  .summary-card.border-galpon      { border-left-color: #8e44ad; }
+  .summary-card.border-carpa-grande{ border-left-color: #2980b9; }
+  .summary-card.border-carpa-chica { border-left-color: #16a085; }
+  .summary-card.border-patio       { border-left-color: #e63946; }
+
+  .sc-icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .sc-name { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+  .sc-row  { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text2); margin-bottom: 5px; }
+  .sc-row strong { color: var(--text); }
+  .sc-bar-wrap { background: rgba(255,255,255,0.08); border-radius: 6px; height: 10px; margin-top: 10px; overflow: hidden; }
+  .sc-bar      { height: 100%; border-radius: 6px; transition: width 0.5s; }
+  .sc-pct      { font-size: 0.72rem; color: var(--gray); text-align: right; margin-top: 3px; }
+
+  .summary-total {
+    background: #1a2c4e;
+    color: white;
+    border-radius: 10px;
+    padding: 18px 24px;
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .total-item { text-align: center; }
+  .total-num  { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+  .total-lbl  { font-size: 0.75rem; opacity: 0.7; margin-top: 4px; }
+
+  /* Galpón */
+  .galpon-grid { display: grid; gap: 5px; margin-bottom: 8px; }
+  .linea-label { display: grid; gap: 5px; }
+  #galpon-linea-label { width: 100%; }
+  #vp-linea-label { grid-template-columns: repeat(3, 88px); }
+  .linea-box   { border: 2px solid var(--border); border-radius: 4px; text-align: center; padding: 7px 4px; font-weight: 700; font-size: 0.95rem; color: var(--text2); background: var(--surface2); }
+
+  /* Vista Planta Completa */
+  .planta-wrap { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  .planta-group {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .planta-group-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.2px;
+  }
+  .planta-group-title a {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+  .planta-group-title a:hover { color: #e63946; }
+  .planta-group-title a::after {
+    content: '↗';
+    font-size: 0.75rem;
+    opacity: 0.4;
+    transition: opacity 0.15s;
+  }
+  .planta-group-title a:hover::after { opacity: 1; }
+
+  /* Buscador de módulos */
+  .search-section { margin-top: 28px; }
+  .search-section h3 { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+  .search-box-wrap { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .search-input {
+    padding: 10px 16px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    width: 280px;
+    outline: none;
+    background: var(--surface2);
+    color: var(--text);
+    transition: border-color 0.2s;
+  }
+  .search-input::placeholder { color: var(--gray); }
+  .search-input:focus { border-color: var(--accent); }
+  .search-hint { font-size: 0.78rem; color: var(--gray); }
+
+  .search-table-wrap { overflow-x: auto; }
+  .search-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+  }
+  .search-table th {
+    background: var(--surface2);
+    color: var(--text2);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    color: var(--text);
+  }
+  .search-table tr:last-child td { border-bottom: none; }
+  .search-table tr:hover td { background: rgba(255,255,255,0.04); }
+  .search-table .col-id { font-weight: 700; color: #e05252; }
+  .search-table .col-loc { color: var(--text2); }
+  .search-table .col-dias { font-weight: 700; text-align: center; }
+  .search-table .col-avance { text-align: center; }
+  .search-table .col-pend { color: #f59e0b; }
+  .search-table .pend-none { color: #34d399; font-style: italic; }
+  .search-mini-bar { display: flex; align-items: center; gap: 8px; }
+  .search-bar-bg { background: rgba(255,255,255,0.08); border-radius: 4px; height: 8px; width: 80px; overflow: hidden; flex-shrink: 0; }
+  .search-bar-fill { height: 100%; border-radius: 4px; }
+  .search-no-results { text-align: center; color: var(--gray); padding: 28px; font-style: italic; }
+  .search-status-chip {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.72rem; font-weight: 700;
+  }
+  .chip-humedo { background: rgba(46,204,113,0.15); color: #2ecc71; }
+  .chip-seco   { background: rgba(52,152,219,0.15); color: #3498db; }
+  .pend-tag {
+    display: inline-block; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25);
+    color: #fbbf24; border-radius: 4px; padding: 1px 6px; font-size: 0.73rem;
+    margin: 1px 2px 1px 0; white-space: nowrap;
+  }
+  .pend-cat { font-weight: 700; }
+  .hidden { display: none !important; }
+
+  /* =====================
+     MODO EDICIÓN
+  ===================== */
+  .edit-toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); border-radius: 8px;
+    padding: 10px 16px; margin-bottom: 16px;
+  }
+  .edit-toolbar.hidden { display: none; }
+  .btn-edit-toggle {
+    padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer;
+    font-weight: 700; font-size: 0.85rem; transition: background 0.2s;
+  }
+  .btn-edit-toggle.off { background: #1a2c4e; color: white; }
+  .btn-edit-toggle.off:hover { background: #243d6a; }
+  .btn-edit-toggle.on  { background: #e63946; color: white; }
+  .btn-edit-toggle.on:hover  { background: #c0303a; }
+  .btn-save {
+    padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer;
+    font-weight: 700; font-size: 0.85rem; background: #27ae60; color: white;
+    transition: background 0.2s;
+  }
+  .btn-save:hover { background: #1e8449; }
+  .btn-save:disabled { background: #aaa; cursor: not-allowed; }
+  .btn-add-pos {
+    padding: 5px 12px; border-radius: 6px; border: 2px dashed var(--border);
+    background: transparent; color: var(--text2); font-weight: 700; font-size: 0.82rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-add-pos:hover { background: var(--surface); color: var(--text); border-color: var(--accent); }
+  .edit-status { font-size: 0.8rem; color: var(--gray); }
+  .edit-status.saving { color: #f39c12; }
+  .edit-status.saved  { color: #27ae60; }
+  .edit-status.error  { color: #e63946; }
+
+  /* Celda editable */
+  body.edit-mode .module-card,
+  body.edit-mode .module-card.empty {
+    cursor: pointer;
+    position: relative;
+  }
+  body.edit-mode .module-card:hover { box-shadow: 0 0 0 3px rgba(251,191,36,0.5); }
+  body.edit-mode .module-card.empty:hover { box-shadow: 0 0 0 3px var(--accent); }
+
+  /* Overlay del select de módulo */
+  .cell-edit-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    background: rgba(18,21,31,0.97);
+    border: 1px solid var(--border);
+    border-radius: 4px; display: flex; flex-direction: column;
+    align-items: stretch; justify-content: center; padding: 4px;
+    gap: 4px;
+  }
+  .cell-edit-overlay select {
+    font-size: 0.8rem; padding: 3px 5px; border: 1px solid var(--border);
+    border-radius: 4px; width: 100%; background: var(--surface2); color: var(--text);
+  }
+  .cell-edit-overlay .cell-btns { display: flex; gap: 4px; justify-content: flex-end; }
+  .cell-edit-overlay button {
+    font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; border: none; cursor: pointer;
+  }
+  .cell-btn-ok  { background: #27ae60; color: white; }
+  .cell-btn-cancel { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+  /* =====================
+     RESPONSIVE / TOUCH
+  ===================== */
+  /* Tabs siempre desplazables horizontalmente */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; }
+
+  /* Eliminar delay de tap y highlight en todos los elementos interactivos */
+  .module-card, .tab-btn, .btn-edit-toggle, .btn-save, .btn-add-pos,
+  .cell-btn-ok, .cell-btn-cancel, .summary-card, .btn-header-sm {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ≤ 768px: tablet vertical y móvil grande */
+  @media (max-width: 768px) {
+    header { padding: 10px 14px; gap: 8px; }
+    header h1 { font-size: 1rem; }
+    header .subtitle { display: none; }
+    .header-user { display: none; }
+    .btn-header-sm { padding: 5px 10px; font-size: 0.75rem; }
+
+    .tab-btn { padding: 10px 12px; font-size: 0.78rem; }
+
+    .tab-content { padding: 12px 10px; }
+
+    /* Secciones multi-columna se apilan */
+    .multi-wrap { flex-direction: column; gap: 14px; }
+    #tab-galpon .multi-wrap > *,
+    #tab-carpa-grande .multi-wrap > * { flex: unset; width: 100%; min-width: 0; }
+
+    /* Grids con scroll horizontal (no cortan el bottom-sheet porque el overlay es position:fixed) */
+    .section-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Buscador full-width */
+    .search-input { width: 100%; max-width: 100%; }
+    .search-box-wrap { flex-direction: column; align-items: stretch; gap: 6px; }
+    .search-hint { display: none; }
+
+    /* Botones de edición con tap targets adecuados (≥44px) */
+    .btn-edit-toggle, .btn-save { min-height: 44px; padding: 10px 14px; }
+    .btn-add-pos { min-height: 42px; padding: 9px 14px; }
+    .edit-toolbar { padding: 8px 10px; gap: 8px; }
+
+    /* Resumen: 2 columnas en tablet */
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    .summary-total { gap: 16px; padding: 14px 16px; }
+    .total-num { font-size: 1.5rem; }
+  }
+
+  /* ≤ 480px: móvil pequeño */
+  @media (max-width: 480px) {
+    header { padding: 8px 10px; }
+    .header-right { gap: 6px; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .planta-wrap { gap: 14px; }
+  }
+</style>
+<script src="xlsx.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏭 Mapa de Módulos — Planta Productiva</h1>
+    <div class="subtitle">Estado y progreso por ubicación · Actualizado desde archivo base</div>
+  </div>
+  <div class="header-right">
+    <span class="header-user" id="headerUserInfo"></span>
+    <a href="admin.html" class="btn-header-sm" id="btnAdmin" style="display:none">⚙️ Admin</a>
+    <button class="btn-header-sm" onclick="doLogout()">Salir</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active"   onclick="switchTab('resumen',this)">📊 Resumen</button>
+  <button class="tab-btn"          onclick="switchTab('planta',this)">🗺️ Vista Completa</button>
+  <button class="tab-btn"          onclick="switchTab('galpon',this)">📦 Galpón</button>
+  <button class="tab-btn"          onclick="switchTab('carpa-grande',this)">🏗️ Carpa Grande</button>
+  <button class="tab-btn"          onclick="switchTab('carpa-chica',this)">🏕️ Carpa Chica</button>
+  <button class="tab-btn"          onclick="switchTab('patio',this)">🌳 Patio de Acopio</button>
+</div>
+
+<!-- ======================== RESUMEN ======================== -->
+<div id="tab-resumen" class="tab-content active">
+  <div class="loc-title">Resumen General</div>
+  <div class="loc-desc">Vista consolidada de todos los módulos de la planta productiva</div>
+  <div id="summary-total-bar" class="summary-total"></div>
+  <div id="summary-grid" class="summary-grid"></div>
+
+  <div class="search-section">
+    <h3>🔍 Buscar módulo</h3>
+    <div class="search-box-wrap">
+      <input type="text" id="module-search" class="search-input"
+             placeholder="Ej: 45 o M-00045"
+             oninput="searchModules(this.value)">
+      <span class="search-hint">Ingresa el número o nombre del módulo</span>
+    </div>
+    <div class="search-table-wrap">
+      <div id="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== GALPÓN ======================== -->
+<div id="tab-galpon" class="tab-content">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+    <div class="loc-title" style="margin-bottom:0;">Ubicación 1 — Galpón</div>
+    <button id="edit-btn-galpon" class="btn-edit-toggle off hidden" onclick="toggleEditMode('galpon')">✏️ Editar layout</button>
+  </div>
+  <div class="loc-desc">Galpón principal</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="edit-toolbar-galpon" class="edit-toolbar hidden">
+    <button class="btn-edit-toggle on" onclick="toggleEditMode('galpon')">✖ Salir edición</button>
+    <button class="btn-save" id="btn-save-galpon" onclick="saveLayoutChanges('galpon')">💾 Guardar cambios</button>
+    <span class="edit-status" id="edit-status-galpon"></span>
+  </div>
+  <div id="stats-galpon" class="stats-bar"></div>
+  <div class="multi-wrap">
+    <div>
+      <div class="section-wrap">
+        <div class="section-title">▣ Galpón Principal</div>
+        <div class="galpon-grid" id="galpon-grid"></div>
+        <!-- Posiciones extra por línea (encima de las etiquetas L3/L2/L1) -->
+        <div id="galpon-extras-area" style="display:grid;gap:5px;margin-top:5px;">
+          <div id="galpon-extras-l3"></div>
+          <div id="galpon-extras-l2"></div>
+          <div id="galpon-extras-l1"></div>
+        </div>
+        <div id="add-pos-galpon" class="hidden" style="display:grid;gap:5px;margin-top:6px;">
+          <button class="btn-add-pos" onclick="addExtraPosition('galpon-l3')">+ Agregar pos. L3</button>
+          <button class="btn-add-pos" onclick="addExtraPosition('galpon-l2')">+ Agregar pos. L2</button>
+          <button class="btn-add-pos" onclick="addExtraPosition('galpon-l1')">+ Agregar pos. L1</button>
+        </div>
+        <div class="linea-label" id="galpon-linea-label" style="margin-top:5px;">
+          <div class="linea-box">L3</div>
+          <div class="linea-box">L2</div>
+          <div class="linea-box">L1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== CARPA GRANDE ======================== -->
+<div id="tab-carpa-grande" class="tab-content">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+    <div class="loc-title" style="margin-bottom:0;">Ubicación 2 — Carpa Grande</div>
+    <button id="edit-btn-carpa-grande" class="btn-edit-toggle off hidden" onclick="toggleEditMode('carpa-grande')">✏️ Editar layout</button>
+  </div>
+  <div class="loc-desc">Módulos en proceso dentro de Carpa Grande · Sector Sur y Sector Norte</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="edit-toolbar-carpa-grande" class="edit-toolbar hidden">
+    <button class="btn-edit-toggle on" onclick="toggleEditMode('carpa-grande')">✖ Salir edición</button>
+    <button class="btn-save" id="btn-save-carpa-grande" onclick="saveLayoutChanges('carpa-grande')">💾 Guardar cambios</button>
+    <span class="edit-status" id="edit-status-carpa-grande"></span>
+  </div>
+  <div id="stats-carpa-grande" class="stats-bar"></div>
+  <div class="multi-wrap">
+    <div class="section-wrap">
+      <div class="section-title" style="color:#2980b9;">▣ Sector Sur</div>
+      <div id="cg-sur"></div>
+    </div>
+    <div class="section-wrap">
+      <div class="section-title" style="color:#e67e22;">▣ Sector Norte</div>
+      <div id="cg-norte"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== CARPA CHICA ======================== -->
+<div id="tab-carpa-chica" class="tab-content">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+    <div class="loc-title" style="margin-bottom:0;">Ubicación 3 — Carpa Chica</div>
+    <button id="edit-btn-carpa-chica" class="btn-edit-toggle off hidden" onclick="toggleEditMode('carpa-chica')">✏️ Editar layout</button>
+  </div>
+  <div class="loc-desc">Módulos en Carpa Chica · Layout horizontal en 3 filas</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="edit-toolbar-carpa-chica" class="edit-toolbar hidden">
+    <button class="btn-edit-toggle on" onclick="toggleEditMode('carpa-chica')">✖ Salir edición</button>
+    <button class="btn-save" id="btn-save-carpa-chica" onclick="saveLayoutChanges('carpa-chica')">💾 Guardar cambios</button>
+    <span class="edit-status" id="edit-status-carpa-chica"></span>
+  </div>
+  <div id="stats-carpa-chica" class="stats-bar"></div>
+  <div class="section-wrap">
+    <div id="carpa-chica-grid"></div>
+    <!-- Botón para agregar posición en el sector medio (solo visible en modo edición) -->
+    <div id="add-pos-carpa-chica" class="hidden" style="margin-top:5px;">
+      <button class="btn-add-pos" onclick="addExtraPosition('carpa-chica-medio')">+ Agregar posición · Sector Medio</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== PATIO DE ACOPIO ======================== -->
+<div id="tab-patio" class="tab-content">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+    <div class="loc-title" style="margin-bottom:0;">Ubicación 4 — Patio de Acopio</div>
+    <button id="edit-btn-patio" class="btn-edit-toggle off hidden" onclick="toggleEditMode('patio')">✏️ Editar layout</button>
+  </div>
+  <div class="loc-desc">Módulos en patio exterior · Costado Galpón, Sector Carpa Grande y Sector Carpa Chica</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="edit-toolbar-patio" class="edit-toolbar hidden">
+    <button class="btn-edit-toggle on" onclick="toggleEditMode('patio')">✖ Salir edición</button>
+    <button class="btn-save" id="btn-save-patio" onclick="saveLayoutChanges('patio')">💾 Guardar cambios</button>
+    <span class="edit-status" id="edit-status-patio"></span>
+  </div>
+  <div id="stats-patio" class="stats-bar"></div>
+  <div class="multi-wrap">
+    <div class="section-wrap">
+      <div class="section-title" style="color:#7f8c8d;">▣ Costado Galpón</div>
+      <div id="costado-bodega-grid"></div>
+      <div id="add-pos-costado-bodega" class="hidden" style="margin-top:8px;">
+        <button class="btn-add-pos" onclick="addExtraPosition('costado-bodega')">+ Agregar posición</button>
+      </div>
+    </div>
+    <div class="section-wrap">
+      <div class="section-title" style="color:#2980b9;">▣ Sector Carpa Grande</div>
+      <div id="patio-cg"></div>
+      <div id="add-pos-patio-cg" class="hidden" style="margin-top:8px;">
+        <button class="btn-add-pos" onclick="addExtraPosition('patio-carpa-grande')">+ Agregar posición</button>
+      </div>
+    </div>
+    <div class="section-wrap">
+      <div class="section-title" style="color:#16a085;">▣ Sector Carpa Chica</div>
+      <div id="patio-cc"></div>
+      <div id="add-pos-patio-cc" class="hidden" style="margin-top:8px;">
+        <button class="btn-add-pos" onclick="addExtraPosition('patio-carpa-chica')">+ Agregar posición</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== VISTA COMPLETA ======================== -->
+<div id="tab-planta" class="tab-content">
+  <div class="loc-title">Vista Completa — Planta Productiva</div>
+  <div class="loc-desc">Todas las ubicaciones en una sola vista</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-humedo"></div> HÚMEDO</div>
+    <div class="legend-item"><div class="legend-dot dot-seco"></div> SECO</div>
+    <div class="legend-item"><div class="legend-dot dot-empty"></div> Vacío</div>
+  </div>
+  <div id="stats-planta" class="stats-bar"></div>
+  <div class="planta-wrap">
+
+    <!-- GALPÓN -->
+    <div class="planta-group">
+      <div class="planta-group-title"><a href="#" onclick="switchToTab('galpon');return false;">📦 Galpón</a></div>
+      <div class="section-wrap">
+        <div class="section-title">▣ Galpón Principal</div>
+        <div class="galpon-grid" id="vp-galpon-grid"></div>
+        <div class="linea-label" id="vp-linea-label">
+          <div class="linea-box">L3</div>
+          <div class="linea-box">L2</div>
+          <div class="linea-box">L1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARPA GRANDE -->
+    <div class="planta-group">
+      <div class="planta-group-title"><a href="#" onclick="switchToTab('carpa-grande');return false;">🏗️ Carpa Grande</a></div>
+      <div class="multi-wrap">
+        <div class="section-wrap">
+          <div class="section-title" style="color:#2980b9;">▣ Sector Sur</div>
+          <div id="vp-cg-sur"></div>
+        </div>
+        <div class="section-wrap">
+          <div class="section-title" style="color:#e67e22;">▣ Sector Norte</div>
+          <div id="vp-cg-norte"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARPA CHICA -->
+    <div class="planta-group">
+      <div class="planta-group-title"><a href="#" onclick="switchToTab('carpa-chica');return false;">🏕️ Carpa Chica</a></div>
+      <div class="section-wrap">
+        <div id="vp-carpa-chica-grid"></div>
+      </div>
+    </div>
+
+    <!-- PATIO DE ACOPIO -->
+    <div class="planta-group">
+      <div class="planta-group-title"><a href="#" onclick="switchToTab('patio');return false;">🌳 Patio de Acopio</a></div>
+      <div class="multi-wrap">
+        <div class="section-wrap">
+          <div class="section-title" style="color:#7f8c8d;">▣ Costado Galpón</div>
+          <div id="vp-costado-bodega"></div>
+        </div>
+        <div class="section-wrap">
+          <div class="section-title" style="color:#2980b9;">▣ Sector Carpa Grande</div>
+          <div id="vp-patio-cg"></div>
+        </div>
+        <div class="section-wrap">
+          <div class="section-title" style="color:#16a085;">▣ Sector Carpa Chica</div>
+          <div id="vp-patio-cc"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  AUTENTICACIÓN
+// ============================================================
+(function() {
+  const s = AUTH.requireAuth('login.html');
+  if (!s) return;
+
+  // Si estamos dentro de tecnopanel (iframe), ocultar UI de auth local
+  if (window.self !== window.top) {
+    const hr = document.querySelector('.header-right');
+    if (hr) hr.style.display = 'none';
+  } else {
+    // Info de usuario en header (solo cuando es página independiente)
+    const userEl = document.getElementById('headerUserInfo');
+    if (userEl) userEl.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role]?.label || s.role);
+
+    // Botón admin solo para administradores
+    if (AUTH.isAdmin()) {
+      const adminBtn = document.getElementById('btnAdmin');
+      if (adminBtn) adminBtn.style.display = 'inline-block';
+    }
+  }
+
+  // Mapa tabId → tab-btn y tab-content
+  const TAB_MAP = {
+    'resumen':      'resumen',
+    'galpon':       'galpon',
+    'carpa-grande': 'carpa-grande',
+    'carpa-chica':  'carpa-chica',
+    'patio':        'patio',
+    'planta':       'planta'
+  };
+
+  // Ocultar tabs sin permiso
+  Object.entries(TAB_MAP).forEach(([tabId]) => {
+    if (!AUTH.canViewTab('layout', tabId)) {
+      // Ocultar botón de la pestaña
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tabId + "'")) {
+          btn.style.display = 'none';
+        }
+      });
+      // Ocultar contenido
+      const content = document.getElementById('tab-' + tabId);
+      if (content) content.style.display = 'none';
+    }
+  });
+
+  // Si la pestaña activa por defecto está oculta, activar la primera visible
+  const firstVisible = AUTH.getAllTabs().find(t => AUTH.canViewTab('layout', t));
+  if (firstVisible && !AUTH.canViewTab('layout', 'resumen')) {
+    // Quitar active del resumen
+    const defaultContent = document.getElementById('tab-resumen');
+    const defaultBtn = document.querySelector('.tab-btn.active');
+    if (defaultContent) { defaultContent.classList.remove('active'); defaultContent.style.display = 'none'; }
+    if (defaultBtn)     defaultBtn.classList.remove('active');
+    // Activar primera pestaña permitida
+    const el = document.getElementById('tab-' + firstVisible);
+    if (el) { el.classList.add('active'); el.style.display = 'block'; }
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + firstVisible + "'")) {
+        btn.classList.add('active');
+      }
+    });
+  }
+})();
+
+function doLogout() {
+  AUTH.logout();
+  window.location.href = 'login.html';
+}
+
+// ============================================================
+//  DATOS DINÁMICOS
+// ============================================================
+let LOC = {};
+let M   = {};
+let DESPACHADOS   = new Set();
+let ALL_LOC_IDS   = new Set(); // todos los IDs de ubicaciones.xlsx antes de filtrar despachados
+
+// SheetJS sheet_to_json produce índices RELATIVOS al !ref de la hoja (O3:BV176).
+// Offset fila: ref empieza en row 3  → r = excel_row - 3
+// Offset col:  ref empieza en col 15 (O) → c = excel_col - 15
+function assignLoc(r, c) {
+  if (r >= 100 && c >= 10) return { loc: 'galpon',         sector: null           };  // c=12,14,16
+  if (r >= 100            ) return { loc: 'costado-bodega', sector: null           };  // c=0,4
+  if (r <  30  && c >= 36) return { loc: 'patio',          sector: 'carpa-chica'  };  // c=38-54
+  if (r <  30             ) return { loc: 'patio',          sector: 'carpa-grande' };  // c=12-30
+  if (c >= 36)             return { loc: 'carpa-chica',    sector: null           };  // c=38-56
+  if (c <  20)             return { loc: 'carpa-grande',   sector: 'sur'          };  // c=12,14,18
+  if (c <  32)             return { loc: 'carpa-grande',   sector: 'norte'        };  // c=22,24,28
+  return                          { loc: 'patio',          sector: 'carpa-grande' };  // c=32 (M-00032)
+}
+
+async function loadDespachos() {
+  try {
+    const SUPA_URL = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+    const resp = await fetch(
+      `${SUPA_URL}/rest/v1/despachos_gd?select=modulo,fecha_despacho&fecha_despacho=not.is.null`,
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY } }
+    );
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const rows = await resp.json();
+    DESPACHADOS = new Set();
+    for (const r of rows) {
+      if (r.modulo && r.fecha_despacho) DESPACHADOS.add(String(r.modulo).trim());
+    }
+  } catch (e) { console.warn('despachos_gd DESPACHADOS:', e.message); }
+}
+
+async function loadUbicaciones() {
+  try {
+    const resp = await fetch('data/ubicaciones.xlsx');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf = await resp.arrayBuffer();
+    const wb  = XLSX.read(new Uint8Array(buf), { type: 'array', dense: true });
+    const ws  = wb.Sheets['UBICACIONES'];
+    if (!ws) throw new Error('Hoja UBICACIONES no encontrada');
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+    LOC = {};
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r] || [];
+      for (let c = 0; c < row.length; c++) {
+        const v = row[c];
+        if (v && typeof v === 'string' && /^M-\d+/.test(v.trim())) {
+          // La hoja UBICACIONES comienza en O3 (col 15, fila 3 en base-1).
+          // Los índices SheetJS son 0-based desde A/fila-1, por lo tanto:
+          //   r_adj = r - 2   (fila 3 → 0 ajustado)
+          //   c_adj = c - 14  (col O → 0 ajustado)
+          // Esto alinea LOC con los valores que almacena la BD y que espera assignLoc.
+          const r_adj = r - 2;
+          const c_adj = c - 14;
+          LOC[v.trim()] = Object.assign({ xls_row: r_adj, xls_col: c_adj }, assignLoc(r_adj, c_adj));
+        }
+      }
+    }
+  } catch (e) { console.warn('ubicaciones.xlsx:', e.message); }
+}
+
+async function loadAvanceData() {
+  await loadDespachos();
+  // ubicaciones.xlsx queda EXCLUIDO como origen de posiciones (todo vive en Supabase)
+  M   = {};
+  try {
+    const resp = await fetch('data/avance.xlsx');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf  = await resp.arrayBuffer();
+    const wb   = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true, dense: true });
+    const ws   = wb.Sheets['BD_AVANCE'];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r[1]) continue;
+      const id = String(r[1]).trim();
+      M[id] = {
+        avance:      r[4]  != null ? Math.round(+r[4] * 100) : 0,
+        status:      (r[3] || 'SECO').toString().trim().toUpperCase(),
+        fecha:       r[6]  instanceof Date ? r[6].toISOString().slice(0, 10) : null,
+        pendientes:  r[97] != null ? String(r[97]).trim() : null,
+        nPendientes: r[99] != null ? +r[99] : 0,
+      };
+    }
+    document.querySelector('header .subtitle').textContent =
+      'Estado y progreso por ubicación · Datos desde avance.xlsx';
+  } catch (e) { console.warn('avance.xlsx:', e.message); }
+  // Guardar todos los IDs ANTES del filtro para que sigan disponibles en el dropdown
+  ALL_LOC_IDS = new Set(Object.keys(M));
+  // Filtrar módulos despachados: no deben aparecer en el mapa
+  for (const id of DESPACHADOS) {
+    delete M[id];
+  }
+}
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function pbClass(p) { return p < 50 ? 'pb-low' : p < 85 ? 'pb-mid' : 'pb-high'; }
+
+function daysElapsed(fecha) {
+  if (!fecha) return '—';
+  const start = new Date(fecha), today = new Date();
+  today.setHours(0,0,0,0); start.setHours(0,0,0,0);
+  const d = Math.floor((today - start) / 86400000);
+  return d >= 0 ? d : '—';
+}
+
+let SCALE = 1;
+function updateScale() {
+  const minScale = window.innerWidth < 500 ? 0.4 : 0.6;
+  SCALE = Math.min(Math.max(window.innerWidth / 1280, minScale), 1.6);
+}
+function px(n) { return Math.round(n * SCALE) + 'px'; }
+function pxN(n) { return Math.round(n * SCALE); }
+
+function cardInner(id, p, status, fecha, w, h, pk) {
+  const cls    = pbClass(p);
+  const sc     = status === 'HUMEDO' ? 'status-humedo' : 'status-seco';
+  const wStyle = w ? `min-width:${w};` : 'min-width:0;';
+  const hStyle = h ? `min-height:${h};` : 'min-height:80px;';
+  const pkAttr = pk ? ` data-pk="${pk}"` : '';
+  return `<div class="module-card"${pkAttr} style="${wStyle}${hStyle}" title="${id} · ${p}% · ${status}">
+    <div class="card-header">
+      <div class="module-name">${parseInt(id, 10) || id}</div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="module-days">${daysElapsed(fecha)}</div>
+        <div style="font-size:0.65em;color:#666;line-height:1;margin-top:1px;">días</div>
+      </div>
+    </div>
+    <div>
+      <div class="progress-wrap"><div class="progress-bar ${cls}" style="width:${p}%">${p}%</div></div>
+      <div class="module-status ${sc}">${status}</div>
+    </div>
+  </div>`;
+}
+
+function card(id, data, w, h, pk) {
+  const wStyle = w ? `min-width:${w};` : 'min-width:0;';
+  const hStyle = h ? `min-height:${h};` : 'min-height:80px;';
+  const pkAttr = pk ? ` data-pk="${pk}"` : '';
+  if (!data) return `<div class="module-card empty"${pkAttr} style="${wStyle}${hStyle}"></div>`;
+  return cardInner(id, data.avance, data.status, data.fecha, w, h, pk);
+}
+
+// Celda con grid-column/row para layout de celdas altas
+function mkCell(id, col, row, rowSpan, w, h, pk) {
+  const fill   = !w;
+  w = w || px(86); h = h || px(85);
+  const hTall  = `${2 * parseInt(h) + 5}px`;
+  const cellH  = rowSpan > 1 ? hTall : h;
+  const rowVal = rowSpan > 1 ? `${row} / ${row + rowSpan}` : `${row}`;
+  const wStyle = fill ? 'min-width:0;' : `min-width:${w};`;
+  const style  = `grid-column:${col};grid-row:${rowVal};${wStyle}min-height:${cellH};`;
+  // pk viene del módulo (DB_OVERRIDES); si no se pasó, fallback vacío
+  pk = pk || null;
+  const pkAttr = pk ? ` data-pk="${pk}"` : '';
+  const eid    = (pk && typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pk) : id;
+  if (!eid || !M[eid]) return `<div class="module-card empty"${pkAttr} style="${style}"></div>`;
+  const d = M[eid];
+  return `<div class="module-card"${pkAttr} style="${style}" title="${eid} · ${d.avance}% · ${d.status}">
+    <div class="card-header">
+      <div class="module-name">${parseInt(eid, 10) || eid}</div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="module-days">${daysElapsed(d.fecha)}</div>
+        <div style="font-size:0.65em;color:#666;line-height:1;margin-top:1px;">días</div>
+      </div>
+    </div>
+    <div>
+      <div class="progress-wrap"><div class="progress-bar ${pbClass(d.avance)}" style="width:${d.avance}%">${d.avance}%</div></div>
+      <div class="module-status ${d.status==='HUMEDO'?'status-humedo':'status-seco'}">${d.status}</div>
+    </div>
+  </div>`;
+}
+
+function stats(ids) {
+  const list   = ids.map(id => M[id]).filter(Boolean);
+  const total  = list.length;
+  const humedo = list.filter(d => d.status === 'HUMEDO').length;
+  const avg    = total ? Math.round(list.reduce((s, d) => s + d.avance, 0) / total) : 0;
+  return { total, humedo, seco: total - humedo, avg };
+}
+
+function renderStats(containerId, ids) {
+  const s = stats(ids);
+  document.getElementById(containerId).innerHTML =
+    `<div class="stat-pill">Total: <strong>${s.total}</strong></div>
+     <div class="stat-pill">Húmedo: <strong style="color:#27ae60">${s.humedo}</strong></div>
+     <div class="stat-pill">Seco: <strong style="color:#2980b9">${s.seco}</strong></div>
+     <div class="stat-pill">Avance prom.: <strong>${s.avg}%</strong></div>`;
+}
+
+// ============================================================
+//  GRID HELPERS
+// ============================================================
+function getSectionModules(loc, sector) {
+  const sectorKey = sectorForLoc(loc, sector);
+
+  // Fuente ÚNICA: Supabase (layout_positions). El Excel ubicaciones.xlsx ya NO
+  // se usa como origen de posiciones. Se conservan todas las posiciones del sector
+  // (incluso las de módulos despachados) para no dejar celdas "muertas"; los
+  // módulos despachados no se muestran porque no existen en M, quedando el slot
+  // vacío pero editable.
+  const dbRows = Object.values(DB_OVERRIDES)
+    .filter(row => row.sector === sectorKey && !row.is_extra)
+    .map(row => DESPACHADOS.has(row.module_id) ? { ...row, module_id: null } : row);
+
+  return dbRows
+    .map(r => ({ id: r.module_id, row: r.xls_row || 0, col: r.xls_col || 0, pk: r.position_key }))
+    .sort((a, b) => {
+      if (a.row !== b.row) return a.row - b.row;
+      return a.col - b.col;
+    });
+}
+
+function buildSectionGrid(modules) {
+  if (!modules.length) return [];
+  const uRows = [...new Set(modules.map(m => m.row))].sort((a, b) => a - b);
+  const uCols = [...new Set(modules.map(m => m.col))].sort((a, b) => a - b);
+  const map   = {};
+  modules.forEach(m => { map[`${m.row},${m.col}`] = m.id; });
+  // Cada celda: { id, pk } — pk permite edición incluso en celdas vacías
+  return uRows.map(r => uCols.map(c => ({ id: map[`${r},${c}`] || null, pk: `r${r}_c${c}` })));
+}
+
+function renderGrid(g, w, h) {
+  if (!g.length) return '';
+  const ncols  = g[0].length;
+  const fill   = !w;
+  const colDef = fill ? '1fr' : w;
+  const wAttr  = fill ? 'width:100%;' : '';
+  const effH   = h || (fill ? `${Math.max(90, Math.min(180, Math.round(pxN(100))))}px` : null);
+  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${colDef});gap:5px;${wAttr}">`;
+  for (const row of g) {
+    for (const cell of row) {
+      // cell puede ser {id, pk} (nuevo) o id string/null (legacy Vista Completa)
+      const id = (cell && typeof cell === 'object') ? cell.id : cell;
+      const pk = (cell && typeof cell === 'object') ? cell.pk : (id && LOC[id] ? posKey(LOC[id]) : null);
+      const eid = (pk && typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pk) : id;
+      html += card(eid, eid ? M[eid] : null, fill ? null : w, effH, pk);
+    }
+  }
+  return html + '</div>';
+}
+
+// ============================================================
+//  RESUMEN
+// ============================================================
+function buildResumen() {
+  const galponIds = getSectionModules('galpon',null).map(m=>m.id);
+  const cgIds     = [...getSectionModules('carpa-grande','sur'), ...getSectionModules('carpa-grande','norte')].map(m=>m.id);
+  const ccIds     = getSectionModules('carpa-chica',null).map(m=>m.id);
+  const patioIds  = [...getSectionModules('costado-bodega',null), ...getSectionModules('patio','carpa-grande'), ...getSectionModules('patio','carpa-chica')].map(m=>m.id);
+
+  const locations = [
+    { id:'galpon',       name:'Galpón',         icon:'📦', tab:'galpon',       cls:'border-galpon',       color:'#8e44ad', ids:galponIds  },
+    { id:'carpa-grande', name:'Carpa Grande',   icon:'🏗️', tab:'carpa-grande', cls:'border-carpa-grande', color:'#2980b9', ids:cgIds      },
+    { id:'carpa-chica',  name:'Carpa Chica',    icon:'🏕️', tab:'carpa-chica',  cls:'border-carpa-chica',  color:'#16a085', ids:ccIds      },
+    { id:'patio',        name:'Patio de Acopio',icon:'🌳', tab:'patio',        cls:'border-patio',        color:'#e63946', ids:patioIds   },
+  ];
+
+  const st = stats(locations.flatMap(l=>l.ids));
+  document.getElementById('summary-total-bar').innerHTML = `
+    <div class="total-item"><div class="total-num">${st.total}</div><div class="total-lbl">Módulos totales</div></div>
+    <div class="total-item"><div class="total-num" style="color:#2ecc71">${st.humedo}</div><div class="total-lbl">Húmedos</div></div>
+    <div class="total-item"><div class="total-num" style="color:#74b9ff">${st.seco}</div><div class="total-lbl">Secos</div></div>
+    <div class="total-item"><div class="total-num">${st.avg}%</div><div class="total-lbl">Avance promedio</div></div>
+    <div style="flex:1;min-width:160px;">
+      <div style="font-size:.75rem;opacity:.7;margin-bottom:5px;">Avance global</div>
+      <div style="background:rgba(255,255,255,0.15);border-radius:6px;height:12px;overflow:hidden;">
+        <div style="width:${st.avg}%;height:100%;background:#2ecc71;border-radius:6px;"></div>
+      </div>
+    </div>`;
+
+  let html = '';
+  for (const loc of locations) {
+    const s = stats(loc.ids);
+    html += `<div class="summary-card ${loc.cls}" onclick="switchToTab('${loc.tab}')">
+      <div class="sc-icon">${loc.icon}</div><div class="sc-name">${loc.name}</div>
+      <div class="sc-row"><span>Módulos</span><strong>${s.total}</strong></div>
+      <div class="sc-row"><span style="color:#27ae60">Húmedo</span><strong>${s.humedo}</strong></div>
+      <div class="sc-row"><span style="color:#2980b9">Seco</span><strong>${s.seco}</strong></div>
+      <div class="sc-bar-wrap"><div class="sc-bar" style="width:${s.avg}%;background:${loc.color};"></div></div>
+      <div class="sc-pct">Avance promedio: <strong>${s.avg}%</strong></div>
+    </div>`;
+  }
+  document.getElementById('summary-grid').innerHTML = html;
+}
+
+// ============================================================
+//  BUSCADOR DE MÓDULOS
+// ============================================================
+// Nombre legible a partir del sector almacenado en Supabase
+function sectorDisplayName(sector) {
+  const map = {
+    'galpon':              '📦 Galpón',
+    'galpon-l1':           '📦 Galpón',
+    'galpon-l2':           '📦 Galpón',
+    'galpon-l3':           '📦 Galpón',
+    'costado-bodega':      '🏭 Patio · Costado Galpón',
+    'carpa-grande-sur':    '🏗️ Carpa Grande · Sur',
+    'carpa-grande-norte':  '🏗️ Carpa Grande · Norte',
+    'carpa-chica':         '🏕️ Carpa Chica',
+    'carpa-chica-medio':   '🏕️ Carpa Chica · Centro',
+    'patio-carpa-grande':  '🌳 Patio · Carpa Grande',
+    'patio-carpa-chica':   '🌳 Patio · Carpa Chica',
+  };
+  return map[sector] || sector;
+}
+
+function renderPendientes(txt, n) {
+  if (!n || !txt) return '<span class="pend-none">Sin pendientes</span>';
+  // txt = "ELÉCTRICO: ARTEFACTOS | TERMINACIONES: PILASTREO, LIMPIEZA FINAL"
+  const parts = txt.split('|').map(s => s.trim()).filter(Boolean);
+  return parts.map(p => {
+    const [cat, items] = p.split(':').map(s => s.trim());
+    const label = items ? `<span class="pend-cat">${cat}:</span> ${items}` : `<span class="pend-cat">${cat}</span>`;
+    return `<span class="pend-tag">${label}</span>`;
+  }).join('');
+}
+
+function searchModules(q) {
+  const el = document.getElementById('search-results');
+  if (!q || !q.trim()) { el.innerHTML = ''; return; }
+
+  const norm = q.trim().toLowerCase();
+  const matches = Object.entries(M).filter(([id]) => {
+    const idLow  = id.toLowerCase();
+    const numStr = id.replace(/\D/g, '');  // "00045" de "M-00045"
+    return idLow.includes(norm) || numStr.includes(norm) || numStr.replace(/^0+/,'').includes(norm);
+  }).sort(([a],[b]) => a.localeCompare(b));
+
+  if (!matches.length) {
+    el.innerHTML = `<div class="search-no-results">No se encontraron módulos con "${q}"</div>`;
+    return;
+  }
+
+  let rows = '';
+  for (const [id, d] of matches) {
+    const dias    = daysElapsed(d.fecha);
+    const pct     = d.avance;
+    const pbCls   = pct < 50 ? '#e74c3c' : pct < 85 ? '#f39c12' : '#2ecc71';
+    const chip    = d.status === 'HUMEDO'
+      ? '<span class="search-status-chip chip-humedo">HÚMEDO</span>'
+      : '<span class="search-status-chip chip-seco">SECO</span>';
+    const loc     = MOD_LOC[id] ? sectorDisplayName(MOD_LOC[id]) : '—';
+    const pendHtml = renderPendientes(d.pendientes, d.nPendientes);
+    rows += `<tr>
+      <td class="col-id">${id}</td>
+      <td class="col-loc">${loc}</td>
+      <td class="col-avance">
+        <div class="search-mini-bar">
+          <div class="search-bar-bg"><div class="search-bar-fill" style="width:${pct}%;background:${pbCls};"></div></div>
+          <strong>${pct}%</strong>
+        </div>
+      </td>
+      <td>${chip}</td>
+      <td class="col-dias">${dias === '—' ? '—' : dias + ' días'}</td>
+      <td class="col-pend">${pendHtml}</td>
+    </tr>`;
+  }
+
+  el.innerHTML = `<table class="search-table">
+    <thead>
+      <tr>
+        <th>Módulo</th>
+        <th>Ubicación</th>
+        <th>Avance</th>
+        <th>Tipo</th>
+        <th>Días</th>
+        <th>Partidas pendientes</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div style="font-size:0.75rem;color:#aaa;margin-top:6px;text-align:right;">${matches.length} resultado${matches.length !== 1 ? 's' : ''}</div>`;
+}
+
+// ============================================================
+//  GALPÓN + COSTADO BODEGA
+// ============================================================
+function buildGalpon() {
+  const mods  = getSectionModules('galpon', null);
+  const g     = buildSectionGrid(mods);
+  const ncols = g.length ? g[0].length : 3;
+  // Compute card height proportional to fill-mode card width
+  const avail = window.innerWidth - 64 - 36; // tab-content pad + section-wrap overhead
+  const cw    = Math.max(70, Math.floor((avail - 5*(ncols-1)) / ncols));
+  const h     = Math.max(90, Math.min(200, Math.round(cw * 0.75))) + 'px';
+  let html = '';
+  for (const row of g)
+    for (const cell of row) {
+      const id = (cell && typeof cell === 'object') ? cell.id : cell;
+      const pk = (cell && typeof cell === 'object') ? cell.pk : (id && LOC[id] ? posKey(LOC[id]) : null);
+      const eid = (pk && typeof effectiveModuleAtPk === 'function') ? effectiveModuleAtPk(pk) : id;
+      html += card(eid, eid ? M[eid] : null, null, h, pk);
+    }
+  const el = document.getElementById('galpon-grid');
+  el.innerHTML = html;
+  el.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
+  el.style.width = '100%';
+  const ll = document.getElementById('galpon-linea-label');
+  if (ll) ll.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
+  const ea = document.getElementById('galpon-extras-area');
+  if (ea) ea.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
+  const ap = document.getElementById('add-pos-galpon');
+  if (ap) ap.style.gridTemplateColumns = `repeat(${ncols},1fr)`;
+
+  renderStats('stats-galpon', mods.map(m=>m.id));
+}
+
+// ============================================================
+//  CARPA GRANDE — celdas altas dinámicas desde xlsx
+//
+//  Estructura: 3 columnas.  Col izq (c[0]) y col der (c[2]) = ALTAS
+//  (span 2 filas).  Col central (c[1]) = dos módulos normales por bloque.
+//
+//  Los bloques se definen por los módulos de la columna izquierda;
+//  la columna central se divide entre "primera mitad" y "segunda mitad"
+//  del intervalo de filas xlsx de cada bloque.
+// ============================================================
+function buildCarpaGrandeSector(mods, compact) {
+  if (!mods.length) return '';
+
+  const uCols = [...new Set(mods.map(m => m.col))].sort((a, b) => a - b);
+  const col1  = uCols[0];                                          // tall izquierda
+  const col2  = uCols.length >= 2 ? uCols[1] : null;              // normal centro
+  const col3  = uCols.length >= 3 ? uCols[uCols.length-1] : null; // tall derecha
+
+  const c1Mods = mods.filter(m => m.col === col1).sort((a,b) => a.row - b.row);
+  const c2Mods = col2 ? mods.filter(m => m.col === col2).sort((a,b) => a.row - b.row) : [];
+  const c3Mods = col3 ? mods.filter(m => m.col === col3).sort((a,b) => a.row - b.row) : [];
+
+  const c1Step = c1Mods.length > 1
+    ? Math.round((c1Mods[c1Mods.length-1].row - c1Mods[0].row) / (c1Mods.length - 1))
+    : 10;
+
+  const ncols = col3 ? 3 : (col2 ? 2 : 1);
+
+  // compact = Vista Completa (fixed px sizes); !compact = individual tab (fill)
+  let w, h, colDef, widthAttr;
+  if (compact) {
+    w = px(86); h = px(85); colDef = w; widthAttr = '';
+  } else {
+    // 2 sectors side by side → each gets ~half the available width
+    const avail = window.innerWidth - 64 - 2*36 - 24; // tab-pad + 2×section-wrap + gap
+    const cw    = Math.max(60, Math.floor((Math.floor(avail/2) - 5*(ncols-1)) / ncols));
+    w = cw + 'px'; h = Math.round(cw * 0.85) + 'px';
+    colDef = '1fr'; widthAttr = 'width:100%;';
+  }
+
+  const gap = '5px';
+  let html = `<div style="display:grid;grid-template-columns:repeat(${ncols},${colDef});gap:${gap};${widthAttr}">`;
+
+  c1Mods.forEach((c1m, i) => {
+    const nextRow = i + 1 < c1Mods.length ? c1Mods[i + 1].row : c1m.row + c1Step;
+    const mid     = c1m.row + (nextRow - c1m.row) / 2;
+    const gridRow = i * 2 + 1;
+
+    const c2r1 = c2Mods.find(m => m.row >= c1m.row && m.row <= mid);
+    const c2r2 = c2Mods.find(m => m.row >  mid     && m.row <  nextRow);
+    const c3m  = c3Mods.find(m => m.row >= c1m.row && m.row < nextRow);
+
+    // In fill mode pass null for w so mkCell uses min-width:0 (grid controls width)
+    const cW = compact ? w : null;
+    html += mkCell(c1m.id, 1, gridRow, 2, cW, h, c1m.pk||null);
+    // Solo emitir celdas de las columnas central/derecha si esas columnas existen,
+    // evitando celdas vacías "muertas" (sin posición editable) cuando un sector
+    // tiene una sola columna (p. ej. Sur y Norte igualados).
+    if (col2) {
+      html += mkCell(c2r1?.id||null, 2, gridRow,     1, cW, h, c2r1?.pk||null);
+      html += mkCell(c2r2?.id||null, 2, gridRow + 1, 1, cW, h, c2r2?.pk||null);
+    }
+    if (col3) html += mkCell(c3m?.id||null, 3, gridRow, 2, cW, h, c3m?.pk||null);
+  });
+
+  html += '</div>';
+  return html;
+}
+
+function buildCarpaGrande() {
+  const surMods = getSectionModules('carpa-grande', 'sur');
+  const norMods = getSectionModules('carpa-grande', 'norte');
+  document.getElementById('cg-sur').innerHTML   = buildCarpaGrandeSector(surMods);
+  document.getElementById('cg-norte').innerHTML = buildCarpaGrandeSector(norMods);
+  renderStats('stats-carpa-grande', [...surMods, ...norMods].map(m=>m.id));
+}
+
+// ============================================================
+//  CARPA CHICA
+//  Filas anchas (paso de col ≥ 4) → tarjetas anchas.
+//  Filas angostas (paso 2) → tarjetas angostas con offset calculado.
+// ============================================================
+function buildCarpaChicaInto(targetId, compact) {
+  const mods = getSectionModules('carpa-chica', null);
+  const el   = document.getElementById(targetId);
+  if (!el) return;
+
+  // Estructura fija: fila superior (5) · centro ampliable (medio) · fila inferior (5).
+  // Las columnas se derivan de los datos de Supabase; el centro se inserta SIEMPRE
+  // entre la primera y la segunda fila.
+  const uRows = [...new Set(mods.map(m => m.row))].sort((a, b) => a - b);
+  const allCols = [...new Set(mods.map(m => m.col))].sort((a, b) => a - b);
+  const minCol = allCols.length ? allCols[0] : 0;
+  const maxCol = allCols.length ? allCols[allCols.length - 1] : 0;
+  let step = 4;
+  if (allCols.length > 1) step = Math.min(...allCols.slice(1).map((c, i) => c - allCols[i]));
+  const cols = [];
+  for (let c = minCol; c <= maxCol; c += step) cols.push(c);
+  if (!cols.length) cols.push(minCol);
+
+  const map = {};
+  mods.forEach(m => { map[`${m.row},${m.col}`] = m; });
+
+  // Dimensiones de las tarjetas
+  let wW, hPx;
+  if (compact) {
+    wW  = pxN(200);
+    hPx = pxN(88);
+  } else {
+    const avail = window.innerWidth - 64 - 36;
+    const nWide = Math.max(1, cols.length);
+    wW  = Math.max(80, Math.floor((avail - (nWide - 1) * 5) / nWide));
+    hPx = Math.round(wW * 88 / 200);
+  }
+  // Las tarjetas del centro usan el mismo tamaño que las filas
+  window._ccNarrowW = wW;
+  window._ccNarrowH = hPx;
+
+  const gap = 5;
+  const rowHtml = (r) => {
+    let h = `<div style="display:flex;gap:${gap}px;margin-bottom:${gap}px;">`;
+    for (const c of cols) {
+      const mod    = map[`${r},${c}`] || null;
+      const pk     = mod ? mod.pk : null;
+      const dispId = pk ? effectiveModuleAtPk(pk) : null;
+      h += card(dispId, dispId ? M[dispId] : null, wW + 'px', hPx + 'px', pk);
+    }
+    return h + '</div>';
+  };
+
+  const medioHtml = () => {
+    if (!compact) {
+      // Vista principal: contenedor que renderExtraPositions() llena.
+      // Alineado a la DERECHA (el módulo del centro queda en el lado derecho).
+      return `<div id="carpa-chica-extras-medio" style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:${gap}px;margin-bottom:${gap}px;width:100%;"></div>`;
+    }
+    // Vista Completa: incrustar directamente las posiciones asignadas del centro
+    const _ccExt = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS['carpa-chica-medio'] || []) : [];
+    const _assigned = _ccExt.filter(pos => {
+      const mid = (PENDING_CHANGES[pos.position_key] !== undefined) ? PENDING_CHANGES[pos.position_key] : pos.module_id;
+      return !!mid;
+    });
+    if (!_assigned.length) return '';
+    let h = `<div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:${gap}px;margin-bottom:${gap}px;width:100%;">`;
+    _assigned.forEach(pos => {
+      const mid = (PENDING_CHANGES[pos.position_key] !== undefined) ? PENDING_CHANGES[pos.position_key] : pos.module_id;
+      h += card(mid, M[mid] || { avance: 0, status: 'SECO', fecha: null }, wW + 'px', hPx + 'px');
+    });
+    return h + '</div>';
+  };
+
+  let html = '';
+  if (!uRows.length) {
+    // Sin filas: mostrar solo el centro
+    html = medioHtml();
+  } else {
+    uRows.forEach((r, idx) => {
+      html += rowHtml(r);
+      if (idx === 0) html += medioHtml(); // centro entre fila superior e inferior
+    });
+  }
+  el.innerHTML = html;
+}
+
+function buildCarpaChica() {
+  buildCarpaChicaInto('carpa-chica-grid');
+  renderStats('stats-carpa-chica', getSectionModules('carpa-chica', null).map(m=>m.id));
+}
+
+// ============================================================
+//  PATIO DE ACOPIO
+// ============================================================
+function buildPatio() {
+  const cbMods = getSectionModules('costado-bodega', null);
+  const cbEl   = document.getElementById('costado-bodega-grid');
+  if (cbEl) cbEl.innerHTML = renderGrid(buildSectionGrid(cbMods)); // null w → 1fr fill
+
+  const cgMods = getSectionModules('patio','carpa-grande');
+  const ccMods = getSectionModules('patio','carpa-chica');
+  const cgEl   = document.getElementById('patio-cg');
+  const ccEl   = document.getElementById('patio-cc');
+  if (cgEl) cgEl.innerHTML = renderGrid(buildSectionGrid(cgMods)); // null w → 1fr fill
+  if (ccEl) ccEl.innerHTML = renderGrid(buildSectionGrid(ccMods)); // null w → 1fr fill
+  renderStats('stats-patio', [...cbMods, ...cgMods, ...ccMods].map(m=>m.id));
+  // Renderizar posiciones extra guardadas (siempre, no solo en edición)
+  if (typeof renderExtraPositions === 'function') {
+    renderExtraPositions('costado-bodega');
+    renderExtraPositions('patio-carpa-grande');
+    renderExtraPositions('patio-carpa-chica');
+  }
+}
+
+// ============================================================
+//  VISTA COMPLETA — todas las ubicaciones juntas
+// ============================================================
+function buildVistaPlanta() {
+  // ── Galpón ──
+  const galponMods  = getSectionModules('galpon', null);
+  const galponGrid  = buildSectionGrid(galponMods);
+  const galponNcols = galponGrid.length ? galponGrid[0].length : 3;
+  let galponHtml = '';
+  for (const row of galponGrid)
+    for (const cell of row) {
+      const origId = (cell && typeof cell === 'object') ? cell.id : cell;
+      const pk     = (cell && typeof cell === 'object') ? cell.pk : null;
+      const dispId = pk ? effectiveModuleAtPk(pk) : origId;
+      galponHtml += card(dispId, dispId ? M[dispId] : null, px(86), px(85));
+    }
+  const vpGalpon = document.getElementById('vp-galpon-grid');
+  if (vpGalpon) {
+    vpGalpon.innerHTML = galponHtml;
+    vpGalpon.style.gridTemplateColumns = `repeat(${galponNcols},${px(86)})`;
+  }
+  const vpLL = document.getElementById('vp-linea-label');
+  if (vpLL) vpLL.style.gridTemplateColumns = `repeat(${galponNcols},${px(86)})`;
+
+  // ── Carpa Grande ──
+  const surMods = getSectionModules('carpa-grande', 'sur');
+  const norMods = getSectionModules('carpa-grande', 'norte');
+  const vpSur   = document.getElementById('vp-cg-sur');
+  const vpNorte = document.getElementById('vp-cg-norte');
+  if (vpSur)   vpSur.innerHTML   = buildCarpaGrandeSector(surMods, true);  // compact
+  if (vpNorte) vpNorte.innerHTML = buildCarpaGrandeSector(norMods, true);  // compact
+
+  // ── Carpa Chica ──
+  buildCarpaChicaInto('vp-carpa-chica-grid', true); // compact
+
+  // ── Patio de Acopio ──
+  const cbMods  = getSectionModules('costado-bodega', null);
+  const pgcMods = getSectionModules('patio', 'carpa-grande');
+  const pccMods = getSectionModules('patio', 'carpa-chica');
+  const vpCB    = document.getElementById('vp-costado-bodega');
+  const vpPGC   = document.getElementById('vp-patio-cg');
+  const vpPCC   = document.getElementById('vp-patio-cc');
+  if (vpCB)  vpCB.innerHTML  = renderGrid(buildSectionGrid(cbMods),  px(86),  px(85));
+  if (vpPGC) vpPGC.innerHTML = renderGrid(buildSectionGrid(pgcMods), px(112), px(90));
+  if (vpPCC) vpPCC.innerHTML = renderGrid(buildSectionGrid(pccMods), px(112), px(90));
+  // También mostrar posiciones extra asignadas del patio en Vista Completa
+  [
+    { el: vpCB,  sector: 'costado-bodega',     w: px(86),  h: px(85)  },
+    { el: vpPGC, sector: 'patio-carpa-grande', w: px(112), h: px(90)  },
+    { el: vpPCC, sector: 'patio-carpa-chica',  w: px(112), h: px(90)  },
+  ].forEach(({ el, sector, w, h }) => {
+    if (!el) return;
+    const extras = (typeof EXTRA_POSITIONS !== 'undefined') ? (EXTRA_POSITIONS[sector] || []) : [];
+    // Usar pos.module_id directamente (fuente más confiable); PENDING_CHANGES tiene prioridad
+    const assigned = extras.filter(pos => {
+      const mid = (PENDING_CHANGES[pos.position_key] !== undefined)
+        ? PENDING_CHANGES[pos.position_key]
+        : pos.module_id;
+      return !!mid;
+    });
+    if (!assigned.length) return;
+    const extraRow = document.createElement('div');
+    extraRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;';
+    assigned.forEach(pos => {
+      const mid = (PENDING_CHANGES[pos.position_key] !== undefined)
+        ? PENDING_CHANGES[pos.position_key]
+        : pos.module_id;
+      const data = M[mid] || { avance: 0, status: 'SECO', fecha: null };
+      extraRow.innerHTML += card(mid, data, w, h);
+    });
+    el.appendChild(extraRow);
+  });
+
+  // ── Stats globales ──
+  const allIds = [
+    ...galponMods, ...surMods, ...norMods,
+    ...getSectionModules('carpa-chica', null),
+    ...cbMods, ...pgcMods, ...pccMods,
+  ].map(m => m.id);
+  renderStats('stats-planta', allIds);
+}
+
+// ============================================================
+//  TABS
+// ============================================================
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => { el.classList.remove('active'); el.style.display = ''; });
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  // Reconstruir Vista Completa cada vez que se activa para reflejar cambios guardados
+  if (tab === 'planta') buildVistaPlanta();
+}
+function switchToTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => { el.classList.remove('active'); el.style.display = ''; });
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  const btn = document.querySelector(`.tab-btn[onclick*="${tab}"]`);
+  if (btn) btn.classList.add('active');
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+async function init() {
+  updateScale();
+  await loadAvanceData();
+  await loadDBOverrides();
+  buildResumen();
+  buildGalpon();
+  buildCarpaGrande();
+  buildCarpaChica();
+  buildPatio();
+  buildVistaPlanta();
+}
+
+let _rt;
+window.addEventListener('resize', () => { clearTimeout(_rt); _rt = setTimeout(rebuild, 150); });
+
+// ============================================================
+//  SUPABASE — cliente liviano sin SDK
+// ============================================================
+const SB_URL    = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+const SB_ANON   = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const SB_HEADERS = { 'apikey': SB_ANON, 'Authorization': 'Bearer ' + SB_ANON, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+async function sbSelect(table, params = '') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, { headers: { ...SB_HEADERS, Prefer: 'return=representation' } });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sbUpsert(table, rows, onConflict = 'position_key') {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=${onConflict}`, {
+    method: 'POST',
+    headers: { ...SB_HEADERS, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(rows)
+  });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+async function sbDelete(table, match) {
+  const params = Object.entries(match).map(([k,v]) => `${k}=eq.${encodeURIComponent(v)}`).join('&');
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, { method: 'DELETE', headers: SB_HEADERS });
+  if (!r.ok) throw new Error(await r.text());
+}
+
+// ============================================================
+//  ESTADO DE EDICIÓN
+// ============================================================
+// DB overrides cargados al inicio: { position_key -> row }
+let DB_OVERRIDES = {};
+// Cambios pendientes en la sesión actual: { position_key -> module_id|null }
+let PENDING_CHANGES = {};
+// Posiciones extra agregadas (is_extra=true): [ { position_key, sector, module_id } ]
+let EXTRA_POSITIONS = {};  // sector -> [{position_key, module_id}]
+// Mapa module_id -> sector (Supabase) para mostrar ubicación en el buscador
+let MOD_LOC = {};
+
+// Pestaña actualmente en modo edición (null = ninguna)
+let EDIT_TAB = null;
+
+// Mapa sector → ids de módulos ya usados (para el dropdown)
+function getAssignedModules() {
+  const assigned = new Set();
+  // 1) Módulos en LOC (ubicaciones.xlsx), respetando overrides de Supabase/pendientes
+  for (const [modId, d] of Object.entries(LOC)) {
+    const override = PENDING_CHANGES[posKey(d)] !== undefined ? PENDING_CHANGES[posKey(d)] : DB_OVERRIDES[posKey(d)]?.module_id;
+    const id = override !== undefined ? override : modId;
+    if (id) assigned.add(id);
+  }
+  // 2) Módulos en Supabase que no están en LOC
+  for (const row of Object.values(DB_OVERRIDES)) {
+    if (row.module_id) assigned.add(row.module_id);
+  }
+  // 3) Cambios pendientes (pueden reemplazar a null)
+  for (const [, modId] of Object.entries(PENDING_CHANGES)) {
+    if (modId) assigned.add(modId);
+  }
+  return assigned;
+}
+
+function posKey(d) { return `r${d.xls_row}_c${d.xls_col}`; }
+function sectorForLoc(loc, sector) {
+  if (loc === 'galpon')         return 'galpon';
+  if (loc === 'costado-bodega') return 'costado-bodega';
+  if (loc === 'carpa-grande')   return `carpa-grande-${sector}`;
+  if (loc === 'carpa-chica')    return 'carpa-chica';
+  if (loc === 'patio')          return `patio-${sector}`;
+  return loc;
+}
+
+// ============================================================
+//  CARGAR OVERRIDES DESDE SUPABASE
+// ============================================================
+async function loadDBOverrides() {
+  try {
+    const rows = await sbSelect('layout_positions', 'select=position_key,module_id,sector,xls_row,xls_col,is_extra');
+    DB_OVERRIDES = {};
+    EXTRA_POSITIONS = {};
+    MOD_LOC = {};
+    for (const row of rows) {
+      DB_OVERRIDES[row.position_key] = row;
+      if (row.module_id) MOD_LOC[row.module_id] = row.sector; // ubicación para el buscador
+      if (row.is_extra) {
+        if (!EXTRA_POSITIONS[row.sector]) EXTRA_POSITIONS[row.sector] = [];
+        EXTRA_POSITIONS[row.sector].push(row);
+      }
+    }
+    // Aplicar overrides al mapa M: reasignar module_id donde hay override
+    applyOverridesToM();
+  } catch(e) { console.warn('Supabase loadDBOverrides:', e.message); }
+}
+
+function applyOverridesToM() {
+  // Reconstruir M a partir de LOC + overrides
+  for (const [origId, d] of Object.entries(LOC)) {
+    const pk = posKey(d);
+    const override = DB_OVERRIDES[pk];
+    if (override !== undefined) {
+      // Si la posición fue reasignada a otro módulo, mover los datos
+      const newId = override.module_id;
+      if (newId && newId !== origId && M[origId]) {
+        // Crear entrada en M con la nueva clave si no existe
+        if (!M[newId]) M[newId] = { avance: 0, status: 'SECO', fecha: null };
+        // La posición ahora apunta al nuevo módulo
+        M[origId + '__overridden__'] = { ...M[origId], _overriddenTo: newId };
+      }
+    }
+  }
+}
+
+// ============================================================
+//  MODO EDICIÓN — toggle
+// ============================================================
+const EDIT_TABS = ['galpon', 'carpa-grande', 'carpa-chica', 'patio'];
+
+function showEditButtons() {
+  if (!AUTH.canEditLayout()) return;
+  EDIT_TABS.forEach(t => {
+    const btn = document.getElementById('edit-btn-' + t);
+    if (btn) btn.classList.remove('hidden');
+  });
+}
+
+function toggleEditMode(tab) {
+  if (EDIT_TAB === tab) {
+    // Salir de modo edición
+    EDIT_TAB = null;
+    document.body.classList.remove('edit-mode');
+    // Restaurar botón
+    const btn = document.getElementById('edit-btn-' + tab);
+    if (btn) { btn.textContent = '✏️ Editar layout'; btn.classList.remove('on'); btn.classList.add('off'); }
+    // Ocultar toolbar
+    const tb = document.getElementById('edit-toolbar-' + tab);
+    if (tb) tb.classList.add('hidden');
+    // Ocultar botones de agregar posición
+    hideAddPosButtons(tab);
+    // Limpiar UI de posiciones extra
+    clearExtraPositionsUI(tab);
+    // Limpiar cambios pendientes sin guardar
+    PENDING_CHANGES = {};
+    // Re-renderizar la pestaña sin modo edición
+    rebuildTab(tab);
+  } else {
+    // Entrar en modo edición
+    if (EDIT_TAB) toggleEditMode(EDIT_TAB); // salir del anterior primero
+    EDIT_TAB = tab;
+    document.body.classList.add('edit-mode');
+    const btn = document.getElementById('edit-btn-' + tab);
+    if (btn) { btn.textContent = '✖ Salir edición'; btn.classList.remove('off'); btn.classList.add('on'); }
+    const tb = document.getElementById('edit-toolbar-' + tab);
+    if (tb) tb.classList.remove('hidden');
+    showAddPosButtons(tab);
+    rebuildTab(tab);
+  }
+}
+
+const ADD_POS_IDS = {
+  patio:        ['add-pos-costado-bodega', 'add-pos-patio-cg', 'add-pos-patio-cc'],
+  galpon:       ['add-pos-galpon'],
+  'carpa-chica': ['add-pos-carpa-chica'],
+};
+function showAddPosButtons(tab) {
+  (ADD_POS_IDS[tab] || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('hidden');
+  });
+}
+function hideAddPosButtons(tab) {
+  (ADD_POS_IDS[tab] || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+}
+
+function rebuildTab(tab) {
+  if (tab === 'galpon')       buildGalpon();
+  if (tab === 'carpa-grande') buildCarpaGrande();
+  if (tab === 'carpa-chica')  buildCarpaChica();
+  if (tab === 'patio')        buildPatio();
+}
+
+// ============================================================
+//  DROPDOWN DE MÓDULO POR CELDA
+// ============================================================
+function allModuleIds() {
+  const ids = new Set([
+    ...Object.keys(M).filter(id => !id.includes('__overridden__')),
+    ...ALL_LOC_IDS,
+  ]);
+  // También incluir módulos asignados en DB_OVERRIDES
+  if (typeof DB_OVERRIDES !== 'undefined') {
+    Object.values(DB_OVERRIDES).forEach(row => { if (row.module_id) ids.add(row.module_id); });
+  }
+  // Excluir módulos despachados: no deben ofrecerse para asignar en el desplegable
+  for (const id of DESPACHADOS) ids.delete(id);
+  return [...ids].sort((a, b) => {
+    const na = parseInt(a.replace(/\D/g,''), 10);
+    const nb = parseInt(b.replace(/\D/g,''), 10);
+    return na - nb;
+  });
+}
+
+function effectiveModuleAt(origId, d) {
+  const pk = posKey(d);
+  if (PENDING_CHANGES[pk] !== undefined) return PENDING_CHANGES[pk];
+  if (DB_OVERRIDES[pk])                  return DB_OVERRIDES[pk].module_id;
+  return origId;
+}
+
+// Devuelve el módulo actual en la posición pk (para patchEditableCards)
+function effectiveModuleAtPk(pk) {
+  if (PENDING_CHANGES[pk] !== undefined) return PENDING_CHANGES[pk];
+  if (DB_OVERRIDES[pk])                  return DB_OVERRIDES[pk].module_id;
+  // Fallback: módulos que vienen solo del xlsx (no guardados aún en Supabase)
+  const locEntry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+  return locEntry ? locEntry[0] : null;
+}
+
+// Devuelve el sector para una posición pk
+function sectorForPk(pk) {
+  const row = DB_OVERRIDES[pk];
+  if (row) return row.sector;
+  // Fallback: buscar en LOC (posiciones que vienen de ubicaciones.xlsx)
+  const locEntry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+  if (locEntry) return sectorForLoc(locEntry[1].loc, locEntry[1].sector);
+  return null;
+}
+
+// ============================================================
+//  EDICIÓN EN TOUCH: bottom-sheet modal (position:fixed,
+//  no se corta por overflow de la sección con scroll horizontal)
+// ============================================================
+function showMobileCellEdit(cardEl, positionKey, currentModuleId, sector) {
+  // Toggle: si ya está abierto para la misma posición, cerrar
+  const existing = document.getElementById('mobile-cell-edit-modal');
+  if (existing && existing.dataset.pk === positionKey) {
+    const bd = document.getElementById('mobile-edit-backdrop');
+    if (bd) bd.remove();
+    existing.remove();
+    return;
+  }
+  // Cerrar cualquier modal previo
+  ['mobile-edit-backdrop', 'mobile-cell-edit-modal'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.remove();
+  });
+
+  const allIds = allModuleIds();
+  const opts = allIds.map(id => {
+    const num = parseInt(id.replace(/\D/g,''), 10) || id;
+    return `<option value="${id}"${id === currentModuleId ? ' selected' : ''}>${num}</option>`;
+  }).join('');
+  const emptyOpt = `<option value=""${!currentModuleId ? ' selected' : ''}>(vacío)</option>`;
+  const curNum = currentModuleId ? parseInt(currentModuleId.replace(/\D/g,''), 10) || currentModuleId : null;
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'mobile-edit-backdrop';
+  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;';
+
+  const modal = document.createElement('div');
+  modal.id = 'mobile-cell-edit-modal';
+  modal.dataset.pk = positionKey;
+  modal.style.cssText = [
+    'position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:9999;',
+    'padding:18px 18px calc(18px + env(safe-area-inset-bottom, 0px));',
+    'border-radius:18px 18px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,0.22);',
+  ].join('');
+  modal.innerHTML = `
+    <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px;"></div>
+    <div style="font-size:0.95rem;font-weight:700;color:#1a2c4e;margin-bottom:12px;">
+      ${currentModuleId ? '🔄 Cambiar módulo' : '➕ Asignar módulo'}
+      ${curNum ? `<span style="color:#cc0000;margin-left:8px;">#${curNum}</span>` : ''}
+    </div>
+    <select style="width:100%;padding:12px 10px;font-size:1rem;border:2px solid #ddd;border-radius:10px;margin-bottom:14px;">
+      ${emptyOpt}${opts}
+    </select>
+    <div style="display:flex;gap:10px;">
+      <button id="mob-edit-ok"
+        style="flex:1;padding:14px;background:#27ae60;color:white;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;touch-action:manipulation;">
+        ✔ Asignar
+      </button>
+      <button id="mob-edit-cancel"
+        style="flex:1;padding:14px;background:#eee;color:#333;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;touch-action:manipulation;">
+        ✖ Cancelar
+      </button>
+    </div>`;
+
+  document.body.appendChild(backdrop);
+  document.body.appendChild(modal);
+
+  const close = () => {
+    backdrop.remove();
+    document.getElementById('mobile-cell-edit-modal')?.remove();
+  };
+  backdrop.addEventListener('click', close);
+  modal.querySelector('#mob-edit-cancel').addEventListener('click', close);
+  modal.querySelector('#mob-edit-ok').addEventListener('click', () => {
+    const val = modal.querySelector('select').value || null;
+    PENDING_CHANGES[positionKey] = val;
+    setEditStatus(EDIT_TAB, '● Cambios sin guardar', 'saving');
+    close();
+
+    const isExtra = positionKey.startsWith('extra_');
+    if (isExtra) {
+      // Extra position → sincronizar module_id en EXTRA_POSITIONS y re-renderizar
+      const sec = positionKey.replace(/^extra_/, '').replace(/_\d+_\d+$/, '');
+      const posEntry = (EXTRA_POSITIONS[sec] || []).find(p => p.position_key === positionKey);
+      if (posEntry) posEntry.module_id = val;
+      renderExtraPositions(sec);
+    } else {
+      // Posición regular → reemplazar el card en el DOM
+      let _w = null, _h = null;
+      if (sector && sector.startsWith('galpon-')) {
+        _w = '100%';
+        _h = `${Math.max(90, Math.min(180, Math.round(pxN(100))))}px`;
+      } else if (sector === 'carpa-chica-medio') {
+        _w = window._ccNarrowW ? window._ccNarrowW + 'px' : null;
+        _h = window._ccNarrowH ? window._ccNarrowH + 'px' : null;
+      }
+      const newCardHtml = card(val, val ? M[val] : null, _w, _h, positionKey);
+      const tmp = document.createElement('div');
+      tmp.innerHTML = newCardHtml;
+      const newCard = tmp.firstElementChild;
+      newCard.style.cursor = 'pointer';
+      newCard.title = (val ? 'Módulo ' + (parseInt(val.replace(/\D/g,''), 10) || val) : 'Vacío') + ' · Tap para cambiar';
+      newCard.onclick = ev => { ev.stopPropagation(); injectCellEdit(newCard, positionKey, val, sector); };
+      cardEl.replaceWith(newCard);
+    }
+  });
+}
+
+// Inyectar overlay de edición dentro de una module-card
+function injectCellEdit(cardEl, positionKey, currentModuleId, sector) {
+  if (!EDIT_TAB) return;
+
+  // En dispositivos touch → bottom-sheet modal (no se corta con overflow-x:auto)
+  if (navigator.maxTouchPoints > 0) {
+    showMobileCellEdit(cardEl, positionKey, currentModuleId, sector);
+    return;
+  }
+
+  // Cerrar cualquier overlay abierto en otro card
+  document.querySelectorAll('.cell-edit-overlay').forEach(el => {
+    if (!cardEl.contains(el)) el.remove();
+  });
+
+  // Toggle: si ya tiene overlay, cerrarlo
+  const existing = cardEl.querySelector('.cell-edit-overlay');
+  if (existing) { existing.remove(); return; }
+
+  const allIds = allModuleIds();
+  const opts   = allIds.map(id => {
+    const num = parseInt(id.replace(/\D/g,''), 10) || id;
+    const sel = id === currentModuleId ? ' selected' : '';
+    return `<option value="${id}"${sel}>${num}</option>`;
+  });
+  const emptyOpt = `<option value=""${!currentModuleId ? ' selected' : ''}>(vacío)</option>`;
+
+  const ov = document.createElement('div');
+  ov.className = 'cell-edit-overlay';
+  ov.innerHTML = `
+    <select>${emptyOpt}${opts.join('')}</select>
+    <div class="cell-btns">
+      <button class="cell-btn-ok">✔</button>
+      <button class="cell-btn-cancel">✖</button>
+    </div>`;
+
+  // *** CRÍTICO: detener propagación para que el click en el overlay
+  // no suba al card y cierre el overlay inmediatamente ***
+  ov.addEventListener('mousedown', e => e.stopPropagation());
+  ov.addEventListener('click',     e => e.stopPropagation());
+
+  ov.querySelector('.cell-btn-cancel').onclick = e => { e.stopPropagation(); ov.remove(); };
+  ov.querySelector('.cell-btn-ok').onclick = e => {
+    e.stopPropagation();
+    const val = ov.querySelector('select').value || null;
+    PENDING_CHANGES[positionKey] = val;
+
+    // Determinar dimensiones según sector (extra positions tienen dimensiones fijas)
+    let _newW = null, _newH = null;
+    if (sector && sector.startsWith('galpon-')) {
+      _newW = '100%';
+      _newH = `${Math.max(90, Math.min(180, Math.round(pxN(100))))}px`;
+    } else if (sector === 'carpa-chica-medio') {
+      _newW = window._ccNarrowW ? window._ccNarrowW + 'px' : null;
+      _newH = window._ccNarrowH ? window._ccNarrowH + 'px' : null;
+    }
+
+    // Re-renderizar el card completo con todos los datos de avance
+    const newCardHtml = card(val, val ? M[val] : null, _newW, _newH, positionKey);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = newCardHtml;
+    const newCard = tmp.firstElementChild;
+
+    // Re-attachar el handler de edición en el nuevo card
+    newCard.style.cursor = 'pointer';
+    newCard.title = (val
+      ? 'Módulo ' + (parseInt(val.replace(/\D/g,''), 10) || val)
+      : 'Vacío') + ' · Click para cambiar';
+    newCard.onclick = (ev) => {
+      ev.stopPropagation();
+      injectCellEdit(newCard, positionKey, val, sector);
+    };
+    cardEl.replaceWith(newCard);
+    setEditStatus(EDIT_TAB, '● Cambios sin guardar', 'saving');
+  };
+
+  cardEl.style.position = 'relative';
+  cardEl.appendChild(ov);
+  ov.querySelector('select').focus();
+}
+
+function setEditStatus(tab, msg, cls) {
+  const el = document.getElementById('edit-status-' + tab);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'edit-status ' + (cls || '');
+}
+
+// ============================================================
+//  CARD CON EDICIÓN
+// ============================================================
+// Wrapper que agrega onclick en modo edición
+function editableCard(origId, d, w, h) {
+  // Siempre mostrar el módulo efectivo (respeta DB_OVERRIDES y PENDING_CHANGES)
+  const effectiveId = d ? effectiveModuleAt(origId, d) : origId;
+  if (EDIT_TAB === null) return card(effectiveId, effectiveId ? M[effectiveId] : null, w, h);
+  const pk    = d ? posKey(d) : null;
+  const sec   = d ? sectorForLoc(d.loc, d.sector) : null;
+  const html  = card(effectiveId, effectiveId ? M[effectiveId] : null, w, h);
+  // Envolver en div temporal, agregar handler
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  const cardEl = wrap.firstElementChild;
+  if (pk) {
+    cardEl.onclick = () => injectCellEdit(cardEl, pk, effectiveId, sec);
+    cardEl.title   = (effectiveId || 'Vacío') + ' · Click para cambiar';
+  }
+  return cardEl.outerHTML;
+}
+
+// ============================================================
+//  POSICIONES EXTRA (PATIO DE ACOPIO)
+// ============================================================
+let _extraCounter = {};
+
+function addExtraPosition(sector) {
+  if (!EXTRA_POSITIONS[sector]) EXTRA_POSITIONS[sector] = [];
+  if (!_extraCounter[sector]) _extraCounter[sector] = 0;
+  _extraCounter[sector]++;
+  const pk = `extra_${sector}_${Date.now()}_${_extraCounter[sector]}`;
+  const newPos = { position_key: pk, sector, module_id: null, is_extra: true };
+  EXTRA_POSITIONS[sector].push(newPos);
+  // Marcar como pendiente
+  PENDING_CHANGES[pk] = null;
+  // Notificar al tab correspondiente
+  const _sTabMap = { 'galpon-l1':'galpon','galpon-l2':'galpon','galpon-l3':'galpon','carpa-chica-medio':'carpa-chica' };
+  setEditStatus(_sTabMap[sector] || 'patio', '● Cambios sin guardar', 'saving');
+  // Re-renderizar sólo el sector correspondiente
+  renderExtraPositions(sector);
+}
+
+function renderExtraPositions(sector) {
+  // Renderiza las posiciones extra (guardadas o pendientes) para el sector dado.
+  // En modo normal: muestra solo las asignadas (card completo con datos).
+  // En modo edición (patio): muestra asignadas + slots vacíos con selector.
+
+  const containerMap = {
+    'costado-bodega':     'costado-bodega-grid',
+    'patio-carpa-grande': 'patio-cg',
+    'patio-carpa-chica':  'patio-cc',
+    'galpon-l1':          'galpon-extras-l1',
+    'galpon-l2':          'galpon-extras-l2',
+    'galpon-l3':          'galpon-extras-l3',
+    'carpa-chica-medio':  'carpa-chica-extras-medio',
+  };
+  const containerId = containerMap[sector];
+  if (!containerId) return;
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  const extras   = EXTRA_POSITIONS[sector] || [];
+  // Determinar qué tab corresponde al sector para verificar si está en modo edición
+  const sectorTabMap = {
+    'costado-bodega': 'patio', 'patio-carpa-grande': 'patio', 'patio-carpa-chica': 'patio',
+    'galpon-l1': 'galpon', 'galpon-l2': 'galpon', 'galpon-l3': 'galpon',
+    'carpa-chica-medio': 'carpa-chica',
+  };
+  const isEditing = EDIT_TAB === (sectorTabMap[sector] || sector);
+
+  // Si no hay extras y no estamos editando, eliminar row si existe y salir
+  if (!extras.length && !isEditing) {
+    const old = el.querySelector('.extra-positions-row');
+    if (old) old.remove();
+    return;
+  }
+
+  // Determinar dimensiones de card según tipo de sector
+  const isGalpon        = sector.startsWith('galpon-');
+  const isCarpaChicaMed = sector === 'carpa-chica-medio';
+  const galponH  = isGalpon ? `${Math.max(90, Math.min(180, Math.round(pxN(100))))}px` : null;
+  const ccCardW  = isCarpaChicaMed && window._ccNarrowW ? window._ccNarrowW + 'px' : null;
+  const ccCardH  = isCarpaChicaMed && window._ccNarrowH ? window._ccNarrowH + 'px' : null;
+  const cardW    = isGalpon ? '100%' : (isCarpaChicaMed ? ccCardW : null);
+  const cardH    = isGalpon ? galponH : (isCarpaChicaMed ? ccCardH : null);
+
+  let extraEl = el.querySelector('.extra-positions-row');
+  if (!extraEl) {
+    extraEl = document.createElement('div');
+    extraEl.className = 'extra-positions-row';
+    // Galpón: columna vertical; Carpa Chica / Patio: fila horizontal
+    extraEl.style.cssText = isGalpon
+      ? 'display:flex;flex-direction:column;gap:5px;width:100%;'
+      : 'display:flex;gap:5px;flex-wrap:wrap;';
+    el.appendChild(extraEl);
+  }
+
+  const allIds = isEditing ? allModuleIds() : [];
+  const opts   = allIds.map(id => {
+    const num = parseInt(id.replace(/\D/g,''), 10) || id;
+    return `<option value="${id}">${num}</option>`;
+  });
+
+  let html = '';
+  for (const pos of extras) {
+    const pk  = pos.position_key;
+    const cur = effectiveModuleAtPk(pk); // lee PENDING_CHANGES → DB_OVERRIDES → null
+
+    if (cur && M[cur]) {
+      // Posición asignada: renderizar card completo con datos de avance
+      html += card(cur, M[cur], cardW, cardH, pk);
+    } else if (isEditing) {
+      // Posición vacía: solo en edición mostrar selector de asignación
+      let emptyStyle;
+      if (isGalpon) {
+        // Mismo height y width que el grid principal; usar height fijo para igualar tamaño
+        emptyStyle = `width:100%;height:${galponH};min-height:${galponH};padding:6px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;`;
+      } else if (isCarpaChicaMed && ccCardW && ccCardH) {
+        emptyStyle = `width:${ccCardW};height:${ccCardH};min-height:${ccCardH};padding:6px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;`;
+      } else {
+        emptyStyle = 'min-width:110px;min-height:90px;padding:6px;';
+      }
+      html += `<div class="module-card empty" style="${emptyStyle}" data-pk="${pk}">
+        <div style="font-size:0.72em;color:#aaa;text-align:center;">Nueva posición</div>
+        <select data-extra-sel="${pk}" style="font-size:0.78rem;width:100%;padding:2px;border:1px solid #ccc;border-radius:4px;">
+          <option value="">(vacío)</option>${opts.join('')}
+        </select>
+        <button class="cell-btn-ok" style="font-size:0.72rem;padding:2px 6px;border-radius:4px;border:none;background:#27ae60;color:white;cursor:pointer;width:100%;" data-extra-btn="${pk}">✔ Asignar</button>
+      </div>`;
+    }
+  }
+  extraEl.innerHTML = html;
+
+  // Si no hay contenido visible, quitar el contenedor del DOM
+  if (!html) { extraEl.remove(); return; }
+
+  if (!isEditing) return; // En modo normal no se necesitan handlers
+
+  // Handler ✔ Asignar en slots vacíos
+  extraEl.querySelectorAll('[data-extra-btn]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pk2 = btn.dataset.extraBtn;
+      const sel = extraEl.querySelector(`[data-extra-sel="${pk2}"]`);
+      const val = sel ? sel.value || null : null;
+      PENDING_CHANGES[pk2] = val;
+      const pos = (EXTRA_POSITIONS[sector] || []).find(p => p.position_key === pk2);
+      if (pos) pos.module_id = val;
+      setEditStatus(EDIT_TAB || 'patio', '● Cambios sin guardar', 'saving');
+      renderExtraPositions(sector);
+    });
+  });
+
+  // Click en cards asignadas → abrir injectCellEdit para reasignar
+  extraEl.querySelectorAll('.module-card[data-pk]').forEach(cardEl => {
+    const pk2 = cardEl.dataset.pk;
+    if (!(EXTRA_POSITIONS[sector] || []).find(p => p.position_key === pk2)) return;
+    cardEl.style.cursor = 'pointer';
+    cardEl.title = (cardEl.title || '') + ' · Click para cambiar';
+    cardEl.onclick = (e) => {
+      e.stopPropagation();
+      injectCellEdit(cardEl, pk2, effectiveModuleAtPk(pk2), sector);
+    };
+  });
+}
+
+// Limpiar UI de posiciones extra al salir de modo edición
+const EXTRA_UI_IDS = {
+  patio:        ['costado-bodega-grid','patio-cg','patio-cc'],
+  galpon:       ['galpon-extras-l3','galpon-extras-l2','galpon-extras-l1'],
+  'carpa-chica': ['carpa-chica-extras-medio'],
+};
+function clearExtraPositionsUI(tab) {
+  (EXTRA_UI_IDS[tab] || []).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { const row = el.querySelector('.extra-positions-row'); if (row) row.remove(); }
+  });
+}
+
+// ============================================================
+//  GUARDAR CAMBIOS EN SUPABASE
+// ============================================================
+async function saveLayoutChanges(tab) {
+  const saveBtn = document.getElementById('btn-save-' + tab);
+  if (saveBtn) saveBtn.disabled = true;
+  setEditStatus(tab, 'Guardando…', 'saving');
+
+  const session = AUTH.getSession();
+  const updatedBy = session ? session.username : 'desconocido';
+
+  try {
+    const upsertRows = [];
+
+    // Procesar cambios en posiciones del xlsx
+    for (const [pk, newModuleId] of Object.entries(PENDING_CHANGES)) {
+      // Posiciones extra — pk = "extra_{sector}_{timestamp}_{counter}"
+      if (pk.startsWith('extra_')) {
+        // Extraer sector: quitar prefijo "extra_" y sufijo "_{timestamp}_{counter}"
+        const sector = pk.replace(/^extra_/, '').replace(/_\d+_\d+$/, '');
+        upsertRows.push({
+          position_key: pk,
+          sector,
+          xls_row:      null,
+          xls_col:      null,
+          module_id:    newModuleId,
+          is_extra:     true,
+          updated_by:   updatedBy,
+          updated_at:   new Date().toISOString()
+        });
+        continue;
+      }
+
+      // Posiciones normales — buscar primero en DB_OVERRIDES, luego en LOC
+      let sector, xls_row, xls_col;
+      const dbRow = DB_OVERRIDES[pk];
+      if (dbRow) {
+        sector  = dbRow.sector;
+        xls_row = dbRow.xls_row;
+        xls_col = dbRow.xls_col;
+      } else {
+        const locEntry = Object.entries(LOC).find(([, d]) => posKey(d) === pk);
+        if (locEntry) {
+          const [, d] = locEntry;
+          sector  = sectorForLoc(d.loc, d.sector);
+          xls_row = d.xls_row;
+          xls_col = d.xls_col;
+        } else {
+          // Celda vacía del grid: pk = 'r{row}_c{col}' sin entrada propia en LOC.
+          // Extraer coordenadas del pk y deducir sector con assignLoc.
+          const pkMatch = pk.match(/^r(\d+)_c(\d+)$/);
+          if (!pkMatch) { console.warn('saveLayoutChanges: pk inválido', pk); continue; }
+          xls_row = parseInt(pkMatch[1], 10);
+          xls_col = parseInt(pkMatch[2], 10);
+          const locInfo = assignLoc(xls_row, xls_col);
+          sector  = sectorForLoc(locInfo.loc, locInfo.sector);
+        }
+      }
+
+      upsertRows.push({
+        position_key: pk,
+        sector,
+        xls_row,
+        xls_col,
+        module_id:    newModuleId,
+        is_extra:     false,
+        updated_by:   updatedBy,
+        updated_at:   new Date().toISOString()
+      });
+    }
+
+    if (upsertRows.length > 0) await sbUpsert('layout_positions', upsertRows);
+
+    // Actualizar cache local
+    for (const row of upsertRows) DB_OVERRIDES[row.position_key] = row;
+    PENDING_CHANGES = {};
+    setEditStatus(tab, '✔ Guardado correctamente', 'saved');
+    setTimeout(() => setEditStatus(tab, '', ''), 3000);
+  } catch(e) {
+    console.error('saveLayoutChanges:', e);
+    setEditStatus(tab, '✖ Error: ' + e.message, 'error');
+    // En móvil el status puede estar fuera de pantalla — mostrar alert también
+    if (navigator.maxTouchPoints > 0) alert('Error al guardar: ' + e.message);
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
+// ============================================================
+//  SOBREESCRIBIR CARD EN MODO EDICIÓN — patch de buildGalpon / buildPatio
+// ============================================================
+// Usa data-pk embebido en cada card durante el renderizado para manejar
+// tanto celdas con módulo como celdas vacías rastreables.
+function patchEditableCards(tabContentId) {
+  if (!EDIT_TAB) return;
+  const content = document.getElementById(tabContentId);
+  if (!content) return;
+  content.querySelectorAll('.module-card').forEach(cardEl => {
+    if (cardEl.querySelector('.cell-edit-overlay')) return;
+
+    const pk = cardEl.dataset.pk;
+    if (!pk) return; // sin posición rastreable → ignorar (ej. vista completa)
+
+    const effectiveId = effectiveModuleAtPk(pk);
+    const sec         = sectorForPk(pk);
+
+    cardEl.style.cursor = 'pointer';
+    cardEl.title = (effectiveId
+      ? 'Módulo ' + (parseInt(effectiveId.replace(/\D/g,''),10) || effectiveId)
+      : 'Vacío') + ' · Click para cambiar';
+
+    cardEl.onclick = (e) => {
+      e.stopPropagation();
+      // Refrescar effectiveId en el momento del click (puede haber cambiado)
+      const curId = effectiveModuleAtPk(pk);
+      injectCellEdit(cardEl, pk, curId, sec);
+    };
+  });
+}
+
+// Inyectar patchEditableCards al final de cada buildXxx
+const _origBuildGalpon       = buildGalpon;
+const _origBuildCarpaGrande  = buildCarpaGrande;
+const _origBuildCarpaChica   = buildCarpaChica;
+const _origBuildPatio        = buildPatio;
+
+buildGalpon = function() {
+  _origBuildGalpon();
+  patchEditableCards('tab-galpon');
+  ['galpon-l3','galpon-l2','galpon-l1'].forEach(s => renderExtraPositions(s));
+};
+buildCarpaGrande = function() {
+  _origBuildCarpaGrande();
+  patchEditableCards('tab-carpa-grande');
+};
+buildCarpaChica = function() {
+  _origBuildCarpaChica();
+  patchEditableCards('tab-carpa-chica');
+  renderExtraPositions('carpa-chica-medio');
+};
+buildPatio = function() {
+  _origBuildPatio();
+  patchEditableCards('tab-patio');
+  // Re-renderizar posiciones extra del patio
+  ['costado-bodega','patio-carpa-grande','patio-carpa-chica'].forEach(s => {
+    if ((EXTRA_POSITIONS[s] || []).length > 0) renderExtraPositions(s);
+  });
+};
+
+// ============================================================
+//  INIT EXTENDIDO — reemplaza init() para incluir Supabase + edición
+// ============================================================
+// Redefinimos init() para que el resize handler también use la versión completa.
+init = async function() {
+  updateScale();
+  await loadAvanceData();    // datos xlsx
+  await loadDBOverrides();   // overrides de Supabase (después de LOC/M populados)
+  buildResumen();
+  buildGalpon();
+  buildCarpaGrande();
+  buildCarpaChica();
+  buildPatio();
+  buildVistaPlanta();
+  showEditButtons();
+};
+
+// rebuild() — reconstruye UI con datos ya cargados, sin re-fetchear.
+// El resize handler llama a esto para evitar race conditions con M y DB_OVERRIDES.
+function rebuild() {
+  if (!M || Object.keys(M).length === 0) return; // datos aún no cargados
+  updateScale();
+  buildResumen();
+  buildGalpon();
+  buildCarpaGrande();
+  buildCarpaChica();
+  buildPatio();
+  buildVistaPlanta();
+  showEditButtons();
+}
+
+// Ejecutar init completo (con funciones patched, Supabase y showEditButtons).
+init();
+</script>
+</body>
+</html>

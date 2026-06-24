@@ -1,0 +1,2535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Chacra – Dashboard</title><!-- v2.1 -->
+<script src="xlsx.min.js"></script>
+<script src="excel-export.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="auth.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:14px}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;gap:12px}
+.logo{display:flex;align-items:center;white-space:nowrap}
+.upload-area{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.auth-area{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.auth-user-badge{font-size:.72rem;background:rgba(255,255,255,0.08);padding:3px 9px;border-radius:20px;color:var(--muted);white-space:nowrap}
+.auth-btn{font-size:.72rem;padding:4px 11px;background:rgba(255,255,255,0.1);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s}
+.auth-btn:hover{color:var(--text);border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:6px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:opacity .15s}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{opacity:.85}
+#file-input{display:none}
+#file-name{font-size:.78rem;color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#load-status{font-size:.78rem;padding:4px 10px;border-radius:99px;display:none}
+.status-ok{background:rgba(63,185,80,.15);color:var(--green);display:inline-flex!important}
+.status-loading{background:rgba(88,166,255,.15);color:var(--accent);display:inline-flex!important}
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:2px;overflow-x:auto}
+.tab{padding:10px 18px;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+.tab:hover{color:var(--text)}.tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+.page{display:none;padding:24px 28px}.page.active{display:block}
+#prompt{text-align:center;padding:100px 32px;color:var(--muted)}
+#prompt h2{color:var(--text);font-size:1.4rem;margin:16px 0 8px}.upload-icon{font-size:3.5rem}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.kpi-lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.kpi-val{font-size:1.7rem;font-weight:700}.kpi-sub{font-size:.75rem;color:var(--muted);margin-top:3px}
+.kpi.c-blue .kpi-val{color:var(--accent)}.kpi.c-green .kpi-val{color:var(--green)}
+.kpi.c-red .kpi-val{color:var(--red)}.kpi.c-yellow .kpi-val{color:var(--yellow)}
+.kpi.c-orange .kpi-val{color:var(--orange)}.kpi.c-purple .kpi-val{color:var(--purple)}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:16px;margin-bottom:16px}
+.grid-1{margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:relative}
+.card h3{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px;padding-right:52px}
+.chart-wrap{position:relative}
+.card-toggle{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:10px;padding:3px 8px;line-height:1.4;transition:all .2s;z-index:2}
+.card-toggle:hover{color:var(--text);background:rgba(255,255,255,0.12)}
+.card.collapsed>*:not(h3):not(.card-toggle){display:none!important}
+.card.collapsed{padding-bottom:14px}
+.kpi-toggle-bar{display:flex;align-items:center;justify-content:space-between;padding:0 0 6px}
+.kpi-toggle-bar span{font-size:.7rem;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.kpi-toggle-bar .kpi-btn{position:static;font-size:10px;padding:2px 8px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.83rem}
+thead th{text-align:left;padding:8px 10px;color:var(--muted);font-weight:600;font-size:.72rem;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+.sortable thead th{cursor:pointer;user-select:none}
+.sortable thead th::after{content:' ⇅';opacity:.2;font-size:9px}
+.sortable thead th[data-sort="asc"]::after{content:' ▲';opacity:1;color:var(--accent)}
+.sortable thead th[data-sort="desc"]::after{content:' ▼';opacity:1;color:var(--accent)}
+tbody td{padding:8px 10px;border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface2)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;text-transform:uppercase}
+.b-green{background:rgba(63,185,80,.15);color:var(--green)}.b-red{background:rgba(248,81,73,.15);color:var(--red)}
+.b-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}.b-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+.b-orange{background:rgba(227,144,62,.15);color:var(--orange)}
+.pbar-wrap{background:var(--surface2);border-radius:99px;height:8px;overflow:hidden;width:100%}
+.pbar{height:100%;border-radius:99px}
+.sec-title{font-size:.85rem;font-weight:700;color:var(--text);margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.filter-bar input,.filter-bar select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:.82rem;outline:none}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent)}
+.filter-bar label{font-size:.78rem;color:var(--muted)}
+.pct-cell{display:flex;align-items:center;gap:8px}.pct-cell .pbar-wrap{width:80px}
+
+@media(max-width:768px){
+  header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+  .upload-area{gap:6px}
+  .auth-area{margin-left:0;margin-top:2px}
+  nav{padding:0 8px}
+  .page{padding:16px 10px}
+  .grid-2{grid-template-columns:1fr!important}
+  .kpi-val{font-size:1.3rem}
+  #file-name{max-width:120px}
+}
+@media(max-width:480px){
+  header{padding:8px 10px}
+  .page{padding:12px 8px}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .kpi{padding:12px 14px}
+  .tab{padding:8px 12px;font-size:.78rem}
+}
+</style>
+
+
+
+<script>
+// Embedded mode: hide header when inside iframe
+(function(){
+  if(window.parent !== window){
+    document.addEventListener('DOMContentLoaded', function(){
+      var h = document.querySelector('header');
+      if(h) h.style.display = 'none';
+    });
+  }
+})();
+</script>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span style="font-size:30px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:30px;font-weight:900;color:#D42B1E;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:12px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup></div>
+  <div class="upload-area">
+    <span id="file-name">Sin archivo cargado</span>
+    <span id="load-status"></span>
+    <label class="btn btn-primary" for="file-input">📂 Cargar Excel</label>
+    <input type="file" id="file-input" accept=".xlsx,.xlsm,.xls">
+  </div>
+  <div class="auth-area">
+    <span class="auth-user-badge" id="dash-user-badge"></span>
+    <a href="admin.html" class="auth-btn" id="dash-admin-btn" style="display:none">⚙️ Admin</a>
+    <button class="auth-btn" onclick="AUTH.logout();window.top.location.href='login.html'">Salir</button>
+  </div>
+</header>
+
+<nav>
+  <div class="tab active" data-tab="resumen">📊 Resumen</div>
+  <div class="tab" data-tab="curva">📈 Curva S</div>
+  <div class="tab" data-tab="modulos">🏗️ Módulos</div>
+  <div class="tab" data-tab="compras">🛒 Compras</div>
+  <div class="tab" data-tab="productos">📦 Productos</div>
+  <div class="tab" data-tab="stock">🗄️ Stock</div>
+  <div class="tab" data-tab="despachos">🚚 Despachos</div>
+  <div class="tab" data-tab="prod-diaria">📅 Prod. Diaria</div>
+</nav>
+
+<div id="prompt">
+  <div class="upload-icon">📊</div>
+  <h2>Cargá el archivo La Chacra.xlsm</h2>
+  <p>Hacé clic en "Cargar Excel" para ver los dashboards con datos reales.</p>
+</div>
+
+<!-- RESUMEN -->
+<div class="page" id="page-resumen">
+  <div class="kpi-row" id="kpi-resumen"></div>
+  <div class="card" id="card-av-econ" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px"><h3 style="margin:0">% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3><label id="proy-extra-lbl" style="display:none;align-items:center;gap:6px;font-size:.8rem;color:#7d8590;white-space:nowrap">Proyectado mes actual:<input id="proy-extra-val" type="number" min="0" max="100" step="0.1" value="4.5" style="width:64px;background:#1a1f2e;border:1px solid #3a3f5c;border-radius:4px;color:#e6edf3;padding:3px 6px;font-size:.85rem;text-align:right">%</label></div>
+    <div class="chart-wrap" style="height:320px"><canvas id="ch-av-econ"></canvas></div>
+  </div>
+  <div class="card" id="card-av-econ-acum" style="margin-bottom:16px">
+    <h3>Avance econ&#xF3;mico acumulado &mdash; proyectado vs real</h3>
+    <div class="chart-wrap" style="height:320px"><canvas id="ch-av-econ-acum"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <h3>Compras reales vs Presupuesto por mes</h3>
+    <div class="chart-wrap" style="height:360px"><canvas id="ch-compras-res"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <h3>Distribución módulos por rango de avance</h3>
+    <div class="chart-wrap" style="height:280px"><canvas id="ch-dist-res"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <h3>M&#178; avance acumulado &mdash; real vs programado (por mes)</h3>
+    <div class="chart-wrap" style="height:300px"><canvas id="ch-m2-res"></canvas></div>
+  </div>
+</div>
+
+<!-- CURVA S -->
+<div class="page" id="page-curva">
+  <div class="kpi-row" id="kpi-curva"></div>
+  <div class="filter-bar">
+    <label>🗓 Filtrar por mes:</label>
+    <select id="curva-mes-sel"></select>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Curva S — % Avance Teórico vs Real por semana</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-curva-s"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Curva S — % Avance Teórico vs Real por día</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-curva-s-dia"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Módulos iniciados acumulados: real vs planificado</h3>
+      <div class="chart-wrap" style="height:280px"><canvas id="ch-init-line"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Módulos terminados acumulados: real vs planificado</h3>
+      <div class="chart-wrap" style="height:280px"><canvas id="ch-term-line"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Módulos iniciados por semana: real vs planificado</h3>
+      <div class="chart-wrap" style="height:280px"><canvas id="ch-activos"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- MÓDULOS -->
+<div class="page" id="page-modulos">
+  <div class="kpi-row" id="kpi-modulos"></div>
+  <div class="grid-2">
+    <div class="card"><h3>Distribución % avance módulos</h3><div class="chart-wrap" style="height:260px"><canvas id="ch-dist-avance"></canvas></div></div>
+    <div class="card"><h3>Avance por torre</h3><div class="chart-wrap" style="height:260px"><canvas id="ch-torre"></canvas></div></div>
+  </div>
+  <div class="grid-1" style="margin-bottom:16px">
+    <div class="card">
+      <h3>M&#178; acumulados &mdash; real vs programado (por semana)</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-m2-mod"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1" style="margin-bottom:16px">
+    <div class="card">
+      <h3>M&#178; avance diario (por semana)</h3>
+      <div class="chart-wrap" style="height:260px"><canvas id="ch-m2-dia"></canvas></div>
+    </div>
+  </div>
+  <div class="sec-title">Detalle módulos</div>
+  <div class="filter-bar">
+    <label>Buscar:</label><input id="mod-search" type="text" placeholder="módulo, torre...">
+    <label>Torre:</label><select id="mod-torre"></select>
+    <label>Estado:</label><select id="mod-estado"></select>
+  </div>
+  <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-modulos','modulos')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-modulos"><thead></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- COMPRAS -->
+<div class="page" id="page-compras">
+  <div class="kpi-row" id="kpi-compras"></div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Compras vs Presupuesto por mes (2025 → 2026)</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-gd-mes"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3>Top 10 materiales por monto comprado</h3><div class="chart-wrap" style="height:280px"><canvas id="ch-top-mat"></canvas></div></div>
+    <div class="card"><h3>Compras por tipo de producto</h3><div class="chart-wrap" style="height:280px"><canvas id="ch-tipo-prod"></canvas></div></div>
+  </div>
+  <div class="sec-title">Detalle guías de despacho — Productos críticos</div>
+  <div class="filter-bar">
+    <label>Buscar:</label><input id="gd-search" type="text" placeholder="material, GD, OC...">
+    <label>Mes:</label><select id="gd-mes"></select>
+  </div>
+  <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-gd','guias-despacho')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-gd"><thead></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- PRODUCTOS -->
+<div class="page" id="page-productos">
+  <div class="kpi-row" id="kpi-productos"></div>
+  <div class="grid-1">
+    <div class="card"><h3>Avance teórico módulo — Productos críticos (%)</h3><div class="chart-wrap" style="height:380px"><canvas id="ch-av-teorico"></canvas></div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><h3>% Avance pedidos — Productos críticos</h3><div class="chart-wrap" style="height:280px"><canvas id="ch-av-pedidos"></canvas></div></div>
+    <div class="card"><h3>Variación precio unitario vs presupuesto (%)</h3><div class="chart-wrap" style="height:280px"><canvas id="ch-var-unit"></canvas></div></div>
+  </div>
+  <div class="sec-title">Tabla productos</div>
+  <div class="filter-bar">
+    <label>Buscar:</label><input id="prod-search" type="text" placeholder="nombre, código...">
+    <label>Tipo:</label><select id="prod-critico"></select>
+  </div>
+  <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-productos','productos')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-productos"><thead></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- STOCK -->
+<div class="page" id="page-stock">
+  <div class="filter-bar" style="margin-bottom:16px;align-items:center">
+    <span style="font-size:.78rem;font-weight:700;color:var(--text);white-space:nowrap">📅 Semana:</span>
+    <select id="stock-semana-sel" style="min-width:160px"><option value="">Todas las semanas</option></select>
+    <button id="stock-semana-prev" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.82rem">◀</button>
+    <button id="stock-semana-next" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.82rem">▶</button>
+    <button id="stock-semana-last" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.78rem;font-weight:600">Última</button>
+    <span id="stock-semana-lbl" style="font-size:.78rem;color:var(--muted);margin-left:4px"></span>
+  </div>
+  <div class="kpi-row" id="kpi-stock"></div>
+
+  <!-- Fila 1: cobertura + valor por tipo -->
+  <div class="grid-2">
+    <div class="card"><h3>Cobertura promedio por tipo de material (módulos)</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-cob-tipo"></canvas></div></div>
+    <div class="card"><h3>Distribución valor de stock por tipo</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-val-tipo"></canvas></div></div>
+  </div>
+
+  <!-- Fila 2: criticidad + top alcance individual -->
+  <div class="grid-2">
+    <div class="card"><h3>Items críticos, bajos y OK por tipo de material</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-crit-tipo"></canvas></div></div>
+    <div class="card"><h3>Top 20 — menor alcance individual (módulos)</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-alcance"></canvas></div></div>
+  </div>
+
+  <!-- Pérdidas en proceso -->
+  <div class="sec-title" id="stock-perdidas-title" style="display:none">Materiales con pérdidas en proceso</div>
+  <div class="card" id="card-perdidas" style="display:none;margin-bottom:16px">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-perdidas','perdidas')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div>
+    <div class="tbl-wrap"><table id="tbl-perdidas"><thead></thead><tbody></tbody></table></div>
+  </div>
+
+  <div class="sec-title">Detalle stock</div>
+  <div class="filter-bar">
+    <label>Buscar:</label><input id="stock-search" type="text" placeholder="material, código...">
+    <label>Estado:</label>
+    <select id="stock-estado">
+      <option value="">Todos</option>
+      <option value="critico">Crítico (&lt;5 mód)</option>
+      <option value="bajo">Bajo (5–14 mód)</option>
+      <option value="ok">OK (≥15 mód)</option>
+    </select>
+    <label>Tipo:</label><select id="stock-tipo"><option value="">Todos los tipos</option></select>
+  </div>
+  <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-stock','stock')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-stock"><thead></thead><tbody></tbody></table></div></div>
+</div>
+
+<!-- DESPACHOS -->
+<div class="page" id="page-despachos">
+  <div class="kpi-row" id="kpi-despachos"></div>
+
+  <div class="grid-1">
+    <div class="card">
+      <h3 style="font-size:1.1rem;font-weight:700;text-transform:none;letter-spacing:0">Despacho Real VS Programa Baquedano</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-mes"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Módulos despachados por semana vs proyectado</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-semana"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Módulos despachados por día vs proyectado</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-dia"></canvas></div>
+    </div>
+  </div>
+  <div style="padding:0 0 8px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="color:var(--muted);font-size:.82rem">Filtrar meses:</span>
+    <div id="desp-mes-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <button onclick="despFilterAll(true)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Todos</button>
+    <button onclick="despFilterAll(false)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Ninguno</button>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Resumen mensual — Despachos</h3>
+      <div id="tbl-desp-resumen" style="overflow-x:auto;max-height:340px;overflow-y:auto"></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Despachos por torre y tipo</h3>
+      <div class="chart-wrap" style="height:240px"><canvas id="ch-desp-torre"></canvas></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- PRODUCCION DIARIA -->
+<div class="page" id="page-prod-diaria">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-size:.85rem;font-weight:700;color:var(--text)">Módulos listos por día</span>
+    <label style="font-size:.8rem;color:var(--muted);margin-left:12px">Desde:</label>
+    <input type="date" id="pd-desde" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.83rem">
+    <label style="font-size:.8rem;color:var(--muted)">Hasta:</label>
+    <input type="date" id="pd-hasta" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:.83rem">
+    <button class="btn btn-primary" onclick="renderProdDiaria()" style="padding:5px 14px;font-size:.8rem">Aplicar</button>
+    <span id="pd-status" style="font-size:.78rem;color:var(--muted);margin-left:4px"></span>
+  </div>
+  <div class="kpi-row" id="kpi-prod-diaria"></div>
+  <div class="grid-1" style="margin-bottom:16px">
+    <div class="card">
+      <h3>Módulos completados por día y categoría</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-prod-diaria"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Detalle por fecha</h3>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-prod-diaria','produccion-diaria')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div>
+    <div class="tbl-wrap"><table id="tbl-prod-diaria"><thead></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+
+<script>
+// ═══════════════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════════════
+try{ Chart.register(ChartDataLabels); Chart.defaults.plugins.datalabels.display = false; }catch(e){ console.warn('ChartDataLabels not loaded:', e); }
+
+const CHARTS = {};
+let DATA = {};
+const SUPA_URL='https://vtrpxsgcbojqgdcsplim.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const SUPA_H={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+let _supaDesp=[];
+async function loadDespachosSupa(){
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/despachos_gd?select=*&order=fecha_gd.asc,id.asc',{headers:SUPA_H});
+    if(!r.ok)return;
+    _supaDesp=await r.json();
+  }catch(e){console.warn('despachos supa:',e);}
+}
+
+// ── Compras desde Supabase (reemplaza DETALLE GD del Excel) ───────────────────
+let _supaCompras=[];      // filas de registro_compras normalizadas al shape de detalleGD
+let _presupuestoTotal=null;
+
+async function loadComprasSupa(){
+  try{
+    const PAGE=1000;
+    let all=[],from=0,done=false;
+    while(!done){
+      const r=await fetch(
+        `${SUPA_URL}/rest/v1/registro_compras?select=*&order=fecha_guia.desc,id.asc&limit=${PAGE}&offset=${from}`,
+        {headers:SUPA_H}
+      );
+      if(!r.ok){console.warn('compras supa HTTP',r.status);return;}
+      const chunk=await r.json();
+      all=all.concat(chunk);
+      if(chunk.length<PAGE)done=true; else from+=PAGE;
+    }
+    // Pre-calcular mapa montoGD y totalPpto por gd
+    const montoGDMap={}, totalPptoMap={};
+    all.forEach(r=>{
+      const cantRec=(parseFloat(r.cantidad_sol)||0)-(parseFloat(r.devolucion)||0);
+      const vti=r.valor_total_item!=null&&r.valor_total_item!==''
+        ? parseFloat(r.valor_total_item)||0
+        : (parseFloat(r.valor_und)||0)*cantRec;
+      const gdKey=String(r.gd??'');
+      montoGDMap[gdKey]=(montoGDMap[gdKey]||0)+vti;
+      totalPptoMap[gdKey]=(totalPptoMap[gdKey]||0)+(parseFloat(r.valor_ppto)||0)*cantRec;
+    });
+    _supaCompras=all.map(r=>{
+      const cantRec=(parseFloat(r.cantidad_sol)||0)-(parseFloat(r.devolucion)||0);
+      const valorTotal=r.valor_total_item!=null&&r.valor_total_item!==''
+        ? parseFloat(r.valor_total_item)||0
+        : (parseFloat(r.valor_und)||0)*cantRec;
+      const valorUN=cantRec?valorTotal/cantRec:0;
+      const valorPpto=parseFloat(r.valor_ppto)||0;
+      const difTotal=valorTotal-cantRec*valorPpto;
+      const base=cantRec*valorPpto;
+      const gdKey=String(r.gd??'');
+      const fd=r.fecha_guia?new Date(r.fecha_guia):null;
+      return {
+        fechaGuia:  r.fecha_guia,
+        anioGuia:   fd?fd.getFullYear():null,
+        mes:        r.mes,
+        codigo:     r.codigo,
+        desc:       r.descripcion,
+        desc2:      r.descripcion,   // descripcion es la col G equivalente
+        um:         r.unidad,
+        cant:       parseFloat(r.cantidad_sol)||0,
+        cantRec:    cantRec,
+        valorUN:    valorUN,
+        valorItem:  valorTotal,
+        valorTotal: valorTotal,
+        valorPpto:  valorPpto,
+        difUN:      valorUN-valorPpto,
+        difTotal:   difTotal,
+        difPct:     base ? difTotal/base : null,  // fracción (igual que Excel: /100 para mostrar %)
+        gd:         r.gd,
+        responsable:r.responsable,
+        montoGD:    montoGDMap[gdKey]||0,
+        oc:         r.oc||null,
+        presupuesto:null,  // se inyecta desde _presupuestoTotal abajo
+        totalPpto:  totalPptoMap[gdKey]||0,
+        tipoProd:   r.tipo_producto,
+        _raw:       r
+      };
+    });
+  }catch(e){console.warn('loadComprasSupa:',e);}
+}
+
+async function loadPresupuestoSupa(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/config?key=eq.presupuesto_total&select=value`,{headers:SUPA_H});
+    if(!r.ok)return;
+    const rows=await r.json();
+    if(rows&&rows[0]) _presupuestoTotal=parseFloat(rows[0].value)||null;
+  }catch(e){console.warn('loadPresupuestoSupa:',e);}
+}
+
+// Devuelve el array de compras a usar: Supabase si está cargado, Excel como fallback
+function getCompras(){
+  if(_supaCompras.length){
+    // Inyectar presupuesto total en primera fila para que renderCompras/renderResumen lo encuentren
+    if(_presupuestoTotal!=null&&_supaCompras.length)
+      _supaCompras[0].presupuesto=_presupuestoTotal;
+    return _supaCompras;
+  }
+  // FALLBACK_EXCEL: DATA.detalleGD del archivo LACHACRA.xlsm
+  return DATA.detalleGD||[];
+}
+
+// Check localStorage for pre-loaded data
+(function(){
+  try {
+    var s = localStorage.getItem('tp_dashboard_data');
+    if(s) {
+      var saved = JSON.parse(s);
+      if(saved && saved.modulos && saved.modulos.length) {
+        DATA = saved;
+        document.addEventListener('DOMContentLoaded', function(){
+          var pr = document.getElementById('prompt');
+          if(pr) pr.style.display = 'none';
+          renderAll();
+          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+            .then(()=>{renderDespachos();renderCompras();renderResumen();});
+          var t = document.querySelector('.tab[data-tab="resumen"]');
+          if(t) t.click();
+          var st = document.getElementById('load-status');
+          if(st){ st.textContent = '✅ Datos de biblioteca'; st.className = 'status-ok'; }
+          var fn = document.getElementById('file-name');
+          var meta = JSON.parse(localStorage.getItem('tp_dashboard_meta')||'{}');
+          if(fn && meta.name) fn.textContent = meta.name;
+        });
+      }
+    }
+  } catch(e){}
+})();
+
+
+// Month order: always 2025 first, then 2026
+const MESES_ORDER = [
+  {n:10,y:2025,lbl:'Oct 2025'},{n:11,y:2025,lbl:'Nov 2025'},{n:12,y:2025,lbl:'Dic 2025'},
+  {n:1, y:2026,lbl:'Ene 2026'},{n:2, y:2026,lbl:'Feb 2026'},{n:3, y:2026,lbl:'Mar 2026'},
+  {n:4, y:2026,lbl:'Abr 2026'},{n:5, y:2026,lbl:'May 2026'},{n:6, y:2026,lbl:'Jun 2026'},
+  {n:7, y:2026,lbl:'Jul 2026'},{n:8, y:2026,lbl:'Ago 2026'},{n:9, y:2026,lbl:'Sep 2026'},
+];
+// key: "mes-anio" => label
+const MESES_KEY = {};
+MESES_ORDER.forEach(m => MESES_KEY[`${m.n}-${m.y}`] = m.lbl);
+
+// ═══════════════════════════════════════════════
+// FORMAT
+// ═══════════════════════════════════════════════
+const N  = v => (v==null||v===''||isNaN(+v))?null:+v;
+const fmt = v => v==null?'—':new Intl.NumberFormat('es-CL').format(Math.round(v));
+const fmtFull = v => v==null?'—':'$'+new Intl.NumberFormat('es-CL').format(Math.round(v));
+const fmtM = v => {
+  if(v==null) return '—';
+  const a=Math.abs(v),s=v<0?'-':'';
+  if(a>=1e9) return s+'$'+(a/1e9).toFixed(2)+'B';
+  if(a>=1e6) return s+'$'+(a/1e6).toFixed(2)+'M';
+  return s+'$'+fmt(Math.abs(v));
+};
+const fmtPr = v => v==null?'—':(+v).toFixed(2)+'%';
+const fmtDate = v => {
+  if(!v) return '—';
+  try{const d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'2-digit'});}
+  catch{return String(v);}
+};
+const fmtDateLong = v => {
+  if(!v) return '—';
+  try{const d=new Date(v);if(isNaN(d))return String(v);return d.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'numeric'});}
+  catch{return String(v);}
+};
+
+function parseDate(v){
+  if(!v) return null;
+  if(v instanceof Date) return new Date(v);
+  if(typeof v==='number') return new Date((v-25569)*86400000);
+  if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(v+'T00:00:00');
+  const d=new Date(v);return isNaN(d)?null:d;
+}
+
+// ═══════════════════════════════════════════════
+// DATE → WEEK KEY (Monday-based)
+// ═══════════════════════════════════════════════
+function weekKey(date){
+  const d=new Date(date);
+  const day=d.getDay(), diff=day===0?-6:1-day;
+  d.setDate(d.getDate()+diff); d.setHours(0,0,0,0);
+  return d.getTime();
+}
+function weekLabel(ts){
+  const d=new Date(ts);
+  return d.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'2-digit'});
+}
+
+// ═══════════════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════════════
+const PALETTE=['#58a6ff','#3fb950','#f85149','#d29922','#e3903e','#bc8cff','#79c0ff','#56d364','#ffa198','#e3b341'];
+
+function killChart(id){if(CHARTS[id]){CHARTS[id].destroy();delete CHARTS[id];}}
+
+// Bar chart – single dataset (shows data labels on bars)
+function barChart(id, labels, datasets, opts={}){
+  killChart(id);
+  const ctx=document.getElementById(id)?.getContext('2d'); if(!ctx) return;
+  const isH=!!opts.horizontal;
+  const single=datasets.length===1;
+  const dlFmt = opts.fullMoney ? v=>fmtFull(v) : opts.money ? v=>fmtM(v) : opts.pct ? v=>(+v).toFixed(2)+'%' : v=>fmt(v);
+  CHARTS[id]=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets},
+    options:{
+      indexAxis:isH?'y':'x',
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{right:isH?80:20,top:isH?0:28,left:isH?4:0}},
+      plugins:{
+        legend:{display:!!opts.legend,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>{
+          const v=c.parsed.y??c.parsed.x;
+          return ' '+(opts.fullMoney?fmtFull(v):opts.money?fmtM(v):opts.pct?(+v).toFixed(2)+'%':fmt(v));
+        }}},
+        datalabels: single?{
+          display:true, color:'#e6edf3', font:{size:10,weight:'600'},
+          anchor:'end', align:'end', offset:2, clip:false,
+          formatter:dlFmt
+        }:{display:false}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',maxTicksLimit:14,
+            callback:opts.xMoney?v=>fmtM(v):opts.xPct?v=>v+'%':function(v){return this.getLabelForValue(v);}},
+          border:{color:'rgba(255,255,255,0.04)'}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',
+            callback:opts.yMoney?v=>fmtM(v):opts.yPct?v=>v+'%':undefined},
+          border:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+// Grouped bar chart (shows data labels)
+function groupedBar(id, labels, datasets, opts={}){
+  killChart(id);
+  const ctx=document.getElementById(id)?.getContext('2d'); if(!ctx) return;
+  const dlFmt=opts.fullMoney?v=>fmtFull(v):opts.money?v=>fmtM(v):opts.pct?v=>(+v).toFixed(2)+'%':v=>fmt(v);
+  CHARTS[id]=new Chart(ctx,{
+    type:'bar', data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:26}},
+      plugins:{
+        legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>{
+          const v=c.parsed.y;
+          return ` ${c.dataset.label}: ${opts.tooltipFull||opts.fullMoney?fmtFull(v):opts.money?fmtM(v):opts.pct?(+v).toFixed(2)+'%':fmt(v)}`;
+        }}},
+        datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},
+          anchor:'end',align:'end',offset:1,clip:false,formatter:dlFmt}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',maxTicksLimit:14},border:{color:'rgba(255,255,255,0.04)'}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',
+            callback:opts.yMoney?v=>fmtM(v):opts.yPct?v=>v+'%':undefined},
+          border:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+// Line chart (no data labels – too cluttered)
+function lineChart(id, labels, datasets, opts={}){
+  killChart(id);
+  const ctx=document.getElementById(id)?.getContext('2d'); if(!ctx) return;
+  CHARTS[id]=new Chart(ctx,{
+    type:'line', data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:!!opts.legend,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${opts.pct?(+c.parsed.y).toFixed(2)+'%':fmt(c.parsed.y)}`}},
+        datalabels:{display:false}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',
+            maxTicksLimit:opts.allTicks?undefined:14,
+            autoSkip:!opts.allTicks,
+            maxRotation:opts.allTicks?90:0, minRotation:opts.allTicks?45:0,
+            font:{size:opts.allTicks?9:11}},
+          border:{color:'rgba(255,255,255,0.04)'}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',
+            callback:opts.pct?v=>v.toFixed(2)+'%':undefined},
+          border:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+}
+
+
+// Mixed chart: bar + line on same axis
+function mixedChart(id, labels, barDatasets, lineDatasets, opts={}){
+  killChart(id);
+  const ctx=document.getElementById(id)?.getContext('2d'); if(!ctx) return;
+  const datasets=[
+    ...barDatasets.map(ds=>({...ds,type:'bar',order:2})),
+    ...lineDatasets.map(ds=>({...ds,type:'line',tension:0.35,pointRadius:3,pointHoverRadius:5,
+      borderWidth:2,fill:false,order:1,datalabels:{display:false}}))
+  ];
+  CHARTS[id]=new Chart(ctx,{
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:20}},
+      plugins:{
+        legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y??0)}},
+        datalabels:{display:false}
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',maxRotation:45,minRotation:0,font:{size:10},maxTicksLimit:18},
+          border:{color:'rgba(255,255,255,0.04)'}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},
+          border:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+// Doughnut with formatted labels
+function doughnutChart(id, labels, data, colors, moneyLabels=false){
+  killChart(id);
+  const ctx=document.getElementById(id)?.getContext('2d'); if(!ctx) return;
+  CHARTS[id]=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#161b22'}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:20},
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#e6edf3',padding:10,boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>{
+          const tot=c.dataset.data.reduce((a,b)=>a+b,0);
+          const v=c.parsed;
+          return ` ${c.label}: ${moneyLabels?fmtFull(v):fmt(v)} (${tot?(v/tot*100).toFixed(2):'0'}%)`;
+        }}},
+        datalabels:{
+          display:true,color:'#e6edf3',font:{size:10,weight:'700'},
+          formatter:(v,ctx)=>{
+            const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+            const pct=tot?(v/tot*100).toFixed(1):'0';
+            return (moneyLabels?fmtFull(v):fmt(v))+'\n'+pct+'%';
+          }
+        }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════
+// ── auth ─────────────────────────────────────
+(function(){
+  var s = AUTH.requireAuth('login.html');
+  if (!s) return;
+  if (window.self !== window.top) {
+    var _aa = document.querySelector('.auth-area');
+    if (_aa) _aa.style.display = 'none';
+  } else {
+    var badge = document.getElementById('dash-user-badge');
+    if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
+    var adminBtn = document.getElementById('dash-admin-btn');
+    if (adminBtn && AUTH.isAdmin()) adminBtn.style.display = 'inline-block';
+  }
+  var peLbl=document.getElementById('proy-extra-lbl');
+  if(peLbl && AUTH.isAdmin()) peLbl.style.display='flex';
+
+  // Ocultar tabs sin permiso
+  var DASH_TABS = ['resumen','curva','modulos','compras','productos','stock','despachos'];
+  DASH_TABS.forEach(function(tabId){
+    if (!AUTH.canViewTab('dashboard', tabId)){
+      var btn = document.querySelector('.tab[data-tab="' + tabId + '"]');
+      var page = document.getElementById('page-' + tabId);
+      if (btn)  btn.style.display = 'none';
+      if (page) page.style.display = 'none';
+    }
+  });
+  // Activar primera pestaña visible si resumen está oculta
+  if (!AUTH.canViewTab('dashboard','resumen')){
+    var firstTab = DASH_TABS.find(function(t){ return AUTH.canViewTab('dashboard', t); });
+    if (firstTab){
+      var defBtn  = document.querySelector('.tab.active');
+      var defPage = document.getElementById('page-resumen');
+      if (defBtn)  defBtn.classList.remove('active');
+      if (defPage) defPage.classList.remove('active');
+      var newBtn  = document.querySelector('.tab[data-tab="' + firstTab + '"]');
+      var newPage = document.getElementById('page-' + firstTab);
+      if (newBtn)  newBtn.classList.add('active');
+      if (newPage) newPage.classList.add('active');
+    }
+  }
+})();
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('page-'+t.dataset.tab).classList.add('active');
+  });
+});
+
+// ═══════════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════════
+document.getElementById('file-input').addEventListener('change',function(e){
+  const file=e.target.files[0]; if(!file) return;
+  document.getElementById('file-name').textContent=file.name;
+  const st=document.getElementById('load-status');
+  st.textContent='⏳ Procesando...'; st.className='status-loading';
+  setTimeout(()=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true,dense:true});
+        DATA=parseAll(wb);
+        document.getElementById('prompt').style.display='none';
+        renderAll();
+        document.querySelector('.tab[data-tab="resumen"]').click();
+        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+          .then(()=>{renderDespachos();renderCompras();renderResumen();});
+        st.textContent='✅ Cargado'; st.className='status-ok';
+        // Save to localStorage for biblioteca
+        try {
+          localStorage.setItem('tp_dashboard_data', JSON.stringify(DATA));
+          localStorage.setItem('tp_dashboard_meta', JSON.stringify({name: file.name, date: new Date().toISOString(), size: file.size}));
+          var lib = JSON.parse(localStorage.getItem('tp_biblioteca')||'[]');
+          lib = lib.filter(function(x){ return x.type !== 'dashboard'; });
+          lib.unshift({type:'dashboard', name: file.name, date: new Date().toISOString(), size: file.size});
+          localStorage.setItem('tp_biblioteca', JSON.stringify(lib.slice(0,20)));
+        } catch(e){}
+
+      }catch(err){st.textContent='❌ '+err.message;st.className='status-loading';console.error(err);}
+    };
+    reader.readAsArrayBuffer(file);
+  },50);
+});
+
+// ═══════════════════════════════════════════════
+// AUTO-LOAD desde data/ del repo
+// ═══════════════════════════════════════════════
+function showAutoStatus(msg, isErr){
+  let el=document.getElementById('auto-load-msg');
+  if(!el){
+    el=document.createElement('div');
+    el.id='auto-load-msg';
+    el.style.cssText='position:fixed;bottom:16px;right:16px;padding:10px 16px;border-radius:8px;font-size:.82rem;font-weight:600;z-index:9999;max-width:320px;';
+    document.body.appendChild(el);
+  }
+  el.textContent=msg;
+  el.style.background=isErr?'rgba(248,81,73,.9)':'rgba(30,35,55,.97)';
+  el.style.color=isErr?'#fff':'#e8eaf0';
+  el.style.border=isErr?'1px solid #f85149':'1px solid #4f8ef7';
+  if(!isErr) setTimeout(()=>{if(el.parentNode)el.remove();},3000);
+}
+
+async function autoLoadFromRepo(){
+  showAutoStatus('⏳ Cargando datos…');
+  try{
+    // Try both casing variants (GitHub Pages is case-sensitive)
+    let resp=await fetch('data/lachacra.xlsm');
+    if(!resp.ok) resp=await fetch('data/LACHACRA.xlsm');
+    if(!resp.ok) throw new Error('HTTP '+resp.status+' — archivo no encontrado. URL: '+resp.url);
+    const buf=await resp.arrayBuffer();
+    showAutoStatus('⏳ Procesando Excel…');
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true,dense:true});
+    DATA=parseAll(wb);
+    document.getElementById('prompt').style.display='none';
+    try{ document.getElementById('file-name').textContent='LA CHACRA.xlsm'; }catch(e){}
+    try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
+    renderAll();
+    try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
+    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+      .then(()=>{renderDespachos();renderCompras();renderResumen();});
+    showAutoStatus('✅ Datos cargados');
+    try{
+      localStorage.setItem('tp_dashboard_data',JSON.stringify(DATA));
+      localStorage.setItem('tp_dashboard_meta',JSON.stringify({name:'LA CHACRA.xlsm',date:new Date().toISOString()}));
+    }catch(e){}
+  }catch(err){
+    showAutoStatus('❌ '+err.message, true);
+    console.error('Auto-load fallido:',err);
+  }
+}
+if(typeof XLSX!=='undefined'){
+  autoLoadFromRepo();
+}else{
+  document.querySelector('script[src*="xlsx"]').addEventListener('load', autoLoadFromRepo);
+}
+
+// ═══════════════════════════════════════════════
+// PARSE
+// ═══════════════════════════════════════════════
+function sheetRows(wb,name){
+  const ws=wb.Sheets[name]; if(!ws) return [];
+  return XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true,dateNF:'yyyy-mm-dd'});
+}
+
+function parseAll(wb){
+  const d={};
+
+  // CURVA: cols E(4)=m2PlanAcum, F(5)=m2PlanDiario insertadas → restantes desplazadas
+  // iniciados→G(6), terminados→H(7), real→I(8), mes→K(10), anio→L(11), M2RealAcum→M(12), M2RealDiario→N(13)
+  d.curva=sheetRows(wb,'CURVA').slice(1).filter(r=>r[0]).map(r=>({
+    fecha:r[0], teorico:N(r[1]), diario:N(r[2]),
+    activos:N(r[3]),
+    m2PlanAcum:N(r[4]), m2PlanDiario:N(r[5]),
+    iniciados:N(r[6]), terminados:N(r[7]),
+    real:N(r[8]), mes:r[10], anio:N(r[11]),
+    m2RealAcum:N(r[12]), m2RealDiario:N(r[13])
+  }));
+
+  d.avplan=sheetRows(wb,'AV_PLAN').slice(1).filter(r=>r[0]).map(r=>({
+    fecha:r[0], initPlan:N(r[1]), planAcum:N(r[2]),
+    initReal:N(r[3]), realAcum:N(r[4]),
+    termPlan:N(r[5]), termPlanAcum:N(r[6]),
+    termReal:N(r[7]), termRealAcum:N(r[8]),
+    mes:r[9], semana:N(r[10]), avance:N(r[11]), termino:N(r[12])
+  }));
+
+  d.modulos=sheetRows(wb,'AVANCE').slice(1).filter(r=>r[0]).map(r=>({
+    torre:r[0],modulo:r[1],serie:r[2],tipo:r[3],
+    avance:N(r[4]),initTeorico:r[5],initReal:r[6],
+    ultReg:r[7],termPlan:r[8],diasSinMov:r[9],termReal:r[10],
+    aportOG:N(r[11]),og:N(r[12]),
+    aportSan:N(r[18]),san:N(r[19]),
+    aportElec:N(r[26]),elec:N(r[27]),
+    aportTerm:N(r[33]),term:N(r[34]),
+    estado:r[57],gapInicio:N(r[58]),gapEstadoInicio:r[59],gapEstadoTermino:r[60]
+  }));
+
+  d.detalleGD=sheetRows(wb,'DETALLE GD').slice(1).filter(r=>r[0]&&r[13]!=null).map(r=>{
+    const fd=parseDate(r[0]);
+    return {
+      fechaGuia:r[0], anioGuia:fd?fd.getFullYear():null,
+      mes:N(r[3]), codigo:r[5], desc:r[6],
+      um:r[7], cant:N(r[8]), cantRec:N(r[10]),
+      valorUN:N(r[11]), valorItem:N(r[12]), valorTotal:N(r[13]),
+      valorPpto:N(r[14]), difUN:N(r[15]), difTotal:N(r[16]), difPct:N(r[17]),
+      gd:r[19], responsable:r[20], montoGD:N(r[21]), oc:r[22],
+      presupuesto:N(r[23]), totalPpto:N(r[24]),
+      tipoProd:r[28], desc2:r[30]
+    };
+  });
+
+  d.productos=sheetRows(wb,'PRODUCTOS').slice(1).filter(r=>r[0]&&r[1]).map(r=>({
+    codigo:r[0],desc:r[1],descCorta:r[2],grupo:r[3],subgrupo:r[4],
+    ppto:N(r[5]),um:r[6],pptoActual:N(r[7]),
+    critico:r[10],cantMod:N(r[11]),
+    pptoMod:N(r[12]),pptoTorre:N(r[13]),pptoTotal:N(r[14]),
+    cantTotal:N(r[15]),cantComprada:N(r[16]),dev:N(r[17]??0),cantRec:N(r[18]),
+    avTeorico:N(r[19]),precioCompra:N(r[20]),precioUN:N(r[21]),
+    proyCompra:N(r[22]),variacion:N(r[23]),pptoFaltante:N(r[24]),
+    pctAvPedidos:N(r[25]),saldoCompra:N(r[26])
+  }));
+
+  d.stock=sheetRows(wb,'REG STOCK').slice(1).filter(r=>r[1]).map(r=>({
+    fecha:r[0],codigo:r[1],material:r[2],um:r[3],
+    totalSol:N(r[4]),cantMod:N(r[5]),stockFisico:N(r[6]),
+    desc:r[7],solicitadoTF:N(r[8]),consumo:N(r[9]),
+    cubPpto:N(r[10]),consumoMod:N(r[11]),
+    alcanceMod:N(r[12]),alcanceFisico:N(r[13]),
+    perdida:N(r[14]??0),valorUN:N(r[15]),
+    valorPerdida:N(r[16]??0),valorStock:N(r[17]),
+    modConstruidos:N(r[21])
+  }));
+
+  // GD_MODULOS: col A=FECHA GD, B=FECHA DESPACHO, C=GD, D=SERIE, E=CANT, F=MONTO, G=MODULO, H=TORRE, I=TIPO, J=ACUMULADO
+  //             cols M-Q: proyección diaria (FECHA, MES, MÓDULOS DÍA, MÓDULOS ASIGNADOS, MÓDULOS ACUMULADOS)
+  d.despachos=sheetRows(wb,'GD_MODULOS').slice(1).filter(r=>r[1]).map(r=>({
+    fecha:r[1],gd:N(r[2]),serie:N(r[3]),
+    cant:N(r[4]),monto:N(r[5]),
+    modulo:r[6],torre:r[7],tipo:r[8],acumulado:N(r[9])
+  }));
+  d.proyeccion=sheetRows(wb,'GD_MODULOS').slice(1).filter(r=>r[12]!=null&&r[14]!=null).map(r=>({
+    fecha:r[12],mes:r[13],
+    modulosDia:N(r[14]),modulosAcumulados:N(r[16])
+  }));
+
+
+  // HOME AVANCE: range B80:M92 exacto (filas 80=header, 81-92=datos)
+  // Usando range para evitar desalineamiento por filas vacías
+  // Dentro del range: idx0=B=mes, idx5=G=avEcon, idx7=I=avEconProy
+  d.homeAvance = (()=>{
+    // Use sheetRows (proven to work with dense:true) and locate MESES header dynamically
+    // Data table: row 80=headers, rows 81-92=Ene-Dic
+    // Cols relative to MESES: +0=mes, +5=% AVANCE ECONOMICO, +7=%AVANCE ESPERADO ECONOMICO
+    const rows = sheetRows(wb, 'HOME AVANCE');
+    const hi = rows.findIndex(r => r.indexOf('MESES') >= 0);
+    if(hi < 0) return [];
+    const bIdx = rows[hi].indexOf('MESES');
+    return rows.slice(hi+1, hi+13).filter(r=>r[bIdx]).map(r=>({
+      mes:        r[bIdx],
+      avEcon:     r[bIdx+5]!=null ? +r[bIdx+5] : null,
+      avEconProy: r[bIdx+7]!=null ? +r[bIdx+7] : null
+    }));
+  })();
+
+  return d;
+}
+
+// ═══════════════════════════════════════════════
+// KPI HTML
+// ═══════════════════════════════════════════════
+function kpiHTML(arr){
+  return arr.map(k=>`<div class="kpi ${k.cls||''}">
+    <div class="kpi-lbl">${k.lbl}</div>
+    <div class="kpi-val">${k.val}</div>
+    ${k.sub?`<div class="kpi-sub">${k.sub}</div>`:''}
+  </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// SORTABLE TABLES
+// ═══════════════════════════════════════════════
+function parseFlexDate(s){
+  if(!s||s==='—') return null;
+  const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if(!m) return null;
+  return new Date(+m[3]<100?2000+ +m[3]:+m[3],+m[2]-1,+m[1]);
+}
+function sortCmp(av,bv,dir){
+  const clean=s=>s.replace(/[$.\s]/g,'').replace('%','').replace(',','.');
+  const an=parseFloat(clean(av)), bn=parseFloat(clean(bv));
+  if(!isNaN(an)&&!isNaN(bn)) return (an-bn)*dir;
+  const ad=parseFlexDate(av), bd=parseFlexDate(bv);
+  if(ad&&bd) return (ad-bd)*dir;
+  return av.localeCompare(bv,'es')*dir;
+}
+function updateSortIndicators(tbl){
+  [...tbl.querySelectorAll('thead th')].forEach((h,i)=>{
+    h.dataset.sort=i===tbl._col?(tbl._dir===1?'asc':'desc'):'';
+  });
+}
+function applyTableSort(tbl){
+  const ci=tbl._col; if(ci<0) return;
+  const tbody=tbl.querySelector('tbody');
+  [...tbody.querySelectorAll('tr')]
+    .sort((a,b)=>sortCmp(
+      a.cells[ci]?.innerText?.trim()||'',
+      b.cells[ci]?.innerText?.trim()||'',
+      tbl._dir
+    ))
+    .forEach(r=>tbody.appendChild(r));
+  updateSortIndicators(tbl);
+}
+function makeSortable(tblId){
+  const tbl=document.getElementById(tblId); if(!tbl||tbl._sortable) return;
+  tbl._sortable=true; tbl._col=-1; tbl._dir=1;
+  tbl.classList.add('sortable');
+  tbl.addEventListener('click',e=>{
+    const th=e.target.closest('th'); if(!th) return;
+    const ths=[...tbl.querySelectorAll('thead th')];
+    const ci=ths.indexOf(th); if(ci<0) return;
+    tbl._col===ci ? tbl._dir*=-1 : (tbl._col=ci, tbl._dir=1);
+    applyTableSort(tbl);
+  });
+  const tbody=tbl.querySelector('tbody');
+  tbl._obs=new MutationObserver(()=>{
+    if(tbl._col<0) return;
+    tbl._obs.disconnect();
+    applyTableSort(tbl);
+    tbl._obs.observe(tbody,{childList:true});
+  });
+  tbl._obs.observe(tbody,{childList:true});
+}
+
+function addToggleButtons(){
+  // Cards
+  document.querySelectorAll('.card').forEach(card=>{
+    if(card.querySelector('.card-toggle')) return;
+    if(!card.querySelector('h3')) return;
+    const btn=document.createElement('button');
+    btn.className='card-toggle'; btn.innerHTML='&#9650;'; btn.title='Ocultar / mostrar';
+    btn.onclick=e=>{
+      e.stopPropagation();
+      const c=card.classList.toggle('collapsed');
+      btn.innerHTML=c?'&#9660;':'&#9650;';
+    };
+    card.appendChild(btn);
+  });
+  // KPI rows
+  document.querySelectorAll('.kpi-row').forEach(row=>{
+    if(row.dataset.toggled) return;
+    row.dataset.toggled='1';
+    const bar=document.createElement('div');
+    bar.className='kpi-toggle-bar';
+    bar.innerHTML='<span>Indicadores</span><button class="card-toggle kpi-btn">&#9650;</button>';
+    bar.querySelector('.kpi-btn').onclick=()=>{
+      const hidden=row.style.display==='none';
+      row.style.display=hidden?'':'none';
+      bar.querySelector('.kpi-btn').innerHTML=hidden?'&#9650;':'&#9660;';
+    };
+    row.parentNode.insertBefore(bar,row);
+  });
+  // Sortable tables
+  ['tbl-modulos','tbl-gd','tbl-productos','tbl-stock'].forEach(makeSortable);
+}
+
+function renderAll(){
+  renderResumen(); renderCurva(); renderModulos();
+  renderCompras(); renderProductos(); renderStock(); renderDespachos();
+  addToggleButtons();
+}
+
+// ═══════════════════════════════════════════════
+// RESUMEN
+// ═══════════════════════════════════════════════
+function renderResumen(){
+  const m=DATA.modulos||[];
+  const totalMod=m.length;
+  const terminados=m.filter(x=>x.termReal).length;
+  const enProceso=m.filter(x=>x.initReal&&!x.termReal).length;
+  const avProm=totalMod?m.reduce((s,x)=>s+(x.avance??0),0)/totalMod:0;
+  // Avance físico real: último valor acumulado de DATA.curva (igual que Curva S)
+  const _today=new Date(); _today.setHours(23,59,59,999);
+  const _curvaHoy=(DATA.curva||[]).filter(x=>{const d=parseDate(x.fecha);return d&&!isNaN(d)&&d<=_today;});
+  const _lastReal=[..._curvaHoy].reverse().find(x=>x.real!=null&&x.real>0);
+  const avFisicoReal=_lastReal?_lastReal.real*100:avProm*100;
+  const totalComprado=getCompras().reduce((s,x)=>s+(x.valorTotal??0),0);
+  const presupuesto=_presupuestoTotal??getCompras().find(x=>x.presupuesto)?.presupuesto??null;
+
+  const despachados=new Set((_supaDesp.length?_supaDesp:(DATA.despachos||[])).map(x=>x.modulo).filter(Boolean)).size;
+  document.getElementById('kpi-resumen').innerHTML=kpiHTML([
+    {lbl:'Ejecución ppto',     val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
+     cls:presupuesto&&totalComprado>presupuesto?'c-red':'c-green'},
+    {lbl:'% Avance Físico',    val:fmtPr(avFisicoReal),    cls:'c-purple'},
+    {lbl:'Total comprado',     val:fmtM(totalComprado),    cls:'c-blue'},
+    {lbl:'Módulos terminados', val:fmt(terminados),        cls:'c-green', sub:fmtPr(terminados/totalMod*100)+' del total'},
+    {lbl:'Módulos en proceso', val:fmt(enProceso),         cls:'c-orange'},
+    {lbl:'Módulos despachados',val:fmt(despachados),       cls:'c-blue',  sub:totalMod?fmtPr(despachados/totalMod*100)+' del total':''},
+  ]);
+
+  // Distribución 10% buckets – solo ≥50%
+  const bucketDefs=['50–59%','60–69%','70–79%','80–89%','90–99%','COMPLETADO','DESPACHADOS'];
+  const buckets={}; bucketDefs.forEach(b=>buckets[b]=0);
+  m.forEach(x=>{
+    if(x.termReal){ buckets['COMPLETADO']++; return; }
+    const p=(x.avance??0)*100;
+    if(p>=100)     { buckets['COMPLETADO']++; return; }
+    if(p>=90)      buckets['90–99%']++;
+    else if(p>=80) buckets['80–89%']++;
+    else if(p>=70) buckets['70–79%']++;
+    else if(p>=60) buckets['60–69%']++;
+    else if(p>=50) buckets['50–59%']++;
+    // < 50% excluidos de este gráfico
+  });
+  buckets['DESPACHADOS'] = new Set((_supaDesp.length?_supaDesp:(DATA.despachos||[])).map(d=>d.modulo)).size;
+  // Gradiente naranja → verde + azul para despachados
+  const bColors=['rgba(227,144,62,.85)','rgba(210,185,50,.85)','rgba(163,200,60,.85)','rgba(100,200,80,.85)','rgba(63,185,80,.85)','rgba(40,160,60,.9)','rgba(52,152,219,.85)'];
+  barChart('ch-dist-res', bucketDefs, [{
+    label:'Módulos', data:bucketDefs.map(b=>buckets[b]),
+    backgroundColor:bColors, borderRadius:5
+  }],{yMoney:false});
+
+  // Compras reales vs Presupuesto por mes – ordered 2025→2026
+  const mesReal={}, mesPpto={};
+  getCompras().forEach(g=>{
+    const key=`${g.mes}-${g.anioGuia}`;
+    mesReal[key]=(mesReal[key]||0)+(g.valorTotal||0);
+    mesPpto[key]=(mesPpto[key]||0)+(g.totalPpto||0);
+  });
+  const mOrdered=MESES_ORDER.filter(m=>mesReal[`${m.n}-${m.y}`]||mesPpto[`${m.n}-${m.y}`]);
+  groupedBar('ch-compras-res', mOrdered.map(m=>m.lbl),[
+    {label:'Compras reales', data:mOrdered.map(m=>Math.round(mesReal[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(88,166,255,.85)', borderRadius:4},
+    {label:'Presupuesto',    data:mOrdered.map(m=>Math.round(mesPpto[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(227,144,62,.65)', borderRadius:4},
+  ],{yMoney:true, money:true, tooltipFull:true});
+
+  // % Avance económico mensual: barras real + línea proyectado
+  const ha = DATA.homeAvance||[];
+  const cardAvEcon = document.getElementById('card-av-econ');
+  if(!ha.length){
+    // Show placeholder when data not yet loaded
+    const canvas = document.getElementById('ch-av-econ');
+    if(canvas && cardAvEcon){
+      canvas.style.display='none';
+      if(!cardAvEcon.querySelector('.av-econ-placeholder')){
+        const ph=document.createElement('div');
+        ph.className='av-econ-placeholder';
+        ph.style.cssText='display:flex;align-items:center;justify-content:center;height:240px;color:#7a7f99;font-size:.85rem;gap:8px;';
+        ph.innerHTML='<span style="font-size:1.4rem">📊</span> Para ver este gráfico, re-subí el archivo Excel';
+        cardAvEcon.querySelector('.chart-wrap').appendChild(ph);
+      }
+    }
+  }
+  if(ha.length){
+    // Trim to current month
+    const MES_N={'Enero':1,'Febrero':2,'Marzo':3,'Abril':4,'Mayo':5,'Junio':6,
+                 'Julio':7,'Agosto':8,'Septiembre':9,'Octubre':10,'Noviembre':11,'Diciembre':12};
+    const curMes = new Date().getMonth()+1; // 1-12
+    const haFilt = ha.filter(x => (MES_N[x.mes]||13) <= curMes);
+    if(!haFilt.length){ ha.length=0; } else { ha.splice(0, ha.length, ...haFilt); }
+
+    const canvas = document.getElementById('ch-av-econ');
+    if(canvas) canvas.style.display='';
+    if(cardAvEcon){ const ph=cardAvEcon.querySelector('.av-econ-placeholder'); if(ph) ph.remove(); }
+    const haLabels = ha.map(x=>{
+      const s = String(x.mes);
+      const abbr = {'Enero':'Ene','Febrero':'Feb','Marzo':'Mar','Abril':'Abr','Mayo':'May',
+                    'Junio':'Jun','Julio':'Jul','Agosto':'Ago','Septiembre':'Sep',
+                    'Octubre':'Oct','Noviembre':'Nov','Diciembre':'Dic'};
+      return abbr[s]||s.slice(0,3);
+    });
+    const haReal = ha.map(x=>x.avEcon!=null ? +((x.avEcon)*100).toFixed(2) : null);
+    const haProy = ha.map(x=>x.avEconProy!=null ? +((x.avEconProy)*100).toFixed(2) : null);
+    const _proySaved=parseFloat(localStorage.getItem('proyExtra_avEcon')||'4.5');
+    const _inpPE=document.getElementById('proy-extra-val');
+    if(_inpPE) _inpPE.value=_proySaved;
+    const haProyExtra=ha.map((_,i)=>i===ha.length-1?_proySaved:null);
+    killChart('ch-av-econ');
+    const ctx = document.getElementById('ch-av-econ')?.getContext('2d');
+    if(ctx){
+      CHARTS['ch-av-econ'] = new Chart(ctx,{
+        type:'bar',
+        data:{
+          labels:haLabels,
+          datasets:[
+            { type:'bar', label:'Avance económico real', data:haReal,
+              backgroundColor:'rgba(212,43,30,.78)', borderRadius:5, order:2 },
+            { type:'line', label:'Proyectado mensual', data:haProy,
+              borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.12)',
+              pointBackgroundColor:'#4f8ef7', borderWidth:2.5, pointRadius:4,
+              tension:0.35, order:1, fill:false, spanGaps:true },
+            { type:'bar', label:'Proyectado adicional', data:haProyExtra,
+              backgroundColor:'transparent', borderColor:'rgba(0,0,0,0)',
+              borderWidth:0, order:3 }
+          ]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11},
+              generateLabels(chart){
+                try{
+                  const fn=Chart.defaults.plugins.legend.labels.generateLabels;
+                  const labels=fn?fn(chart):[];
+                  labels.forEach(l=>{if(l.text==='Proyectado adicional'){l.fillStyle='transparent';l.strokeStyle='rgba(245,166,35,0.95)';l.lineWidth=2;}});
+                  return labels;
+                }catch(e){return [];}
+              }}},
+            tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
+            datalabels:{
+            display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
+            color:'#e6edf3',font:{size:10,weight:'600'},
+            anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
+            align:ctx=>ctx.dataset.type==='bar'?'end':'top',
+            offset:2,
+            formatter:v=>(+v).toFixed(1)+'%'
+          }
+          },
+          scales:{
+            x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+            y:{grid:{color:'rgba(255,255,255,0.04)'},
+              ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},
+              border:{color:'rgba(255,255,255,0.04)'}}
+          }
+        },
+        plugins:[{
+          id:'proyExtraOutline',
+          afterDatasetsDraw(chart){
+            const proDS=chart.data.datasets.find(d=>d.label==='Proyectado adicional');
+            if(!proDS) return;
+            const val=proDS.data.find(v=>v!==null);
+            if(!val) return;
+            const realIdx=chart.data.datasets.findIndex(d=>d.label==='Avance económico real');
+            if(realIdx<0) return;
+            const meta=chart.getDatasetMeta(realIdx);
+            const lastBar=meta.data[meta.data.length-1];
+            if(!lastBar) return;
+            const yScale=chart.scales.y;
+            const y0=yScale.getPixelForValue(0);
+            const y1=yScale.getPixelForValue(val);
+            const bw=lastBar.width;
+            const ctx=chart.ctx;
+            ctx.save();
+            ctx.strokeStyle='rgba(245,166,35,0.95)';
+            ctx.lineWidth=2.5;
+            ctx.strokeRect(lastBar.x-bw/2, Math.min(y0,y1), bw, Math.abs(y0-y1));
+            ctx.restore();
+          }
+        }]
+      });
+      // Event listener para edición directa del proyectado adicional
+      (function(){
+        const inp=document.getElementById('proy-extra-val');
+        if(!inp) return;
+        inp.addEventListener('input',function(){
+          const v=parseFloat(this.value);
+          if(isNaN(v)||v<0) return;
+          localStorage.setItem('proyExtra_avEcon',v);
+          const ch=CHARTS['ch-av-econ'];
+          if(!ch) return;
+          const ds=ch.data.datasets.find(d=>d.label==='Proyectado adicional');
+          if(!ds) return;
+          const idx=ds.data.findLastIndex(x=>x!==null);
+          if(idx>=0) ds.data[idx]=v;
+          else { const last=ds.data.length-1; if(last>=0) ds.data[last]=v; }
+          ch.update();
+        });
+      })();
+    }
+
+    // Avance económico acumulado proyectado vs real
+    killChart('ch-av-econ-acum');
+    const ctxAcum = document.getElementById('ch-av-econ-acum')?.getContext('2d');
+    if(ctxAcum){
+      let sumReal=0, sumProy=0;
+      const haRealAcum=[], haProyAcum=[];
+      for(let i=0;i<haReal.length;i++){
+        if(haReal[i]!=null){ sumReal+=haReal[i]; haRealAcum.push(+sumReal.toFixed(2)); }
+        else haRealAcum.push(null);
+        if(haProy[i]!=null){ sumProy+=haProy[i]; haProyAcum.push(+sumProy.toFixed(2)); }
+        else haProyAcum.push(null);
+      }
+      CHARTS['ch-av-econ-acum'] = new Chart(ctxAcum,{
+        type:'bar',
+        data:{
+          labels:haLabels,
+          datasets:[
+            { type:'bar', label:'Real acumulado', data:haRealAcum,
+              backgroundColor:'rgba(212,43,30,.78)', borderRadius:5, order:2 },
+            { type:'line', label:'Proyectado acumulado', data:haProyAcum,
+              borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.12)',
+              pointBackgroundColor:'#4f8ef7', borderWidth:2.5, pointRadius:4,
+              tension:0.35, order:1, fill:false, spanGaps:true }
+          ]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+            tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
+            datalabels:{
+            display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
+            color:'#e6edf3',font:{size:10,weight:'600'},
+            anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
+            align:ctx=>ctx.dataset.type==='bar'?'end':'top',
+            offset:2,
+            formatter:v=>(+v).toFixed(1)+'%'
+          }
+          },
+          scales:{
+            x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+            y:{grid:{color:'rgba(255,255,255,0.04)'},
+              ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},
+              border:{color:'rgba(255,255,255,0.04)'}}
+          }
+        },
+        plugins:[ChartDataLabels]
+      });
+    }
+  }
+
+  // M² acumulado real vs programado por mes
+  (function(){
+    const curva=DATA.curva||[];
+    const today=new Date(); today.setHours(23,59,59,999);
+    const m2ByMes={};
+    curva.forEach(r=>{
+      const fd=parseDate(r.fecha); if(!fd||isNaN(fd)) return;
+      const key=`${fd.getMonth()+1}-${fd.getFullYear()}`;
+      if(!m2ByMes[key]) m2ByMes[key]={m2RealAcum:0,m2PlanAcum:0,_lastPlan:null,_lastReal:null};
+      // Plan: última fila del mes (incluye proyectadas)
+      if(!m2ByMes[key]._lastPlan||fd>m2ByMes[key]._lastPlan){
+        m2ByMes[key].m2PlanAcum=r.m2PlanAcum||0;
+        m2ByMes[key]._lastPlan=fd;
+      }
+      // Real: última fila del mes con fecha <= hoy
+      if(fd<=today&&(!m2ByMes[key]._lastReal||fd>m2ByMes[key]._lastReal)){
+        m2ByMes[key].m2RealAcum=r.m2RealAcum||0;
+        m2ByMes[key]._lastReal=fd;
+      }
+    });
+    const m2Ord=MESES_ORDER.filter(m=>m2ByMes[`${m.n}-${m.y}`]);
+    killChart('ch-m2-res');
+    const ctx=document.getElementById('ch-m2-res')?.getContext('2d');
+    if(!ctx||!m2Ord.length) return;
+    CHARTS['ch-m2-res']=new Chart(ctx,{
+      type:'bar',
+      data:{labels:m2Ord.map(m=>m.lbl),datasets:[
+        {type:'bar', label:'Real acumulado',       data:m2Ord.map(m=>m2ByMes[`${m.n}-${m.y}`].m2RealAcum||0),
+         backgroundColor:'rgba(212,43,30,.75)',borderRadius:4,order:2},
+        {type:'line',label:'Programado acumulado', data:m2Ord.map(m=>m2ByMes[`${m.n}-${m.y}`].m2PlanAcum||0),
+         borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.1)',borderWidth:2.5,pointRadius:3,tension:0.35,fill:false,order:1}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+                 tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y||0).toLocaleString('es-CL')} m²`}},
+                 datalabels:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',callback:v=>v.toLocaleString('es-CL')},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  })();
+}
+
+// ═══════════════════════════════════════════════
+// CURVA S
+// ═══════════════════════════════════════════════
+function renderCurva(){
+  const today=new Date(); today.setHours(23,59,59,999);
+
+  // Build available months from CURVA (up to today)
+  const monthSet=new Set();
+  (DATA.curva||[]).forEach(x=>{
+    const d=parseDate(x.fecha);
+    if(d&&!isNaN(d)&&d<=today){
+      monthSet.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    }
+  });
+  const months=[...monthSet].sort();
+  const MN={1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
+  const sel=document.getElementById('curva-mes-sel');
+  sel.innerHTML='<option value="">Todos los meses</option>'+
+    months.map(m=>{const[y,mn]=m.split('-');return`<option value="${m}">${MN[+mn]} ${y}</option>`;}).join('');
+
+  // KPIs (always based on full data up to today)
+  const curvaHoy=(DATA.curva||[]).filter(x=>{const d=parseDate(x.fecha);return d&&!isNaN(d)&&d<=today;});
+  const lastReal=[...curvaHoy].reverse().find(x=>x.real!=null&&x.real>0);
+  const lastTeo=[...curvaHoy].reverse().find(x=>x.teorico!=null&&x.teorico>0);
+  const realPct=lastReal?lastReal.real*100:0;
+  const teoPct=lastTeo?lastTeo.teorico*100:0;
+  const modsActivos=(DATA.modulos||[]).filter(x=>x.initReal&&!x.termReal).length;
+  const modsIniciados=(DATA.modulos||[]).filter(x=>x.initReal).length;
+  const modsTerminados=(DATA.modulos||[]).filter(x=>x.termReal).length;
+  const avHoy=(DATA.avplan||[]).filter(x=>{const d=parseDate(x.fecha);return d&&!isNaN(d)&&d<=today;});
+  const lastAvPlan=[...avHoy].reverse().find(x=>x.termPlanAcum!=null&&x.termPlanAcum>0);
+  const termPlanHoy=lastAvPlan?Math.round(lastAvPlan.termPlanAcum):0;
+  const brechaTerms=modsTerminados-termPlanHoy;
+
+  document.getElementById('kpi-curva').innerHTML=kpiHTML([
+    {lbl:'% Avance Real (hoy)',      val:fmtPr(realPct),      cls:'c-green'},
+    {lbl:'% Avance Teórico (hoy)',   val:fmtPr(teoPct),       cls:'c-blue'},
+    {lbl:'Brecha módulos terminados',val:(brechaTerms>=0?'+':'')+fmt(brechaTerms), cls:brechaTerms>=0?'c-green':'c-red', sub:`real ${fmt(modsTerminados)} vs plan ${fmt(termPlanHoy)}`},
+    {lbl:'Módulos activos',          val:fmt(modsActivos),    cls:'c-orange', sub:'iniciados sin terminar'},
+    {lbl:'Módulos iniciados',        val:fmt(modsIniciados),  cls:'c-purple'},
+    {lbl:'Módulos terminados',       val:fmt(modsTerminados), cls:'c-green'},
+  ]);
+
+  const renderCurvaCharts=()=>{
+    const filterMonth=sel.value;
+
+    // Filter CURVA to today, then optionally to selected month
+    let curvaF=(DATA.curva||[]).filter(x=>{
+      const d=parseDate(x.fecha); if(!d||isNaN(d)||d>today) return false;
+      if(filterMonth){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return ym===filterMonth;}
+      return true;
+    });
+
+    // Filter AV_PLAN similarly
+    let avF=(DATA.avplan||[]).filter(x=>{
+      const d=parseDate(x.fecha); if(!d||isNaN(d)||d>today) return false;
+      if(filterMonth){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return ym===filterMonth;}
+      return true;
+    });
+
+    // ── Aggregate CURVA by week ──
+    const curvaWeeks=new Map();
+    curvaF.forEach(r=>{
+      const d=parseDate(r.fecha); if(!d||isNaN(d)) return;
+      const wk=weekKey(d);
+      if(!curvaWeeks.has(wk)) curvaWeeks.set(wk,{wk,rows:[]});
+      curvaWeeks.get(wk).rows.push(r);
+    });
+    const curvaByWeek=[...curvaWeeks.values()].sort((a,b)=>a.wk-b.wk).map(w=>{
+      const rows=w.rows, last=rows[rows.length-1];
+      return {
+        label:weekLabel(w.wk),
+        teorico:last.teorico?+(last.teorico*100).toFixed(4):0,
+        real:last.real?+(last.real*100).toFixed(4):0,
+      };
+    });
+
+    // ── Chart: Curva S por semana (con puntos) ──
+    lineChart('ch-curva-s', curvaByWeek.map(w=>w.label),[
+      {label:'% Teórico',data:curvaByWeek.map(w=>w.teorico),
+       borderColor:'rgba(88,166,255,1)',backgroundColor:'rgba(88,166,255,0.08)',fill:true,tension:0.3,pointRadius:4,pointHoverRadius:6,borderWidth:2},
+      {label:'% Real',data:curvaByWeek.map(w=>w.real),
+       borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,0.08)',fill:true,tension:0.3,pointRadius:4,pointHoverRadius:6,borderWidth:2},
+    ],{pct:true,legend:true});
+
+    // ── Chart: Curva S por día ──
+    const curvaByDay=[...curvaF].sort((a,b)=>{
+      const da=parseDate(a.fecha),db=parseDate(b.fecha);return da-db;
+    }).map(r=>{
+      const d=parseDate(r.fecha);
+      return {
+        label:d?d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'}):'' ,
+        teorico:r.teorico?+(r.teorico*100).toFixed(4):0,
+        real:r.real?+(r.real*100).toFixed(4):0,
+      };
+    });
+    lineChart('ch-curva-s-dia', curvaByDay.map(d=>d.label),[
+      {label:'% Teórico',data:curvaByDay.map(d=>d.teorico),
+       borderColor:'rgba(88,166,255,1)',backgroundColor:'rgba(88,166,255,0.08)',fill:true,tension:0.3,pointRadius:2,pointHoverRadius:4,borderWidth:2},
+      {label:'% Real',data:curvaByDay.map(d=>d.real),
+       borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,0.08)',fill:true,tension:0.3,pointRadius:2,pointHoverRadius:4,borderWidth:2},
+    ],{pct:true,legend:true,allTicks:true});
+
+    // ── Aggregate AV_PLAN by week ──
+    const avWeeks=new Map();
+    avF.forEach(r=>{
+      const d=parseDate(r.fecha); if(!d||isNaN(d)) return;
+      const wk=weekKey(d);
+      if(!avWeeks.has(wk)) avWeeks.set(wk,{wk,rows:[],initPlan:0,initReal:0});
+      const w=avWeeks.get(wk);
+      w.rows.push(r);
+      w.initPlan+=(r.initPlan||0);
+      w.initReal+=(r.initReal||0);
+    });
+    const avByWeek=[...avWeeks.values()].sort((a,b)=>a.wk-b.wk).map(w=>{
+      const last=w.rows[w.rows.length-1];
+      return {
+        label:weekLabel(w.wk),
+        initPlan:w.initPlan, initReal:w.initReal,
+        planAcum:last.planAcum||0, realAcum:last.realAcum||0,
+        termPlanAcum:last.termPlanAcum||0, termRealAcum:last.termRealAcum||0,
+      };
+    });
+    const avLabels=avByWeek.map(w=>w.label);
+
+    // ── Chart: Inicio acumulado real vs planificado ──
+    lineChart('ch-init-line', avLabels,[
+      {label:'Planificado',data:avByWeek.map(w=>w.planAcum),
+       borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(227,144,62,0.08)',fill:true,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
+      {label:'Real',       data:avByWeek.map(w=>w.realAcum),
+       borderColor:'rgba(88,166,255,1)',backgroundColor:'rgba(88,166,255,0.08)',fill:true,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
+    ],{legend:true});
+
+    // ── Chart: Término acumulado real vs planificado ──
+    lineChart('ch-term-line', avLabels,[
+      {label:'Planificado',data:avByWeek.map(w=>w.termPlanAcum),
+       borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(227,144,62,0.08)',fill:true,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
+      {label:'Real',       data:avByWeek.map(w=>w.termRealAcum),
+       borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,0.08)',fill:true,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
+    ],{legend:true});
+
+    // ── Chart: Iniciados por semana real vs planificado (línea) ──
+    lineChart('ch-activos', avLabels,[
+      {label:'Planificado',data:avByWeek.map(w=>w.initPlan),
+       borderColor:'rgba(227,144,62,1)',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
+      {label:'Real',       data:avByWeek.map(w=>w.initReal),
+       borderColor:'rgba(88,166,255,1)',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
+    ],{legend:true});
+  };
+
+  sel.onchange=renderCurvaCharts;
+  renderCurvaCharts();
+}
+
+// ═══════════════════════════════════════════════
+// MÓDULOS
+// ═══════════════════════════════════════════════
+let MOD_ALL=[];
+function renderModulos(){
+  const m=DATA.modulos||[]; MOD_ALL=m;
+  const terminados=m.filter(x=>x.termReal).length;
+  const enProceso=m.filter(x=>x.initReal&&!x.termReal).length;
+  const sinIniciar=m.filter(x=>!x.initReal).length;
+  const avProm=m.length?(m.reduce((s,x)=>s+(x.avance??0),0)/m.length*100):0;
+
+  const totalIniciados=terminados+enProceso;
+
+  // Despachados y listos pendientes de despacho
+  const despachados=_supaDesp.length?_supaDesp:(DATA.despachos||[]);
+  const modsDespachados=new Set(despachados.map(x=>x.modulo).filter(Boolean));
+  const nDespachados=modsDespachados.size;
+  const listosPendDesp=m.filter(x=>x.termReal&&!modsDespachados.has(x.modulo)).length;
+
+  document.getElementById('kpi-modulos').innerHTML=kpiHTML([
+    {lbl:'% Avance promedio',       val:fmtPr(avProm),         cls:'c-purple'},
+    {lbl:'Terminados',              val:fmt(terminados),        cls:'c-green', sub:fmtPr(terminados/m.length*100)+' del total'},
+    {lbl:'En proceso',              val:fmt(enProceso),         cls:'c-orange'},
+    {lbl:'Total iniciados',         val:fmt(totalIniciados),    cls:'c-blue', sub:fmtPr(totalIniciados/m.length*100)+' del total'},
+    {lbl:'Despachados',             val:fmt(nDespachados),      cls:'c-green'},
+    {lbl:'Listos — pend. despacho', val:fmt(listosPendDesp),   cls:'c-yellow'},
+  ]);
+
+  // Distribución 10% buckets – todos los rangos (mismo estilo que Resumen)
+  // Distribución 10% buckets – desde 10% (excluye 0–9%)
+  const bd=['10–19%','20–29%','30–39%','40–49%','50–59%','60–69%','70–79%','80–89%','90–99%','COMPLETADO'];
+  const bk={}; bd.forEach(b=>bk[b]=0);
+  m.forEach(x=>{
+    if(x.termReal){ bk['COMPLETADO']++; return; }
+    const p=(x.avance??0)*100;
+    if(p>=100)     { bk['COMPLETADO']++; return; }
+    if(p>=90)      bk['90–99%']++;
+    else if(p>=80) bk['80–89%']++;
+    else if(p>=70) bk['70–79%']++;
+    else if(p>=60) bk['60–69%']++;
+    else if(p>=50) bk['50–59%']++;
+    else if(p>=40) bk['40–49%']++;
+    else if(p>=30) bk['30–39%']++;
+    else if(p>=20) bk['20–29%']++;
+    else if(p>=10) bk['10–19%']++;
+    // <10%: excluidos
+  });
+  const bColors10=['rgba(240,110,60,.8)','rgba(227,144,62,.8)','rgba(210,175,50,.8)','rgba(190,195,55,.8)','rgba(163,200,60,.8)','rgba(130,200,70,.8)','rgba(100,200,80,.8)','rgba(75,192,80,.8)','rgba(55,185,75,.8)','rgba(40,160,60,.9)'];
+  barChart('ch-dist-avance',bd,[{label:'Módulos',data:bd.map(b=>bk[b]),
+    backgroundColor:bColors10, borderRadius:5}],{yMoney:false});
+
+  // Por torre – % avance promedio, solo torres activas (con al menos un módulo en proceso)
+  const torresActivas=new Set(m.filter(x=>x.initReal&&!x.termReal).map(x=>x.torre||'S/T'));
+  const torrMap={};
+  m.filter(x=>torresActivas.has(x.torre||'S/T')).forEach(x=>{
+    const t=x.torre||'S/T';
+    if(!torrMap[t]) torrMap[t]={sum:0,cnt:0};
+    torrMap[t].sum+=(x.avance??0)*100;
+    torrMap[t].cnt++;
+  });
+  const tKeys=Object.keys(torrMap).sort();
+  barChart('ch-torre',tKeys,[{
+    label:'% Avance',data:tKeys.map(k=>+(torrMap[k].sum/torrMap[k].cnt).toFixed(2)),
+    backgroundColor:tKeys.map(k=>{
+      const p=torrMap[k].sum/torrMap[k].cnt;
+      return p>=75?'rgba(63,185,80,.8)':p>=50?'rgba(88,166,255,.8)':p>=25?'rgba(227,144,62,.8)':'rgba(248,81,73,.8)';
+    }),borderRadius:5
+  }],{yMoney:false,pct:true});
+
+  // Filters
+  const ts=document.getElementById('mod-torre'),es=document.getElementById('mod-estado');
+  ts.innerHTML=['Todas',...new Set(m.map(x=>x.torre).filter(Boolean))].map(t=>`<option>${t}</option>`).join('');
+  es.innerHTML=['Todos',...new Set(m.map(x=>x.estado||'').filter(Boolean))].map(e=>`<option>${e}</option>`).join('');
+
+  const renderModTable=()=>{
+    const q=document.getElementById('mod-search').value.toLowerCase();
+    const t=ts.value,e=es.value;
+    const filtered=MOD_ALL.filter(x=>{
+      if(t!=='Todas'&&x.torre!==t) return false;
+      if(e!=='Todos'&&(x.estado||'')!==e) return false;
+      if(q&&!((x.modulo||'').toLowerCase().includes(q)||(x.torre||'').toLowerCase().includes(q)||(x.tipo||'').toLowerCase().includes(q))) return false;
+      return true;
+    }).slice(0,200);
+
+    document.querySelector('#tbl-modulos thead').innerHTML=
+      `<tr><th>Módulo</th><th>Torre</th><th>Tipo</th><th>% Avance</th><th>Inicio proy.</th><th>Inicio real</th><th>GAP inicio (días)</th><th>Término plan.</th><th>Término real</th><th>GAP término (días)</th><th>Duración real (días)</th><th>Estado</th></tr>`;
+    document.querySelector('#tbl-modulos tbody').innerHTML=filtered.map(x=>{
+      const pct=(x.avance??0)*100;
+      const col=pct>=100?'var(--green)':pct>=75?'var(--accent)':pct>=50?'var(--yellow)':'var(--red)';
+      const hoy=new Date(); hoy.setHours(0,0,0,0);
+      const tp=parseDate(x.termPlan); const atrasado=tp&&tp<hoy&&pct<100;
+      const badge=pct>=100||x.termReal?'<span class="badge b-green">Terminado</span>':
+                  atrasado?'<span class="badge b-red">Atrasado</span>':
+                  '<span class="badge b-blue">En proceso</span>';
+      const gapI=x.gapInicio!=null?x.gapInicio:'—';
+      const gapT=(parseDate(x.termReal)&&parseDate(x.termPlan))?Math.round((parseDate(x.termReal)-parseDate(x.termPlan))/86400000):'—';
+      const durR=(parseDate(x.termReal)&&parseDate(x.initReal))?Math.round((parseDate(x.termReal)-parseDate(x.initReal))/86400000):'—';
+      const gapIClr=typeof gapI==='number'?(gapI>0?'color:var(--red)':gapI<0?'color:var(--green)':''):'';
+      const gapTClr=typeof gapT==='number'?(gapT>0?'color:var(--red)':gapT<0?'color:var(--green)':''):'';
+      return`<tr>
+        <td>${x.modulo||'—'}</td><td>${x.torre||'—'}</td><td>${x.tipo||'—'}</td>
+        <td><div class="pct-cell"><div class="pbar-wrap"><div class="pbar" style="width:${Math.min(pct,100).toFixed(0)}%;background:${col}"></div></div><span>${pct.toFixed(2)}%</span></div></td>
+        <td>${fmtDate(x.initTeorico)}</td><td>${fmtDate(x.initReal)}</td><td style="${gapIClr}">${gapI}</td><td>${fmtDate(x.termPlan)}</td><td>${fmtDate(x.termReal)}</td><td style="${gapTClr}">${gapT}</td><td>${durR}</td>
+        <td>${badge}</td>
+      </tr>`;
+    }).join('');
+  };
+  document.getElementById('mod-search').oninput=renderModTable;
+  ts.onchange=renderModTable; es.onchange=renderModTable;
+  renderModTable();
+
+  // M² charts por semana
+  (function(){
+    const today=new Date(); today.setHours(23,59,59,999);
+    const curva=(DATA.curva||[]).filter(r=>{const d=parseDate(r.fecha);return d&&!isNaN(d)&&d<=today;});
+    killChart('ch-m2-mod'); killChart('ch-m2-dia');
+    if(!curva.length) return;
+    const weekMap={};
+    curva.forEach(r=>{
+      if(!r.fecha) return;
+      const wk=weekKey(r.fecha); if(!wk) return;
+      if(!weekMap[wk]) weekMap[wk]={last:null,realDia:0,planDia:0};
+      weekMap[wk].last=r;
+      weekMap[wk].realDia+=(r.m2RealDiario||0);
+      weekMap[wk].planDia+=(r.m2PlanDiario||0);
+    });
+    const wKeys=Object.keys(weekMap).sort();
+    const wLabels=wKeys.map(k=>weekLabel(+k));
+    const ctx1=document.getElementById('ch-m2-mod')?.getContext('2d');
+    if(ctx1) CHARTS['ch-m2-mod']=new Chart(ctx1,{
+      type:'bar',
+      data:{labels:wLabels,datasets:[
+        {type:'bar', label:'Real acumulado',       data:wKeys.map(k=>weekMap[k].last.m2RealAcum||0),
+         backgroundColor:'rgba(212,43,30,.75)',borderRadius:3,order:2},
+        {type:'line',label:'Programado acumulado', data:wKeys.map(k=>weekMap[k].last.m2PlanAcum||0),
+         borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.1)',borderWidth:2.5,pointRadius:2,tension:0.35,fill:false,order:1}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+                 tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y||0).toLocaleString('es-CL')} m²`}},
+                 datalabels:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',maxRotation:45,font:{size:10}},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',callback:v=>v.toLocaleString('es-CL')},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+    const ctx2=document.getElementById('ch-m2-dia')?.getContext('2d');
+    if(ctx2) CHARTS['ch-m2-dia']=new Chart(ctx2,{
+      type:'bar',
+      data:{labels:wLabels,datasets:[
+        {type:'bar', label:'Real diario',       data:wKeys.map(k=>weekMap[k].realDia),
+         backgroundColor:'rgba(63,185,80,.75)',borderRadius:3,order:2},
+        {type:'line',label:'Programado diario', data:wKeys.map(k=>weekMap[k].planDia),
+         borderColor:'rgba(227,144,62,1)',backgroundColor:'transparent',borderWidth:2.5,pointRadius:2,tension:0.35,fill:false,order:1}
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+                 tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y||0).toLocaleString('es-CL')} m²`}},
+                 datalabels:{display:false}},
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',maxRotation:45,font:{size:10}},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',callback:v=>v.toLocaleString('es-CL')},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  })();
+}
+
+// ═══════════════════════════════════════════════
+// COMPRAS
+// ═══════════════════════════════════════════════
+let GD_ALL=[];
+function renderCompras(){
+  const gd=getCompras(); GD_ALL=gd;
+  const total=gd.reduce((s,x)=>s+(x.valorTotal||0),0);
+  const totalPpto=gd.reduce((s,x)=>s+(x.totalPpto||0),0);
+  const ppto=gd.find(x=>x.presupuesto)?.presupuesto??null;
+  const nGD=new Set(gd.map(x=>x.gd).filter(Boolean)).size;
+
+  document.getElementById('kpi-compras').innerHTML=kpiHTML([
+    {lbl:'Total comprado',      val:fmtM(total),             cls:'c-blue'},
+    {lbl:'Ppto acumulado (GD)', val:fmtM(totalPpto),         cls:''},
+    {lbl:'Dif. real – ppto',    val:fmtM(total-totalPpto),   cls:(total-totalPpto)<=0?'c-green':'c-red', sub:'neg = más barato'},
+    {lbl:'N° guías (GD)',       val:fmt(nGD),                cls:'c-orange'},
+    {lbl:'Ppto total proyecto',  val:fmtM(ppto),             cls:''},
+    {lbl:'Ejec. ppto total',    val:ppto?fmtPr(total/ppto*100):'—', cls:ppto&&total>ppto?'c-red':'c-green'},
+  ]);
+
+  // Compras vs Ppto por mes – ordered 2025→2026
+  const mesReal={}, mesPpto={};
+  gd.forEach(g=>{
+    const key=`${g.mes}-${g.anioGuia}`;
+    mesReal[key]=(mesReal[key]||0)+(g.valorTotal||0);
+    mesPpto[key]=(mesPpto[key]||0)+(g.totalPpto||0);
+  });
+  const mOrd=MESES_ORDER.filter(m=>mesReal[`${m.n}-${m.y}`]||mesPpto[`${m.n}-${m.y}`]);
+  groupedBar('ch-gd-mes',mOrd.map(m=>m.lbl),[
+    {label:'Compras reales', data:mOrd.map(m=>Math.round(mesReal[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(88,166,255,.85)', borderRadius:4},
+    {label:'Presupuesto',    data:mOrd.map(m=>Math.round(mesPpto[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(227,144,62,.65)', borderRadius:4},
+  ],{yMoney:true, money:true});
+
+  // Top 10 materiales
+  const matMap={};
+  gd.forEach(g=>{const k=g.desc2||g.desc||'SIN DESC';matMap[k]=(matMap[k]||0)+(g.valorTotal||0);});
+  const top10=Object.entries(matMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  barChart('ch-top-mat',top10.map(x=>x[0].substring(0,25)),[{
+    label:'Monto',data:top10.map(x=>x[1]),
+    backgroundColor:'rgba(188,140,255,.75)',borderRadius:5
+  }],{horizontal:true,xMoney:true,money:true});
+
+  // Por tipo – doughnut con montos formateados
+  const tipoMap={};
+  gd.forEach(g=>{const t=g.tipoProd||'OTRO';tipoMap[t]=(tipoMap[t]||0)+(g.valorTotal||0);});
+  const tKeys=Object.keys(tipoMap);
+  doughnutChart('ch-tipo-prod',tKeys,tKeys.map(k=>Math.round(tipoMap[k])),
+    tKeys.map((_,i)=>['rgba(88,166,255,.8)','rgba(227,144,62,.8)','rgba(188,140,255,.8)','rgba(63,185,80,.8)'][i%4]),
+    true  // money labels
+  );
+
+  // Table – solo productos críticos
+  const gdCrit=gd.filter(x=>x.tipoProd==='PRODUCTO CRITICO');
+  const mesesOpts=['Todos',...MESES_ORDER.filter(m=>gdCrit.some(g=>g.mes===m.n&&g.anioGuia===m.y)).map(m=>m.lbl)];
+  const ms=document.getElementById('gd-mes');
+  ms.innerHTML=mesesOpts.map(m=>`<option>${m}</option>`).join('');
+
+  const renderGD=()=>{
+    const q=document.getElementById('gd-search').value.toLowerCase();
+    const mLbl=ms.value;
+    const mo=MESES_ORDER.find(m=>m.lbl===mLbl);
+    const filtered=gdCrit.filter(x=>{
+      if(mLbl!=='Todos'&&mo&&!(x.mes===mo.n&&x.anioGuia===mo.y)) return false;
+      if(q&&!((x.desc||'').toLowerCase().includes(q)||(String(x.gd||'')).includes(q)||(String(x.oc||'')).includes(q)||(x.desc2||'').toLowerCase().includes(q))) return false;
+      return true;
+    }).slice(0,300);
+
+    document.querySelector('#tbl-gd thead').innerHTML=
+      `<tr><th>Fecha</th><th>GD</th><th>Material</th><th>Cant.</th><th>Val. unit.</th><th>Total</th><th>Ppto unit.</th><th>Dif. total</th><th>Dif. %</th></tr>`;
+    document.querySelector('#tbl-gd tbody').innerHTML=filtered.map(x=>{
+      // difTotal = ppto - real → negativo significa real > ppto → MÁS CARO → rojo
+      const dt=x.difTotal;
+      const dtColor=dt==null?'':dt<0?'var(--red)':'var(--green)';  // neg=más caro=rojo
+      const dp=x.difPct!=null?x.difPct*100:null;
+      const dpColor=dp==null?'':dp<0?'var(--red)':'var(--green)';
+      return`<tr>
+        <td>${fmtDate(x.fechaGuia)}</td>
+        <td>${x.gd||'—'}</td>
+        <td>${(x.desc2||x.desc||'—').substring(0,35)}</td>
+        <td class="num">${fmt(x.cant)}</td>
+        <td class="num">${fmtM(x.valorUN)}</td>
+        <td class="num">${fmtM(x.valorTotal)}</td>
+        <td class="num">${fmtM(x.valorPpto)}</td>
+        <td class="num" style="color:${dtColor}">${fmtM(dt)}</td>
+        <td class="num" style="color:${dpColor}">${dp!=null?dp.toFixed(2)+'%':'—'}</td>
+      </tr>`;
+    }).join('');
+  };
+  document.getElementById('gd-search').oninput=renderGD;
+  ms.onchange=renderGD; renderGD();
+}
+
+// ═══════════════════════════════════════════════
+// PRODUCTOS
+// ═══════════════════════════════════════════════
+let PROD_ALL=[];
+function renderProductos(){
+  const p=DATA.productos||[]; PROD_ALL=p;
+  const criticos=p.filter(x=>x.critico==='PRODUCTO CRITICO');
+  const conAv=p.filter(x=>x.avTeorico!=null);
+  const sobre100=conAv.filter(x=>(x.avTeorico||0)>100).length;
+  const bajo50=conAv.filter(x=>(x.avTeorico||0)<50).length;
+
+  document.getElementById('kpi-productos').innerHTML=kpiHTML([
+    {lbl:'Total productos',    val:fmt(p.length),        cls:'c-blue'},
+    {lbl:'Productos críticos', val:fmt(criticos.length), cls:'c-orange'},
+    {lbl:'Av. teórico >100%',  val:fmt(sobre100),        cls:'c-red',    sub:'exceso consumo'},
+    {lbl:'Av. teórico <50%',   val:fmt(bajo50),          cls:'c-yellow', sub:'en riesgo'},
+  ]);
+
+  const critConAv=criticos.filter(x=>x.avTeorico!=null).sort((a,b)=>b.avTeorico-a.avTeorico);
+  barChart('ch-av-teorico',critConAv.map(x=>(x.descCorta||x.desc||'').substring(0,22)),[{
+    label:'% Avance Teórico',
+    data:critConAv.map(x=>+(x.avTeorico||0).toFixed(2)),
+    backgroundColor:critConAv.map(x=>(x.avTeorico||0)>100?'rgba(248,81,73,.8)':(x.avTeorico||0)>=80?'rgba(63,185,80,.8)':(x.avTeorico||0)>=50?'rgba(227,144,62,.75)':'rgba(248,81,73,.5)'),
+    borderRadius:4
+  }],{horizontal:true,xPct:true,pct:true});
+
+  const critPed=criticos.filter(x=>x.pctAvPedidos!=null).sort((a,b)=>(b.pctAvPedidos||0)-(a.pctAvPedidos||0)).slice(0,15);
+  barChart('ch-av-pedidos',critPed.map(x=>(x.descCorta||'').substring(0,20)),[{
+    label:'% Avance pedidos',
+    data:critPed.map(x=>+((x.pctAvPedidos||0)*100).toFixed(2)),
+    backgroundColor:critPed.map(x=>((x.pctAvPedidos||0)*100)>=90?'rgba(63,185,80,.8)':((x.pctAvPedidos||0)*100)>=60?'rgba(227,144,62,.75)':'rgba(248,81,73,.75)'),
+    borderRadius:5
+  }],{yPct:true,pct:true});
+
+  const conVar=p.filter(x=>x.variacion!=null&&Math.abs(x.variacion||0)>0.01)
+    .sort((a,b)=>Math.abs(b.variacion||0)-Math.abs(a.variacion||0)).slice(0,15);
+  barChart('ch-var-unit',conVar.map(x=>(x.descCorta||'').substring(0,20)),[{
+    label:'% Variación',
+    data:conVar.map(x=>+((x.variacion||0)*100).toFixed(2)),
+    backgroundColor:conVar.map(x=>(x.variacion||0)<0?'rgba(63,185,80,.75)':'rgba(248,81,73,.75)'),
+    borderRadius:5
+  }],{yPct:true,pct:true});
+
+  const cs=document.getElementById('prod-critico');
+  cs.innerHTML=['Todos','PRODUCTO CRITICO','NO CRITICO'].map(v=>`<option>${v}</option>`).join('');
+
+  const renderProd=()=>{
+    const q=document.getElementById('prod-search').value.toLowerCase();
+    const c=cs.value;
+    const filtered=PROD_ALL.filter(x=>{
+      if(c!=='Todos'&&x.critico!==c) return false;
+      if(q&&!((x.desc||'').toLowerCase().includes(q)||(String(x.codigo||'')).toLowerCase().includes(q)||(x.descCorta||'').toLowerCase().includes(q))) return false;
+      return true;
+    }).slice(0,200);
+    document.querySelector('#tbl-productos thead').innerHTML=
+      `<tr><th>Código</th><th>Descripción</th><th>Tipo</th><th>Av. teórico</th><th>% Av. pedidos</th><th>Cant. comprada</th><th>Precio compra</th><th>Variación</th></tr>`;
+    document.querySelector('#tbl-productos tbody').innerHTML=filtered.map(x=>{
+      const av=x.avTeorico,avp=x.pctAvPedidos,vc=x.variacion||0;
+      return`<tr>
+        <td>${x.codigo||'—'}</td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${x.desc||''}">${(x.descCorta||x.desc||'').substring(0,35)}</td>
+        <td>${x.critico==='PRODUCTO CRITICO'?'<span class="badge b-orange">Crítico</span>':'<span class="badge b-blue">Normal</span>'}</td>
+        <td class="num" style="color:${av>100?'var(--red)':av>=80?'var(--green)':av>=50?'var(--yellow)':'var(--red)'}">${av!=null?av.toFixed(2)+'%':'—'}</td>
+        <td class="num">${avp!=null?(avp*100).toFixed(2)+'%':'—'}</td>
+        <td class="num">${fmt(x.cantComprada)}</td>
+        <td class="num">${fmtM(x.precioUN)}</td>
+        <td class="num" style="color:${vc<0?'var(--green)':vc>0?'var(--red)':'var(--text)'}">${(vc*100).toFixed(2)}%</td>
+      </tr>`;
+    }).join('');
+  };
+  document.getElementById('prod-search').oninput=renderProd;
+  cs.onchange=renderProd; renderProd();
+}
+
+// ═══════════════════════════════════════════════
+// STOCK
+// ═══════════════════════════════════════════════
+// ── Stock helpers ──────────────────────────────
+let _stockData=[];       // datos de la semana activa (o todos)
+let _stockAllData=[];    // todos los datos sin filtro de semana
+let _stockSemanas=[];    // [{ts, lbl}] ordenadas asc
+
+function _stockEstado(alc){ return alc<5?'critico':alc<15?'bajo':'ok'; }
+function _stockTipoLabel(x){
+  // Prefer a non-empty, non-numeric desc; fall back to material name
+  const d=(x.desc||'').trim();
+  return d&&!/^\d+$/.test(d)?d:(x.material||'Sin tipo').trim();
+}
+function _stockModConstruidos(s){
+  // Use the maximum value found across all rows (most reliable)
+  const vals=s.map(x=>x.modConstruidos).filter(v=>v!=null&&v>0);
+  return vals.length?Math.max(...vals):null;
+}
+
+function _stockBuildSemanas(){
+  _stockAllData=DATA.stock||[];
+  // Recopilar semanas únicas (lunes de cada semana)
+  const seen=new Set();
+  _stockAllData.forEach(x=>{
+    const d=parseDate(x.fecha); if(!d||isNaN(d)) return;
+    const ts=weekKey(d);
+    seen.add(ts);
+  });
+  _stockSemanas=[...seen].sort((a,b)=>a-b).map(ts=>({ts,lbl:'Semana '+weekLabel(ts)}));
+
+  const sel=document.getElementById('stock-semana-sel'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todas las semanas</option>'+
+    _stockSemanas.map(w=>`<option value="${w.ts}">${w.lbl}</option>`).join('');
+  // Seleccionar la semana más reciente por defecto
+  if(!cur && _stockSemanas.length){
+    sel.value=String(_stockSemanas[_stockSemanas.length-1].ts);
+  } else if(cur){
+    sel.value=cur;
+  }
+  _stockApplySemana();
+}
+
+function _stockApplySemana(){
+  const sel=document.getElementById('stock-semana-sel');
+  const ts=sel?+sel.value||0:0;
+  const lbl=document.getElementById('stock-semana-lbl');
+  if(ts){
+    _stockData=_stockAllData.filter(x=>{
+      const d=parseDate(x.fecha); if(!d||isNaN(d)) return false;
+      return weekKey(d)===ts;
+    });
+    if(lbl){ const w=_stockSemanas.find(s=>s.ts===ts); lbl.textContent=w?w.lbl:''; }
+  } else {
+    _stockData=[..._stockAllData];
+    if(lbl) lbl.textContent='';
+  }
+  _stockRenderCharts();
+}
+
+function renderStock(){
+  _stockBuildSemanas();
+
+  // Conectar botones de navegación (una sola vez)
+  const sel=document.getElementById('stock-semana-sel');
+  const btnPrev=document.getElementById('stock-semana-prev');
+  const btnNext=document.getElementById('stock-semana-next');
+  const btnLast=document.getElementById('stock-semana-last');
+  if(sel && !sel._stockBound){
+    sel._stockBound=true;
+    sel.addEventListener('change', _stockApplySemana);
+    if(btnPrev) btnPrev.addEventListener('click',()=>{
+      const i=_stockSemanas.findIndex(s=>s.ts===+sel.value);
+      if(i>0){ sel.value=String(_stockSemanas[i-1].ts); _stockApplySemana(); }
+    });
+    if(btnNext) btnNext.addEventListener('click',()=>{
+      const i=_stockSemanas.findIndex(s=>s.ts===+sel.value);
+      if(i<_stockSemanas.length-1){ sel.value=String(_stockSemanas[i+1].ts); _stockApplySemana(); }
+    });
+    if(btnLast) btnLast.addEventListener('click',()=>{
+      if(_stockSemanas.length){ sel.value=String(_stockSemanas[_stockSemanas.length-1].ts); _stockApplySemana(); }
+    });
+  }
+}
+
+function _stockRenderCharts(){
+  const s=_stockData;
+  const totalValor=s.reduce((a,x)=>a+(x.valorStock||0),0);
+  const totalPerdi=s.reduce((a,x)=>a+(x.valorPerdida||0),0);
+  const criticos=s.filter(x=>(x.alcanceMod||0)<5).length;
+  const modConstruidos=_stockModConstruidos(s);
+
+  document.getElementById('kpi-stock').innerHTML=kpiHTML([
+    {lbl:'Materiales en stock',   val:fmt(s.length),       cls:'c-blue'},
+    {lbl:'Valor total stock',     val:fmtM(totalValor),    cls:'c-green'},
+    {lbl:'Stock crítico (<5 mód)',val:fmt(criticos),       cls:'c-red'},
+    {lbl:'Módulos construidos',   val:fmt(modConstruidos), cls:'c-orange'},
+    {lbl:'Val. pérdidas/proceso', val:fmtM(totalPerdi),    cls:totalPerdi>0?'c-yellow':''},
+  ]);
+
+  // ── Agrupar por tipo (campo desc normalizado) ──
+  const tipoMap={};
+  s.forEach(x=>{
+    const t=_stockTipoLabel(x);
+    if(!tipoMap[t]) tipoMap[t]={alcs:[],val:0,critico:0,bajo:0,ok:0};
+    if(x.alcanceMod!=null) tipoMap[t].alcs.push(x.alcanceMod);
+    tipoMap[t].val+=(x.valorStock||0);
+    const estado=_stockEstado(x.alcanceMod||0);
+    tipoMap[t][estado]++;
+  });
+  const tipos=Object.keys(tipoMap).sort();
+  const cobAvg=tipos.map(t=>{const a=tipoMap[t].alcs;return a.length?+(a.reduce((s,v)=>s+v,0)/a.length).toFixed(2):0;});
+  const valTipo=tipos.map(t=>Math.round(tipoMap[t].val));
+  const critArr=tipos.map(t=>tipoMap[t].critico);
+  const bajoArr=tipos.map(t=>tipoMap[t].bajo);
+  const okArr  =tipos.map(t=>tipoMap[t].ok);
+
+  // Chart 1: cobertura promedio por tipo — tooltip con nombre completo
+  killChart('ch-cob-tipo');
+  (()=>{
+    const ctx=document.getElementById('ch-cob-tipo')?.getContext('2d'); if(!ctx) return;
+    CHARTS['ch-cob-tipo']=new Chart(ctx,{
+      type:'bar',
+      data:{labels:tipos,datasets:[{
+        label:'Cobertura prom. (mód.)',data:cobAvg,
+        backgroundColor:cobAvg.map(v=>v<5?'rgba(248,81,73,.82)':v<15?'rgba(210,153,34,.78)':'rgba(63,185,80,.78)'),
+        borderRadius:5
+      }]},
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        layout:{padding:{right:60}},
+        plugins:{
+          legend:{display:false},
+          datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
+          tooltip:{callbacks:{
+            title:items=>[tipos[items[0].dataIndex]],
+            label:c=>` Cobertura: ${c.parsed.x.toFixed(2)} módulos`
+          }}
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',font:{size:10}},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  })();
+
+  // Chart 2: donut valor por tipo
+  doughnutChart('ch-val-tipo', tipos, valTipo,
+    ['#4f8ef7','#D42B1E','#3ecf8e','#f7a24f','#9f7aea','#f75f5f','#38bdf8','#fbbf24',
+     '#a3e635','#e879f9','#67e8f9','#fb923c','#94a3b8','#f472b6','#34d399'],
+    true);
+
+  // Chart 3: criticidad stacked por tipo
+  groupedBar('ch-crit-tipo', tipos, [
+    {label:'Crítico (<5 mód)',  data:critArr, backgroundColor:'rgba(248,81,73,.82)',  borderRadius:3},
+    {label:'Bajo (5-14 mód)',   data:bajoArr, backgroundColor:'rgba(210,153,34,.78)', borderRadius:3},
+    {label:'OK (≥15 mód)',      data:okArr,   backgroundColor:'rgba(63,185,80,.75)',  borderRadius:3}
+  ], {legend:true});
+
+  // Chart 4: top 20 menor alcance — tooltip con nombre completo y código
+  const sorted=[...s].sort((a,b)=>(a.alcanceMod||0)-(b.alcanceMod||0)).slice(0,20);
+  killChart('ch-alcance');
+  (()=>{
+    const ctx=document.getElementById('ch-alcance')?.getContext('2d'); if(!ctx) return;
+    const fullNames=sorted.map(x=>x.desc||x.material||'—');
+    const codes=sorted.map(x=>x.codigo||x.material||'');
+    CHARTS['ch-alcance']=new Chart(ctx,{
+      type:'bar',
+      data:{labels:sorted.map(x=>(x.desc||x.material||'').substring(0,22)),datasets:[{
+        label:'Alcance (mód.)',
+        data:sorted.map(x=>+(x.alcanceMod||0).toFixed(2)),
+        backgroundColor:sorted.map(x=>(x.alcanceMod||0)<5?'rgba(248,81,73,.8)':(x.alcanceMod||0)<15?'rgba(210,153,34,.75)':'rgba(63,185,80,.75)'),
+        borderRadius:5
+      }]},
+      options:{
+        indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        layout:{padding:{right:60}},
+        plugins:{
+          legend:{display:false},
+          datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
+          tooltip:{callbacks:{
+            title:items=>[fullNames[items[0].dataIndex]+(codes[items[0].dataIndex]?' ['+codes[items[0].dataIndex]+']':'')],
+            label:c=>` Alcance: ${c.parsed.x.toFixed(2)} módulos`
+          }}
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',font:{size:10}},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  })();
+
+  // ── Poblar selector de tipos ──
+  const tipoSel=document.getElementById('stock-tipo');
+  if(tipoSel){
+    const cur=tipoSel.value;
+    tipoSel.innerHTML='<option value="">Todos los tipos</option>'+tipos.map(t=>`<option value="${t}">${t}</option>`).join('');
+    if(cur&&tipos.includes(cur)) tipoSel.value=cur;
+  }
+
+  // ── Tabla de pérdidas ──
+  const conPerdida=s.filter(x=>(x.valorPerdida||0)>0).sort((a,b)=>(b.valorPerdida||0)-(a.valorPerdida||0));
+  const titleP=document.getElementById('stock-perdidas-title');
+  const cardP=document.getElementById('card-perdidas');
+  if(conPerdida.length){
+    if(titleP) titleP.style.display='';
+    if(cardP)  cardP.style.display='';
+    document.querySelector('#tbl-perdidas thead').innerHTML=
+      `<tr><th>Código</th><th>Material</th><th>Stock físico</th><th>Pérdida (ud)</th><th>Val. pérdida</th><th>Val. unitario</th></tr>`;
+    document.querySelector('#tbl-perdidas tbody').innerHTML=conPerdida.map(x=>`<tr>
+      <td style="color:var(--muted);font-size:.78rem">${x.codigo||'—'}</td>
+      <td title="${x.desc||x.material||''}">${(x.desc||x.material||'—').substring(0,45)}</td>
+      <td class="num">${fmt(x.stockFisico)}</td>
+      <td class="num" style="color:var(--yellow)">${x.perdida!=null?x.perdida.toFixed(2):'—'}</td>
+      <td class="num" style="color:var(--red)">${fmtM(x.valorPerdida)}</td>
+      <td class="num">${fmtM(x.valorUN)}</td>
+    </tr>`).join('');
+  } else {
+    if(titleP) titleP.style.display='none';
+    if(cardP)  cardP.style.display='none';
+  }
+
+  // ── Tabla detalle stock ──
+  renderStockTable();
+
+  // Conectar filtros (solo una vez)
+  ['stock-search','stock-estado','stock-tipo'].forEach(id=>{
+    const el=document.getElementById(id); if(!el||el._stockBound) return;
+    el._stockBound=true;
+    el.addEventListener('input', renderStockTable);
+    el.addEventListener('change', renderStockTable);
+  });
+}
+
+function renderStockTable(){
+  const s=_stockData;
+  const q=(document.getElementById('stock-search')?.value||'').toLowerCase().trim();
+  const est=document.getElementById('stock-estado')?.value||'';
+  const tipo=document.getElementById('stock-tipo')?.value||'';
+
+  const filtered=[...s].filter(x=>{
+    if(est && _stockEstado(x.alcanceMod||0)!==est) return false;
+    if(tipo && _stockTipoLabel(x)!==tipo) return false;
+    if(q){
+      const hay=(x.codigo||'')+(x.desc||'')+(x.material||'');
+      if(!hay.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>(a.alcanceMod??999)-(b.alcanceMod??999));
+
+  document.querySelector('#tbl-stock thead').innerHTML=
+    `<tr><th>Código</th><th>Material</th><th>Stock físico</th><th>Consumo</th><th>Consumo/mód</th><th>Alcance (mód)</th><th>Val. unitario</th><th>Valor stock</th><th>Estado</th></tr>`;
+  document.querySelector('#tbl-stock tbody').innerHTML=filtered.map(x=>{
+    const alc=x.alcanceMod||0;
+    const badge=alc<5?'<span class="badge b-red">Crítico</span>':alc<15?'<span class="badge b-yellow">Bajo</span>':'<span class="badge b-green">OK</span>';
+    return`<tr>
+      <td style="color:var(--muted);font-size:.78rem">${x.codigo||'—'}</td>
+      <td title="${x.desc||x.material||''}">${(x.desc||x.material||'—').substring(0,40)}</td>
+      <td class="num">${fmt(x.stockFisico)}</td>
+      <td class="num">${fmt(x.consumo)}</td>
+      <td class="num">${x.consumoMod!=null?x.consumoMod.toFixed(2):'—'}</td>
+      <td class="num" style="color:${alc<5?'var(--red)':alc<15?'var(--yellow)':'var(--green)'}">${alc.toFixed(2)}</td>
+      <td class="num">${fmtM(x.valorUN)}</td>
+      <td class="num">${fmtM(x.valorStock)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('')||(filtered.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">Sin resultados</td></tr>':'');
+}
+
+// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// DESPACHOS
+// ═══════════════════════════════════════════════
+let _despMesFilter=null; // null = all, Set of mesKeys = filtered
+
+function despFilterAll(val){
+  document.querySelectorAll('#desp-mes-filter input[type=checkbox]').forEach(cb=>cb.checked=val);
+  _despMesFilter=val?null:new Set();
+  renderDespFiltered();
+}
+
+function renderDespFiltered(){
+  const cbs=[...document.querySelectorAll('#desp-mes-filter input[type=checkbox]')];
+  if(!cbs.length){renderDespachos();return;}
+  const checked=new Set(cbs.filter(c=>c.checked).map(c=>c.value));
+  const all=checked.size===cbs.length;
+  _despMesFilter=all?null:checked;
+  renderDespachos();
+}
+
+function renderDespachos(){
+  const todayTs=new Date(); todayTs.setHours(23,59,59,999);
+  const d=_supaDesp.length?_supaDesp.map(x=>({fecha:x.fecha_despacho,gd:x.gd_numero,serie:x.modulo_nro_serie,cant:x.cantidad,monto:x.monto_neto,modulo:x.modulo,torre:x.torre,tipo:x.tipo})):(DATA.despachos||[]);
+  const proy=DATA.proyeccion||[];
+  const totalMonto=d.reduce((s,x)=>s+(x.monto||0),0);
+  const nMods=new Set(d.map(x=>x.modulo).filter(Boolean)).size;
+  const modsTerminados=(DATA.modulos||[]).filter(x=>x.termReal).length;
+
+  document.getElementById('kpi-despachos').innerHTML=kpiHTML([
+    {lbl:'Módulos despachados', val:fmt(nMods),           cls:'c-green'},
+    {lbl:'Total GDs emitidas',  val:fmt(d.length),        cls:'c-blue'},
+    {lbl:'Monto total despach.',val:fmtM(totalMonto),     cls:'c-orange'},
+    {lbl:'Monto prom./módulo',  val:fmtM(nMods?totalMonto/nMods:0), cls:''},
+    {lbl:'Módulos terminados',  val:fmt(modsTerminados),  cls:'c-purple', sub:'total avance real'},
+  ]);
+
+  // ── CHART 1: Mensual ────────────────────────────────────────────────────
+  const MES_NAMES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mesKey=dt=>dt.getFullYear()+'_'+(dt.getMonth()+1);
+  const mesLbl=dt=>MES_NAMES[dt.getMonth()]+' '+dt.getFullYear();
+
+  const realMes={};
+  d.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const k=mesKey(dt);
+    if(!realMes[k]) realMes[k]={lbl:mesLbl(dt),mods:new Set(),ts:dt.getTime()};
+    if(x.modulo) realMes[k].mods.add(x.modulo);
+  });
+  Object.values(realMes).forEach(v=>v.count=v.mods.size);
+
+  const proyMes={};
+  proy.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const k=mesKey(dt);
+    if(!proyMes[k]) proyMes[k]={lbl:mesLbl(dt),sum:0,ts:dt.getTime(),acum:0,acumHoy:0};
+    proyMes[k].sum+=(x.modulosDia||0);
+    proyMes[k].acum=Math.max(proyMes[k].acum, x.modulosAcumulados||0);
+    // acumHoy: acumulado solo hasta hoy (para mes actual)
+    if(dt<=todayTs) proyMes[k].acumHoy=Math.max(proyMes[k].acumHoy, x.modulosAcumulados||0);
+  });
+
+  const curMesKey=mesKey(todayTs);
+  const allMesKeys=[...new Set([...Object.keys(realMes),...Object.keys(proyMes)])]
+    .sort((a,b)=>(realMes[a]||proyMes[a]).ts-(realMes[b]||proyMes[b]).ts);
+
+  // Build/refresh month filter checkboxes (only on first render or when data changes)
+  const filterDiv=document.getElementById('desp-mes-filter');
+  if(filterDiv&&filterDiv.children.length!==allMesKeys.length){
+    filterDiv.innerHTML=allMesKeys.map(k=>{
+      const lbl=(realMes[k]||proyMes[k]).lbl;
+      return `<label style="display:flex;align-items:center;gap:3px;font-size:.78rem;color:var(--text);cursor:pointer;padding:2px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:4px">
+        <input type="checkbox" value="${k}" checked onchange="renderDespFiltered()" style="cursor:pointer">${lbl}</label>`;
+    }).join('');
+  }
+
+  // Apply active filter
+  const filteredMesKeys=_despMesFilter?allMesKeys.filter(k=>_despMesFilter.has(k)):allMesKeys;
+  const filteredMesSet=new Set(filteredMesKeys.map(k=>{const [y,m]=k.split('_').map(Number);return y+'_'+m;}));
+  // Chart 1 always shows full project (not affected by month filter)
+  const mesLabels=allMesKeys.map(k=>(realMes[k]||proyMes[k]).lbl);
+
+  lineChart('ch-desp-mes', mesLabels, [
+    {label:'Despachado', data:allMesKeys.map(k=>realMes[k]?.count||0),
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.15)',
+      tension:0.35, pointRadius:4, fill:false},
+    {label:'Proyectado', data:allMesKeys.map(k=>proyMes[k]?.sum||0),
+      borderColor:'rgba(88,166,255,.9)',       borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.15)',
+      tension:0.35, pointRadius:4, fill:false}
+  ], {legend:true});
+
+  // ── CHART 1b: Semanal ───────────────────────────────────────────────────
+  const getISOWeek=dt=>{const d=new Date(Date.UTC(dt.getFullYear(),dt.getMonth(),dt.getDate()));d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7));const yr=d.getUTCFullYear();const w=Math.ceil((((d-new Date(Date.UTC(yr,0,1)))/86400000)+1)/7);return yr+'_'+String(w).padStart(2,'0');};
+  const semLbl=k=>{const[yr,wk]=k.split('_');const jan4=new Date(Date.UTC(+yr,0,4));const mon=new Date(jan4.getTime()+((+wk-1)*7-(jan4.getUTCDay()||7)+1)*86400000);return mon.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});};
+
+  const realSem={};
+  d.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+    if(!filteredMesSet.has(mk)) return;
+    const k=getISOWeek(dt);
+    if(!realSem[k]) realSem[k]={lbl:semLbl(k),mods:new Set(),ts:dt.getTime()};
+    if(x.modulo) realSem[k].mods.add(x.modulo);
+  });
+  Object.values(realSem).forEach(v=>v.count=v.mods.size);
+
+  const proySem={};
+  proy.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+    if(!filteredMesSet.has(mk)) return;
+    const k=getISOWeek(dt);
+    if(!proySem[k]) proySem[k]={lbl:semLbl(k),sum:0,acum:0,ts:dt.getTime()};
+    proySem[k].sum+=(x.modulosDia||0);
+    proySem[k].acum=Math.max(proySem[k].acum,x.modulosAcumulados||0);
+  });
+
+  const allSemKeys=[...new Set([...Object.keys(realSem),...Object.keys(proySem)])].sort();
+  const semLabels=allSemKeys.map(k=>(realSem[k]||proySem[k]).lbl);
+
+  let _acumSem=0;
+  const acumSemData=allSemKeys.map(k=>{_acumSem+=(realSem[k]?.count||0);return _acumSem;});
+
+  lineChart('ch-desp-semana', semLabels, [
+    {label:'Despachado acumulado', data:acumSemData,
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Proyectado acumulado', data:allSemKeys.map(k=>proySem[k]?.acum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Despachado semanal', data:allSemKeys.map(k=>realSem[k]?.count||0),
+      type:'bar', borderColor:'rgba(255,167,38,.9)', backgroundColor:'rgba(255,167,38,.6)'}
+  ], {legend:true});
+
+  // ── CHART 2: Diario ─────────────────────────────────────────────────────
+  const realDia={};
+  d.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const ts=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()).getTime();
+    const lbl=dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    if(!realDia[ts]) realDia[ts]={lbl,mods:new Set()};
+    if(x.modulo) realDia[ts].mods.add(x.modulo);
+  });
+  Object.values(realDia).forEach(v=>v.count=v.mods.size);
+
+  const proyDia={};
+  proy.forEach(x=>{
+    const dt=parseDate(x.fecha); if(!dt||isNaN(dt)) return;
+    const ts=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()).getTime();
+    const lbl=dt.toLocaleDateString('es-CL',{day:'2-digit',month:'short'});
+    if(!proyDia[ts]) proyDia[ts]={lbl,val:0,acum:0};
+    proyDia[ts].val=x.modulosDia||0;
+    proyDia[ts].acum=Math.max(proyDia[ts].acum,x.modulosAcumulados||0);
+  });
+
+  // Filter daily data by selected months
+  const allDiaKeys=[...new Set([...Object.keys(realDia),...Object.keys(proyDia)])]
+    .map(Number).filter(k=>{
+      const dt=new Date(k); const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
+      return filteredMesSet.has(mk);
+    }).sort((a,b)=>a-b);
+  const diaLabels=allDiaKeys.map(k=>(realDia[k]||proyDia[k]).lbl);
+
+  let _acumDia=0;
+  const acumDiaData=allDiaKeys.map(k=>{_acumDia+=(realDia[k]?.count||0);return _acumDia;});
+
+  lineChart('ch-desp-dia', diaLabels, [
+    {label:'Despachado acumulado', data:acumDiaData,
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Proyectado acumulado', data:allDiaKeys.map(k=>proyDia[k]?.acum||0),
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Despachado diario', data:allDiaKeys.map(k=>realDia[k]?.count||0),
+      borderColor:'rgba(255,167,38,.9)', backgroundColor:'rgba(255,167,38,.1)',
+      tension:0.35, pointRadius:3, fill:false, borderDash:[5,4]}
+  ], {legend:true});
+
+  // ── TABLA RESUMEN MENSUAL ────────────────────────────────────────────────
+  let acumReal=0, acumPend=0, prevAcumProy=0;
+  const tblRows=filteredMesKeys.map(k=>{
+    const rr=realMes[k]; const pp=proyMes[k];
+    const desp=rr?.count||0;
+    const acumProy=pp?.acum||0;
+    acumReal+=desp;
+
+    // For current month: projected only up to today (not full month)
+    // For past months: full month projection
+    const isCurrentMes=(k===curMesKey);
+    const mesAcumProy=isCurrentMes?(pp?.acumHoy||0):acumProy;
+    const proyMes_only=mesAcumProy-prevAcumProy; // projected for this month only
+    prevAcumProy=mesAcumProy;
+
+    acumPend+=proyMes_only-desp; // carry forward: add this month's deficit/surplus
+    return {lbl:(rr||pp).lbl, proyMes_only, desp, acumProy, acumReal, pendiente:Math.max(0,acumPend)};
+  });
+
+  document.getElementById('tbl-desp-resumen').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:6px 8px">Mes</th>
+        <th style="text-align:right;padding:6px 8px">Proy. mes</th>
+        <th style="text-align:right;padding:6px 8px">Despachado</th>
+        <th style="text-align:right;padding:6px 8px">Pendiente acum.</th>
+        <th style="text-align:right;padding:6px 8px">Acum. proy.</th>
+        <th style="text-align:right;padding:6px 8px">Acum. real</th>
+      </tr></thead>
+      <tbody style="color:var(--text)">${tblRows.map(r=>`<tr>
+        <td style="padding:5px 8px">${r.lbl}</td>
+        <td style="text-align:right;padding:5px 8px">${fmt(r.proyMes_only)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--green)">${fmt(r.desp)}</td>
+        <td style="text-align:right;padding:5px 8px;color:${r.pendiente>0?'var(--red)':'var(--green)'}">${fmt(r.pendiente)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--muted)">${fmt(r.acumProy)}</td>
+        <td style="text-align:right;padding:5px 8px;color:var(--accent)">${fmt(r.acumReal)}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+
+  // ── CHART TORRE/TIPO ────────────────────────────────────────────────────
+  const torrTipoMap={};
+  d.forEach(x=>{const k=x.torre||'?',t=x.tipo||'?';if(!torrTipoMap[k])torrTipoMap[k]={};torrTipoMap[k][t]=(torrTipoMap[k][t]||0)+1;});
+  const tKeys=Object.keys(torrTipoMap);
+  const tipos=[...new Set(d.map(x=>x.tipo).filter(Boolean))];
+  groupedBar('ch-desp-torre',tKeys,tipos.map((tipo,i)=>({
+    label:tipo, data:tKeys.map(t=>torrTipoMap[t][tipo]||0),
+    backgroundColor:['rgba(88,166,255,.8)','rgba(63,185,80,.8)','rgba(227,144,62,.8)'][i%3], borderRadius:5
+  })));
+}
+// ═══════════════════════════════════════════════
+// PRODUCCION DIARIA (Supabase)
+// ═══════════════════════════════════════════════
+const PD_CATS = {
+  obra_gruesa:  {label:'Obra Gruesa',   color:'rgba(79,142,247,.8)',  border:'rgba(79,142,247,1)',  codes:['OG.01','OG.02','OG.03','OG.04','OG.05']},
+  sanitario:    {label:'Sanitario',     color:'rgba(63,207,142,.8)',  border:'rgba(63,207,142,1)',  codes:['SA.01','SA.02','SA.03','SA.04','SA.05']},
+  electrico:    {label:'Eléctrico',     color:'rgba(247,215,79,.8)',  border:'rgba(247,215,79,1)',  codes:['EL.01','EL.02','EL.03','EL.04','EL.05']},
+  terminaciones:{label:'Terminaciones', color:'rgba(188,140,255,.8)', border:'rgba(188,140,255,1)', codes:['TE.01','TE.02','TE.03','TE.04','TE.05','TE.06','TE.07','TE.08','TE.09','TE.10','TE.11','TE.12','TE.13','TE.14','TE.15','TE.16','TE.17','TE.18','TE.19','TE.20','TE.21','TE.22']}
+};
+
+let _pdMods = null;
+let _chPD = null;
+let _pdInited = false;
+
+function _pdIsNA(s){ if(!s) return false; return typeof s==='object'?s.c3==='no_aplica':s==='no_aplica'; }
+function _pdIsDone(s){ if(!s) return false; return typeof s==='object'?s.c3==='aprobado':s==='aprobado'; }
+
+async function _loadPDData(){
+  if(_pdMods!==null) return _pdMods;
+  const st=document.getElementById('pd-status');
+  if(st) st.textContent='Cargando módulos…';
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/planta_modulos?select=id,nombre,torre,tipo,estado_modulo,estados,tiempos&order=orden.asc',
+      {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    _pdMods=await r.json();
+    if(st) st.textContent=_pdMods.length+' módulos';
+  }catch(e){
+    if(st) st.textContent='Error al cargar';
+    _pdMods=[];
+  }
+  return _pdMods;
+}
+
+function _computePDRows(mods){
+  const rows=[];
+  mods.forEach(m=>{
+    const est=m.estados||{}, tim=m.tiempos||{};
+    Object.keys(PD_CATS).forEach(cat=>{
+      const codes=PD_CATS[cat].codes;
+      const rel=codes.filter(c=>!_pdIsNA(est[c]));
+      if(!rel.length) return;
+      if(!rel.every(c=>_pdIsDone(est[c]))) return;
+      let maxD=null;
+      rel.forEach(c=>{ const t=tim[c]; if(t&&t.t3){ const d=t.t3.slice(0,10); if(!maxD||d>maxD) maxD=d; } });
+      if(maxD) rows.push({date:maxD,cat,modulo:m.nombre,torre:m.torre,tipo:m.tipo});
+    });
+  });
+  return rows;
+}
+
+async function renderProdDiaria(){
+  const mods=await _loadPDData();
+  let rows=_computePDRows(mods);
+
+  const desde=document.getElementById('pd-desde').value;
+  const hasta=document.getElementById('pd-hasta').value;
+  if(desde) rows=rows.filter(r=>r.date>=desde);
+  if(hasta) rows=rows.filter(r=>r.date<=hasta);
+
+  const catKeys=Object.keys(PD_CATS);
+  const dateSet=[...new Set(rows.map(r=>r.date))].sort();
+
+  // byDate map
+  const byDate={};
+  dateSet.forEach(d=>{ byDate[d]={}; catKeys.forEach(c=>byDate[d][c]=0); });
+  rows.forEach(r=>{ if(byDate[r.date]) byDate[r.date][r.cat]++; });
+
+  // KPIs
+  const kpiColors=['c-blue','c-green','c-yellow','c-purple'];
+  const kpiEl=document.getElementById('kpi-prod-diaria');
+  if(kpiEl) kpiEl.innerHTML=catKeys.map((c,i)=>{
+    const tot=rows.filter(r=>r.cat===c).length;
+    return `<div class="kpi ${kpiColors[i]}"><div class="kpi-lbl">${PD_CATS[c].label}</div><div class="kpi-val">${tot}</div><div class="kpi-sub">etapas completadas</div></div>`;
+  }).join('')+`<div class="kpi c-orange"><div class="kpi-lbl">Total período</div><div class="kpi-val">${rows.length}</div><div class="kpi-sub">eventos</div></div>`;
+
+  // Chart
+  if(_chPD){ _chPD.destroy(); _chPD=null; }
+  const ctx=document.getElementById('ch-prod-diaria');
+  if(ctx&&dateSet.length){
+    _chPD=new Chart(ctx.getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:dateSet.map(d=>{ const [y,mo,dy]=d.split('-'); return dy+'/'+mo; }),
+        datasets:catKeys.map(c=>({
+          label:PD_CATS[c].label,
+          data:dateSet.map(d=>byDate[d][c]),
+          backgroundColor:PD_CATS[c].color,
+          borderColor:PD_CATS[c].border,
+          borderWidth:1,
+          borderRadius:4
+        }))
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{labels:{color:'#e8eaf0',font:{size:11}}},
+          datalabels:{
+            display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
+            color:'#fff',font:{size:10,weight:'bold'},
+            anchor:'center',align:'center'
+          }
+        },
+        scales:{
+          x:{ticks:{color:'#7a7f99'},grid:{color:'rgba(255,255,255,.05)'},stacked:false},
+          y:{ticks:{color:'#7a7f99',stepSize:1},grid:{color:'rgba(255,255,255,.05)'},beginAtZero:true,stacked:false}
+        }
+      }
+    });
+  } else if(ctx&&!dateSet.length){
+    const c2=ctx.getContext('2d');
+    c2.clearRect(0,0,ctx.width,ctx.height);
+    c2.fillStyle='#7a7f99'; c2.font='14px Segoe UI'; c2.textAlign='center';
+    c2.fillText('Sin datos en el rango seleccionado',ctx.width/2,ctx.height/2);
+  }
+
+  // Table
+  const tbl=document.getElementById('tbl-prod-diaria');
+  if(tbl){
+    tbl.querySelector('thead').innerHTML=`<tr><th>Fecha</th>${catKeys.map(c=>`<th>${PD_CATS[c].label}</th>`).join('')}<th>Total</th></tr>`;
+    tbl.querySelector('tbody').innerHTML=dateSet.length
+      ? dateSet.map(d=>{
+          const tot=catKeys.reduce((s,c)=>s+byDate[d][c],0);
+          return `<tr><td>${d.split('-').reverse().join('/')}</td>${catKeys.map(c=>`<td style="text-align:center">${byDate[d][c]||'—'}</td>`).join('')}<td style="text-align:center;font-weight:700">${tot}</td></tr>`;
+        }).join('')
+      : `<tr><td colspan="${catKeys.length+2}" style="text-align:center;color:var(--muted);padding:20px">Sin datos en el rango seleccionado</td></tr>`;
+  }
+}
+
+// Hook tab click
+(function(){
+  const pdTab=document.querySelector('.tab[data-tab="prod-diaria"]');
+  if(pdTab) pdTab.addEventListener('click',async()=>{
+    if(!_pdInited){
+      _pdInited=true;
+      const now=new Date();
+      document.getElementById('pd-hasta').value=now.toISOString().slice(0,10);
+      const d30=new Date(now); d30.setDate(d30.getDate()-30);
+      document.getElementById('pd-desde').value=d30.toISOString().slice(0,10);
+    }
+    await renderProdDiaria();
+  });
+})();
+
+</script>
+</body>
+</html>

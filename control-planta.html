@@ -1,0 +1,1795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Planta — La Chacra</title>
+<script src="auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--orange:#f7a24f;--purple:#a855f7;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;display:flex;flex-direction:column;font-size:14px}
+
+/* TOPBAR */
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;height:54px;position:relative;z-index:100}
+.logo{display:flex;align-items:baseline;text-decoration:none;flex-shrink:0}
+.logo-tecno{font-size:19px;font-weight:900;color:var(--text);letter-spacing:1.5px}
+.logo-panel{font-size:19px;font-weight:900;color:var(--brand);letter-spacing:1.5px}
+.logo sup{font-size:9px;color:var(--muted);margin-left:2px;font-weight:400}
+.planta-badge{font-size:10px;background:var(--brand);color:#fff;border-radius:4px;padding:2px 7px;font-weight:700;letter-spacing:.5px;flex-shrink:0}
+.btn-ghost{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:7px;font-size:.74rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);text-decoration:none;transition:all .15s;white-space:nowrap}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
+.auth-badge{font-size:.7rem;background:rgba(255,255,255,.06);padding:4px 10px;border-radius:20px;color:var(--muted);border:1px solid var(--border);white-space:nowrap}
+@media(max-width:600px){.auth-badge{display:none}}
+.cp-tabs{display:flex;align-items:stretch;gap:0;flex:1}
+.cp-tab{height:54px;padding:0 18px;font-size:.84rem;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;white-space:nowrap}
+.cp-tab:hover{color:var(--text)}
+.cp-tab.active{color:var(--brand);border-bottom-color:var(--brand)}
+.tb-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.auth-badge{font-size:.72rem;background:rgba(255,255,255,.08);padding:3px 9px;border-radius:20px;color:var(--muted);white-space:nowrap}
+.sm-btn{font-size:.72rem;padding:4px 10px;background:rgba(255,255,255,.08);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.sm-btn:hover{color:var(--text);border-color:var(--accent)}
+
+/* BREADCRUMB */
+#breadcrumb{padding:9px 20px;font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.bc-link{cursor:pointer;color:var(--accent)}
+.bc-link:hover{text-decoration:underline}
+.bc-sep{color:var(--border)}
+
+/* MAIN */
+#main{flex:1;overflow:hidden;display:flex;position:relative}
+
+/* TORRE GRID */
+#view-torres{flex:1;overflow-y:auto;padding:20px}
+.grid-header{margin-bottom:16px}
+.grid-title{font-size:1.05rem;font-weight:700}
+.grid-sub{font-size:.78rem;color:var(--muted);margin-top:3px}
+.torres-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:11px}
+.torre-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px;cursor:pointer;transition:all .15s}
+.torre-card:hover,.torre-card.sel{border-color:var(--accent);transform:translateY(-1px)}
+.torre-name{font-size:.9rem;font-weight:700;margin-bottom:10px}
+.torre-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tchip{font-size:.68rem;padding:2px 7px;border-radius:4px;font-weight:600}
+.tchip-s{background:rgba(79,142,247,.15);color:var(--accent)}
+.tchip-h{background:rgba(62,207,142,.15);color:var(--green)}
+.tchip-e{background:rgba(62,207,142,.25);color:var(--green)}
+.prog-wrap{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+.prog-label{font-size:.68rem;color:var(--muted);margin-top:4px}
+
+/* MODULE LIST */
+#view-modules{flex:1;overflow:hidden;display:flex}
+#list-panel{width:300px;min-width:230px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
+.list-filter{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;gap:7px;align-items:center;flex-shrink:0}
+.f-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:.8rem}
+.f-input::placeholder{color:var(--muted)}
+.type-btns{display:flex;gap:3px}
+.t-btn{font-size:.68rem;padding:3px 7px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer}
+.t-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mod-item{padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.mod-item:hover{background:var(--surface2)}
+.mod-item.sel{background:rgba(79,142,247,.1);border-left:2px solid var(--accent);padding-left:12px}
+.mod-row1{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.mod-nombre{font-weight:700;font-size:.86rem}
+.badge{font-size:.64rem;padding:1px 6px;border-radius:3px;font-weight:700}
+.badge-seco{background:rgba(79,142,247,.15);color:var(--accent)}
+.badge-humedo{background:rgba(62,207,142,.15);color:var(--green)}
+.badge-entregado{background:rgba(62,207,142,.2);color:var(--green)}
+.badge-fabricacion{background:rgba(122,127,153,.12);color:var(--muted)}
+.mini-prog{display:flex;gap:2px;margin-top:5px;align-items:center}
+.mp-seg{height:5px;border-radius:2px;flex:1}
+.mp-done{background:var(--green)}
+.mp-partial{background:var(--orange)}
+.mp-pend{background:var(--border)}
+
+/* PHASE FILTER */
+.phase-filter{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0}
+.ph-btn{font-size:.67rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-weight:600;transition:all .12s;white-space:nowrap}
+.ph-btn:hover{color:var(--text)}
+.ph-btn.on{background:var(--surface2);border-color:var(--accent);color:var(--text)}
+.ph-btn.on.pf-fab{border-color:var(--muted);color:var(--muted)}
+.ph-btn.on.pf-cal{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.1)}
+.ph-btn.on.pf-cli{border-color:var(--orange);color:var(--orange);background:rgba(247,162,79,.1)}
+.ph-btn.on.pf-ent{border-color:var(--green);color:var(--green);background:rgba(62,207,142,.1)}
+/* PHASE BADGES */
+.ph-badge{font-size:.62rem;padding:1px 6px;border-radius:3px;font-weight:700;flex-shrink:0}
+.ph-fabricacion{background:rgba(122,127,153,.15);color:var(--muted)}
+.ph-calidad{background:rgba(168,85,247,.18);color:var(--purple)}
+.ph-cliente{background:rgba(247,162,79,.18);color:var(--orange)}
+.ph-entregado{background:rgba(62,207,142,.18);color:var(--green)}
+
+/* DETAIL PANEL */
+#detail-panel{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.dp-empty{justify-content:center;align-items:center;color:var(--muted);font-size:.88rem;text-align:center;gap:10px;flex-direction:column;display:flex;height:100%}
+#dp-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;background:var(--surface);gap:12px}
+.dp-title{font-size:1.05rem;font-weight:800}
+.dp-meta{font-size:.74rem;color:var(--muted);margin-top:2px}
+#dp-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:18px}
+.sec-title{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:9px}
+
+/* PARTIDA ROWS — 3-CHECK SYSTEM */
+.part-row{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 13px;display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.part-row.na-row{opacity:.55}.part-row.na-row .p-label{text-decoration:line-through;color:var(--muted)}
+.p-code{font-size:.69rem;font-weight:700;color:var(--muted);width:42px;flex-shrink:0}
+.p-label{flex:1;font-size:.82rem;min-width:0}
+
+/* CHECK PILLS */
+.checks{display:flex;align-items:center;gap:5px;flex-shrink:0;flex-wrap:wrap}
+.cpill{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:5px;border:1.5px solid;font-size:.69rem;font-weight:700;white-space:nowrap;transition:all .15s;user-select:none}
+.cp-pend{border-color:var(--border);color:#555c7a;background:rgba(46,51,80,.4);cursor:not-allowed}
+.cp-open{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.08);cursor:pointer}
+.cp-open:hover{background:rgba(79,142,247,.2)}
+.cp-c1{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.12);cursor:pointer}
+.cp-c1:hover{opacity:.8}
+.cp-c2{border-color:var(--purple);color:var(--purple);background:rgba(168,85,247,.12);cursor:pointer}
+.cp-c2:hover{opacity:.8}
+.cp-c3ok{border-color:var(--green);color:var(--green);background:rgba(62,207,142,.12)}
+.cp-na{border-color:#333a5a;color:#444862;background:transparent;font-size:.63rem;cursor:default}
+
+/* c3 action buttons */
+.c3-btns{display:flex;gap:4px;flex-shrink:0}
+.c3-btn{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:5px;border:1.5px solid;font-size:.69rem;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+.c3-aprob{border-color:var(--green);color:var(--green);background:rgba(62,207,142,.08)}
+.c3-aprob:hover{background:rgba(62,207,142,.2)}
+.c3-rech{border-color:var(--red);color:var(--red);background:rgba(247,95,95,.08)}
+.c3-admin-aprob{border-color:#a78bfa;color:#a78bfa;background:rgba(167,139,250,.08)}
+.c3-admin-aprob:hover{background:rgba(167,139,250,.22)}
+.c3-rech:hover{background:rgba(247,95,95,.2)}
+
+/* HISTORIAL */
+.hist-item{display:flex;gap:9px;margin-bottom:7px;font-size:.77rem}
+.h-dot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.h-meta{color:var(--muted);font-size:.68rem;margin-top:2px}
+
+/* RECEPCION */
+#view-recepcion{flex:1;overflow-y:auto;padding:20px}
+.recep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.r-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:13px 15px}
+.r-card.ent{border-color:var(--green)}
+.r-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.r-meta{font-size:.74rem;color:var(--muted);margin-bottom:10px}
+
+/* BUTTONS */
+.btn{padding:7px 16px;border-radius:6px;border:none;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text)}
+.btn-ok{background:var(--green);color:#0f1117}
+.btn-ok:hover{opacity:.85}
+.btn-rej{background:var(--red);color:#fff}
+.btn-rej:hover{opacity:.85}
+.btn-pri{background:var(--accent);color:#fff}
+.btn-pri:hover{opacity:.85}
+.btn-sm{padding:5px 11px;font-size:.77rem}
+
+/* CONFIRM MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;width:380px;max-width:92vw}
+.m-title{font-size:.98rem;font-weight:700;margin-bottom:3px}
+.m-sub{font-size:.78rem;color:var(--muted);margin-bottom:14px}
+.m-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+
+/* NOTIF SETTINGS MODAL */
+.notif-modal{width:520px;max-height:85vh;overflow-y:auto}
+.notif-contact{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:11px 13px;margin-bottom:8px}
+.nc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.nc-name{font-weight:700;font-size:.88rem}
+.nc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.nc-tag{font-size:.63rem;padding:1px 6px;border-radius:3px;background:rgba(79,142,247,.15);color:var(--accent);font-weight:600}
+.form-row{margin-bottom:10px}
+.form-label{display:block;font-size:.76rem;color:var(--muted);margin-bottom:4px;font-weight:600}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 10px;font-size:.83rem}
+.form-input::placeholder{color:var(--muted)}
+.ev-checks{display:flex;gap:8px;flex-wrap:wrap;margin-top:5px}
+.ev-check{display:flex;align-items:center;gap:5px;font-size:.77rem;cursor:pointer}
+.ev-check input{accent-color:var(--accent)}
+.del-btn{font-size:.7rem;padding:2px 7px;border-radius:4px;border:1px solid var(--red);color:var(--red);background:transparent;cursor:pointer}
+.del-btn:hover{background:rgba(247,95,95,.1)}
+.notif-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.notif-tab{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);padding:5px 14px;font-size:.78rem;cursor:pointer;transition:all .15s}
+.notif-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+/* LOADING / TOAST */
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:.88rem;gap:8px;padding:30px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toasts{position:fixed;bottom:18px;right:18px;z-index:300;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:.8rem;max-width:270px;animation:si .2s ease;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+@keyframes si{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* REJECTION MODAL */
+.rej-modal{width:480px;max-height:88vh;overflow-y:auto}
+.img-upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:8px}
+.img-upload-area:hover{border-color:var(--accent)}
+.img-previews{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.img-thumb{position:relative;width:78px;height:78px;border-radius:6px;overflow:hidden;border:1px solid var(--border);flex-shrink:0}
+.img-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.img-thumb-del{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(0,0,0,.75);border-radius:50%;border:none;color:#fff;font-size:9px;cursor:pointer;line-height:16px;text-align:center;padding:0}
+.hist-obs{font-size:.74rem;color:var(--muted);margin-top:3px;font-style:italic;word-break:break-word}
+.hist-imgs{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.hist-img{width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--border);cursor:pointer}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.hidden{display:none!important}
+
+/* ─── RESPONSIVE / MOBILE ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Topbar: 2 filas — fila 1: logo + botones, fila 2: tabs */
+  #topbar {
+    height: auto !important;
+    flex-wrap: wrap;
+    padding: 6px 12px 0;
+    align-items: center;
+  }
+  .logo-area { flex-shrink: 0; margin-right: 0; }
+  .logo-area span { font-size: 17px !important; }
+  .planta-badge { font-size: 9px; padding: 1px 5px; margin-left: 6px; }
+  .cp-tabs {
+    order: 10;
+    flex: 0 0 calc(100% + 24px);
+    margin: 0 -12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .cp-tabs::-webkit-scrollbar { display: none; }
+  .cp-tab { height: 38px; padding: 0 12px; font-size: .76rem; flex-shrink: 0; }
+  .tb-right { gap: 4px; margin-left: auto; }
+  .auth-badge { display: none !important; }
+  .sm-btn { padding: 3px 7px; font-size: .67rem; }
+
+  /* Breadcrumb */
+  #breadcrumb { padding: 5px 12px; font-size: .74rem; }
+
+  /* Main: scroll vertical */
+  #main { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+
+  /* Vista torres */
+  #view-torres { padding: 12px; overflow-y: visible; }
+  .torres-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .torre-card { padding: 11px 12px; }
+
+  /* Panel split → apilado */
+  #view-modules { flex-direction: column; overflow: visible; }
+  #list-panel {
+    width: 100% !important;
+    min-width: unset !important;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 45vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  #detail-panel { min-height: 50vh; overflow-y: auto; }
+
+  /* Mobile: cuando se selecciona un módulo, detalle ocupa toda la pantalla */
+  #view-modules.mob-detail #list-panel { display: none !important; }
+  #view-modules.mob-detail #detail-panel { min-height: 0; flex: 1; }
+
+  /* Botón "← Lista" — sólo visible en mobile */
+  .mobile-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    font-size: .73rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .mobile-back-btn:hover { color: var(--text); }
+
+  /* Partida rows: pills en segunda línea */
+  .part-row { flex-wrap: wrap; padding: 8px 10px; }
+  .p-code { width: 36px; }
+  .p-label { min-width: 0; }
+  .checks {
+    flex-wrap: wrap;
+    width: 100%;
+    padding-left: 44px;
+    margin-top: 5px;
+    gap: 4px;
+  }
+  .cpill { font-size: .67rem; padding: 4px 7px; }
+  .c3-btns { flex-wrap: wrap; }
+  .c3-btn { font-size: .67rem; padding: 4px 8px; }
+
+  /* dp-header: wrap */
+  #dp-header { flex-wrap: wrap; gap: 8px; }
+  .dp-title { font-size: .95rem; }
+
+  /* Filtro fases: scrollable horizontal */
+  .phase-filter { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .phase-filter::-webkit-scrollbar { display: none; }
+
+  /* Recepción: 1 columna */
+  .recep-grid { grid-template-columns: 1fr; }
+
+  /* Modales: ancho completo */
+  .modal { width: 94vw !important; max-height: 88vh; overflow-y: auto; }
+
+  /* Lista de filtros */
+  .list-filter { flex-wrap: wrap; gap: 6px; }
+}
+
+/* Desktop: ocultar botón mobile-only */
+@media (min-width: 769px) {
+  .mobile-back-btn { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a href="tecnopanel.html" class="logo">
+    <span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>®</sup>
+  </a>
+  <span class="planta-badge">PLANTA</span>
+  <div class="cp-tabs">
+    <button class="cp-tab hidden" id="tab-obra_gruesa" onclick="switchTab('obra_gruesa')">🏗️ Obra Gruesa</button>
+    <button class="cp-tab hidden" id="tab-sanitario" onclick="switchTab('sanitario')">🚿 Sanitario</button>
+    <button class="cp-tab hidden" id="tab-electrico" onclick="switchTab('electrico')">⚡ Eléctrico</button>
+    <button class="cp-tab hidden" id="tab-terminaciones" onclick="switchTab('terminaciones')">🏠 Terminaciones</button>
+    <button class="cp-tab hidden" id="tab-recepcion" onclick="switchTab('recepcion')">✅ Recepción</button>
+  </div>
+  <div class="tb-right">
+    <button class="btn-ghost hidden" id="notif-btn" onclick="openNotifModal()" title="Configurar notificaciones WhatsApp">🔔 Notif.</button>
+    <span class="auth-badge" id="user-badge"></span>
+    <button class="btn-ghost" onclick="goBack()">← Volver</button>
+    <button class="btn-ghost" onclick="doLogout()">Salir</button>
+  </div>
+</div>
+
+<div id="breadcrumb" class="hidden">
+  <span class="bc-link" onclick="goHome()">🏗️ Torres</span>
+  <span id="bc-torre-sep" class="bc-sep hidden">›</span>
+  <span id="bc-torre" class="bc-link hidden" onclick="goHome()"></span>
+  <span id="bc-mod-sep" class="bc-sep hidden">›</span>
+  <span id="bc-mod" style="color:var(--text)" class="hidden"></span>
+</div>
+
+<div id="main">
+
+  <!-- TORRE GRID -->
+  <div id="view-torres">
+    <div style="max-width:1200px;margin:0 auto">
+      <div class="grid-header">
+        <div class="grid-title">🏗️ Control de Planta</div>
+        <div class="grid-sub" id="grid-sub">Cargando módulos...</div>
+      </div>
+      <div class="torres-grid" id="torres-grid">
+        <div class="loading"><div class="spinner"></div> Cargando torres...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULES VIEW -->
+  <div id="view-modules" class="hidden">
+    <div id="list-panel">
+      <div class="list-filter">
+        <input class="f-input" id="f-search" type="text" placeholder="Buscar módulo..." oninput="renderList()">
+        <div class="type-btns">
+          <button class="t-btn on" id="tb-all" onclick="setTF('all')">All</button>
+          <button class="t-btn" id="tb-seco" onclick="setTF('seco')">S</button>
+          <button class="t-btn" id="tb-humedo" onclick="setTF('humedo')">H</button>
+        </div>
+      </div>
+      <div class="phase-filter">
+        <button class="ph-btn on" id="pf-all" onclick="setPF('all')">Todos</button>
+        <button class="ph-btn pf-fab" id="pf-fabricacion" onclick="setPF('fabricacion')">🔧 Fab.</button>
+        <button class="ph-btn pf-cal" id="pf-calidad" onclick="setPF('calidad')">🔍 Cal.</button>
+        <button class="ph-btn pf-cli" id="pf-cliente" onclick="setPF('cliente')">🔍 Auditoría</button>
+        <button class="ph-btn pf-ent" id="pf-entregado" onclick="setPF('entregado')">✅ Ent.</button>
+      </div>
+      <div id="mod-list" style="flex:1;overflow-y:auto"></div>
+    </div>
+    <div id="detail-panel">
+      <div class="dp-empty">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <span>Selecciona un módulo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECEPCION VIEW -->
+  <div id="view-recepcion" class="hidden">
+    <div style="max-width:1200px;margin:0 auto">
+      <div class="grid-header">
+        <div class="grid-title">✅ Recepción de Módulos</div>
+        <div class="grid-sub">Módulos con todas las partidas aprobadas por Auditoría</div>
+      </div>
+      <div id="recep-filter" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div class="recep-grid" id="recep-grid">
+        <div class="loading"><div class="spinner"></div> Cargando...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONFIRM MODAL (rejection / undo) -->
+<div class="overlay hidden" id="modal">
+  <div class="modal">
+    <div class="m-title" id="m-title"></div>
+    <div class="m-sub" id="m-sub"></div>
+    <div class="m-actions" id="m-actions"></div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS SETTINGS MODAL -->
+<div class="overlay hidden" id="notif-modal">
+  <div class="modal notif-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="m-title">🔔 Notificaciones</div>
+      <button class="sm-btn" onclick="closeNotifModal()">✕</button>
+    </div>
+    <div class="notif-tabs">
+      <button class="notif-tab active" id="ntab-wa" onclick="switchNotifTab('wa')">💬 WhatsApp</button>
+      <button class="notif-tab" id="ntab-slack" onclick="switchNotifTab('slack')">🟢 Slack</button>
+      <button class="notif-tab" id="ntab-tg" onclick="switchNotifTab('tg')">✈️ Telegram</button>
+    </div>
+    <!-- Panel WhatsApp -->
+    <div id="npanel-wa">
+      <div id="notif-contacts-list"><div class="loading"><div class="spinner"></div></div></div>
+      <hr style="border-color:var(--border);margin:14px 0">
+      <div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Agregar contacto</div>
+      <div class="form-row"><label class="form-label">Nombre</label><input class="form-input" id="nc-name" placeholder="Ej: Juan QC1"></div>
+      <div class="form-row"><label class="form-label">Teléfono (con código país, sin +)</label><input class="form-input" id="nc-phone" placeholder="56912345678"></div>
+      <div class="form-row"><label class="form-label">CallMeBot API Key (<a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" style="color:var(--accent);font-size:.72rem">obtener key</a>)</label><input class="form-input" id="nc-key" placeholder="123456"></div>
+      <div class="form-row">
+        <label class="form-label">Notificar cuando:</label>
+        <div class="ev-checks">
+          <label class="ev-check"><input type="checkbox" id="ev-c1" value="check1_done"> ✅ Producción lista</label>
+          <label class="ev-check"><input type="checkbox" id="ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
+          <label class="ev-check"><input type="checkbox" id="ev-c3ok" value="check3_approved"> 🔍 Auditoría aprueba</label>
+          <label class="ev-check"><input type="checkbox" id="ev-c3rej" value="check3_rejected"> ❌ Auditoría rechaza</label>
+        </div>
+      </div>
+      <div class="m-actions">
+        <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
+        <button class="btn btn-pri" onclick="saveContact()">➕ Agregar</button>
+      </div>
+    </div>
+    <!-- Panel Slack -->
+    <div id="npanel-slack" class="hidden">
+      <div id="slack-channels-list"><div class="loading"><div class="spinner"></div></div></div>
+      <hr style="border-color:var(--border);margin:14px 0">
+      <div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Agregar canal</div>
+      <div class="form-row"><label class="form-label">Nombre del canal</label><input class="form-input" id="sc-name" placeholder="Ej: #produccion-planta"></div>
+      <div class="form-row"><label class="form-label">Webhook URL (<a href="https://api.slack.com/apps" target="_blank" style="color:var(--accent);font-size:.72rem">cómo obtenerlo ↗</a>)</label><input class="form-input" id="sc-webhook" placeholder="https://hooks.slack.com/services/..."></div>
+      <div class="form-row">
+        <label class="form-label">Notificar cuando:</label>
+        <div class="ev-checks">
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c1" value="check1_done"> ✅ Producción lista</label>
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c3ok" value="check3_approved"> 🔍 Auditoría aprueba</label>
+          <label class="ev-check"><input type="checkbox" id="sc-ev-c3rej" value="check3_rejected"> ❌ Auditoría rechaza</label>
+        </div>
+      </div>
+      <div class="m-actions">
+        <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
+        <button class="btn btn-pri" onclick="saveSlackChannel()">➕ Agregar</button>
+      </div>
+    </div>
+    <!-- Panel Telegram -->
+    <div id="npanel-tg" class="hidden">
+      <div id="tg-chats-list"><div class="loading"><div class="spinner"></div></div></div>
+      <hr style="border-color:var(--border);margin:14px 0">
+      <div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.7px">Agregar chat</div>
+      <div class="form-row"><label class="form-label">Nombre</label><input class="form-input" id="tg-name" placeholder="Ej: #produccion"></div>
+      <div class="form-row"><label class="form-label">Bot Token (<a href="https://t.me/BotFather" target="_blank" style="color:var(--accent);font-size:.72rem">obtener con @BotFather ↗</a>)</label><input class="form-input" id="tg-token" placeholder="123456789:AAF..."></div>
+      <div class="form-row"><label class="form-label">Chat ID (<a href="https://t.me/userinfobot" target="_blank" style="color:var(--accent);font-size:.72rem">obtener con @userinfobot ↗</a>)</label><input class="form-input" id="tg-chatid" placeholder="-1001234567890"></div>
+      <div class="form-row">
+        <label class="form-label">Notificar cuando:</label>
+        <div class="ev-checks">
+          <label class="ev-check"><input type="checkbox" id="tg-ev-c1" value="check1_done"> ✅ Producción lista</label>
+          <label class="ev-check"><input type="checkbox" id="tg-ev-c2" value="check2_done"> 🔍 Calidad aprobada</label>
+          <label class="ev-check"><input type="checkbox" id="tg-ev-c3ok" value="check3_approved"> 👤 Cliente aprueba</label>
+          <label class="ev-check"><input type="checkbox" id="tg-ev-c3rej" value="check3_rejected"> ❌ Cliente rechaza</label>
+        </div>
+      </div>
+      <div class="m-actions">
+        <button class="btn btn-ghost" onclick="closeNotifModal()">Cancelar</button>
+        <button class="btn btn-pri" onclick="saveTelegramChat()">➕ Agregar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REJECTION MODAL (observación + imágenes) -->
+<div class="overlay hidden" id="rej-modal">
+  <div class="modal rej-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="m-title">✗ Rechazar Partida</div>
+      <button class="sm-btn" onclick="closeRejectModal()">✕</button>
+    </div>
+    <div id="rej-partida-info" style="font-size:.82rem;color:var(--muted);margin-bottom:14px;background:rgba(247,95,95,.08);border:1px solid rgba(247,95,95,.2);border-radius:6px;padding:8px 11px"></div>
+    <div style="font-size:.74rem;color:var(--muted);margin-bottom:12px">Esto reiniciará todos los checks (Producción, Calidad y Auditoría). Se deberá ejecutar todo de nuevo.</div>
+    <div class="form-row">
+      <label class="form-label">Observación de Auditoría *</label>
+      <textarea class="form-input" id="rej-obs" rows="4" placeholder="Describe el problema encontrado..." style="resize:vertical;min-height:90px"></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Imágenes del problema (opcional, máx. 5)</label>
+      <div class="img-upload-area" id="rej-upload-area" onclick="document.getElementById('rej-img-input').click()">
+        <div style="font-size:.82rem;color:var(--muted)">📎 Haz clic para agregar imágenes</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px">JPG · PNG · WEBP · Máx 5 MB c/u</div>
+      </div>
+      <input type="file" id="rej-img-input" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" onchange="previewRejImages(this)">
+      <div class="img-previews" id="rej-img-previews"></div>
+    </div>
+    <div id="rej-upload-progress" class="hidden" style="font-size:.76rem;color:var(--muted);margin-bottom:8px">⏳ Subiendo imágenes...</div>
+    <div class="m-actions">
+      <button class="btn btn-ghost" onclick="closeRejectModal()">Cancelar</button>
+      <button class="btn btn-rej" id="rej-submit-btn" onclick="submitRejection()">✗ Confirmar Rechazo</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const SURL = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const SH = {'apikey':SKEY,'Authorization':'Bearer '+SKEY,'Content-Type':'application/json'};
+
+// ── Partidas ──────────────────────────────────────────────────────────────────
+const PARTIDAS = {
+  obra_gruesa:[
+    {c:'OG.01',l:'Piso',              w:12.0},
+    {c:'OG.02',l:'Tabiques',          w:8.0},
+    {c:'OG.03',l:'Muros',             w:11.0},
+    {c:'OG.04',l:'Cielo',             w:8.0},
+    {c:'OG.05',l:'Estructura Balcón', w:4.0}
+  ],
+  electrico:[
+    {c:'EL.01',l:'Canalización',            w:3.0},
+    {c:'EL.02',l:'Conductores (Cableado)',   w:3.0},
+    {c:'EL.03',l:'Artefactos',              w:1.0},
+    {c:'EL.04',l:'Tablero',                 w:2.0},
+    {c:'EL.05',l:'Caja PAU',               w:2.0}
+  ],
+  sanitario:[
+    {c:'SA.01',l:'Red de Alcantarillado',   w:2.0},
+    {c:'SA.02',l:'Red de Agua',             w:2.0},
+    {c:'SA.03',l:'Tina',                    w:1.0},
+    {c:'SA.04',l:'WC',                      w:1.0},
+    {c:'SA.05',l:'Lavamanos',              w:2.0}
+  ],
+  terminaciones:[
+    {c:'TE.01',l:'OSB Cubierta',                             w:2.0},
+    {c:'TE.02',l:'OSB Exterior',                             w:3.0},
+    {c:'TE.03',l:'Lavadero',                                 w:0.5},
+    {c:'TE.04',l:'Impermeabilización Baño - Cocina - Logia', w:1.0},
+    {c:'TE.05',l:'Revestimiento Interior Zona Seca',         w:2.0},
+    {c:'TE.06',l:'Revestimiento Interior Cocina - Logia',    w:2.0},
+    {c:'TE.07',l:'Revestimiento Interior Baño',              w:3.0},
+    {c:'TE.08',l:'Instalación Vinílico',                     w:2.0},
+    {c:'TE.09',l:'Lavaplatos',                               w:1.0},
+    {c:'TE.10',l:'Marcos Ventanas',                          w:2.0},
+    {c:'TE.11',l:'Puertas',                                  w:2.0},
+    {c:'TE.12',l:'Extractores',                              w:2.0},
+    {c:'TE.13',l:'Termopaneles',                             w:1.0},
+    {c:'TE.14',l:'Cornizas',                                 w:1.0},
+    {c:'TE.15',l:'Pilastras',                                w:1.0},
+    {c:'TE.16',l:'Endolados',                                w:1.0},
+    {c:'TE.17',l:'Celosías',                                 w:0.5},
+    {c:'TE.18',l:'Baranda y Pintura Balcón',                 w:2.0},
+    {c:'TE.19',l:'Smart Panel',                              w:3.0},
+    {c:'TE.20',l:'Pintura Exterior',                         w:2.5},
+    {c:'TE.21',l:'Ventilaciones Pasivas',                    w:1.0},
+    {c:'TE.22',l:'Recepción Final',                          w:2.5}
+  ]
+};
+
+// Todas las pestañas disponibles en control-planta
+const CP_TABS = ['obra_gruesa','sanitario','electrico','terminaciones','recepcion'];
+
+// ── App state ─────────────────────────────────────────────────────────────────
+let SES=null, PROL=null;
+let curTab=null, curTorre=null;
+let allMods=[], tf='all', pf='all';
+let selId=null, selMod=null;
+let recepTF='all', pendConfirm=null;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async function(){
+  SES = AUTH.getSession();
+  if (!SES && window.opener) {
+    try {
+      const raw = window.opener.sessionStorage.getItem('lachacra_session');
+      if (raw) { sessionStorage.setItem('lachacra_session', raw); SES = AUTH.getSession(); }
+    } catch(e){}
+  }
+  if (!SES) { window.location.href='login.html'; return; }
+
+  PROL = SES.plantaRol || (SES.role==='admin'?'admin':null);
+  document.getElementById('user-badge').textContent =
+    SES.name + (PROL ? ' · '+PROL.replace(/_/g,' ') : '');
+
+  // Control de pestañas — mismo patrón que el Dashboard
+  // Admin siempre ve todas las tabs; resto según AUTH.canViewTab('planta', t)
+  const allowed = SES.role === 'admin'
+    ? CP_TABS
+    : CP_TABS.filter(t => AUTH.canViewTab('planta', t));
+
+  if (!allowed.length) {
+    document.getElementById('view-torres').innerHTML =
+      '<div style="padding:40px;color:var(--muted);text-align:center">Sin acceso asignado. Contacta al administrador.</div>';
+    return;
+  }
+
+  // Mostrar/ocultar tabs según permisos — igual que Dashboard: visible por defecto, ocultar las no permitidas
+  CP_TABS.forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (!el) return;
+    if (allowed.includes(t)) el.classList.remove('hidden');
+    // Las no permitidas quedan con class="hidden" (estado por defecto en el HTML)
+  });
+
+  const isAdmin = SES.role==='admin' || PROL==='admin' || PROL==='gerente';
+  if (isAdmin) document.getElementById('notif-btn').classList.remove('hidden');
+
+  // Activar primera pestaña visible — igual que Dashboard
+  curTab = allowed[0];
+  setActive(curTab);
+
+  await loadAll();
+  setupRT();
+})();
+
+// ── Helpers: new 3-check state ────────────────────────────────────────────────
+function pS(m, code) {
+  const s = m.estados?.[code];
+  if (!s) return {c1:false, c2:false, c3:null};
+  if (typeof s === 'string') {
+    // fallback for old string format
+    if (s==='aprobado')   return {c1:true,  c2:true,  c3:'aprobado'};
+    if (s==='no_aplica')  return {c1:false, c2:false, c3:'no_aplica'};
+    if (s==='qc2')        return {c1:true,  c2:true,  c3:null};
+    if (s==='qc1'||s==='ejecutado') return {c1:true, c2:false, c3:null};
+    return {c1:false, c2:false, c3:null};
+  }
+  return {c1:!!s.c1, c2:!!s.c2, c3:s.c3||null};
+}
+
+function isDone(s)  { return s.c1 && s.c2 && s.c3==='aprobado'; }
+function isNA(s)    { return s.c3==='no_aplica'; }
+
+// Progress: % of non-NA partidas that are fully done (c3=aprobado)
+function tabProgress(m, tab) {
+  const ps = PARTIDAS[tab]||[];
+  const rel = ps.filter(p => !isNA(pS(m,p.c)));
+  if (!rel.length) return 100;
+  const totalW = rel.reduce((s,p)=>s+(p.w||1),0);
+  const doneW  = rel.filter(p=>isDone(pS(m,p.c))).reduce((s,p)=>s+(p.w||1),0);
+  return Math.round(doneW/totalW*100);
+}
+function moduleProgress(m) {
+  const all = Object.values(PARTIDAS).flat();
+  const rel = all.filter(p=>!isNA(pS(m,p.c)));
+  if (!rel.length) return 100;
+  const totalW = rel.reduce((s,p)=>s+(p.w||1),0);
+  const doneW  = rel.filter(p=>isDone(pS(m,p.c))).reduce((s,p)=>s+(p.w||1),0);
+  return Math.round(doneW/totalW*100);
+}
+
+function isAllDone(m) {
+  return Object.values(PARTIDAS).flat().every(p => {
+    const s=pS(m,p.c); return isDone(s)||isNA(s);
+  });
+}
+
+// Phase of a module based on 3-check progress
+// fabricacion → calidad → cliente → entregado
+function getPhase(m) {
+  if (m.estado_modulo==='entregado') return 'entregado';
+  const allPs=Object.values(PARTIDAS).flat();
+  const rel=allPs.filter(p=>!isNA(pS(m,p.c)));
+  if (!rel.length || rel.every(p=>isDone(pS(m,p.c)))) return 'entregado';
+  if (rel.some(p=>!pS(m,p.c).c1)) return 'fabricacion';
+  if (rel.some(p=>!pS(m,p.c).c2)) return 'calidad';
+  return 'cliente';
+}
+
+const PHASE_LABEL = {
+  fabricacion:{l:'🔧 Fabricación',cls:'ph-fabricacion'},
+  calidad:    {l:'🔍 Calidad',    cls:'ph-calidad'},
+  cliente:    {l:'🔍 Auditoría',  cls:'ph-cliente'},
+  entregado:  {l:'✅ Entregado',  cls:'ph-entregado'}
+};
+
+// ── Role permissions ──────────────────────────────────────────────────────────
+function isAdminOrGerente() { return SES.role==='admin'||PROL==='admin'||PROL==='gerente'; }
+function canC1(grp) { return isAdminOrGerente() || AUTH.canMarkInPlanta(grp, 'produccion'); }
+function canC2(grp) { return isAdminOrGerente() || AUTH.canMarkInPlanta(grp || curTab, 'calidad'); }
+function canC3(grp) { return isAdminOrGerente() || AUTH.canMarkInPlanta(grp || curTab, 'cliente'); }
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const r = await fetch(
+      `${SURL}/rest/v1/planta_modulos?select=id,nombre,nro_serie,torre,tipo,estado_modulo,estados,tiempos,orden&order=orden.asc`,
+      {headers:SH}
+    );
+    allMods = await r.json();
+    const tot=allMods.length, ent=allMods.filter(m=>m.estado_modulo==='entregado').length;
+    document.getElementById('grid-sub').textContent =
+      `${tot} módulos · ${ent} entregados · ${[...new Set(allMods.map(m=>m.torre))].length} torres`;
+    renderGrid();
+    if (curTorre) renderList();
+    if (curTab==='recepcion') renderRecep();
+  } catch(e){ toast('Error cargando datos','err'); }
+}
+
+async function loadHist(id) {
+  const r = await fetch(`${SURL}/rest/v1/planta_historial?modulo_id=eq.${id}&order=timestamp.desc&limit=30`,{headers:SH});
+  return await r.json();
+}
+
+// ── Realtime ──────────────────────────────────────────────────────────────────
+function setupRT() {
+  try {
+    const sc = supabase.createClient(SURL, SKEY);
+    sc.channel('cp_rt3')
+      .on('postgres_changes',{event:'*',schema:'public',table:'planta_modulos'}, p => {
+        const idx=allMods.findIndex(m=>m.id===p.new?.id);
+        if (idx!==-1) allMods[idx]={...allMods[idx],...p.new};
+        else if (p.eventType==='INSERT') allMods.push(p.new);
+        renderGrid();
+        if (curTorre) renderList();
+        if (curTab==='recepcion') renderRecep();
+        if (selId===p.new?.id) { selMod=allMods.find(m=>m.id===selId); renderDetail(); }
+      })
+      .subscribe();
+  } catch(e){}
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  curTab=t; setActive(t);
+  if (t==='recepcion') { showView('recepcion'); renderRecep(); }
+  else {
+    if(curTorre) { showView('modules'); renderList(); if(selMod) renderDetail(); }
+    else showView('torres');
+  }
+}
+
+function setActive(t) {
+  document.querySelectorAll('.cp-tab').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+t)?.classList.add('active');
+}
+
+function showView(v) {
+  document.getElementById('view-torres').classList.toggle('hidden',v!=='torres');
+  document.getElementById('view-modules').classList.toggle('hidden',v!=='modules');
+  document.getElementById('view-recepcion').classList.toggle('hidden',v!=='recepcion');
+}
+
+function selectTorre(t) {
+  curTorre=t; selId=null; selMod=null; pf='all';
+  ['all','fabricacion','calidad','cliente','entregado'].forEach(id=>document.getElementById('pf-'+id)?.classList.toggle('on',id==='all'));
+  document.getElementById('breadcrumb').classList.remove('hidden');
+  ['bc-torre-sep','bc-torre'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
+  document.getElementById('bc-torre').textContent=t;
+  ['bc-mod-sep','bc-mod'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  showView('modules'); renderList(); resetDP();
+}
+
+function goHome() {
+  curTorre=null; selId=null; selMod=null;
+  document.getElementById('breadcrumb').classList.add('hidden');
+  showView(curTab==='recepcion'?'recepcion':'torres');
+}
+
+function goBack() {
+  if (selId) {
+    selId=null; selMod=null; resetDP(); renderList();
+    document.getElementById('view-modules')?.classList.remove('mob-detail');
+    ['bc-mod-sep','bc-mod'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  } else if (curTorre) { goHome(); }
+  else { try{window.close();}catch(e){history.back();} }
+}
+
+function doLogout(){ AUTH.logout(); window.location.href='login.html'; }
+
+function mobileBackToList() {
+  selId=null; selMod=null; resetDP(); renderList();
+  document.getElementById('view-modules')?.classList.remove('mob-detail');
+  ['bc-mod-sep','bc-mod'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+}
+
+// ── Torre Grid ─────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const stats={};
+  allMods.forEach(m=>{
+    if(!stats[m.torre]) stats[m.torre]={s:0,h:0,ent:0,totalW:0,doneW:0};
+    const st=stats[m.torre];
+    m.tipo==='seco'?st.s++:st.h++;
+    if(m.estado_modulo==='entregado') st.ent++;
+    const all=Object.values(PARTIDAS).flat();
+    const rel=all.filter(p=>!isNA(pS(m,p.c)));
+    st.totalW+=rel.reduce((s,p)=>s+(p.w||1),0);
+    st.doneW+=rel.filter(p=>isDone(pS(m,p.c))).reduce((s,p)=>s+(p.w||1),0);
+  });
+  const keys=Object.keys(stats).sort((a,b)=>parseInt(a.replace(/\D/g,''))-parseInt(b.replace(/\D/g,'')));
+  document.getElementById('torres-grid').innerHTML = keys.map(t=>{
+    const s=stats[t];
+    const total=s.s+s.h;
+    const pct=s.totalW>0?Math.round(s.doneW/s.totalW*100):0;
+    return `<div class="torre-card${curTorre===t?' sel':''}" onclick="selectTorre('${t}')">
+      <div class="torre-name">🏗️ ${t}</div>
+      <div class="torre-chips">
+        <span class="tchip tchip-s">${s.s} Seco</span>
+        <span class="tchip tchip-h">${s.h} Húm.</span>
+        ${s.ent>0?`<span class="tchip tchip-e">✓ ${s.ent}</span>`:''}
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div class="prog-label">${pct}% de avance · ${s.ent}/${total} entregados</div>
+    </div>`;
+  }).join('')||'<div class="loading">Sin datos</div>';
+}
+
+// ── Module List ────────────────────────────────────────────────────────────────
+function torreModules() {
+  return allMods.filter(m=>m.torre===curTorre).sort((a,b)=>a.orden-b.orden);
+}
+
+function renderList() {
+  const q=(document.getElementById('f-search')?.value||'').toLowerCase();
+  const tab=curTab!=='recepcion'?curTab:'sanitario';
+  const mods=torreModules().filter(m=>{
+    if(tf!=='all'&&m.tipo!==tf) return false;
+    if(pf!=='all'&&getPhase(m)!==pf) return false;
+    if(q&&!m.nombre.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  // Update phase filter counts
+  const allTM=torreModules();
+  ['fabricacion','calidad','cliente','entregado'].forEach(ph=>{
+    const cnt=allTM.filter(m=>(tf==='all'||m.tipo===tf)&&getPhase(m)===ph).length;
+    const el=document.getElementById('pf-'+ph);
+    if(el){
+      const labels={fabricacion:'🔧 Fab.',calidad:'🔍 Cal.',cliente:'🔍 Auditoría',entregado:'✅ Ent.'};
+      el.textContent=labels[ph]+(cnt>0?` (${cnt})`:'');
+    }
+  });
+
+  document.getElementById('mod-list').innerHTML = mods.map(m=>{
+    const ps=PARTIDAS[tab]||[];
+    let done=0,partial=0,pend=0;
+    ps.forEach(p=>{ const s=pS(m,p.c); if(isNA(s)) return; if(isDone(s)) done++; else if(s.c1||s.c2) partial++; else pend++; });
+    const total=done+partial+pend;
+    const segs=total>0?`<div class="mini-prog">
+      ${Array(done).fill('<div class="mp-seg mp-done"></div>').join('')}
+      ${Array(partial).fill('<div class="mp-seg mp-partial"></div>').join('')}
+      ${Array(pend).fill('<div class="mp-seg mp-pend"></div>').join('')}
+    </div>`:'';
+    const phase=getPhase(m);
+    const phCfg=PHASE_LABEL[phase];
+    return `<div class="mod-item${selId===m.id?' sel':''}" onclick="openMod('${m.id}')">
+      <div class="mod-row1">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span class="mod-nombre">${m.nombre}</span>
+          <span class="badge badge-${m.tipo}">${m.tipo==='seco'?'S':'H'}</span>
+        </div>
+        <span class="ph-badge ${phCfg.cls}">${phCfg.l}</span>
+      </div>
+      ${segs}
+    </div>`;
+  }).join('')||'<div style="padding:18px;color:var(--muted);text-align:center;font-size:.82rem">Sin módulos con este filtro</div>';
+}
+
+function setTF(t){
+  tf=t;
+  ['all','seco','humedo'].forEach(id=>document.getElementById('tb-'+id)?.classList.toggle('on',id===t));
+  renderList();
+}
+
+function setPF(f){
+  pf=f;
+  ['all','fabricacion','calidad','cliente','entregado'].forEach(id=>{
+    document.getElementById('pf-'+id)?.classList.toggle('on',id===f);
+  });
+  renderList();
+}
+
+// ── Detail Panel ──────────────────────────────────────────────────────────────
+async function openMod(id) {
+  selId=id; selMod=allMods.find(m=>m.id===id);
+  if(!selMod) return;
+  if(window.innerWidth<=768) document.getElementById('view-modules').classList.add('mob-detail');
+  document.getElementById('bc-mod-sep').classList.remove('hidden');
+  document.getElementById('bc-mod').classList.remove('hidden');
+  document.getElementById('bc-mod').textContent=selMod.nombre;
+  renderList(); renderDetail();
+  loadHist(id).then(h=>{ const el=document.getElementById('hist-list'); if(el) el.innerHTML=histHtml(h); });
+}
+
+function canMarkEntregado() {
+  if(!selMod||selMod.estado_modulo==='entregado') return false;
+  return isAdminOrGerente() || AUTH.canMarkInPlanta('recepcion', 'entregado');
+}
+
+function pendingCount(m) {
+  return Object.values(PARTIDAS).flat().filter(p=>{
+    const s=pS(m,p.c); return !isNA(s)&&!isDone(s);
+  }).length;
+}
+
+function renderDetail() {
+  const dp=document.getElementById('detail-panel');
+  if(!selMod){ resetDP(); return; }
+  const tab=curTab!=='recepcion'?curTab:null;
+
+  dp.innerHTML=`
+    <div id="dp-header">
+      <button class="mobile-back-btn" onclick="mobileBackToList()">← Lista</button>
+      <div style="min-width:0;flex:1">
+        <div class="dp-title">${selMod.nombre}</div>
+        <div class="dp-meta">${selMod.torre} · ${selMod.tipo==='seco'?'Módulo Seco':'Módulo Húmedo'} · Nº serie: ${selMod.nro_serie||'-'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+        <span class="badge badge-${selMod.estado_modulo}" style="font-size:.76rem;padding:4px 10px">
+          ${selMod.estado_modulo==='entregado'?'✓ Entregado':'🔧 En Fabricación'}
+        </span>
+        ${canMarkEntregado()?pendingCount(selMod)>0
+          ?`<button class="btn btn-sm" style="border:1px solid var(--orange);color:var(--orange);background:rgba(247,162,79,.1)" onclick="doEntregadoForzar()">⚠️ Marcar Entregado</button>
+             <button class="btn btn-sm btn-ghost" onclick="completarPendientesNA()" title="Marcar todas las partidas pendientes como N/A y entregar">✦ Completar y Entregar</button>`
+          :`<button class="btn btn-ok btn-sm" onclick="doEntregado()">✓ Marcar Entregado</button>`:''}
+      </div>
+    </div>
+    <div id="dp-body">
+      <div>${tab?partsHtml(tab):partsSummary()}</div>
+      <div>
+        <div class="sec-title">Historial</div>
+        <div id="hist-list"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>`;
+  // Reload historial
+  loadHist(selId).then(h=>{ const el=document.getElementById('hist-list'); if(el) el.innerHTML=histHtml(h); });
+}
+
+function partsSummary() {
+  const LABELS={obra_gruesa:'🏗️ Obra Gruesa',electrico:'⚡ Eléctrico',sanitario:'🚿 Sanitario',terminaciones:'🏠 Terminaciones'};
+  const pct0=moduleProgress(selMod);
+  let h=`<div class="sec-title">Avance total: ${pct0}%</div>`;
+  for(const [grp,ps] of Object.entries(PARTIDAS)){
+    const rel=ps.filter(p=>!isNA(pS(selMod,p.c)));
+    const totalW=rel.reduce((s,p)=>s+(p.w||1),0);
+    const doneW=rel.filter(p=>isDone(pS(selMod,p.c))).reduce((s,p)=>s+(p.w||1),0);
+    const pct=totalW?Math.round(doneW/totalW*100):100;
+    const done=rel.filter(p=>isDone(pS(selMod,p.c))).length;
+    h+=`<div class="part-row">
+      <span class="p-label">${LABELS[grp]||grp}</span>
+      <div style="flex:1;margin:0 12px"><div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div></div>
+      <span style="font-size:.75rem;color:${pct===100?'var(--green)':'var(--muted)'}">${pct}% (${done}/${rel.length})</span>
+    </div>`;
+  }
+  return h;
+}
+
+function partsHtml(tab) {
+  const LABELS={obra_gruesa:'🏗️ Obra Gruesa',sanitario:'🚿 Sanitario',electrico:'⚡ Eléctrico',terminaciones:'🏠 Terminaciones'};
+  const label=LABELS[tab]||tab;
+  const grp=tab;
+  const ps=PARTIDAS[tab]||[];
+
+  // Separar pendientes de aprobadas/NA
+  const pending=ps.filter(p=>{ const s=pS(selMod,p.c); return !isDone(s)&&!isNA(s); });
+  const done   =ps.filter(p=>{ const s=pS(selMod,p.c); return  isDone(s)||isNA(s); });
+
+  const rowHtml=p=>{
+    const s=pS(selMod,p.c); const na=isNA(s);
+    return `<div class="part-row${na?' na-row':''}" id="pr-${p.c}">
+      <span class="p-code">${p.c}</span>
+      <span class="p-label">${p.l}</span>
+      <div class="checks">${checksHtml(selMod,p.c,grp,s)}</div>
+    </div>`;
+  };
+
+  const legend=`<div style="font-size:.68rem;color:var(--muted);margin-bottom:9px;display:flex;gap:14px">
+    <span>⬜ Producción</span><span style="color:var(--purple)">⬜ Calidad</span><span style="color:var(--green)">⬜ Auditoría</span>
+  </div>`;
+
+  let h=`<div class="sec-title">${label}</div>${legend}`;
+
+  // Pendientes primero
+  if(pending.length===0){
+    h+=`<div style="padding:8px 0 4px;font-size:.82rem;color:var(--green)">✅ Todas las partidas aprobadas</div>`;
+  } else {
+    h+=pending.map(rowHtml).join('');
+  }
+
+  // Aprobadas/NA colapsadas al final
+  if(done.length>0){
+    const uid='done-'+tab;
+    h+=`<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">
+      <button id="btn-${uid}" onclick="toggleDone('${uid}')"
+        style="display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:600;color:var(--muted);background:transparent;border:none;cursor:pointer;padding:0;letter-spacing:.3px">
+        <span id="arr-${uid}" style="font-size:.65rem">▶</span>
+        ${done.length} partida${done.length>1?'s':''} aprobada${done.length>1?'s':''} / N/A
+      </button>
+      <div id="${uid}" style="display:none;margin-top:8px;opacity:.7">
+        ${done.map(rowHtml).join('')}
+      </div>
+    </div>`;
+  }
+
+  if(isAdminOrGerente()){
+    h+=`<div style="margin-top:10px;font-size:.72rem;color:var(--muted)">Clic en un check activo para desmarcarlo. Clic en N/A para marcar partida como no aplicable.</div>`;
+  }
+  return h;
+}
+
+function toggleDone(uid) {
+  const el=document.getElementById(uid);
+  const arr=document.getElementById('arr-'+uid);
+  if(!el) return;
+  const open=el.style.display!=='none';
+  el.style.display=open?'none':'block';
+  if(arr) arr.textContent=open?'▶':'▼';
+}
+
+function checksHtml(m, code, grp, s) {
+  if(!s) s=pS(m,code);
+  const na=isNA(s);
+  if(na){
+    const unna=isAdminOrGerente()?`onclick="toggleNA('${m.id}','${code}','${grp}')"`:''
+    return `<span class="cpill cp-na" ${unna} title="${isAdminOrGerente()?'Clic para quitar N/A':'Partida no aplica'}">N/A</span>`;
+  }
+
+  // c1 pill
+  const c1can=canC1(grp);
+  let c1html;
+  if(s.c1){
+    c1html=`<span class="cpill cp-c1" onclick="toggleC1('${m.id}','${code}','${grp}')" title="✓ Producción — clic para desmarcar">✓ Prod.</span>`;
+  } else if(c1can){
+    c1html=`<span class="cpill cp-open" onclick="toggleC1('${m.id}','${code}','${grp}')" title="Marcar Producción completa">○ Prod.</span>`;
+  } else {
+    c1html=`<span class="cpill cp-pend" title="Pendiente Producción">○ Prod.</span>`;
+  }
+
+  // c2 pill
+  const c2can=canC2(grp)&&s.c1;
+  let c2html;
+  if(s.c2){
+    c2html=`<span class="cpill cp-c2" onclick="toggleC2('${m.id}','${code}','${grp}')" title="✓ Calidad — clic para desmarcar">✓ Cal.</span>`;
+  } else if(c2can){
+    c2html=`<span class="cpill cp-open" onclick="toggleC2('${m.id}','${code}','${grp}')" title="Aprobar Calidad">○ Cal.</span>`;
+  } else {
+    c2html=`<span class="cpill cp-pend" title="${s.c1?'Pendiente Calidad':'Completar Producción primero'}">○ Cal.</span>`;
+  }
+
+  // c3 section
+  let c3html;
+  if(s.c3==='aprobado'){
+    const undo=isAdminOrGerente()?`onclick="undoC3('${m.id}','${code}','${grp}')"`:'';
+    c3html=`<span class="cpill cp-c3ok" ${undo} title="${isAdminOrGerente()?'✓ Aprobado — clic para revertir':'✓ Aprobado por Auditoría'}">✓ Aud.</span>`;
+  } else if(s.c1&&s.c2&&canC3(grp)){
+    c3html=`<div class="c3-btns">
+      <button class="c3-btn c3-aprob" onclick="doC3(true,'${m.id}','${code}','${grp}')">✓ Aprob.</button>
+      <button class="c3-btn c3-rech"  onclick="doC3(false,'${m.id}','${code}','${grp}')">✗ Rech.</button>
+    </div>`;
+  } else if(s.c1&&s.c2){
+    c3html=`<span class="cpill cp-pend" title="Pendiente revisión Auditoría">⏳ Aud.</span>`;
+  } else {
+    c3html=`<span class="cpill cp-pend" title="Completar Producción y Calidad primero">— Aud.</span>`;
+  }
+
+  // N/A option for admin
+  const naBtn=isAdminOrGerente()&&!s.c1&&!s.c2?
+    `<span class="cpill cp-na" onclick="toggleNA('${m.id}','${code}','${grp}')" title="Marcar como N/A" style="cursor:pointer">N/A</span>`:'';
+
+  // Botón "Aprobado" solo para admin cuando la partida no está completada
+  const adminAprob=isAdminOrGerente()&&!isDone(s)&&!isNA(s)?
+    `<button class="c3-btn c3-admin-aprob" onclick="aprobarAdmin('${m.id}','${code}','${grp}')" title="Admin: marcar las 3 etapas como aprobadas">⚡ Aprobado</button>`:'';
+
+  return c1html+c2html+c3html+naBtn+adminAprob;
+}
+
+function resetDP() {
+  document.getElementById('detail-panel').innerHTML=`<div class="dp-empty">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    <span>Selecciona un módulo</span>
+  </div>`;
+}
+
+// ── Check Actions ──────────────────────────────────────────────────────────────
+async function toggleC1(modId, code, grp) {
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  const s=pS(m,code);
+  if(isNA(s)||!canC1(grp)) return;
+  if(s.c1&&s.c2&&!isAdminOrGerente()){
+    toast('Calidad ya aprobada — solo gerencia puede desmarcar','err'); return;
+  }
+  if(s.c1){
+    // uncheck — confirm if c2 or c3 set
+    if(s.c2||s.c3){
+      pendConfirm={fn:()=>_doToggleC1(m,code,grp,s)};
+      showConfirm('¿Desmarcar Producción?',
+        'Esto también desmarcará Calidad y Cliente. Se registrará en historial.',
+        [['Cancelar',null,'btn-ghost'],['Confirmar',()=>{ _doToggleC1(m,code,grp,s); closeModal(); },'btn-rej']]);
+      return;
+    }
+    _doToggleC1(m,code,grp,s);
+  } else {
+    const newS={c1:true,c2:s.c2,c3:s.c3};
+    const t=m.tiempos||{};
+    const newT={...(t[code]||{}),t1:new Date().toISOString()};
+    await savePartida(modId,code,newS,newT,'check_prod',grp);
+    await sendNotifs('check1_done',`✅ [PRODUCCIÓN] ${code} listo en ${m.nombre} (${m.torre}) — Pendiente revisión Calidad`);
+  }
+}
+
+async function _doToggleC1(m,code,grp,s){
+  const t=m.tiempos||{};
+  const newT={};  // clear all times for this partida
+  await savePartida(m.id,code,{c1:false,c2:false,c3:null},newT,'uncheck_prod',grp);
+}
+
+async function toggleC2(modId, code, grp) {
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  const s=pS(m,code);
+  if(isNA(s)||!s.c1||!canC2()) return;
+  if(s.c2&&s.c3&&!isAdminOrGerente()){
+    toast('Auditoría ya revisó — solo gerencia puede desmarcar','err'); return;
+  }
+  if(s.c2){
+    if(s.c3){
+      pendConfirm={fn:()=>_doToggleC2(m,code,grp,s)};
+      showConfirm('¿Desmarcar Calidad?',
+        'Esto también desmarcará la aprobación de Auditoría.',
+        [['Cancelar',null,'btn-ghost'],['Confirmar',()=>{ _doToggleC2(m,code,grp,s); closeModal(); },'btn-rej']]);
+      return;
+    }
+    _doToggleC2(m,code,grp,s);
+  } else {
+    const t=m.tiempos||{};
+    const newT={...(t[code]||{}),t2:new Date().toISOString()};
+    await savePartida(modId,code,{c1:true,c2:true,c3:s.c3},newT,'check_cal',grp);
+    await sendNotifs('check2_done',`🔍 [CALIDAD OK] ${code} en ${m.nombre} (${m.torre}) — Pendiente revisión Auditoría`);
+  }
+}
+
+async function _doToggleC2(m,code,grp,s){
+  const t=m.tiempos||{};
+  const newT={...(t[code]||{})}; delete newT.t2; delete newT.t3;
+  await savePartida(m.id,code,{c1:true,c2:false,c3:null},newT,'uncheck_cal',grp);
+}
+
+function doC3(approve, modId, code, grp) {
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  const s=pS(m,code);
+  if(!s.c1||!s.c2||s.c3||!canC3()) return;
+  if(approve){
+    showConfirm('¿Aprobar partida?',
+      `${code} · La partida quedará como aprobada por Auditoría.`,
+      [['Cancelar',null,'btn-ghost'],['✓ Aprobar',async()=>{ closeModal(); await _doC3Aprob(m,code,grp); },'btn-ok']]);
+  } else {
+    openRejectModal(modId, code, grp);
+  }
+}
+
+async function _doC3Aprob(m,code,grp){
+  const s=pS(m,code);
+  const t=m.tiempos||{};
+  const newT={...(t[code]||{}),t3:new Date().toISOString()};
+  await savePartida(m.id,code,{c1:true,c2:true,c3:'aprobado'},newT,'cliente_aprueba',grp);
+  await sendNotifs('check3_approved',`✅ [AUDITORÍA APRUEBA] ${code} en ${m.nombre} (${m.torre})`);
+}
+
+async function _doC3Rech(m,code,grp,obs='',imgUrls=[]){
+  const obsData=imgUrls.length?JSON.stringify({text:obs,images:imgUrls}):(obs||null);
+  await savePartida(m.id,code,{c1:false,c2:false,c3:null},{},'cliente_rechaza',grp,obsData);
+  let msg=`❌ [AUDITORÍA RECHAZA] ${code} en ${m.nombre} (${m.torre}) — Requiere nueva ejecución`;
+  if(obs) msg+=`\n📝 *Observación:* ${obs}`;
+  await sendNotifs('check3_rejected',msg,imgUrls);
+}
+
+async function aprobarAdmin(modId,code,grp){
+  if(!isAdminOrGerente()) return;
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  const s=pS(m,code);
+  if(isDone(s)||isNA(s)) return;
+  showConfirm('⚡ Aprobar partida completa',
+    `${code} · Se marcarán Producción, Calidad y Auditoría como aprobadas.`,
+    [['Cancelar',null,'btn-ghost'],['✓ Aprobar todo',async()=>{
+      closeModal();
+      const t=m.tiempos||{};
+      const now=new Date().toISOString();
+      const newT={...(t[code]||{}),t1:s.c1?(t[code]||{}).t1||now:now,t2:s.c2?(t[code]||{}).t2||now:now,t3:now};
+      await savePartida(modId,code,{c1:true,c2:true,c3:'aprobado'},newT,'admin_aprueba',grp);
+      await sendNotifs('check3_approved',`⚡ [ADMIN APRUEBA] ${code} en ${m.nombre} (${m.torre})`);
+    },'btn-ok']]);
+}
+
+function undoC3(modId,code,grp){
+  if(!isAdminOrGerente()) return;
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  showConfirm('¿Revertir aprobación de Auditoría?',
+    `${code} · Vuelve a estado Calidad aprobada, pendiente Auditoría.`,
+    [['Cancelar',null,'btn-ghost'],['Revertir',async()=>{ closeModal();
+      const t=m.tiempos||{};
+      const newT={...(t[code]||{})}; delete newT.t3;
+      await savePartida(modId,code,{c1:true,c2:true,c3:null},newT,'undo_c3',grp);
+    },'btn-rej']]);
+}
+
+// ── Rejection modal: observación + imágenes ────────────────────────────────────
+let _rejCtx=null, _rejFiles=[];
+
+function openRejectModal(modId,code,grp){
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  _rejCtx={modId,code,grp}; _rejFiles=[];
+  document.getElementById('rej-obs').value='';
+  document.getElementById('rej-img-previews').innerHTML='';
+  document.getElementById('rej-img-input').value='';
+  document.getElementById('rej-upload-progress').classList.add('hidden');
+  const btn=document.getElementById('rej-submit-btn');
+  btn.disabled=false; btn.textContent='✗ Confirmar Rechazo';
+  document.getElementById('rej-partida-info').innerHTML=
+    `<strong>${code}</strong> · ${m.nombre} · ${m.torre}`;
+  document.getElementById('rej-modal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('rej-obs').focus(),100);
+}
+
+function closeRejectModal(){
+  document.getElementById('rej-modal').classList.add('hidden');
+  _rejCtx=null; _rejFiles=[];
+}
+
+function previewRejImages(input){
+  const files=Array.from(input.files).slice(0,5);
+  _rejFiles=files;
+  const el=document.getElementById('rej-img-previews');
+  el.innerHTML=files.map((f,i)=>{
+    const url=URL.createObjectURL(f);
+    return `<div class="img-thumb" id="rejthumb-${i}">
+      <img src="${url}" alt="img-${i}">
+      <button class="img-thumb-del" onclick="removeRejImg(${i})" title="Quitar">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeRejImg(idx){
+  _rejFiles=_rejFiles.filter((_,i)=>i!==idx);
+  document.getElementById('rej-img-input').value='';
+  const el=document.getElementById('rej-img-previews');
+  el.innerHTML=_rejFiles.map((f,i)=>{
+    const url=URL.createObjectURL(f);
+    return `<div class="img-thumb">
+      <img src="${url}" alt="img-${i}">
+      <button class="img-thumb-del" onclick="removeRejImg(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function uploadImagesToSupabase(files,modId,code){
+  const sc=supabase.createClient(SURL,SKEY);
+  const urls=[];
+  for(const file of files){
+    const ext=file.name.split('.').pop()||'jpg';
+    const path=`${modId}/${code}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const {error}=await sc.storage.from('planta-rechazos').upload(path,file,{contentType:file.type,upsert:false});
+    if(!error){
+      const {data:pub}=sc.storage.from('planta-rechazos').getPublicUrl(path);
+      if(pub?.publicUrl) urls.push(pub.publicUrl);
+    } else {
+      console.warn('Upload error',error);
+    }
+  }
+  return urls;
+}
+
+async function submitRejection(){
+  if(!_rejCtx) return;
+  const obs=document.getElementById('rej-obs').value.trim();
+  if(!obs){ toast('Ingresa una observación del problema','err'); return; }
+  const btn=document.getElementById('rej-submit-btn');
+  btn.disabled=true; btn.textContent='Guardando...';
+  const {modId,code,grp}=_rejCtx;
+  const m=allMods.find(x=>x.id===modId);
+  let imgUrls=[];
+  if(_rejFiles.length>0){
+    document.getElementById('rej-upload-progress').classList.remove('hidden');
+    try{ imgUrls=await uploadImagesToSupabase(_rejFiles,modId,code); }
+    catch(e){ console.warn('img upload failed',e); toast('Error subiendo imágenes','err'); }
+    document.getElementById('rej-upload-progress').classList.add('hidden');
+  }
+  closeRejectModal();
+  await _doC3Rech(m,code,grp,obs,imgUrls);
+}
+
+async function toggleNA(modId,code,grp){
+  if(!isAdminOrGerente()) return;
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  const s=pS(m,code);
+  const newS=isNA(s)?{c1:false,c2:false,c3:null}:{c1:false,c2:false,c3:'no_aplica'};
+  await savePartida(modId,code,newS,{},'toggle_na',grp);
+}
+
+// ── Save to Supabase ───────────────────────────────────────────────────────────
+const ACCION_LABELS = {
+  check_prod:'✓ Producción',uncheck_prod:'✗ Producción desmarcado',
+  check_cal:'✓ Calidad',uncheck_cal:'✗ Calidad desmarcado',
+  cliente_aprueba:'✓ Auditoría aprueba',cliente_rechaza:'✗ Auditoría rechaza — reiniciado',
+  undo_c3:'↩ Aprobación Auditoría revertida',toggle_na:'◌ No Aplica toggle',
+  entregado:'📦 Módulo entregado'
+};
+
+async function savePartida(modId,code,newState,newTimes,accion,grp,observacion=null){
+  const m=allMods.find(x=>x.id===modId); if(!m) return;
+  const updE={...(m.estados||{}),[code]:newState};
+  const updT={...(m.tiempos||{}),[code]:newTimes};
+  try {
+    await fetch(`${SURL}/rest/v1/planta_modulos?id=eq.${modId}`,{
+      method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({estados:updE,tiempos:updT})
+    });
+    await fetch(`${SURL}/rest/v1/planta_historial`,{
+      method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({
+        modulo_id:modId,modulo_nombre:m.nombre,partida:code,
+        accion,nuevo_estado:JSON.stringify(newState),
+        observacion,usuario:SES.name,user_id:SES.id,
+        rol:PROL||SES.role,timestamp:new Date().toISOString()
+      })
+    });
+    m.estados=updE; m.tiempos=updT;
+    const isRej=accion==='cliente_rechaza';
+    toast(`${code} · ${ACCION_LABELS[accion]||accion}`,isRej?'err':'ok');
+
+    // Auto-entregado: si todas las partidas quedan aprobadas/NA, marcar módulo
+    if(m.estado_modulo!=='entregado' && isAllDone(m)){
+      try{
+        await fetch(`${SURL}/rest/v1/planta_modulos?id=eq.${modId}`,{
+          method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+          body:JSON.stringify({estado_modulo:'entregado'})
+        });
+        await fetch(`${SURL}/rest/v1/planta_historial`,{
+          method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+          body:JSON.stringify({
+            modulo_id:modId,modulo_nombre:m.nombre,partida:'MÓDULO',
+            accion:'entregado',nuevo_estado:'entregado',
+            observacion:'Auto-entregado al completar todas las partidas',
+            usuario:SES.name,user_id:SES.id,rol:PROL||SES.role,
+            timestamp:new Date().toISOString()
+          })
+        });
+        m.estado_modulo='entregado';
+        toast(`✅ ${m.nombre} — Entregado automáticamente`,'ok');
+        if(curTab==='recepcion') renderRecep();
+      }catch(e2){ console.warn('auto-entregado error',e2); }
+    }
+
+    renderGrid(); renderList();
+    if(selId===modId){ selMod=m; renderDetail(); }
+  } catch(e){ toast('Error al guardar','err'); console.error(e); }
+}
+
+// ── Entregar módulo (forzar con partidas pendientes) ──────────────────────────
+function doEntregadoForzar(){
+  const pc=pendingCount(selMod);
+  showConfirm(
+    '⚠️ Módulo con partidas pendientes',
+    `Este módulo tiene ${pc} partida${pc>1?'s':''} sin aprobación de Auditoría. ¿Marcarlo como Entregado de todas formas?`,
+    [['Cancelar',null,'btn-ghost'],['Entregar igual',async()=>{ closeModal(); await doEntregado(); },'btn-ok']]
+  );
+}
+
+// Marcar todas las partidas pendientes como completadas y luego entregar
+async function completarPendientesNA(){
+  const pc=pendingCount(selMod);
+  showConfirm(
+    '✦ Completar partidas pendientes',
+    `Se marcarán ${pc} partida${pc>1?'s':''} pendiente${pc>1?'s':''} como "Completada${pc>1?'s':''}" y el módulo quedará Entregado. Esta acción no se puede deshacer fácilmente.`,
+    [['Cancelar',null,'btn-ghost'],['Confirmar',async()=>{
+      closeModal();
+      if(!selMod) return;
+      const updE={...(selMod.estados||{})};
+      const updT={...(selMod.tiempos||{})};
+      Object.values(PARTIDAS).flat().forEach(p=>{
+        const s=pS(selMod,p.c);
+        if(!isNA(s)&&!isDone(s)){
+          updE[p.c]={c1:true,c2:true,c3:'aprobado'};
+          updT[p.c]={};
+        }
+      });
+      try{
+        await fetch(`${SURL}/rest/v1/planta_modulos?id=eq.${selMod.id}`,{
+          method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+          body:JSON.stringify({estados:updE,tiempos:updT,estado_modulo:'entregado'})
+        });
+        await fetch(`${SURL}/rest/v1/planta_historial`,{
+          method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+          body:JSON.stringify({
+            modulo_id:selMod.id,modulo_nombre:selMod.nombre,partida:'MÓDULO',
+            accion:'entregado',nuevo_estado:'entregado',
+            observacion:`${pc} partidas completadas como N/A al marcar entregado`,
+            usuario:SES.name,user_id:SES.id,rol:PROL||SES.role,
+            timestamp:new Date().toISOString()
+          })
+        });
+        selMod.estados=updE; selMod.tiempos=updT; selMod.estado_modulo='entregado';
+        const idx=allMods.findIndex(m=>m.id===selMod.id);
+        if(idx!==-1){ allMods[idx].estados=updE; allMods[idx].tiempos=updT; allMods[idx].estado_modulo='entregado'; }
+        toast(`✅ ${selMod.nombre} — Entregado (${pc} partidas → N/A)`,'ok');
+        renderGrid(); renderList(); renderDetail();
+        if(curTab==='recepcion') renderRecep();
+      }catch(e){ toast('Error','err'); console.error(e); }
+    },'btn-ok']]
+  );
+}
+
+// ── Entregar módulo ────────────────────────────────────────────────────────────
+async function doEntregado(){
+  if(!selMod) return;
+  const id=selMod.id;
+  try{
+    await fetch(`${SURL}/rest/v1/planta_modulos?id=eq.${id}`,{
+      method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({estado_modulo:'entregado'})
+    });
+    await fetch(`${SURL}/rest/v1/planta_historial`,{
+      method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({
+        modulo_id:id,modulo_nombre:selMod.nombre,partida:'MÓDULO',
+        accion:'entregado',nuevo_estado:'entregado',
+        usuario:SES.name,user_id:SES.id,rol:PROL||SES.role,
+        timestamp:new Date().toISOString()
+      })
+    });
+    selMod.estado_modulo='entregado';
+    allMods.find(m=>m.id===id).estado_modulo='entregado';
+    renderGrid(); renderList(); renderDetail();
+    if(curTab==='recepcion') renderRecep();
+    toast(`${selMod.nombre} — Entregado ✓`,'ok');
+  } catch(e){ toast('Error','err'); }
+}
+
+async function doEntById(id){
+  selMod=allMods.find(m=>m.id===id); selId=id;
+  if(selMod) await doEntregado();
+  renderRecep();
+}
+
+// ── Recepción view ─────────────────────────────────────────────────────────────
+function renderRecep(){
+  const ready=allMods.filter(m=>m.estado_modulo==='entregado'||isAllDone(m));
+  const torres=[...new Set(ready.map(m=>m.torre))].sort((a,b)=>parseInt(a.replace(/\D/g,''))-parseInt(b.replace(/\D/g,'')));
+  document.getElementById('recep-filter').innerHTML=
+    ['all',...torres].map(t=>`<button class="sm-btn" style="${recepTF===t?'border-color:var(--accent);color:var(--text)':''}" onclick="setRT('${t}')">${t==='all'?'Todas':t}</button>`).join('');
+  const filt=ready.filter(m=>recepTF==='all'||m.torre===recepTF);
+  const canMark=PROL==='supervisor_recepcion'||PROL==='gerente'||SES.role==='admin';
+  document.getElementById('recep-grid').innerHTML=filt.length?filt.map(m=>{
+    const ent=m.estado_modulo==='entregado';
+    return `<div class="r-card${ent?' ent':''}">
+      <div class="r-card-top">
+        <div><strong>${m.nombre}</strong> <span class="badge badge-${m.tipo}" style="margin-left:4px">${m.tipo==='seco'?'SECO':'HÚM.'}</span></div>
+        <span class="badge badge-${m.estado_modulo}">${ent?'✓ Entregado':'🟡 Listo'}</span>
+      </div>
+      <div class="r-meta">${m.torre} · Nº serie ${m.nro_serie||'-'}</div>
+      ${canMark&&!ent?`<button class="btn btn-ok" style="width:100%;font-size:.78rem" onclick="doEntById('${m.id}')">✓ Marcar Entregado</button>`:''}
+    </div>`;
+  }).join(''):'<div style="color:var(--muted);font-size:.84rem;padding:16px">Sin módulos listos aún.</div>';
+}
+
+function setRT(t){ recepTF=t; renderRecep(); }
+
+// ── Historial ─────────────────────────────────────────────────────────────────
+const ACCION_DOTS = {
+  check_prod:'#4f8ef7',check_cal:'#a855f7',cliente_aprueba:'#3ecf8e',
+  cliente_rechaza:'#f75f5f',uncheck_prod:'#7a7f99',uncheck_cal:'#7a7f99',
+  undo_c3:'#f7a24f',toggle_na:'#444862',entregado:'#3ecf8e'
+};
+
+function histHtml(rows){
+  if(!rows?.length) return '<div style="color:var(--muted);font-size:.78rem">Sin historial aún.</div>';
+  return rows.map(r=>{
+    const dot=ACCION_DOTS[r.accion]||'#7a7f99';
+    const label=ACCION_LABELS[r.accion]||r.accion||r.nuevo_estado||'';
+    const d=r.timestamp?new Date(r.timestamp).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+    // Parse observation — can be plain text or JSON {text, images}
+    let obsHtml='';
+    if(r.observacion){
+      try{
+        const parsed=JSON.parse(r.observacion);
+        if(parsed.text) obsHtml+=`<div class="hist-obs">📝 ${parsed.text}</div>`;
+        if(parsed.images?.length){
+          obsHtml+=`<div class="hist-imgs">${parsed.images.map(u=>
+            `<a href="${u}" target="_blank" rel="noopener"><img class="hist-img" src="${u}" alt="foto rechazo" loading="lazy"></a>`
+          ).join('')}</div>`;
+        }
+      }catch(e){
+        obsHtml=`<div class="hist-obs">📝 ${r.observacion}</div>`;
+      }
+    }
+    return `<div class="hist-item">
+      <div class="h-dot" style="background:${dot}"></div>
+      <div style="flex:1;min-width:0">
+        <div><strong>${r.partida}</strong> <span style="color:${dot}">${label}</span></div>
+        <div class="h-meta">${r.usuario||'Sistema'}${r.rol?' · '+r.rol.replace(/_/g,' '):''} · ${d}</div>
+        ${obsHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Confirm modal ─────────────────────────────────────────────────────────────
+function showConfirm(title,sub,btns){
+  document.getElementById('m-title').textContent=title;
+  document.getElementById('m-sub').textContent=sub;
+  document.getElementById('m-actions').innerHTML=btns.map(([label,fn,cls])=>
+    `<button class="btn ${cls}" onclick="${fn?'pendConfirm.fn&&pendConfirm.fn()':'closeModal()'}">${label}</button>`
+  ).join('');
+  // Use direct onclick to avoid stringified fn
+  document.getElementById('modal').classList.remove('hidden');
+  // Override buttons with actual functions
+  const actionBtns=document.getElementById('m-actions').querySelectorAll('button');
+  btns.forEach(([label,fn,cls],i)=>{
+    if(fn) actionBtns[i].onclick=fn;
+    else actionBtns[i].onclick=closeModal;
+  });
+}
+
+function closeModal(){ document.getElementById('modal').classList.add('hidden'); pendConfirm=null; }
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal') closeModal(); });
+
+// ── WhatsApp + Slack Notifications ───────────────────────────────────────────
+async function sendNotifs(evento, message, imageUrls=[]){
+  // WhatsApp via CallMeBot
+  try{
+    const r=await fetch(`${SURL}/rest/v1/planta_notif_contacts?active=eq.true&select=phone,callmebot_key,eventos`,{headers:SH});
+    const contacts=await r.json();
+    contacts.filter(c=>c.callmebot_key&&c.eventos?.includes(evento)).forEach(c=>{
+      new Image().src=`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(c.phone)}&text=${encodeURIComponent(message)}&apikey=${c.callmebot_key}`;
+    });
+  } catch(e){ console.warn('WhatsApp notif error',e); }
+  // Slack via Edge Function (proxy para evitar CORS)
+  try{
+    fetch(`${SURL}/functions/v1/slack-notify`,{
+      method:'POST',
+      headers:{...SH,'Content-Type':'application/json'},
+      body:JSON.stringify({evento,message,imageUrls})
+    });
+  } catch(e){ console.warn('Slack notif error',e); }
+  // Telegram via Edge Function
+  try{
+    fetch(`${SURL}/functions/v1/telegram-notify`,{
+      method:'POST',
+      headers:{...SH,'Content-Type':'application/json'},
+      body:JSON.stringify({evento,message,imageUrls})
+    });
+  } catch(e){ console.warn('Telegram notif error',e); }
+}
+
+// ── Notification modal ────────────────────────────────────────────────────────
+const EV_LABEL={'check1_done':'Producción','check2_done':'Calidad','check3_approved':'Auditoría aprueba','check3_rejected':'Auditoría rechaza'};
+
+function switchNotifTab(tab){
+  ['wa','slack','tg'].forEach(t=>{
+    document.getElementById('ntab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('npanel-'+t).classList.toggle('hidden',t!==tab);
+  });
+  if(tab==='slack') refreshSlackList();
+  if(tab==='tg') refreshTelegramList();
+}
+
+async function openNotifModal(){
+  document.getElementById('notif-modal').classList.remove('hidden');
+  await refreshContactsList();
+}
+
+function closeNotifModal(){ document.getElementById('notif-modal').classList.add('hidden'); }
+document.getElementById('notif-modal').addEventListener('click',e=>{ if(e.target.id==='notif-modal') closeNotifModal(); });
+
+// ── WhatsApp contacts ─────────────────────────────────────────────────────────
+async function refreshContactsList(){
+  const el=document.getElementById('notif-contacts-list');
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const r=await fetch(`${SURL}/rest/v1/planta_notif_contacts?order=created_at.asc`,{headers:SH});
+    const contacts=await r.json();
+    el.innerHTML=contacts.length?contacts.map(c=>`
+      <div class="notif-contact">
+        <div class="nc-top">
+          <div>
+            <div class="nc-name">${c.nombre}</div>
+            <div style="font-size:.72rem;color:var(--muted)">${c.phone}${!c.active?' · ⚫ inactivo':''}</div>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <button class="sm-btn" onclick="toggleContactActive('${c.id}',${!c.active})">${c.active?'Desactivar':'Activar'}</button>
+            <button class="del-btn" onclick="deleteContact('${c.id}')">✕</button>
+          </div>
+        </div>
+        <div class="nc-tags">${(c.eventos||[]).map(ev=>`<span class="nc-tag">${EV_LABEL[ev]||ev}</span>`).join('')}</div>
+      </div>`).join(''):'<div style="color:var(--muted);font-size:.82rem;padding:8px 0">Sin contactos configurados.</div>';
+  } catch(e){ el.innerHTML='<div style="color:var(--red)">Error cargando contactos.</div>'; }
+}
+
+async function saveContact(){
+  const nombre=document.getElementById('nc-name').value.trim();
+  const phone=document.getElementById('nc-phone').value.trim();
+  const key=document.getElementById('nc-key').value.trim();
+  if(!nombre||!phone||!key){ toast('Completa nombre, teléfono y key','err'); return; }
+  const evs=['ev-c1','ev-c2','ev-c3ok','ev-c3rej']
+    .filter(id=>document.getElementById(id).checked)
+    .map(id=>document.getElementById(id).value);
+  try{
+    await fetch(`${SURL}/rest/v1/planta_notif_contacts`,{
+      method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({nombre,phone,callmebot_key:key,eventos:evs,active:true})
+    });
+    ['nc-name','nc-phone','nc-key'].forEach(id=>document.getElementById(id).value='');
+    ['ev-c1','ev-c2','ev-c3ok','ev-c3rej'].forEach(id=>document.getElementById(id).checked=false);
+    toast('Contacto agregado','ok');
+    await refreshContactsList();
+  } catch(e){ toast('Error al guardar contacto','err'); }
+}
+
+async function deleteContact(id){
+  if(!confirm('¿Eliminar este contacto?')) return;
+  await fetch(`${SURL}/rest/v1/planta_notif_contacts?id=eq.${id}`,{method:'DELETE',headers:SH});
+  await refreshContactsList();
+}
+
+async function toggleContactActive(id, active){
+  await fetch(`${SURL}/rest/v1/planta_notif_contacts?id=eq.${id}`,{
+    method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+    body:JSON.stringify({active})
+  });
+  await refreshContactsList();
+}
+
+// ── Slack channels ─────────────────────────────────────────────────────────────
+async function refreshSlackList(){
+  const el=document.getElementById('slack-channels-list');
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const r=await fetch(`${SURL}/rest/v1/planta_slack_channels?order=created_at.asc`,{headers:SH});
+    const channels=await r.json();
+    el.innerHTML=channels.length?channels.map(c=>`
+      <div class="notif-contact">
+        <div class="nc-top">
+          <div>
+            <div class="nc-name">🟢 ${c.nombre}</div>
+            <div style="font-size:.72rem;color:var(--muted);font-family:monospace">${c.webhook_url.replace(/\/[^\/]{10,}$/,'/*****')}${!c.active?' · ⚫ inactivo':''}</div>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <button class="sm-btn" onclick="toggleSlackActive('${c.id}',${!c.active})">${c.active?'Desactivar':'Activar'}</button>
+            <button class="del-btn" onclick="deleteSlackChannel('${c.id}')">✕</button>
+          </div>
+        </div>
+        <div class="nc-tags">${(c.eventos||[]).map(ev=>`<span class="nc-tag">${EV_LABEL[ev]||ev}</span>`).join('')}</div>
+      </div>`).join(''):'<div style="color:var(--muted);font-size:.82rem;padding:8px 0">Sin canales configurados.</div>';
+  } catch(e){ el.innerHTML='<div style="color:var(--red)">Error cargando canales.</div>'; }
+}
+
+async function saveSlackChannel(){
+  const nombre=document.getElementById('sc-name').value.trim();
+  const webhook_url=document.getElementById('sc-webhook').value.trim();
+  if(!nombre||!webhook_url){ toast('Completa nombre y webhook URL','err'); return; }
+  if(!webhook_url.startsWith('https://hooks.slack.com/')){ toast('URL de webhook inválida','err'); return; }
+  const evs=['sc-ev-c1','sc-ev-c2','sc-ev-c3ok','sc-ev-c3rej']
+    .filter(id=>document.getElementById(id).checked)
+    .map(id=>document.getElementById(id).value);
+  try{
+    await fetch(`${SURL}/rest/v1/planta_slack_channels`,{
+      method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({nombre,webhook_url,eventos:evs,active:true})
+    });
+    ['sc-name','sc-webhook'].forEach(id=>document.getElementById(id).value='');
+    ['sc-ev-c1','sc-ev-c2','sc-ev-c3ok','sc-ev-c3rej'].forEach(id=>document.getElementById(id).checked=false);
+    toast('Canal Slack agregado','ok');
+    await refreshSlackList();
+  } catch(e){ toast('Error al guardar canal','err'); }
+}
+
+async function deleteSlackChannel(id){
+  if(!confirm('¿Eliminar este canal?')) return;
+  await fetch(`${SURL}/rest/v1/planta_slack_channels?id=eq.${id}`,{method:'DELETE',headers:SH});
+  await refreshSlackList();
+}
+
+async function toggleSlackActive(id, active){
+  await fetch(`${SURL}/rest/v1/planta_slack_channels?id=eq.${id}`,{
+    method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+    body:JSON.stringify({active})
+  });
+  await refreshSlackList();
+}
+
+// ── Telegram chats ─────────────────────────────────────────────────────────────
+async function refreshTelegramList(){
+  const el=document.getElementById('tg-chats-list');
+  el.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const r=await fetch(`${SURL}/rest/v1/planta_telegram_chats?order=created_at.asc`,{headers:SH});
+    const chats=await r.json();
+    el.innerHTML=chats.length?chats.map(c=>`
+      <div class="notif-contact">
+        <div class="nc-top">
+          <div>
+            <div class="nc-name">✈️ ${c.nombre}</div>
+            <div style="font-size:.72rem;color:var(--muted);font-family:monospace">chat: ${c.chat_id}${!c.active?' · ⚫ inactivo':''}</div>
+          </div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <button class="sm-btn" onclick="toggleTelegramActive('${c.id}',${!c.active})">${c.active?'Desactivar':'Activar'}</button>
+            <button class="del-btn" onclick="deleteTelegramChat('${c.id}')">✕</button>
+          </div>
+        </div>
+        <div class="nc-tags">${(c.eventos||[]).map(ev=>`<span class="nc-tag">${EV_LABEL[ev]||ev}</span>`).join('')}</div>
+      </div>`).join(''):'<div style="color:var(--muted);font-size:.82rem;padding:8px 0">Sin chats configurados.</div>';
+  } catch(e){ el.innerHTML='<div style="color:var(--red)">Error cargando chats.</div>'; }
+}
+
+async function saveTelegramChat(){
+  const nombre=document.getElementById('tg-name').value.trim();
+  const bot_token=document.getElementById('tg-token').value.trim();
+  const chat_id=document.getElementById('tg-chatid').value.trim();
+  if(!nombre||!bot_token||!chat_id){ toast('Completa nombre, token y chat ID','err'); return; }
+  const evs=['tg-ev-c1','tg-ev-c2','tg-ev-c3ok','tg-ev-c3rej']
+    .filter(id=>document.getElementById(id).checked)
+    .map(id=>document.getElementById(id).value);
+  try{
+    await fetch(`${SURL}/rest/v1/planta_telegram_chats`,{
+      method:'POST',headers:{...SH,'Prefer':'return=minimal'},
+      body:JSON.stringify({nombre,bot_token,chat_id,eventos:evs,active:true})
+    });
+    ['tg-name','tg-token','tg-chatid'].forEach(id=>document.getElementById(id).value='');
+    ['tg-ev-c1','tg-ev-c2','tg-ev-c3ok','tg-ev-c3rej'].forEach(id=>document.getElementById(id).checked=false);
+    toast('Chat Telegram agregado','ok');
+    await refreshTelegramList();
+  } catch(e){ toast('Error al guardar chat','err'); }
+}
+
+async function deleteTelegramChat(id){
+  if(!confirm('¿Eliminar este chat?')) return;
+  await fetch(`${SURL}/rest/v1/planta_telegram_chats?id=eq.${id}`,{method:'DELETE',headers:SH});
+  await refreshTelegramList();
+}
+
+async function toggleTelegramActive(id, active){
+  await fetch(`${SURL}/rest/v1/planta_telegram_chats?id=eq.${id}`,{
+    method:'PATCH',headers:{...SH,'Prefer':'return=minimal'},
+    body:JSON.stringify({active})
+  });
+  await refreshTelegramList();
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function toast(msg,type='ok'){
+  const el=document.createElement('div');
+  el.className='toast '+type; el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+// ── Keys ──────────────────────────────────────────────────────────────────────
+document.getElementById('rej-modal').addEventListener('click',e=>{ if(e.target.id==='rej-modal') closeRejectModal(); });
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(!document.getElementById('rej-modal').classList.contains('hidden')) closeRejectModal();
+    else if(!document.getElementById('notif-modal').classList.contains('hidden')) closeNotifModal();
+    else if(!document.getElementById('modal').classList.contains('hidden')) closeModal();
+    else goBack();
+  }
+});
+</script>
+</body>
+</html>
