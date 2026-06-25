@@ -487,13 +487,60 @@ async function loadPresupuestoSupa(){
 // Devuelve el array de compras a usar: Supabase si está cargado, Excel como fallback
 function getCompras(){
   if(_supaCompras.length){
-    // Inyectar presupuesto total en primera fila para que renderCompras/renderResumen lo encuentren
-    if(_presupuestoTotal!=null&&_supaCompras.length)
-      _supaCompras[0].presupuesto=_presupuestoTotal;
+    if(_presupuestoTotal!=null) _supaCompras[0].presupuesto=_presupuestoTotal;
     return _supaCompras;
   }
   // FALLBACK_EXCEL: DATA.detalleGD del archivo LACHACRA.xlsm
   return DATA.detalleGD||[];
+}
+
+// ── HOME AVANCE desde Supabase ────────────────────────────
+let _supaAvanceProy=[];   // filas de avance_econ_proy para el año del gráfico
+
+async function loadAvanceEconProy(){
+  try{
+    const anio=new Date().getFullYear();
+    const r=await fetch(`${SUPA_URL}/rest/v1/avance_econ_proy?anio=eq.${anio}&order=mes.asc`,{headers:SUPA_H});
+    if(!r.ok)return;
+    _supaAvanceProy=await r.json();
+  }catch(e){console.warn('loadAvanceEconProy:',e);}
+}
+
+// Construye el array homeAvance desde Supabase (av_econ calculado de _supaCompras)
+// Equivalente a DATA.homeAvance del Excel pero en tiempo real.
+function getHomeAvance(){
+  if(!_supaAvanceProy.length) return DATA.homeAvance||[];
+
+  const MES_NAMES=['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const anio=new Date().getFullYear();
+  const ppto=_presupuestoTotal||1;
+
+  // Acumular compras por (anio,mes) desde _supaCompras
+  const montoMes={};
+  (_supaCompras.length?_supaCompras:DATA.detalleGD||[]).forEach(c=>{
+    const key=`${c.anioGuia??anio}-${c.mes}`;
+    montoMes[key]=(montoMes[key]||0)+(c.valorTotal||0);
+  });
+
+  // Mes 1 (Enero) agrupa todo lo anterior al año del gráfico + enero del año
+  const preAnio=Object.entries(montoMes)
+    .filter(([k])=>parseInt(k.split('-')[0])<anio)
+    .reduce((s,[,v])=>s+v,0);
+
+  const proyMap={};
+  _supaAvanceProy.forEach(r=>{ proyMap[r.mes]=parseFloat(r.valor)||0; });
+
+  return MES_NAMES.map((nombre,i)=>{
+    const mes=i+1;
+    let real=montoMes[`${anio}-${mes}`]||0;
+    if(mes===1) real+=preAnio;   // agrupa meses anteriores en Enero
+    return {
+      mes:    nombre,
+      avEcon: ppto>0 ? real/ppto : null,
+      avEconProy: proyMap[mes]??null
+    };
+  });
 }
 
 // Check localStorage for pre-loaded data
@@ -508,7 +555,7 @@ function getCompras(){
           var pr = document.getElementById('prompt');
           if(pr) pr.style.display = 'none';
           renderAll();
-          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy()])
             .then(()=>{renderDespachos();renderCompras();renderResumen();});
           var t = document.querySelector('.tab[data-tab="resumen"]');
           if(t) t.click();
@@ -815,7 +862,7 @@ document.getElementById('file-input').addEventListener('change',function(e){
         document.getElementById('prompt').style.display='none';
         renderAll();
         document.querySelector('.tab[data-tab="resumen"]').click();
-        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy()])
           .then(()=>{renderDespachos();renderCompras();renderResumen();});
         st.textContent='✅ Cargado'; st.className='status-ok';
         // Save to localStorage for biblioteca
@@ -868,7 +915,7 @@ async function autoLoadFromRepo(){
     try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
     renderAll();
     try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
-    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa()])
+    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy()])
       .then(()=>{renderDespachos();renderCompras();renderResumen();});
     showAutoStatus('✅ Datos cargados');
     try{
@@ -1168,10 +1215,9 @@ function renderResumen(){
   ],{yMoney:true, money:true, tooltipFull:true});
 
   // % Avance económico mensual: barras real + línea proyectado
-  const ha = DATA.homeAvance||[];
+  const ha = getHomeAvance();
   const cardAvEcon = document.getElementById('card-av-econ');
   if(!ha.length){
-    // Show placeholder when data not yet loaded
     const canvas = document.getElementById('ch-av-econ');
     if(canvas && cardAvEcon){
       canvas.style.display='none';
@@ -1179,7 +1225,7 @@ function renderResumen(){
         const ph=document.createElement('div');
         ph.className='av-econ-placeholder';
         ph.style.cssText='display:flex;align-items:center;justify-content:center;height:240px;color:#7a7f99;font-size:.85rem;gap:8px;';
-        ph.innerHTML='<span style="font-size:1.4rem">📊</span> Para ver este gráfico, re-subí el archivo Excel';
+        ph.innerHTML='<span style="font-size:1.4rem">📊</span> Sin datos de avance económico';
         cardAvEcon.querySelector('.chart-wrap').appendChild(ph);
       }
     }
