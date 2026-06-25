@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Chacra · Configuración</title>
 <script src="auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="excel-export.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -12,8 +14,10 @@
   --green:#3fb950;--green2:rgba(63,185,80,.12);
   --red:#f85149;--red2:rgba(248,81,73,.12);
   --blue:#4f8ef7;--blue2:rgba(79,142,247,.13);
+  --yellow2:rgba(251,191,36,0.15);
+  --purple2:rgba(139,92,246,0.15);
   --border:#2e3350;--bg:#0f1117;--surface:#1a1d27;--surface2:#12151f;
-  --text:#e8eaf0;--muted:#7a7f99;
+  --text:#e8eaf0;--muted:#7a7f99;--text2:#9ca3b8;
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
@@ -26,19 +30,35 @@ header{background:var(--surface);border-bottom:1px solid var(--border);display:f
 .btn-back{font-size:.8rem;color:var(--muted);background:none;border:1px solid var(--border);padding:5px 12px;border-radius:6px;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all .15s}
 .btn-back:hover{color:var(--text);border-color:var(--blue)}
 
+/* ── Tab nav ─────────────────────────────────────────────── */
+.tab-nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:0;padding:0 24px;position:sticky;top:54px;z-index:99}
+.tab-btn{font-size:.85rem;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;padding:14px 18px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--text);border-bottom-color:var(--brand)}
+
 /* ── Layout ─────────────────────────────────────────────── */
-main{max-width:860px;margin:0 auto;padding:32px 20px 60px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.page{max-width:960px;margin:0 auto;padding:32px 20px 60px}
+.page-wide{max-width:1400px;margin:0 auto;padding:28px 22px 60px}
 h1{font-size:1.35rem;font-weight:700;margin-bottom:4px}
 .page-sub{color:var(--muted);font-size:.85rem;margin-bottom:32px}
 
 /* ── Cards ──────────────────────────────────────────────── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
-.card-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;box-shadow:0 1px 8px rgba(0,0,0,.25)}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.card-header-left{display:flex;align-items:center;gap:10px}
 .card-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .icon-blue{background:var(--blue2)}
 .icon-green{background:var(--green2)}
 .card-title{font-size:1rem;font-weight:700}
 .card-sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+.card-header h2{font-size:.95rem;font-weight:700;color:var(--text)}
+.card-header>span{font-size:.76rem;color:var(--muted)}
+.card-body{padding:0}
+.card-body.padded{padding:16px 22px}
+.card-body.scrollable{overflow-x:auto}
+.card-body.scrollable table{min-width:960px}
 
 /* ── Resumen financiero ──────────────────────────────────── */
 .fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:22px}
@@ -81,16 +101,134 @@ h1{font-size:1.35rem;font-weight:700;margin-bottom:4px}
 .save-ok{color:var(--green)}
 .save-err{color:var(--red)}
 
+/* ── General table (usuarios tab) ───────────────────────── */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:0 12px 10px;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;font-size:.85rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.04)}
+
+/* ── Badges ─────────────────────────────────────────────── */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600}
+.badge-admin   {background:var(--yellow2);color:#fbbf24}
+.badge-editor  {background:var(--purple2);color:#a78bfa}
+.badge-operador{background:var(--blue2);color:var(--blue)}
+.badge-viewer  {background:rgba(255,255,255,.07);color:var(--muted)}
+.badge-compras {background:rgba(62,207,142,.15);color:#3ecf8e}
+.badge-on {background:rgba(52,211,153,.13);color:#34d399}
+.badge-off{background:rgba(248,113,113,.13);color:#f87171}
+.page-chip{display:inline-block;font-size:.68rem;font-weight:600;padding:1px 6px;border-radius:4px;margin:1px 2px;background:var(--blue2);color:var(--blue)}
+.tab-chip {display:inline-block;font-size:.65rem;font-weight:600;padding:1px 5px;border-radius:3px;margin:1px;background:var(--blue2);color:var(--blue)}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn{padding:6px 13px;border-radius:6px;border:none;font-size:.8rem;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn-primary{background:var(--brand);color:white}
+.btn-primary:hover{background:#b82218}
+.btn-danger {background:var(--red2);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+.btn-danger:hover{background:rgba(248,81,73,.2)}
+.btn-edit  {background:var(--blue2);color:var(--blue);border:1px solid rgba(79,142,247,.3)}
+.btn-edit:hover{background:rgba(79,142,247,.2)}
+.btn-sm{padding:3px 9px;font-size:.73rem}
+.btn-group{display:flex;gap:5px}
+
+/* ── Timestamps ─────────────────────────────────────────── */
+.ts{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.ts strong{display:block;color:var(--text);font-size:.78rem;font-weight:600}
+
+/* ── Row flash ───────────────────────────────────────────── */
+@keyframes rowFlash{0%{background:rgba(52,211,153,.12)}60%{background:rgba(52,211,153,.12)}100%{background:transparent}}
+tr.just-saved td{animation:rowFlash 2.2s ease forwards}
+
+/* ── Save confirm banner ─────────────────────────────────── */
+.save-confirm{display:none;align-items:center;gap:6px;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399;border-radius:7px;padding:10px 16px;font-size:.83rem;font-weight:600;margin-bottom:16px}
+.save-confirm.show{display:flex}
+
+/* ── Info box ────────────────────────────────────────────── */
+.info-box{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.25);border-radius:8px;padding:10px 14px;font-size:.8rem;color:#93c5fd;margin-bottom:18px;display:flex;gap:8px}
+.empty-state{text-align:center;padding:28px;color:var(--muted);font-size:.88rem}
+
+/* ── Roles grid ─────────────────────────────────────────── */
+.roles-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:768px){.roles-grid{grid-template-columns:1fr 1fr}}
+.role-card{border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--surface2)}
+.role-card h4{font-size:.82rem;font-weight:700;margin-bottom:5px;color:var(--text)}
+.role-card ul{list-style:none;font-size:.75rem;color:var(--muted)}
+.role-card ul li{margin-bottom:2px}
+.role-card ul li::before{content:'• '}
+
+/* ── Modal ───────────────────────────────────────────────── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid var(--border)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;border-radius:14px 14px 0 0}
+.modal-header h3{font-size:1rem;font-weight:700;color:var(--text)}
+.modal-close{background:none;border:none;font-size:1.2rem;color:var(--muted);cursor:pointer}
+.modal-body{padding:18px 22px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 22px;border-top:1px solid var(--border)}
+
+/* ── Form ────────────────────────────────────────────────── */
+.form-row{margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-label{display:block;font-size:.72rem;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.form-input,.form-select{width:100%;padding:8px 11px;border:2px solid var(--border);border-radius:7px;font-size:.88rem;color:var(--text);outline:none;transition:border-color .2s;background:var(--surface2)}
+.form-input:focus,.form-select:focus{border-color:var(--brand);background:var(--surface2)}
+.form-select option{background:var(--surface)}
+.form-hint{font-size:.7rem;color:var(--muted);margin-top:3px}
+
+/* ── Page perms ──────────────────────────────────────────── */
+.section-label{font-size:.72rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.perm-page{border:2px solid var(--border);border-radius:9px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.perm-page.enabled{border-color:var(--brand)}
+.perm-page-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,.03);cursor:pointer;user-select:none}
+.perm-page.enabled .perm-page-header{background:var(--brand2)}
+.perm-page-title{display:flex;align-items:center;gap:10px;font-size:.88rem;font-weight:700;color:var(--text)}
+.perm-page-body{padding:10px 14px;border-top:1px solid var(--border);display:none}
+.perm-page.open .perm-page-body{display:block}
+.tabs-grid-sm{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tab-check-sm{display:flex;align-items:center;gap:5px;padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;font-size:.78rem;color:var(--text2);transition:border-color .15s,background .15s}
+.tab-check-sm:has(input:checked){border-color:var(--brand);background:var(--brand2);color:var(--text)}
+.tab-check-sm input{accent-color:var(--brand)}
+.all-none-btns{display:flex;gap:6px;margin-bottom:6px}
+.btn-all-none{font-size:.7rem;padding:2px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--muted)}
+.btn-all-none:hover{color:var(--text)}
+
+/* ── Toggle switch ───────────────────────────────────────── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:.85rem;color:var(--text)}
+.toggle-label small{display:block;font-size:.7rem;color:var(--muted);margin-top:1px}
+.switch{position:relative;width:38px;height:21px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#ccc;border-radius:21px;cursor:pointer;transition:background .2s}
+.slider::before{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:white;left:3px;top:3px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch input:checked+.slider{background:var(--brand)}
+.switch input:checked+.slider::before{transform:translateX(17px)}
+
 /* ── Toast ───────────────────────────────────────────────── */
 #toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:11px 18px;font-size:.85rem;box-shadow:0 8px 32px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);transition:all .22s;pointer-events:none;z-index:9999;max-width:320px}
 #toast.show{opacity:1;transform:translateY(0)}
 #toast.ok{border-color:var(--green);color:var(--green)}
 #toast.err{border-color:var(--red);color:var(--red)}
+#toast.success{background:#065f46;border-color:#34d399;color:#34d399}
+#toast.error  {background:#991b1b;border-color:#f87171;color:#f87171}
 
-/* ── Unauthorized ────────────────────────────────────────── */
-#unauth{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:14px;text-align:center}
-#unauth .icon{font-size:2.5rem}
-#unauth h2{font-size:1.1rem;color:var(--muted)}
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:768px){
+  .form-grid{grid-template-columns:1fr}
+  .card-body.scrollable{-webkit-overflow-scrolling:touch}
+  .btn-group{flex-wrap:wrap}
+}
+@media(max-width:480px){
+  header{height:auto;padding:10px 14px;flex-wrap:wrap;gap:6px}
+  .tab-nav{padding:0 12px}
+  .tab-btn{padding:12px 12px;font-size:.78rem}
+  .modal-overlay{padding:12px 6px}
+  .modal{border-radius:10px}
+  .modal-body,.modal-header,.modal-footer{padding:12px 14px}
+  .modal-footer{flex-wrap:wrap;gap:8px}
+  .modal-footer .btn{flex:1 1 auto;text-align:center}
+}
 </style>
 </head>
 <body>
@@ -103,124 +241,343 @@ h1{font-size:1.35rem;font-weight:700;margin-bottom:4px}
   </div>
 </header>
 
-<main id="main-content">
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('config',event)">Configuración</button>
+  <button class="tab-btn" onclick="switchTab('admin',event)">Administración</button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 1: Configuración
+═══════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-config">
+<div class="page">
   <h1>Configuración del proyecto</h1>
   <p class="page-sub">Parámetros y valores de referencia. Solo visible para administradores.</p>
 
-  <!-- ── Resumen financiero ── -->
+  <!-- Resumen financiero -->
   <div class="card">
     <div class="card-header">
-      <div class="card-icon icon-blue">💰</div>
-      <div>
-        <div class="card-title">Presupuesto del proyecto</div>
-        <div class="card-sub">Total comprado calculado desde Supabase · Presupuesto editable</div>
+      <div class="card-header-left">
+        <div class="card-icon icon-blue">💰</div>
+        <div>
+          <div class="card-title">Presupuesto del proyecto</div>
+          <div class="card-sub">Total comprado calculado desde Supabase · Presupuesto editable</div>
+        </div>
       </div>
     </div>
-
-    <div class="fin-grid">
-      <div class="fin-kpi">
-        <div class="fin-kpi-lbl">Total comprado</div>
-        <div class="fin-kpi-val c-blue" id="kpi-total-comprado">—</div>
+    <div class="card-body padded">
+      <div class="fin-grid">
+        <div class="fin-kpi">
+          <div class="fin-kpi-lbl">Total comprado</div>
+          <div class="fin-kpi-val c-blue" id="kpi-total-comprado">—</div>
+        </div>
+        <div class="fin-kpi">
+          <div class="fin-kpi-lbl">Presupuesto total</div>
+          <div class="fin-kpi-val c-muted" id="kpi-presupuesto">—</div>
+        </div>
+        <div class="fin-kpi">
+          <div class="fin-kpi-lbl">% Ejecución</div>
+          <div class="fin-kpi-val" id="kpi-ejecucion">—</div>
+        </div>
       </div>
-      <div class="fin-kpi">
-        <div class="fin-kpi-lbl">Presupuesto total</div>
-        <div class="fin-kpi-val c-muted" id="kpi-presupuesto">—</div>
+      <div class="field-row">
+        <span class="field-label">Presupuesto total ($)</span>
+        <input type="number" id="inp-presupuesto" class="field-input" placeholder="ej. 6579000000" min="0" step="1000000">
+        <span class="field-hint">Sin puntos ni comas</span>
       </div>
-      <div class="fin-kpi">
-        <div class="fin-kpi-lbl">% Ejecución</div>
-        <div class="fin-kpi-val" id="kpi-ejecucion">—</div>
+      <div class="save-row">
+        <button class="btn-save" id="btn-save-ppto" onclick="savePresupuesto()">
+          <span>Guardar presupuesto</span>
+        </button>
+        <span class="save-status" id="status-ppto"></span>
       </div>
-    </div>
-
-    <div class="field-row">
-      <span class="field-label">Presupuesto total ($)</span>
-      <input type="number" id="inp-presupuesto" class="field-input" placeholder="ej. 6579000000" min="0" step="1000000">
-      <span class="field-hint">Sin puntos ni comas</span>
-    </div>
-    <div class="save-row">
-      <button class="btn-save" id="btn-save-ppto" onclick="savePresupuesto()">
-        <span>Guardar presupuesto</span>
-      </button>
-      <span class="save-status" id="status-ppto"></span>
     </div>
   </div>
 
-  <!-- ── Avance económico proyectado ── -->
+  <!-- Avance económico proyectado -->
   <div class="card">
     <div class="card-header">
-      <div class="card-icon icon-green">📈</div>
-      <div>
-        <div class="card-title">Avance económico proyectado</div>
-        <div class="card-sub">% mensual proyectado — línea azul en el gráfico del dashboard</div>
+      <div class="card-header-left">
+        <div class="card-icon icon-green">📈</div>
+        <div>
+          <div class="card-title">Avance económico proyectado</div>
+          <div class="card-sub">% mensual proyectado — línea azul en el gráfico del dashboard</div>
+        </div>
       </div>
     </div>
-
-    <div class="year-row">
-      <label>Año</label>
-      <select id="year-sel" class="year-sel" onchange="loadProyData()">
-        <option value="2026">2026</option>
-        <option value="2027">2027</option>
-        <option value="2028">2028</option>
-      </select>
-    </div>
-
-    <table class="proy-table">
-      <thead>
-        <tr>
-          <th>Mes</th>
-          <th style="text-align:right">% Mensual proyectado</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="proy-tbody"></tbody>
-    </table>
-
-    <div class="save-row">
-      <button class="btn-save" id="btn-save-proy" onclick="saveProyData()">
-        <span>Guardar proyectado</span>
-      </button>
-      <span class="save-status" id="status-proy"></span>
+    <div class="card-body padded">
+      <div class="year-row">
+        <label>Año</label>
+        <select id="year-sel" class="year-sel" onchange="loadProyData()">
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+        </select>
+      </div>
+      <table class="proy-table">
+        <thead>
+          <tr>
+            <th>Mes</th>
+            <th style="text-align:right">% Mensual proyectado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="proy-tbody"></tbody>
+      </table>
+      <div class="save-row">
+        <button class="btn-save" id="btn-save-proy" onclick="saveProyData()">
+          <span>Guardar proyectado</span>
+        </button>
+        <span class="save-status" id="status-proy"></span>
+      </div>
     </div>
   </div>
-</main>
+</div>
+</div>
 
-<div id="unauth">
-  <div class="icon">🔒</div>
-  <h2>Acceso restringido a administradores</h2>
-  <a href="tecnopanel.html" class="btn-back">← Volver al panel</a>
+<!-- ══════════════════════════════════════════════════════
+     TAB 2: Usuarios
+═══════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-admin">
+<div class="page-wide">
+
+  <div class="info-box">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <div>Los usuarios se gestionan en Supabase. Los cambios son inmediatos y se comparten con todos los equipos. Para resetear una contraseña, usá <strong>Editar</strong> → campo contraseña.</div>
+  </div>
+
+  <!-- Banner de confirmación de guardado -->
+  <div class="save-confirm" id="saveConfirmBanner">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+    <span id="saveConfirmText">Cambios guardados correctamente</span>
+  </div>
+
+  <!-- Tabla de usuarios -->
+  <div class="card" id="card-users">
+    <div class="card-header">
+      <div>
+        <h2>Usuarios</h2>
+        <span id="userCount"></span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" style="background:var(--surface2);border:1px solid var(--border);color:var(--text)" onclick="exportContainerTableToExcel('card-users','usuarios')">⬇ Excel</button>
+        <button class="btn btn-primary" onclick="openModal()">+ Nuevo usuario</button>
+      </div>
+    </div>
+    <div class="card-body scrollable">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Páginas con acceso</th>
+            <th>Modo</th>
+            <th>Estado</th>
+            <th>Último ingreso</th>
+            <th>Ingresos</th>
+            <th>Última modificación</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody">
+          <tr><td colspan="10" class="empty-state">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Roles de referencia -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Roles predefinidos</h2>
+      <span>Permisos por defecto al asignar un rol</span>
+    </div>
+    <div class="card-body padded">
+      <div class="roles-grid">
+        <div class="role-card">
+          <h4>🔑 Administrador</h4>
+          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Puede editar</li><li>Puede editar layout</li><li>Accede a Configuración</li></ul>
+        </div>
+        <div class="role-card" style="border-color:#8b5cf6">
+          <h4>✏️ Editor Layout</h4>
+          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Puede editar layout</li><li>Sin acceso a Configuración</li></ul>
+        </div>
+        <div class="role-card">
+          <h4>⚙️ Operador</h4>
+          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Puede editar datos</li><li>Sin edición de layout</li></ul>
+        </div>
+        <div class="role-card">
+          <h4>👁️ Solo Lectura</h4>
+          <ul><li>Acceso a todas las páginas</li><li>Todas las pestañas</li><li>Solo visualización</li><li>Sin acceso a Configuración</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ── Modal de usuario ──────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Nuevo usuario</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editUserId">
+
+      <div class="form-grid form-row">
+        <div>
+          <label class="form-label">Nombre completo</label>
+          <input type="text" class="form-input" id="fName" placeholder="Ej: Juan Pérez">
+        </div>
+        <div>
+          <label class="form-label">Usuario (login)</label>
+          <input type="text" class="form-input" id="fUsername" placeholder="ej: jperez" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" class="form-input" id="fEmail" placeholder="Ej: juan@empresa.com" autocomplete="off">
+        <p class="form-hint">Se usa para enviar las credenciales de acceso al usuario.</p>
+      </div>
+
+      <div class="form-grid form-row">
+        <div>
+          <label class="form-label">Contraseña <span id="passHint" style="font-weight:400;text-transform:none;color:#888;font-size:.68rem"></span></label>
+          <input type="password" class="form-input" id="fPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+        </div>
+        <div>
+          <label class="form-label">Rol base</label>
+          <select class="form-select" id="fRole" onchange="onRoleChange()">
+            <option value="viewer">👁️ Solo Lectura</option>
+            <option value="operador">⚙️ Operador</option>
+            <option value="compras">🛒 Compras</option>
+            <option value="editor">✏️ Editor Layout</option>
+            <option value="admin">🔑 Administrador</option>
+          </select>
+          <p class="form-hint">Aplica permisos por defecto del rol</p>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Permisos de marcado — Control Planta</label>
+        <p class="form-hint" style="margin-bottom:10px">Por cada pestaña, indicá qué marcas puede colocar este usuario en las partidas.</p>
+        <table id="plantaMarksTable" style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Pestaña</th>
+              <th style="text-align:center;padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">✅ Producción</th>
+              <th style="text-align:center;padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">🔍 Calidad</th>
+              <th style="text-align:center;padding:6px 8px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">👤 Cliente</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:6px 8px">🏗️ Obra Gruesa</td>
+              <td style="text-align:center"><input type="checkbox" id="pm-obra_gruesa-produccion"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-obra_gruesa-calidad"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-obra_gruesa-cliente"></td></tr>
+            <tr><td style="padding:6px 8px">🚿 Sanitario</td>
+              <td style="text-align:center"><input type="checkbox" id="pm-sanitario-produccion"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-sanitario-calidad"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-sanitario-cliente"></td></tr>
+            <tr><td style="padding:6px 8px">⚡ Eléctrico</td>
+              <td style="text-align:center"><input type="checkbox" id="pm-electrico-produccion"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-electrico-calidad"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-electrico-cliente"></td></tr>
+            <tr><td style="padding:6px 8px">🏠 Terminaciones</td>
+              <td style="text-align:center"><input type="checkbox" id="pm-terminaciones-produccion"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-terminaciones-calidad"></td>
+              <td style="text-align:center"><input type="checkbox" id="pm-terminaciones-cliente"></td></tr>
+            <tr><td style="padding:6px 8px">✅ Recepción</td>
+              <td style="text-align:center" colspan="3">
+                <label style="display:inline-flex;align-items:center;gap:5px;font-size:.78rem;color:var(--muted)">
+                  <input type="checkbox" id="pm-recepcion-entregado"> Puede marcar módulo como Entregado
+                </label>
+              </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Permisos por página -->
+      <div class="form-row">
+        <div class="section-label">Acceso por página y pestaña</div>
+        <div id="pagePermsContainer"></div>
+      </div>
+
+      <!-- Opciones -->
+      <div class="form-row" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <div class="toggle-row">
+          <div class="toggle-label">Solo lectura<small>El usuario no podrá modificar datos</small></div>
+          <label class="switch"><input type="checkbox" id="fReadonly"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Puede editar layout<small>Asignar módulos a posiciones y agregar posiciones en Patio</small></div>
+          <label class="switch"><input type="checkbox" id="fCanEditLayout"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Puede editar catálogo de productos<small>Agregar productos nuevos en Solicitud de Materiales</small></div>
+          <label class="switch"><input type="checkbox" id="fCanEditProducts"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-label">Usuario activo<small>Los usuarios inactivos no pueden iniciar sesión</small></div>
+          <label class="switch"><input type="checkbox" id="fActive" checked><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border)">Cancelar</button>
+      <button class="btn btn-primary" id="btnSave" onclick="saveUser()">Guardar</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
+// ── Supabase ────────────────────────────────────────────────
 const SUPA_URL='https://vtrpxsgcbojqgdcsplim.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
 const H={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
-
 const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-// ── Auth ──────────────────────────────────────────────────
-(function(){
-  const s=AUTH.requireAuth('login.html');
-  if(!s) return;
-  if(s.role!=='admin'){
-    document.getElementById('main-content').style.display='none';
-    document.getElementById('unauth').style.display='flex';
-    document.getElementById('user-badge').textContent=s.name+' · '+s.role;
-    return;
-  }
-  document.getElementById('user-badge').textContent=s.name+' · '+s.role;
+// ── Auth ────────────────────────────────────────────────────
+const _session = AUTH.requireAdmin('tecnopanel.html');
+if (_session) {
+  document.getElementById('user-badge').textContent = _session.name + ' · Admin';
   init();
-})();
+}
 
 async function init(){
   await Promise.all([loadFinanciero(), loadProyData()]);
+  // Carga usuarios en segundo plano (tab puede no estar activo aún)
+  renderTable();
 }
 
-// ── Resumen financiero ────────────────────────────────────
+// ── Tab switching ───────────────────────────────────────────
+function switchTab(name, ev){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  const btn=ev?ev.currentTarget:document.querySelector(`.tab-btn[onclick*="'${name}'"]`);
+  if(btn) btn.classList.add('active');
+  history.replaceState(null,'','#'+name);
+}
+// Abrir tab por hash (permite que admin.html redirija a settings.html#admin)
+(function(){
+  const hash=(location.hash||'').replace('#','');
+  if(hash==='admin') switchTab('admin');
+})();
+
+// ═══════════════════════════════════════════════════════════
+// TAB 1: Configuración
+// ═══════════════════════════════════════════════════════════
+
 async function loadFinanciero(){
   try{
-    // Total comprado desde registro_compras
     const PAGE=1000; let all=[],from=0,done=false;
     while(!done){
       const r=await fetch(`${SUPA_URL}/rest/v1/registro_compras?select=valor_total_item,valor_und,cantidad_sol,devolucion&limit=${PAGE}&offset=${from}`,{headers:H});
@@ -237,8 +594,6 @@ async function loadFinanciero(){
       return s+vti;
     },0);
     document.getElementById('kpi-total-comprado').textContent=fmtM(totalComprado);
-
-    // Presupuesto desde config
     const rc=await fetch(`${SUPA_URL}/rest/v1/config?key=eq.presupuesto_total&select=value`,{headers:H});
     const rows=await rc.json();
     const ppto=rows&&rows[0]?parseFloat(rows[0].value)||null:null;
@@ -250,31 +605,29 @@ async function loadFinanciero(){
       el.textContent=ejec.toFixed(2)+'%';
       el.className='fin-kpi-val '+(ejec>100?'c-red':'c-green');
     }
-  }catch(e){toast('Error cargando datos financieros: '+e.message,'err');}
+  }catch(e){showToast('Error cargando datos financieros: '+e.message,'error');}
 }
 
 async function savePresupuesto(){
   const val=parseFloat(document.getElementById('inp-presupuesto').value);
-  if(!val||val<=0){toast('Ingresá un valor válido','err');return;}
+  if(!val||val<=0){showToast('Ingresá un valor válido','error');return;}
   const btn=document.getElementById('btn-save-ppto');
   btn.disabled=true;
   try{
     const r=await fetch(`${SUPA_URL}/rest/v1/config?key=eq.presupuesto_total`,{
-      method:'PATCH',
-      headers:{...H,'Prefer':'return=minimal'},
+      method:'PATCH',headers:{...H,'Prefer':'return=minimal'},
       body:JSON.stringify({value:String(Math.round(val))})
     });
     if(!r.ok) throw new Error('HTTP '+r.status);
-    toast('Presupuesto guardado ✓','ok');
+    showToast('Presupuesto guardado ✓','success');
     setStatus('status-ppto','Guardado ✓','ok');
     await loadFinanciero();
   }catch(e){
-    toast('Error al guardar: '+e.message,'err');
+    showToast('Error al guardar: '+e.message,'error');
     setStatus('status-ppto','Error: '+e.message,'err');
   }finally{btn.disabled=false;}
 }
 
-// ── Avance económico proyectado ───────────────────────────
 let proyRows=[];
 
 async function loadProyData(){
@@ -282,12 +635,11 @@ async function loadProyData(){
   try{
     const r=await fetch(`${SUPA_URL}/rest/v1/avance_econ_proy?anio=eq.${anio}&order=mes.asc`,{headers:H});
     const data=await r.json();
-    // Build map mes→valor, fill missing with 0
     const map={};
     (data||[]).forEach(d=>{ map[d.mes]=parseFloat(d.valor)||0; });
     proyRows=MES.map((_,i)=>({mes:i+1,valor:map[i+1]??0}));
     renderProyTable();
-  }catch(e){toast('Error cargando proyectado: '+e.message,'err');}
+  }catch(e){showToast('Error cargando proyectado: '+e.message,'error');}
 }
 
 function renderProyTable(){
@@ -310,23 +662,309 @@ async function saveProyData(){
   const btn=document.getElementById('btn-save-proy');
   btn.disabled=true;
   try{
-    // Upsert all 12 rows
     const payload=proyRows.map(r=>({anio,mes:r.mes,valor:r.valor}));
     const r=await fetch(`${SUPA_URL}/rest/v1/avance_econ_proy`,{
-      method:'POST',
-      headers:{...H,'Prefer':'resolution=merge-duplicates'},
+      method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates'},
       body:JSON.stringify(payload)
     });
     if(!r.ok) throw new Error('HTTP '+r.status);
-    toast('Proyectado guardado ✓','ok');
+    showToast('Proyectado guardado ✓','success');
     setStatus('status-proy','Guardado ✓','ok');
   }catch(e){
-    toast('Error al guardar: '+e.message,'err');
+    showToast('Error al guardar: '+e.message,'error');
     setStatus('status-proy','Error: '+e.message,'err');
   }finally{btn.disabled=false;}
 }
 
-// ── Utils ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+// TAB 2: Usuarios
+// ═══════════════════════════════════════════════════════════
+
+function fmtDate(ts){
+  if(!ts) return '<span class="ts">—</span>';
+  const d=new Date(ts);
+  const now=Date.now();
+  const diff=Math.floor((now-ts)/1000);
+  let rel;
+  if(diff<60)         rel='hace un momento';
+  else if(diff<3600)  rel='hace '+Math.floor(diff/60)+' min';
+  else if(diff<86400) rel='hace '+Math.floor(diff/3600)+' h';
+  else                rel='hace '+Math.floor(diff/86400)+' día(s)';
+  const hhmm=d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+  const ddmm=d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  return `<span class="ts"><strong>${rel}</strong>${ddmm} ${hhmm}</span>`;
+}
+
+async function renderTable(highlightId){
+  const tbody=document.getElementById('usersTableBody');
+  tbody.innerHTML='<tr><td colspan="10" class="empty-state">Cargando usuarios...</td></tr>';
+  const [users,loginStats]=await Promise.all([AUTH.getUsers(),AUTH.getLoginStats()]);
+  document.getElementById('userCount').textContent=users.length+' usuario'+(users.length!==1?'s':'');
+  if(users.length===0){tbody.innerHTML='<tr><td colspan="10" class="empty-state">Sin usuarios.</td></tr>';return;}
+  tbody.innerHTML=users.map(u=>{
+    const roleBadge={
+      admin:'<span class="badge badge-admin">Admin</span>',
+      editor:'<span class="badge badge-editor">Editor</span>',
+      operador:'<span class="badge badge-operador">Operador</span>',
+      viewer:'<span class="badge badge-viewer">Viewer</span>'
+    }[u.role]||`<span class="badge badge-viewer">${u.role||'?'}</span>`;
+    const roles2=AUTH.getRoles();
+    const rl2=roles2[u.role];
+    const celVal=u.permissions.canEditLayout!==undefined?u.permissions.canEditLayout:(rl2?!!rl2.canEditLayout:false);
+    const cepVal=u.permissions.canEditProducts!==undefined?u.permissions.canEditProducts:(u.role==='admin');
+    const modoBadge=u.permissions.readonly?'<span class="badge badge-viewer">Solo lectura</span>':'<span class="badge badge-on">Edición</span>';
+    const layoutBadge  =celVal?'<span class="badge badge-editor">✏️ Layout</span>':'';
+    const productsBadge=cepVal?'<span class="badge badge-editor">📦 Productos</span>':'';
+    const plantaBadge  =u.plantaRol?`<span class="badge" style="background:#e0f2fe;color:#075985">🏭 ${u.plantaRol.replace(/_/g,' ')}</span>`:'';
+    const activoBadge  =u.active?'<span class="badge badge-on">Activo</span>':'<span class="badge badge-off">Inactivo</span>';
+    const pages=AUTH.getPages();
+    const pageChips=Object.keys(pages).map(pid=>{
+      const pg=u.permissions.pages&&u.permissions.pages[pid];
+      if(!pg||!pg.access) return '';
+      const tabCount=pg.tabs?pg.tabs.length:0;
+      const totalTabs=Object.keys(pages[pid].tabs).length;
+      return `<span class="page-chip" title="${tabCount}/${totalTabs} pestañas">${pages[pid].label}</span>`;
+    }).join('');
+    const stats=loginStats[u.id];
+    const countBadge=stats
+      ?`<span title="Último: ${new Date(stats.lastLogin).toLocaleString('es-CL')}" style="display:inline-block;background:var(--blue2);color:var(--blue);border-radius:12px;padding:2px 10px;font-size:.78rem;font-weight:700;cursor:default">${stats.count}</span>`
+      :'<span style="color:var(--muted);font-size:.72rem">0</span>';
+    const lastLoginTs=stats?new Date(stats.lastLogin).getTime():(u.lastLogin||null);
+    const ACCESS_URL='https://arielpint.github.io/LA-CHACRA/login.html';
+    const emailBody=`Hola ${u.name},%0D%0A%0D%0ATe compartimos tus datos de acceso al sistema La Chacra:%0D%0A%0D%0A`+
+      `Acceso: ${ACCESS_URL}%0D%0AUsuario: ${u.username}%0D%0A%0D%0A`+
+      `Saludos,%0D%0AAdministraci%C3%B3n La Chacra`;
+    const mailtoHref=u.email?`mailto:${u.email}?subject=Acceso%20La%20Chacra&body=${emailBody}`:'';
+    const sendBtn=u.email
+      ?`<a class="btn btn-edit btn-sm" href="${mailtoHref}" title="Enviar acceso a ${u.email}">📧 Enviar</a>`
+      :`<button class="btn btn-sm" style="background:rgba(255,255,255,.05);color:#bbb;cursor:default" disabled>📧</button>`;
+    const isSelf=u.username===_session.username;
+    const flash=highlightId===u.id?' class="just-saved"':'';
+    return `<tr data-uid="${u.id}"${flash}>
+      <td>
+        <strong>${u.name}</strong>${isSelf?' <span style="font-size:.68rem;color:var(--muted)">(tú)</span>':''}
+        ${u.email?`<div style="font-size:.7rem;color:var(--muted);margin-top:2px">${u.email}</div>`:''}
+      </td>
+      <td style="font-family:monospace;color:var(--text2);font-size:.8rem">${u.username}</td>
+      <td>${roleBadge}</td>
+      <td>${pageChips||'<span style="color:var(--muted);font-size:.75rem">Sin acceso</span>'}</td>
+      <td>${modoBadge} ${layoutBadge} ${productsBadge} ${plantaBadge}</td>
+      <td>${activoBadge}</td>
+      <td>${lastLoginTs?fmtDate(lastLoginTs):'<span style="color:var(--muted);font-size:.72rem">Nunca</span>'}</td>
+      <td style="text-align:center">${countBadge}</td>
+      <td>${fmtDate(u.updatedAt||u.createdAt)}</td>
+      <td><div class="btn-group">
+        <button class="btn btn-edit btn-sm" onclick="editUser('${u.id}')">Editar</button>
+        ${sendBtn}
+        ${!isSelf?`<button class="btn btn-danger btn-sm" onclick="confirmDelete('${u.id}','${u.name}')">Eliminar</button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Permisos Control Planta ─────────────────────────────────
+const PLANTA_TABS=['obra_gruesa','sanitario','electrico','terminaciones'];
+const PLANTA_MARKS=['produccion','calidad','cliente'];
+
+function loadPlantaMarks(marks){
+  PLANTA_TABS.forEach(tab=>PLANTA_MARKS.forEach(m=>{
+    const el=document.getElementById(`pm-${tab}-${m}`);
+    if(el) el.checked=!!(marks&&marks[tab]&&marks[tab].includes(m));
+  }));
+  const recepEl=document.getElementById('pm-recepcion-entregado');
+  if(recepEl) recepEl.checked=!!(marks&&marks.recepcion&&marks.recepcion.includes('entregado'));
+}
+
+function getPlantaMarksFromForm(){
+  const result={};
+  PLANTA_TABS.forEach(tab=>{
+    const allowed=PLANTA_MARKS.filter(m=>{const el=document.getElementById(`pm-${tab}-${m}`);return el&&el.checked;});
+    if(allowed.length) result[tab]=allowed;
+  });
+  const recepEl=document.getElementById('pm-recepcion-entregado');
+  if(recepEl&&recepEl.checked) result.recepcion=['entregado'];
+  return Object.keys(result).length?result:null;
+}
+
+// ── Permisos por página ─────────────────────────────────────
+function buildPagePerms(currentPages){
+  const pages=AUTH.getPages();
+  const container=document.getElementById('pagePermsContainer');
+  container.innerHTML='';
+  Object.entries(pages).forEach(([pageId,pageDef])=>{
+    const curPg=(currentPages&&currentPages[pageId])||{access:true,tabs:Object.keys(pageDef.tabs)};
+    const hasAccess=!!curPg.access;
+    const allowedTabs=curPg.tabs||Object.keys(pageDef.tabs);
+    const div=document.createElement('div');
+    div.className='perm-page'+(hasAccess?' enabled open':'');
+    div.id='perm-page-'+pageId;
+    const tabsHtml=Object.entries(pageDef.tabs).map(([tabId,tabLabel])=>
+      `<label class="tab-check-sm">
+        <input type="checkbox" data-page="${pageId}" data-tab="${tabId}" ${allowedTabs.includes(tabId)?'checked':''}>
+        ${tabLabel}
+      </label>`).join('');
+    div.innerHTML=`
+      <div class="perm-page-header" onclick="togglePageSection('${pageId}')">
+        <div class="perm-page-title">
+          <label class="switch" onclick="event.stopPropagation()">
+            <input type="checkbox" id="page-access-${pageId}" ${hasAccess?'checked':''} onchange="onPageAccessChange('${pageId}')">
+            <span class="slider"></span>
+          </label>
+          <span>${pageDef.label}</span>
+        </div>
+        <span style="font-size:.72rem;color:var(--muted)">${hasAccess?Object.keys(pageDef.tabs).length+' pestañas':'sin acceso'} ▾</span>
+      </div>
+      <div class="perm-page-body">
+        <div class="all-none-btns">
+          <button class="btn-all-none" onclick="selectAllTabs('${pageId}',true)">Todas</button>
+          <button class="btn-all-none" onclick="selectAllTabs('${pageId}',false)">Ninguna</button>
+        </div>
+        <div class="tabs-grid-sm">${tabsHtml}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+function togglePageSection(pageId){document.getElementById('perm-page-'+pageId).classList.toggle('open');}
+function onPageAccessChange(pageId){
+  const checked=document.getElementById('page-access-'+pageId).checked;
+  const el=document.getElementById('perm-page-'+pageId);
+  if(checked){el.classList.add('enabled');el.classList.add('open');}
+  else{el.classList.remove('enabled');}
+}
+function selectAllTabs(pageId,select){
+  document.querySelectorAll(`input[data-page="${pageId}"]`).forEach(cb=>cb.checked=select);
+}
+function getPagePermsFromForm(){
+  const pages=AUTH.getPages();
+  const result={};
+  Object.keys(pages).forEach(pageId=>{
+    const accessEl=document.getElementById('page-access-'+pageId);
+    const access=accessEl?accessEl.checked:false;
+    const tabs=[...document.querySelectorAll(`input[data-page="${pageId}"]:checked`)].map(cb=>cb.dataset.tab);
+    result[pageId]={access,tabs:access?tabs:[]};
+  });
+  return result;
+}
+
+function onRoleChange(){
+  const role=document.getElementById('fRole').value;
+  buildPagePerms(AUTH.getDefaultPages(role));
+  const roles=AUTH.getRoles();
+  document.getElementById('fReadonly').checked      =roles[role]?roles[role].readonly:false;
+  document.getElementById('fCanEditLayout').checked =roles[role]?!!roles[role].canEditLayout:false;
+  document.getElementById('fCanEditProducts').checked=false;
+}
+
+// ── Modal ───────────────────────────────────────────────────
+function openModal(){
+  document.getElementById('editUserId').value='';
+  document.getElementById('fName').value='';
+  document.getElementById('fUsername').value='';
+  document.getElementById('fEmail').value='';
+  document.getElementById('fPassword').value='';
+  document.getElementById('fRole').value='viewer';
+  loadPlantaMarks(null);
+  document.getElementById('fActive').checked=true;
+  document.getElementById('passHint').textContent='';
+  document.getElementById('modalTitle').textContent='Nuevo usuario';
+  onRoleChange();
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+async function editUser(id){
+  const users=await AUTH.getUsers();
+  const user=users.find(u=>u.id===id);
+  if(!user) return;
+  document.getElementById('editUserId').value=user.id;
+  document.getElementById('fName').value=user.name;
+  document.getElementById('fUsername').value=user.username;
+  document.getElementById('fEmail').value=user.email||'';
+  document.getElementById('fPassword').value='';
+  document.getElementById('fRole').value=user.role;
+  document.getElementById('fReadonly').checked=user.permissions.readonly;
+  const rolesDef=AUTH.getRoles();
+  const roleDef=rolesDef[user.role];
+  const cel=user.permissions.canEditLayout!==undefined?user.permissions.canEditLayout:(roleDef?!!roleDef.canEditLayout:false);
+  document.getElementById('fCanEditLayout').checked=cel;
+  const cep=user.permissions.canEditProducts!==undefined?user.permissions.canEditProducts:false;
+  document.getElementById('fCanEditProducts').checked=cep;
+  document.getElementById('fActive').checked=user.active;
+  loadPlantaMarks(user.permissions&&user.permissions.planta_marks);
+  document.getElementById('passHint').textContent='(dejar vacío para no cambiar)';
+  document.getElementById('modalTitle').textContent='Editar usuario';
+  buildPagePerms(user.permissions.pages);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape') closeModal();});
+document.getElementById('modalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget) closeModal();});
+
+// ── Guardar usuario ─────────────────────────────────────────
+async function saveUser(){
+  const btn=document.getElementById('btnSave');
+  const id   =document.getElementById('editUserId').value;
+  const name =document.getElementById('fName').value.trim();
+  const user =document.getElementById('fUsername').value.trim();
+  const email=document.getElementById('fEmail').value.trim();
+  const pass =document.getElementById('fPassword').value;
+  const role =document.getElementById('fRole').value;
+  const ro   =document.getElementById('fReadonly').checked;
+  const cel  =document.getElementById('fCanEditLayout').checked;
+  const cep  =document.getElementById('fCanEditProducts').checked;
+  const act  =document.getElementById('fActive').checked;
+  const pages=getPagePermsFromForm();
+  const plantaMarks=getPlantaMarksFromForm();
+  if(!name||!user){showToast('Nombre y usuario son requeridos','error');return;}
+  if(!id&&pass.length<6){showToast('La contraseña debe tener al menos 6 caracteres','error');return;}
+  const hasAnyAccess=Object.values(pages).some(p=>p.access&&p.tabs.length>0);
+  if(!hasAnyAccess){showToast('El usuario debe tener acceso a al menos una página','error');return;}
+  btn.disabled=true; btn.textContent='Guardando...';
+  try{
+    let savedUser;
+    if(id){
+      savedUser=await AUTH.updateUser(id,{username:user,name,email,role,customPages:pages,readonly:ro,active:act,password:pass||undefined,canEditLayoutOverride:cel,canEditProductsOverride:cep,planta_marks:plantaMarks});
+      showToast('Usuario actualizado','success');
+    }else{
+      savedUser=await AUTH.createUser({username:user,password:pass,name,email,role,customPages:pages,readonly:ro,canEditLayoutOverride:cel,canEditProductsOverride:cep,planta_marks:plantaMarks});
+      showToast('Usuario creado','success');
+    }
+    closeModal();
+    renderTable(savedUser.id);
+    showSaveConfirm(savedUser.name,savedUser.updatedAt||savedUser.createdAt);
+  }catch(err){
+    showToast(err.message||'Error al guardar','error');
+  }finally{
+    btn.disabled=false; btn.textContent='Guardar';
+  }
+}
+
+async function confirmDelete(id,name){
+  if(!confirm(`¿Eliminar a "${name}"? Esta acción no se puede deshacer.`)) return;
+  try{
+    await AUTH.deleteUser(id);
+    showToast('Usuario eliminado','success');
+    renderTable();
+  }catch(err){showToast(err.message||'Error al eliminar','error');}
+}
+
+// ── Save confirm banner ─────────────────────────────────────
+let confirmTimer;
+function showSaveConfirm(userName,ts){
+  const banner=document.getElementById('saveConfirmBanner');
+  const text=document.getElementById('saveConfirmText');
+  const d=new Date(ts);
+  const hhmm=d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const ddmm=d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  text.innerHTML=`✓ Cambios de <strong>${userName}</strong> guardados · ${ddmm} ${hhmm}`;
+  banner.classList.add('show');
+  banner.scrollIntoView({behavior:'smooth',block:'nearest'});
+  clearTimeout(confirmTimer);
+  confirmTimer=setTimeout(()=>banner.classList.remove('show'),7000);
+}
+
+// ── Helpers compartidos ─────────────────────────────────────
 function fmtM(n){
   if(n==null||isNaN(n)) return '—';
   if(n>=1e9) return '$'+(n/1e9).toFixed(2)+'B';
@@ -339,11 +977,13 @@ function setStatus(id,msg,type){
   el.className='save-status save-'+type;
   setTimeout(()=>{el.textContent='';el.className='save-status';},4000);
 }
-function toast(msg,type){
+let _toastTimer;
+function showToast(msg,type){
   const el=document.getElementById('toast');
-  el.textContent=msg; el.className='show '+(type||'');
-  clearTimeout(toast._t);
-  toast._t=setTimeout(()=>{el.className='';},3000);
+  el.textContent=msg;
+  el.className='show '+(type||'');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>{el.className='';},3000);
 }
 </script>
 </body>
