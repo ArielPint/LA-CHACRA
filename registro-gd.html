@@ -399,9 +399,9 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
     <div id="mode-multi" style="display:none">
       <div class="section-title">
         <span>Productos</span>
-        <button class="btn btn-sm btn-primary" onclick="addProductLine()">+ Agregar producto</button>
       </div>
       <div id="prod-lines-container"></div>
+      <button class="btn btn-sm btn-primary" onclick="addProductLine()" style="margin-top:8px">+ Agregar producto</button>
       <div class="monto-gd-box" id="multi-monto-box" style="margin-top:8px">
         <span class="mg-label">💰 Monto Total GD <span id="multi-gd-badge" style="font-size:.7rem;opacity:.7"></span></span>
         <span class="mg-val" id="multi-monto-val">—</span>
@@ -894,10 +894,14 @@ function openDrawer(id){
   document.getElementById('overlay').classList.add('show');
   document.getElementById('drawer-reg').classList.add('open');
 }
-function closeDrawer(){
+function closeDrawer(force){
+  if(!force && editId===null && productLines.some(l=>l.codigo||l.valor_total_item)){
+    if(!confirm('¿Descartar los datos ingresados?')) return;
+  }
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('drawer-reg').classList.remove('open');
   hidePLSugg(); hideSingleSugg(); editId=null;
+  productLines=[]; _lineCounter=0;
 }
 
 function setF(id,val){ document.getElementById(id).value=val; }
@@ -1084,11 +1088,15 @@ function onPLCodeKey(e,idx){
 function showPLSugg(list,inp){
   const box=document.getElementById('pl-sugg');
   const rect=inp.getBoundingClientRect();
-  box.style.left=rect.left+'px';
-  box.style.top=(rect.bottom+4)+'px';
-  box.style.width=Math.max(320,rect.width*2)+'px';
+  const w=Math.max(320,rect.width*2);
+  box.style.width=w+'px';
   box.innerHTML=list.map(p=>`<div class="sugg-item" onclick="applyPLProduct(${activeSuggIdx},${JSON.stringify(p).replace(/"/g,'&quot;')})"><div class="sc">${esc(String(p.codigo))}<span class="su">${esc(p.unidad||'')}</span></div><div class="sd">${esc(p.descripcion)}</div></div>`).join('');
   box.style.display='block';
+  const boxH=Math.min(200,box.scrollHeight);
+  const left=Math.min(rect.left,window.innerWidth-w-8);
+  const fitsBelow=rect.bottom+4+boxH<=window.innerHeight;
+  box.style.left=left+'px';
+  box.style.top=(fitsBelow?rect.bottom+4:rect.top-boxH-4)+'px';
 }
 function hidePLSugg(){ const b=document.getElementById('pl-sugg'); b.style.display='none'; b.innerHTML=''; activeSuggIdx=null; }
 function applyPLProduct(idx,p){
@@ -1128,12 +1136,16 @@ function updatePLCalc(idx){
 function recalcMultiMonto(){
   const gd=getF('f_gd');
   const existing=gd?registros.filter(r=>String(r.gd)===gd&&r.id!==editId).reduce((s,r)=>s+getVTI(r),0):0;
-  const lineSum=productLines.reduce((s,l)=>s+(parseFloat(l.valor_total_item)||0),0);
+  const lineSum=productLines.reduce((s,l)=>{
+    const cs=parseFloat(l.cant_sol)||0, dv=parseFloat(l.devol)||0, vt=parseFloat(l.valor_total_item)||0;
+    return s+(cs>0&&dv>0?vt*(cs-dv)/cs:vt);
+  },0);
   const total=existing+lineSum;
   document.getElementById('multi-monto-val').textContent=gd?fmtNum(total):'—';
   document.getElementById('multi-gd-badge').textContent=gd?`GD ${gd}`:'';
 }
 document.addEventListener('click',e=>{ if(!e.target.closest('.prod-line')&&!e.target.closest('#pl-sugg')) hidePLSugg(); if(!e.target.closest('.pl-code-wrap')&&!e.target.closest('#s-sugg')) hideSingleSugg(); });
+document.querySelector('#drawer-reg .drw-body').addEventListener('scroll',hidePLSugg);
 
 // ── Guardar / Eliminar ────────────────────────────────────────────────────────
 async function saveRecord(){
