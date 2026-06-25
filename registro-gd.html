@@ -1064,11 +1064,11 @@ function getPLCalc(line){
 function onPLCode(idx,inp){
   const line=productLines.find(l=>l.idx===idx);
   if(!line) return;
+  clearTimeout(suggTimeout);
   line.codigo=inp.value;
   const exact=prodMap[inp.value.trim()]||allProducts.find(p=>String(p.codigo).trim()===inp.value.trim());
   if(exact){applyPLProduct(idx,exact);return;}
   if(!inp.value.trim()){clearPLProduct(idx);hidePLSugg();return;}
-  clearTimeout(suggTimeout);
   activeSuggIdx=idx;
   suggTimeout=setTimeout(()=>{
     const ql=inp.value.trim().toLowerCase();
