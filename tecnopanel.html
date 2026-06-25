@@ -152,6 +152,11 @@ body.sidebar-open iframe { visibility: hidden; }
     <div class="nav-item" id="dd-asistencia" data-label="Asistencia GeoVictoria" onclick="window.location.href='asistencia.html'" style="display:none">
       <span class="nav-icon">&#128119;</span><span class="nav-label">Asistencia GeoVictoria</span>
     </div>
+    <div class="nav-sep"></div>
+    <div class="nav-section">Sistema</div>
+    <div class="nav-item" id="dd-settings" data-label="Configuración" onclick="window.location.href='settings.html'" style="display:none">
+      <span class="nav-icon">&#9881;&#65039;</span><span class="nav-label">Configuraci&#243;n</span>
+    </div>
   </div>
 </nav>
 <div id="body-layout">
@@ -208,7 +213,10 @@ var currentPage = 'dashboard';
   if (!s) return;
   var badge = document.getElementById('tp-user-badge');
   if (badge) badge.textContent = s.name + ' · ' + (AUTH.getRoles()[s.role] ? AUTH.getRoles()[s.role].label : s.role);
-  if (AUTH.isAdmin()) { var ab = document.getElementById('tp-admin-btn'); if (ab) ab.style.display = 'inline-flex'; }
+  if (AUTH.isAdmin()) {
+    var ab = document.getElementById('tp-admin-btn'); if (ab) ab.style.display = 'inline-flex';
+    var ds = document.getElementById('dd-settings'); if (ds) ds.style.display = 'flex';
+  }
   if (AUTH.canAccessPage('registro-gd')) { var elrg = document.getElementById('dd-registro-gd'); if (elrg) elrg.style.display = 'flex'; }
   if (AUTH.canAccessPage('solicitudes')) { var el = document.getElementById('dd-solicitudes'); if (el) el.style.display = 'flex'; }
   if (AUTH.canAccessPlanta()) { var el2 = document.getElementById('dd-planta'); if (el2) el2.style.display = 'flex'; }
