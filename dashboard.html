@@ -1607,13 +1607,13 @@ function renderCurva(){
     });
     [{tipo:'HUMEDO',id:'ch-tiempo-humedo'},{tipo:'SECO',id:'ch-tiempo-seco'}].forEach(({tipo,id})=>{
       const mods=modsF
-        .filter(x=>(x.tipo||'').toUpperCase()===tipo && x.initReal)
+        .filter(x=>(x.tipo||'').toUpperCase()===tipo && x.initReal && (x.avance??0)>=1 && x.tiempoReal>0)
         .sort((a,b)=>(a.modulo||'').localeCompare(b.modulo||'','es',{numeric:true}));
       const labels=mods.map(x=>x.modulo||'?');
       mixedChart(id, labels,
-        [{label:'Tiempo Real (días)',data:mods.map(x=>x.tiempoReal??null),
+        [{label:'Tiempo Real (días)',data:mods.map(x=>Math.round(x.tiempoReal)),
           backgroundColor:'rgba(88,166,255,0.7)'}],
-        [{label:'Tiempo Proyectado (días)',data:mods.map(x=>x.tiempoProy??null),
+        [{label:'Tiempo Proyectado (días)',data:mods.map(x=>x.tiempoProy>0?Math.round(x.tiempoProy):null),
           borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)'}],
         {}
       );
