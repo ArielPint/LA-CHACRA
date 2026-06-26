@@ -1595,8 +1595,9 @@ function renderCurva(){
     // ── Charts: Tiempo real vs proyectado por módulo (Húmedo / Seco) ──
     const filterTorre=selTorre.value;
     const modsF=(DATA.modulos||[]).filter(x=>{
+      if(!x.initReal) return false;
       if(filterTorre && x.torre!==filterTorre) return false;
-      if(filterMonth && x.initReal){
+      if(filterMonth){
         const d=parseDate(x.initReal);
         if(!d||isNaN(d)) return false;
         const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -1604,9 +1605,9 @@ function renderCurva(){
       }
       return true;
     });
-    [{tipo:'Húmedo',id:'ch-tiempo-humedo'},{tipo:'Seco',id:'ch-tiempo-seco'}].forEach(({tipo,id})=>{
+    [{tipo:'HUMEDO',id:'ch-tiempo-humedo'},{tipo:'SECO',id:'ch-tiempo-seco'}].forEach(({tipo,id})=>{
       const mods=modsF
-        .filter(x=>(x.tipo||'').toLowerCase()===tipo.toLowerCase())
+        .filter(x=>(x.tipo||'').toUpperCase()===tipo && x.initReal)
         .sort((a,b)=>(a.modulo||'').localeCompare(b.modulo||'','es',{numeric:true}));
       const labels=mods.map(x=>x.modulo||'?');
       mixedChart(id, labels,
