@@ -181,12 +181,6 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="chart-wrap" style="height:320px"><canvas id="ch-curva-s"></canvas></div>
     </div>
   </div>
-  <div class="grid-1">
-    <div class="card">
-      <h3>Curva S — % Avance Teórico vs Real por día</h3>
-      <div class="chart-wrap" style="height:300px"><canvas id="ch-curva-s-dia"></canvas></div>
-    </div>
-  </div>
   <div class="grid-2">
     <div class="card">
       <h3>Módulos iniciados acumulados: real vs planificado</h3>
@@ -201,6 +195,22 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="card">
       <h3>Módulos iniciados por semana: real vs planificado</h3>
       <div class="chart-wrap" style="height:280px"><canvas id="ch-activos"></canvas></div>
+    </div>
+  </div>
+  <div class="filter-bar" style="margin-top:12px">
+    <label>🏗 Filtrar por torre:</label>
+    <select id="curva-torre-sel"></select>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Tiempo real vs proyectado — Módulos Húmedos</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-tiempo-humedo"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Tiempo real vs proyectado — Módulos Secos</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-tiempo-seco"></canvas></div>
     </div>
   </div>
 </div>
@@ -971,7 +981,8 @@ function parseAll(wb){
     aportSan:N(r[18]),san:N(r[19]),
     aportElec:N(r[26]),elec:N(r[27]),
     aportTerm:N(r[33]),term:N(r[34]),
-    estado:r[57],gapInicio:N(r[58]),gapEstadoInicio:r[59],gapEstadoTermino:r[60]
+    estado:r[57],gapInicio:N(r[58]),gapEstadoInicio:r[59],gapEstadoTermino:r[60],
+    tiempoProy:N(r[61]),tiempoReal:N(r[62])
   }));
 
   d.detalleGD=sheetRows(wb,'DETALLE GD').slice(1).filter(r=>r[0]&&r[13]!=null).map(r=>{
@@ -1463,6 +1474,13 @@ function renderCurva(){
   sel.innerHTML='<option value="">Todos los meses</option>'+
     months.map(m=>{const[y,mn]=m.split('-');return`<option value="${m}">${MN[+mn]} ${y}</option>`;}).join('');
 
+  // Build torre filter for tiempo charts
+  const torreSet=new Set((DATA.modulos||[]).map(x=>x.torre).filter(Boolean));
+  const torres=[...torreSet].sort();
+  const selTorre=document.getElementById('curva-torre-sel');
+  selTorre.innerHTML='<option value="">Todas las torres</option>'+
+    torres.map(t=>`<option value="${t}">${t}</option>`).join('');
+
   // KPIs (always based on full data up to today)
   const curvaHoy=(DATA.curva||[]).filter(x=>{const d=parseDate(x.fecha);return d&&!isNaN(d)&&d<=today;});
   const lastReal=[...curvaHoy].reverse().find(x=>x.real!=null&&x.real>0);
@@ -1528,24 +1546,6 @@ function renderCurva(){
        borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,0.08)',fill:true,tension:0.3,pointRadius:4,pointHoverRadius:6,borderWidth:2},
     ],{pct:true,legend:true});
 
-    // ── Chart: Curva S por día ──
-    const curvaByDay=[...curvaF].sort((a,b)=>{
-      const da=parseDate(a.fecha),db=parseDate(b.fecha);return da-db;
-    }).map(r=>{
-      const d=parseDate(r.fecha);
-      return {
-        label:d?d.toLocaleDateString('es-CL',{day:'2-digit',month:'short'}):'' ,
-        teorico:r.teorico?+(r.teorico*100).toFixed(4):0,
-        real:r.real?+(r.real*100).toFixed(4):0,
-      };
-    });
-    lineChart('ch-curva-s-dia', curvaByDay.map(d=>d.label),[
-      {label:'% Teórico',data:curvaByDay.map(d=>d.teorico),
-       borderColor:'rgba(88,166,255,1)',backgroundColor:'rgba(88,166,255,0.08)',fill:true,tension:0.3,pointRadius:2,pointHoverRadius:4,borderWidth:2},
-      {label:'% Real',data:curvaByDay.map(d=>d.real),
-       borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,0.08)',fill:true,tension:0.3,pointRadius:2,pointHoverRadius:4,borderWidth:2},
-    ],{pct:true,legend:true,allTicks:true});
-
     // ── Aggregate AV_PLAN by week ──
     const avWeeks=new Map();
     avF.forEach(r=>{
@@ -1591,9 +1591,36 @@ function renderCurva(){
       {label:'Real',       data:avByWeek.map(w=>w.initReal),
        borderColor:'rgba(88,166,255,1)',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
     ],{legend:true});
+
+    // ── Charts: Tiempo real vs proyectado por módulo (Húmedo / Seco) ──
+    const filterTorre=selTorre.value;
+    const modsF=(DATA.modulos||[]).filter(x=>{
+      if(filterTorre && x.torre!==filterTorre) return false;
+      if(filterMonth && x.initReal){
+        const d=parseDate(x.initReal);
+        if(!d||isNaN(d)) return false;
+        const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        if(ym!==filterMonth) return false;
+      }
+      return true;
+    });
+    [{tipo:'Húmedo',id:'ch-tiempo-humedo'},{tipo:'Seco',id:'ch-tiempo-seco'}].forEach(({tipo,id})=>{
+      const mods=modsF
+        .filter(x=>(x.tipo||'').toLowerCase()===tipo.toLowerCase())
+        .sort((a,b)=>(a.modulo||'').localeCompare(b.modulo||'','es',{numeric:true}));
+      const labels=mods.map(x=>x.modulo||'?');
+      mixedChart(id, labels,
+        [{label:'Tiempo Real (días)',data:mods.map(x=>x.tiempoReal??null),
+          backgroundColor:'rgba(88,166,255,0.7)'}],
+        [{label:'Tiempo Proyectado (días)',data:mods.map(x=>x.tiempoProy??null),
+          borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)'}],
+        {}
+      );
+    });
   };
 
   sel.onchange=renderCurvaCharts;
+  selTorre.onchange=renderCurvaCharts;
   renderCurvaCharts();
 }
 
