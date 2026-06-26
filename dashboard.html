@@ -759,7 +759,7 @@ function mixedChart(id, labels, barDatasets, lineDatasets, opts={}){
       plugins:{
         legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y??0)}},
-        datalabels:{display:false}
+        datalabels:opts.datalabels||{display:false}
       },
       scales:{
         x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',maxRotation:45,minRotation:0,font:{size:10},maxTicksLimit:18},
@@ -1612,10 +1612,14 @@ function renderCurva(){
       const labels=mods.map(x=>x.modulo||'?');
       mixedChart(id, labels,
         [{label:'Tiempo Real (días)',data:mods.map(x=>Math.round(x.tiempoReal)),
-          backgroundColor:'rgba(88,166,255,0.7)'}],
+          backgroundColor:'rgba(63,185,80,0.7)',
+          datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},
+            anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v!=null?String(v):''}}],
         [{label:'Tiempo Proyectado (días)',data:mods.map(x=>x.tiempoProy>0?Math.round(x.tiempoProy):null),
-          borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)'}],
-        {}
+          borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
+          datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:10,weight:'600'},
+            anchor:'end',align:'top',offset:4,clip:false,formatter:v=>v!=null?String(v):''}}],
+        {datalabels:{display:'auto'}}
       );
     });
   };
