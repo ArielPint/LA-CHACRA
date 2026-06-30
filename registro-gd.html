@@ -356,6 +356,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
           <th>Unidad</th>
           <th class="r">Cant/Módulo</th>
           <th>Grupo</th>
+          <th class="r">Precio PPP</th>
           <th>Fuente</th>
           <th></th>
         </tr></thead>
@@ -1435,12 +1436,29 @@ function renderCatalogGD(){
   const tbody=document.getElementById('cat-tbody-gd');
   const session=AUTH.getSession?AUTH.getSession():null;
   const isAdmin=session&&session.role==='admin';
+
+  // Calcular Precio Promedio Ponderado por código
+  const pppMap={};
+  (registros||[]).forEach(r=>{
+    const cr=calcCR(r);
+    if(cr<=0) return;
+    const vt=getVTI(r);
+    if(vt<=0) return;
+    const k=String(r.codigo).trim().toUpperCase();
+    if(!pppMap[k]) pppMap[k]={monto:0,cant:0};
+    pppMap[k].monto+=vt;
+    pppMap[k].cant+=cr;
+  });
+
   tbody.innerHTML=list.map(p=>{
     const isCustom=customCodes.has(p.codigo.toUpperCase());
     const cpm=p.cantidad_por_modulo!=null?p.cantidad_por_modulo:'—';
     const cpmStr=typeof cpm==='number'?cpm.toLocaleString('es-CL',{maximumFractionDigits:4}):cpm;
     const fuente=isCustom?'Custom':'Base';
     const fClass=isCustom?'badge-custom':'badge-base';
+    const pppData=pppMap[String(p.codigo).trim().toUpperCase()];
+    const ppp=pppData&&pppData.cant>0?pppData.monto/pppData.cant:null;
+    const pppStr=ppp!=null?fmtNum(ppp):'<span style="color:var(--muted)">—</span>';
     const actions=isAdmin?`<div style="display:flex;gap:5px">
       <button class="btn btn-sm" style="font-size:.7rem;background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.3);padding:3px 8px" onclick="openEditProdGD('${esc(p.codigo)}')">Editar</button>
       <button class="btn btn-sm" style="font-size:.7rem;background:rgba(247,95,95,.1);color:var(--red);border:1px solid rgba(247,95,95,.25);padding:3px 8px" onclick="deleteProdGD('${esc(p.codigo)}')">Eliminar</button>
@@ -1451,6 +1469,7 @@ function renderCatalogGD(){
       <td style="color:var(--muted);font-size:.78rem">${esc(p.unidad||'—')}</td>
       <td class="r" style="${typeof cpm==='number'?'color:var(--accent);font-weight:600':'color:var(--muted)'};font-size:.78rem">${cpmStr}</td>
       <td style="font-size:.75rem;color:var(--muted)">${esc(p.grupo||'—')}</td>
+      <td class="r" style="font-size:.78rem;font-weight:600;font-family:'Consolas',monospace;color:var(--green)">${pppStr}</td>
       <td><span class="badge-src ${fClass}">${fuente}</span></td>
       <td>${actions}</td>
     </tr>`;
