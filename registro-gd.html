@@ -64,6 +64,9 @@ input[type="date"]{color-scheme:dark}
 
 #tbl-wrap{flex:1;overflow:auto;padding:0 18px 18px}
 table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1600px}
+#main-table tfoot td{position:sticky;bottom:0;background:var(--surface2);border-top:2px solid var(--border);padding:5px 8px;font-size:.77rem;font-weight:700;white-space:nowrap}
+#main-table tfoot td.r{text-align:right}
+#main-table tfoot td.c{text-align:center}
 thead th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:.64rem;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2}
 thead th.r,td.r{text-align:right}
 thead th.c,td.c{text-align:center}
@@ -307,6 +310,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
           <th class="r" style="color:var(--green)">Monto GD</th>
         </tr></thead>
         <tbody id="tbl-body"></tbody>
+        <tfoot id="reg-tfoot"></tfoot>
       </table>
     </div>
   </div>
@@ -746,7 +750,7 @@ function renderTable(){
   const filtered=getFiltered();
   const tbody=document.getElementById('tbl-body');
   document.getElementById('count-label').textContent=`${filtered.length} de ${registros.length} registros`;
-  if(!filtered.length){ tbody.innerHTML=`<tr><td colspan="21" class="no-data">${registros.length?'Sin resultados — ajustá los filtros.':'Sin registros. Usá + Nueva entrada.'}</td></tr>`; return; }
+  if(!filtered.length){ tbody.innerHTML=`<tr><td colspan="21" class="no-data">${registros.length?'Sin resultados — ajustá los filtros.':'Sin registros. Usá + Nueva entrada.'}</td></tr>`; const _tf=document.getElementById('reg-tfoot'); if(_tf) _tf.innerHTML=''; return; }
   const montoGD={};
   registros.forEach(r=>{ montoGD[r.gd]=(montoGD[r.gd]||0)+getVTI(r); });
   const gdOrder=[],gdGroups={};
@@ -774,6 +778,49 @@ function renderTable(){
     });
   });
   tbody.innerHTML=html;
+
+  // ── Fila de totales ───────────────────────────────────────────────────────
+  const tfoot=document.getElementById('reg-tfoot');
+  if(tfoot){
+    if(!filtered.length){ tfoot.innerHTML=''; }
+    else {
+      let sumCantSol=0, sumDevol=0, sumCantRec=0, sumVTI=0, sumPpto=0, sumDifT=0;
+      filtered.forEach(r=>{
+        const cr=calcCR(r), vti=getVTI(r), ppto=(parseFloat(r.valor_ppto)||0)*cr;
+        sumCantSol+=(parseFloat(r.cantidad_sol)||0);
+        sumDevol+=(parseFloat(r.devolucion)||0);
+        sumCantRec+=cr;
+        sumVTI+=vti;
+        sumPpto+=ppto;
+        sumDifT+=calcDifT(r);
+      });
+      const vundAvg=sumCantRec?sumVTI/sumCantRec:0;
+      const pptoAvg=sumCantRec?sumPpto/sumCantRec:0;
+      const difUndAvg=vundAvg-pptoAvg;
+      const pctAvg=sumPpto?sumDifT/sumPpto*100:null;
+      const gdsFiltradas=new Set(filtered.map(r=>r.gd));
+      const sumMontoGD=Array.from(gdsFiltradas).reduce((s,gd)=>s+(montoGD[gd]||0),0);
+      const dc=sumDifT>0?'dif-pos':sumDifT<0?'dif-neg':'dif-zero';
+      const pc=pctAvg!=null?(pctAvg>0?'dif-pos':pctAvg<0?'dif-neg':'dif-zero'):'';
+      const nItems=filtered.length, nGDs=gdsFiltradas.size;
+      tfoot.innerHTML=`<tr>
+        <td></td>
+        <td colspan="3" style="color:var(--muted);font-weight:400;font-size:.72rem">${nItems} ítem${nItems!==1?'s':''} · ${nGDs} GD${nGDs!==1?'s':''}</td>
+        <td class="c"></td><td></td><td></td><td></td><td class="c"></td>
+        <td class="r">${fmt0(sumCantSol)}</td>
+        <td class="r">${sumDevol?fmt0(sumDevol):'—'}</td>
+        <td class="r">${fmt0(sumCantRec)}</td>
+        <td class="r" style="color:var(--text)">${fmtNum(sumVTI)}</td>
+        <td class="r" style="color:var(--muted)">${fmtNum(vundAvg)}</td>
+        <td class="r" style="color:var(--muted)">${pptoAvg?fmtNum(pptoAvg):'—'}</td>
+        <td class="r ${dc}">${fmtNum(difUndAvg)}</td>
+        <td class="r ${dc}">${fmtNum(sumDifT)}</td>
+        <td class="r ${pc}">${pctAvg!=null?pctAvg.toFixed(1)+'%':'—'}</td>
+        <td></td><td class="c"></td>
+        <td class="r" style="color:var(--green)">${fmtNum(sumMontoGD)}</td>
+      </tr>`;
+    }
+  }
 }
 
 // ── Cálculos ──────────────────────────────────────────────────────────────────
