@@ -102,6 +102,35 @@ tbody td.c{text-align:center}
 /* Empty state */
 .empty{text-align:center;padding:40px;color:var(--muted);font-size:.85rem}
 
+/* Edit button */
+.edit-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:3px 6px;border-radius:4px;font-size:.85rem;line-height:1;transition:all .12s;margin-right:2px}
+.edit-btn:hover{background:rgba(79,142,247,.12);color:var(--accent)}
+
+/* Modal */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;align-items:center;justify-content:center;padding:20px}
+#modal-overlay.open{display:flex}
+#modal-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:visible}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface2);border-radius:12px 12px 0 0}
+.modal-hdr span{font-size:.95rem;font-weight:700}
+.modal-hdr button{background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .12s}
+.modal-hdr button:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.modal-bdy{padding:18px}
+.modal-ftr{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--border)}
+.modal-label{display:block;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.modal-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:7px;font-size:.88rem;outline:none;transition:border .15s}
+.modal-input:focus{border-color:var(--accent)}
+.modal-input::placeholder{color:var(--muted)}
+.modal-row{margin-bottom:16px;position:relative}
+.modal-row:last-child{margin-bottom:0}
+#modal-sugg-box{position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:200px;overflow-y:auto;display:none;z-index:10}
+#modal-sel-display{display:none;align-items:center;justify-content:space-between;background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.3);border-radius:7px;padding:8px 12px;margin-top:6px}
+#modal-sel-info{font-size:.82rem;color:var(--text);flex:1}
+.modal-sel-clear{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem;padding:2px 5px;border-radius:3px;margin-left:8px;flex-shrink:0}
+.modal-sel-clear:hover{color:var(--red)}
+#modal-mat-locked{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:.85rem;color:var(--text)}
+#modal-alcance-hint{display:block;font-size:.72rem;color:var(--muted);margin-top:5px;min-height:14px}
+#modal-count{display:block;font-size:.68rem;color:var(--muted);margin-top:3px}
+
 /* Toast */
 #toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 18px;font-size:.8rem;box-shadow:0 4px 20px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:200}
 #toast.show{opacity:1}
@@ -153,20 +182,12 @@ tbody td.c{text-align:center}
 
 <!-- Main -->
 <div id="main">
-  <!-- Buscador -->
-  <div id="search-wrap">
-    <input id="search-input" type="text" placeholder="🔍 Buscar material del catálogo para agregar..." autocomplete="off"
-      oninput="onSearch(this.value)" onkeydown="onSearchKey(event)">
-    <button class="btn btn-sm" onclick="clearSearch()">✕</button>
-    <span style="font-size:.72rem;color:var(--muted)" id="catalog-count"></span>
-    <div id="sugg-box"></div>
-  </div>
-
   <!-- Tabla de stock -->
   <div class="card">
     <div class="card-header">
       <h3 id="table-title">📦 Stock de la semana</h3>
-      <span style="margin-left:auto;font-size:.7rem;color:var(--muted)" id="table-subtitle"></span>
+      <span style="font-size:.7rem;color:var(--muted)" id="table-subtitle"></span>
+      <button class="btn btn-primary btn-sm" onclick="openModal(null)" style="margin-left:auto;white-space:nowrap">＋ Agregar material</button>
     </div>
     <div class="tbl-wrap">
       <table id="tbl-stock">
@@ -195,6 +216,45 @@ tbody td.c{text-align:center}
 
 <!-- Loading -->
 <div id="loading">Cargando...</div>
+
+<!-- Modal de ingreso de material -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal-box">
+    <div class="modal-hdr">
+      <span id="modal-title">Agregar material</span>
+      <button onclick="closeModalForce()">✕</button>
+    </div>
+    <div class="modal-bdy">
+      <!-- Modo nuevo: buscador -->
+      <div class="modal-row" id="modal-search-section">
+        <label class="modal-label">Material</label>
+        <input class="modal-input" id="modal-search" type="text" placeholder="🔍 Buscar por código o nombre..." autocomplete="off"
+          oninput="onModalSearch(this.value)" onkeydown="onModalKey(event)">
+        <span id="modal-count"></span>
+        <div id="modal-sugg-box"></div>
+        <div id="modal-sel-display">
+          <span id="modal-sel-info"></span>
+          <button class="modal-sel-clear" onclick="clearModalProduct()" title="Cambiar material">✕ Cambiar</button>
+        </div>
+      </div>
+      <!-- Modo edición: material bloqueado -->
+      <div class="modal-row" id="modal-locked-section" style="display:none">
+        <label class="modal-label">Material</label>
+        <div id="modal-mat-locked"></div>
+      </div>
+      <!-- Stock físico -->
+      <div class="modal-row">
+        <label class="modal-label">Stock físico</label>
+        <input class="modal-input" id="modal-stock" type="number" min="0" step="any" placeholder="Ingresa la cantidad..." oninput="updateModalAlcance()">
+        <span id="modal-alcance-hint"></span>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-sm" onclick="closeModalForce()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted)">Cancelar</button>
+      <button class="btn btn-primary btn-sm" id="modal-submit" onclick="submitModal()">Agregar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ─────────────────────────────────────────────
@@ -295,9 +355,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Auth
   _session = AUTH.requireAuth('login.html');
   if (!_session) return;
-  if (_session.role !== 'admin' && _session.role !== 'operador') {
+  if (!_session.permissions || !_session.permissions.permiso_stock) {
     alert('No tienes permiso para acceder a esta página.');
-    window.location.href = 'tecnopanel.html';
+    if (window.parent && window.parent !== window && typeof window.parent.showSheet === 'function') {
+      window.parent.showSheet('dashboard');
+    } else {
+      window.location.href = 'tecnopanel.html';
+    }
     return;
   }
   document.getElementById('user-info').textContent = _session.name || _session.username;
@@ -349,8 +413,6 @@ async function loadCatalog() {
 
   _allProds = Object.values(map).sort((a, b) => a.descripcion.localeCompare(b.descripcion));
   _allProds.forEach(p => { _prodMap[String(p.codigo).trim().toUpperCase()] = p; });
-
-  document.getElementById('catalog-count').textContent = `Catálogo: ${_allProds.length} productos`;
 }
 
 // ─────────────────────────────────────────────
@@ -468,7 +530,7 @@ async function loadSemana(key) {
   });
 
   document.getElementById('table-subtitle').textContent =
-    rows.length ? `${rows.length} materiales registrados` : 'Sin datos aún — agrega materiales con el buscador';
+    rows.length ? `${rows.length} materiales registrados` : '';
   renderTable();
   updateStats();
 }
@@ -479,27 +541,27 @@ async function loadSemana(key) {
 function renderTable() {
   const tbody = document.getElementById('tbl-body');
   if (!_items.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty">Sin materiales — usa el buscador para agregar</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">Sin materiales — usá <strong>＋ Agregar material</strong> para comenzar</td></tr>`;
     return;
   }
   tbody.innerHTML = _items.map((it, i) => {
     const alc = alcance(it.stock_fisico, it.qty);
     const qMod = it.qty != null ? fmt(it.qty) : '<span style="color:var(--muted)">—</span>';
+    const stockDisplay = it._dirty
+      ? `<strong style="color:var(--yellow)">${fmt(it.stock_fisico)}</strong>`
+      : `<strong>${fmt(it.stock_fisico)}</strong>`;
     return `<tr id="row-${i}">
       <td class="c" style="color:var(--muted);font-size:.72rem">${i + 1}</td>
       <td class="td-code">${esc(it.codigo)}</td>
       <td class="td-mat" title="${esc(it.material)}">${esc(it.material)}</td>
       <td class="td-um">${esc(it.unidad)}</td>
-      <td class="r">
-        <input type="number" class="stock-input${it._dirty ? ' changed' : ''}" min="0" step="any"
-          value="${it.stock_fisico}"
-          data-idx="${i}"
-          onchange="onStockChange(${i}, this.value)"
-          oninput="onStockInput(${i}, this)">
-      </td>
+      <td class="r">${stockDisplay}</td>
       <td class="r" style="color:var(--muted);font-size:.75rem">${qMod}</td>
       <td class="r">${alcanceBadge(alc)}</td>
-      <td class="c"><button class="del-btn" onclick="removeItem(${i})" title="Quitar de la tabla">✕</button></td>
+      <td class="c">
+        <button class="edit-btn" onclick="openModal(${i})" title="Editar stock">✏</button>
+        <button class="del-btn" onclick="removeItem(${i})" title="Quitar de la tabla">✕</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -522,123 +584,185 @@ function updateStats() {
 }
 
 // ─────────────────────────────────────────────
-// INPUTS
+// TABLA — eliminar item
 // ─────────────────────────────────────────────
-function onStockInput(idx, input) {
-  _items[idx].stock_fisico = parseFloat(input.value) || 0;
-  _items[idx]._dirty = true;
-  input.classList.add('changed');
-  // Actualizar badge de alcance en la misma fila
-  const row = document.getElementById('row-' + idx);
-  if (row) {
-    const alc = alcance(_items[idx].stock_fisico, _items[idx].qty);
-    row.cells[6].innerHTML = alcanceBadge(alc);
-  }
-  updateStats();
-}
-
-function onStockChange(idx, val) {
-  _items[idx].stock_fisico = parseFloat(val) || 0;
-  _items[idx]._dirty = true;
-  updateStats();
-}
-
 function removeItem(idx) {
   _items.splice(idx, 1);
   renderTable();
   updateStats();
   document.getElementById('table-subtitle').textContent =
-    _items.length ? `${_items.length} materiales registrados` : 'Sin datos — agrega materiales con el buscador';
+    _items.length ? `${_items.length} materiales registrados` : '';
 }
 
 // ─────────────────────────────────────────────
-// BUSCADOR
+// MODAL
 // ─────────────────────────────────────────────
-let _suggIdx = -1;
+let _modalIdx     = null;   // null = nuevo, número = editar
+let _modalProd    = null;   // producto seleccionado (modo nuevo)
+let _modalSuggIdx = -1;
 
-function onSearch(q) {
+function openModal(idx) {
+  _modalIdx  = idx;
+  _modalProd = null;
+  _modalSuggIdx = -1;
+
+  const searchSec = document.getElementById('modal-search-section');
+  const lockedSec = document.getElementById('modal-locked-section');
+  const title     = document.getElementById('modal-title');
+  const submitBtn = document.getElementById('modal-submit');
+
+  // Reset buscador
+  document.getElementById('modal-search').value = '';
+  document.getElementById('modal-sugg-box').style.display = 'none';
+  document.getElementById('modal-sugg-box').innerHTML = '';
+  document.getElementById('modal-sel-display').style.display = 'none';
+  document.getElementById('modal-sel-info').textContent = '';
+  document.getElementById('modal-alcance-hint').textContent = '';
+  document.getElementById('modal-count').textContent = `Catálogo: ${_allProds.length} productos`;
+
+  if (idx === null) {
+    title.textContent = 'Agregar material';
+    submitBtn.textContent = 'Agregar';
+    searchSec.style.display = 'block';
+    lockedSec.style.display = 'none';
+    document.getElementById('modal-stock').value = '';
+    setTimeout(() => document.getElementById('modal-search').focus(), 60);
+  } else {
+    const it = _items[idx];
+    title.textContent = 'Editar stock';
+    submitBtn.textContent = 'Guardar';
+    searchSec.style.display = 'none';
+    lockedSec.style.display = 'block';
+    document.getElementById('modal-mat-locked').textContent = `${it.codigo} — ${it.material} (${it.unidad})`;
+    document.getElementById('modal-stock').value = it.stock_fisico;
+    updateModalAlcance();
+    setTimeout(() => document.getElementById('modal-stock').focus(), 60);
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(event) {
+  if (event.target === document.getElementById('modal-overlay')) closeModalForce();
+}
+
+function closeModalForce() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('modal-sugg-box').style.display = 'none';
+}
+
+function onModalSearch(q) {
   q = q.trim().toLowerCase();
-  const box = document.getElementById('sugg-box');
+  const box = document.getElementById('modal-sugg-box');
+  document.getElementById('modal-sel-display').style.display = 'none';
   if (!q) { box.style.display = 'none'; return; }
 
   const already = new Set(_items.map(it => String(it.codigo).toUpperCase()));
   const matches = _allProds
     .filter(p => !already.has(String(p.codigo).toUpperCase()))
     .filter(p => (String(p.codigo) + ' ' + p.descripcion).toLowerCase().includes(q))
-    .slice(0, 12);
+    .slice(0, 10);
 
-  if (!matches.length) {
-    box.style.display = 'none'; return;
-  }
+  if (!matches.length) { box.style.display = 'none'; return; }
 
   box.innerHTML = matches.map((p, i) => `
-    <div class="sugg-item" data-idx="${i}" onclick="addProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+    <div class="sugg-item" data-idx="${i}" onclick="selectModalProd(${JSON.stringify(p).replace(/"/g,'&quot;')})">
       <div class="si-code">${esc(p.codigo)}</div>
       <div class="si-desc">${esc(p.descripcion)}</div>
-      <div class="si-meta">${esc(p.unidad)} ${p.qty != null ? '· ' + fmt(p.qty) + ' ud/mód' : ''}</div>
+      <div class="si-meta">${esc(p.unidad)}${p.qty != null ? ' · ' + fmt(p.qty) + ' ud/mód' : ''}</div>
     </div>`).join('');
   box.style.display = 'block';
   box._matches = matches;
-  _suggIdx = -1;
+  _modalSuggIdx = -1;
 }
 
-function onSearchKey(e) {
-  const box = document.getElementById('sugg-box');
-  const items = box.querySelectorAll('.sugg-item');
+function onModalKey(e) {
+  const box = document.getElementById('modal-sugg-box');
+  const els = box.querySelectorAll('.sugg-item');
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    _suggIdx = Math.min(_suggIdx + 1, items.length - 1);
-    items.forEach((el, i) => el.style.background = i === _suggIdx ? 'var(--surface2)' : '');
+    _modalSuggIdx = Math.min(_modalSuggIdx + 1, els.length - 1);
+    els.forEach((el, i) => el.style.background = i === _modalSuggIdx ? 'var(--surface2)' : '');
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
-    _suggIdx = Math.max(_suggIdx - 1, -1);
-    items.forEach((el, i) => el.style.background = i === _suggIdx ? 'var(--surface2)' : '');
+    _modalSuggIdx = Math.max(_modalSuggIdx - 1, -1);
+    els.forEach((el, i) => el.style.background = i === _modalSuggIdx ? 'var(--surface2)' : '');
   } else if (e.key === 'Enter') {
     e.preventDefault();
-    if (_suggIdx >= 0 && box._matches && box._matches[_suggIdx]) {
-      addProduct(box._matches[_suggIdx]);
+    if (_modalSuggIdx >= 0 && box._matches && box._matches[_modalSuggIdx]) {
+      selectModalProd(box._matches[_modalSuggIdx]);
     }
   } else if (e.key === 'Escape') {
-    clearSearch();
+    closeModalForce();
   }
 }
 
-function clearSearch() {
-  document.getElementById('search-input').value = '';
-  document.getElementById('sugg-box').style.display = 'none';
+function selectModalProd(p) {
+  _modalProd = p;
+  document.getElementById('modal-search').value = '';
+  document.getElementById('modal-sugg-box').style.display = 'none';
+  document.getElementById('modal-sel-info').textContent = `${p.codigo} — ${p.descripcion} (${p.unidad})`;
+  document.getElementById('modal-sel-display').style.display = 'flex';
+  document.getElementById('modal-count').textContent = '';
+  updateModalAlcance();
+  setTimeout(() => document.getElementById('modal-stock').focus(), 60);
 }
 
-document.addEventListener('click', e => {
-  if (!e.target.closest('#search-wrap')) {
-    document.getElementById('sugg-box').style.display = 'none';
+function clearModalProduct() {
+  _modalProd = null;
+  document.getElementById('modal-sel-display').style.display = 'none';
+  document.getElementById('modal-sel-info').textContent = '';
+  document.getElementById('modal-alcance-hint').textContent = '';
+  document.getElementById('modal-count').textContent = `Catálogo: ${_allProds.length} productos`;
+  document.getElementById('modal-search').value = '';
+  document.getElementById('modal-search').focus();
+}
+
+function updateModalAlcance() {
+  const hint = document.getElementById('modal-alcance-hint');
+  const stockVal = parseFloat(document.getElementById('modal-stock').value);
+  let qty = null;
+  if (_modalIdx !== null && _items[_modalIdx]) qty = _items[_modalIdx].qty;
+  else if (_modalProd) qty = _modalProd.qty != null ? +_modalProd.qty : null;
+  if (!qty || isNaN(stockVal)) {
+    hint.textContent = qty ? '' : (stockVal >= 0 ? '' : '');
+    return;
   }
-});
+  const alc = stockVal / qty;
+  hint.textContent = `Alcance estimado: ${fmt(alc)} módulos`;
+  hint.style.color = alc < 5 ? 'var(--red)' : alc < 15 ? 'var(--yellow)' : 'var(--green)';
+}
 
-function addProduct(p) {
-  const already = _items.find(it => String(it.codigo).toUpperCase() === String(p.codigo).toUpperCase());
-  if (already) { showToast('Ya está en la tabla: ' + p.codigo, 'err'); clearSearch(); return; }
+function submitModal() {
+  const stockVal = parseFloat(document.getElementById('modal-stock').value);
+  if (isNaN(stockVal) || stockVal < 0) {
+    showToast('Ingresa un stock válido (≥ 0)', 'err'); return;
+  }
 
-  _items.push({
-    _id: null,
-    codigo: p.codigo,
-    material: p.descripcion,
-    unidad: p.unidad || 'UND',
-    qty: p.qty != null ? +p.qty : null,
-    stock_fisico: 0,
-    _dirty: true
-  });
+  if (_modalIdx === null) {
+    if (!_modalProd) { showToast('Selecciona un material del catálogo', 'err'); return; }
+    const already = _items.find(it => String(it.codigo).toUpperCase() === String(_modalProd.codigo).toUpperCase());
+    if (already) { showToast('Ya está en la tabla: ' + _modalProd.codigo, 'err'); return; }
+    _items.push({
+      _id: null,
+      codigo: _modalProd.codigo,
+      material: _modalProd.descripcion,
+      unidad: _modalProd.unidad || 'UND',
+      qty: _modalProd.qty != null ? +_modalProd.qty : null,
+      stock_fisico: stockVal,
+      _dirty: true
+    });
+    showToast(`✓ ${_modalProd.descripcion} agregado`, 'ok');
+  } else {
+    _items[_modalIdx].stock_fisico = stockVal;
+    _items[_modalIdx]._dirty = true;
+    showToast('Stock actualizado', 'ok');
+  }
 
-  clearSearch();
+  closeModalForce();
   renderTable();
   updateStats();
-
   document.getElementById('table-subtitle').textContent = `${_items.length} materiales registrados`;
-
-  // Enfocar el input de stock del nuevo item
-  setTimeout(() => {
-    const inputs = document.querySelectorAll('.stock-input');
-    if (inputs.length) inputs[inputs.length - 1].focus();
-  }, 50);
 }
 
 // ─────────────────────────────────────────────

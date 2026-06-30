@@ -856,7 +856,7 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
   var peLbl=document.getElementById('proy-extra-lbl');
   if(peLbl && AUTH.isAdmin()) peLbl.style.display='flex';
   var btnSI=document.getElementById('btn-stock-ingreso');
-  if(btnSI){const _s=AUTH.getSession();if(_s&&(_s.role==='admin'||_s.role==='operador'))btnSI.style.display='inline-block';}
+  if(btnSI){const _s=AUTH.getSession();if(_s&&_s.permissions&&_s.permissions.permiso_stock)btnSI.style.display='inline-block';}
 
   // Ocultar tabs sin permiso
   var DASH_TABS = ['resumen','curva','modulos','compras','productos','stock','despachos'];

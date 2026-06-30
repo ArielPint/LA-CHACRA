@@ -523,6 +523,10 @@ tr.just-saved td{animation:rowFlash 2.2s ease forwards}
           <label class="switch"><input type="checkbox" id="fCanEditProducts"><span class="slider"></span></label>
         </div>
         <div class="toggle-row">
+          <div class="toggle-label">Acceso Ingreso Stock<small>Puede ingresar y editar el stock semanal en la página Ingreso Stock</small></div>
+          <label class="switch"><input type="checkbox" id="fPermisoStock"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
           <div class="toggle-label">Usuario activo<small>Los usuarios inactivos no pueden iniciar sesión</small></div>
           <label class="switch"><input type="checkbox" id="fActive" checked><span class="slider"></span></label>
         </div>
@@ -866,6 +870,7 @@ function openModal(){
   document.getElementById('fRole').value='viewer';
   loadPlantaMarks(null);
   document.getElementById('fActive').checked=true;
+  document.getElementById('fPermisoStock').checked=false;
   document.getElementById('passHint').textContent='';
   document.getElementById('modalTitle').textContent='Nuevo usuario';
   onRoleChange();
@@ -889,6 +894,8 @@ async function editUser(id){
   document.getElementById('fCanEditLayout').checked=cel;
   const cep=user.permissions.canEditProducts!==undefined?user.permissions.canEditProducts:false;
   document.getElementById('fCanEditProducts').checked=cep;
+  const ps=user.permissions.permiso_stock===true;
+  document.getElementById('fPermisoStock').checked=ps;
   document.getElementById('fActive').checked=user.active;
   loadPlantaMarks(user.permissions&&user.permissions.planta_marks);
   document.getElementById('passHint').textContent='(dejar vacío para no cambiar)';
@@ -913,6 +920,7 @@ async function saveUser(){
   const ro   =document.getElementById('fReadonly').checked;
   const cel  =document.getElementById('fCanEditLayout').checked;
   const cep  =document.getElementById('fCanEditProducts').checked;
+  const ps   =document.getElementById('fPermisoStock').checked;
   const act  =document.getElementById('fActive').checked;
   const pages=getPagePermsFromForm();
   const plantaMarks=getPlantaMarksFromForm();
@@ -924,10 +932,10 @@ async function saveUser(){
   try{
     let savedUser;
     if(id){
-      savedUser=await AUTH.updateUser(id,{username:user,name,email,role,customPages:pages,readonly:ro,active:act,password:pass||undefined,canEditLayoutOverride:cel,canEditProductsOverride:cep,planta_marks:plantaMarks});
+      savedUser=await AUTH.updateUser(id,{username:user,name,email,role,customPages:pages,readonly:ro,active:act,password:pass||undefined,canEditLayoutOverride:cel,canEditProductsOverride:cep,permisoStockOverride:ps,planta_marks:plantaMarks});
       showToast('Usuario actualizado','success');
     }else{
-      savedUser=await AUTH.createUser({username:user,password:pass,name,email,role,customPages:pages,readonly:ro,canEditLayoutOverride:cel,canEditProductsOverride:cep,planta_marks:plantaMarks});
+      savedUser=await AUTH.createUser({username:user,password:pass,name,email,role,customPages:pages,readonly:ro,canEditLayoutOverride:cel,canEditProductsOverride:cep,permisoStockOverride:ps,planta_marks:plantaMarks});
       showToast('Usuario creado','success');
     }
     closeModal();

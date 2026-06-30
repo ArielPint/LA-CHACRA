@@ -188,7 +188,7 @@ const AUTH = (() => {
   }
 
   // ─── createUser (via Edge Function con service_role) ─────────────────────
-  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride, plantaRol, planta_marks }) {
+  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride, permisoStockOverride, plantaRol, planta_marks }) {
     const roleDef = DEFAULT_ROLES[role] || DEFAULT_ROLES.viewer;
     const permissions = {
       pages: customPages || roleDef.pages(),
@@ -196,6 +196,7 @@ const AUTH = (() => {
     };
     if (canEditLayoutOverride   !== undefined) permissions.canEditLayout    = canEditLayoutOverride;
     if (canEditProductsOverride !== undefined) permissions.canEditProducts = canEditProductsOverride;
+    if (permisoStockOverride    !== undefined) permissions.permiso_stock    = permisoStockOverride;
     if (planta_marks            !== undefined) permissions.planta_marks     = planta_marks || null;
 
     const token = await _getAccessToken();
@@ -225,7 +226,7 @@ const AUTH = (() => {
   }
 
   // ─── updateUser ───────────────────────────────────────────────────────────
-  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride, plantaRol, planta_marks }) {
+  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride, permisoStockOverride, plantaRol, planta_marks }) {
     const sb = await _client();
 
     const { data: current, error: fetchErr } = await sb
@@ -248,6 +249,7 @@ const AUTH = (() => {
     if (readonly                 !== undefined) perms.readonly        = readonly;
     if (canEditLayoutOverride    !== undefined) perms.canEditLayout    = canEditLayoutOverride;
     if (canEditProductsOverride  !== undefined) perms.canEditProducts = canEditProductsOverride;
+    if (permisoStockOverride     !== undefined) perms.permiso_stock    = permisoStockOverride;
     if (planta_marks             !== undefined) perms.planta_marks     = planta_marks || null;
 
     const updates = { role: newRole, permissions: perms, updated_at: new Date().toISOString() };

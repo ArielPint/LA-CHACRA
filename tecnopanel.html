@@ -226,7 +226,7 @@ var currentPage = 'dashboard';
     var ds = document.getElementById('dd-settings'); if (ds) ds.style.display = 'flex';
   }
   if (AUTH.canAccessPage('registro-gd')) { var elrg = document.getElementById('dd-registro-gd'); if (elrg) elrg.style.display = 'flex'; }
-  if (s.role === 'admin' || s.role === 'operador') { var elsi = document.getElementById('dd-stock-ingreso'); if (elsi) elsi.style.display = 'flex'; }
+  if (s.permissions && s.permissions.permiso_stock) { var elsi = document.getElementById('dd-stock-ingreso'); if (elsi) elsi.style.display = 'flex'; }
   if (AUTH.canAccessPage('solicitudes')) { var el = document.getElementById('dd-solicitudes'); if (el) el.style.display = 'flex'; }
   if (AUTH.canAccessPlanta()) { var el2 = document.getElementById('dd-planta'); if (el2) el2.style.display = 'flex'; }
   if (AUTH.canAccessPage('geovictoria')) { var el3 = document.getElementById('dd-asistencia'); if (el3) el3.style.display = 'flex'; }
