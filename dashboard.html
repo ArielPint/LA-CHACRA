@@ -539,7 +539,7 @@ async function loadStockSupa(){
       return{
         fecha:row.fecha,codigo:row.codigo,material:row.material,um:row.unidad,
         totalSol:null,cantMod:cantModTotal,stockFisico:sf,
-        desc:prod.grupo||row.material,solicitadoTF:null,consumo:consumo,
+        desc:prod.desc||row.material,solicitadoTF:null,consumo:consumo,
         cubPpto:null,consumoMod:consumoMod,
         alcanceMod:alcanceMod,alcanceFisico:null,
         perdida:0,valorUN:valorUN,
