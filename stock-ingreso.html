@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingreso de Stock — La Chacra</title>
+<script src="auth.js"></script>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7c05f;--orange:#f7a24f;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px}
+body{display:flex;flex-direction:column;overflow:hidden}
+
+/* Header */
+#hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:0 18px;height:48px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+#hdr h1{font-size:.95rem;font-weight:700}
+.hdr-badge{font-size:.68rem;background:rgba(255,255,255,.07);padding:2px 8px;border-radius:20px;color:var(--muted)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+#user-info{font-size:.75rem;color:var(--muted)}
+
+/* Buttons */
+.btn{padding:5px 13px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;white-space:nowrap}
+.btn:hover{color:var(--text);border-color:var(--accent)}
+.btn:disabled{opacity:.4;cursor:default;pointer-events:none}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#3a7ae8;border-color:#3a7ae8;color:#fff}
+.btn-sm{padding:3px 9px;font-size:.72rem}
+.btn-danger{border-color:var(--red);color:var(--red)}
+.btn-danger:hover{background:rgba(247,95,95,.1)}
+.btn-green{background:var(--green);color:#0f1117;border-color:var(--green)}
+.btn-green:hover{background:#2db87a;border-color:#2db87a;color:#0f1117}
+
+/* Toolbar */
+#toolbar{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;flex-wrap:wrap}
+#toolbar label{font-size:.72rem;color:var(--muted);white-space:nowrap}
+#toolbar select,#toolbar input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:6px;font-size:.78rem;outline:none}
+#toolbar select:focus,#toolbar input:focus{border-color:var(--accent)}
+input[type="date"]{color-scheme:dark}
+.tsep{width:1px;height:20px;background:var(--border);margin:0 2px;flex-shrink:0}
+#semana-lbl{font-size:.78rem;color:var(--accent);font-weight:700}
+#save-status{font-size:.72rem;color:var(--muted)}
+#save-status.ok{color:var(--green)}
+#save-status.err{color:var(--red)}
+
+/* Stats bar */
+#stats-bar{display:flex;gap:10px;padding:8px 18px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:7px 14px;min-width:120px}
+.stat .lbl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.stat .val{font-size:1.2rem;font-weight:800}
+.c-blue .val{color:var(--accent)}.c-green .val{color:var(--green)}.c-yellow .val{color:var(--yellow)}.c-red .val{color:var(--red)}
+
+/* Main content */
+#main{flex:1;overflow:auto;padding:14px 18px 20px}
+
+/* Search box */
+#search-wrap{display:flex;align-items:center;gap:8px;margin-bottom:14px;position:relative}
+#search-input{flex:1;max-width:400px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 11px;border-radius:6px;font-size:.82rem;outline:none;transition:border .15s}
+#search-input:focus{border-color:var(--accent)}
+#search-input::placeholder{color:var(--muted)}
+#sugg-box{position:absolute;top:100%;left:0;width:430px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:100;max-height:280px;overflow-y:auto;display:none}
+.sugg-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);transition:background .1s}
+.sugg-item:hover{background:var(--surface2)}
+.sugg-item:last-child{border-bottom:none}
+.si-code{font-size:.68rem;color:var(--accent);font-family:monospace;margin-bottom:2px}
+.si-desc{font-size:.8rem;color:var(--text)}
+.si-meta{font-size:.65rem;color:var(--muted);margin-top:1px}
+
+/* Table */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.card-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.card-header h3{font-size:.8rem;font-weight:700;color:var(--text)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--surface2);color:var(--muted);font-size:.63rem;text-transform:uppercase;letter-spacing:.4px;padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;z-index:2}
+thead th.r{text-align:right}
+thead th.c{text-align:center}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+tbody tr:hover{background:rgba(255,255,255,.025)}
+tbody td{padding:6px 10px;font-size:.8rem;white-space:nowrap}
+tbody td.r{text-align:right}
+tbody td.c{text-align:center}
+.td-code{font-family:monospace;font-size:.72rem;color:var(--muted)}
+.td-mat{max-width:280px;overflow:hidden;text-overflow:ellipsis}
+.td-um{color:var(--muted);font-size:.72rem}
+
+/* Stock input */
+.stock-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:5px;font-size:.82rem;width:100px;text-align:right;outline:none;transition:border .15s}
+.stock-input:focus{border-color:var(--accent)}
+.stock-input.changed{border-color:var(--yellow)}
+
+/* Alcance badge */
+.badge-ok{background:rgba(62,207,142,.15);color:var(--green);border-radius:4px;padding:2px 7px;font-size:.68rem;font-weight:700}
+.badge-bajo{background:rgba(247,192,95,.15);color:var(--yellow);border-radius:4px;padding:2px 7px;font-size:.68rem;font-weight:700}
+.badge-critico{background:rgba(247,95,95,.15);color:var(--red);border-radius:4px;padding:2px 7px;font-size:.68rem;font-weight:700}
+.badge-sin{background:rgba(122,127,153,.1);color:var(--muted);border-radius:4px;padding:2px 7px;font-size:.68rem}
+.badge-nd{color:var(--muted);font-size:.72rem}
+
+/* Delete btn */
+.del-btn{background:none;border:none;cursor:pointer;color:var(--muted);padding:3px 6px;border-radius:4px;font-size:.9rem;line-height:1;transition:all .12s}
+.del-btn:hover{background:rgba(247,95,95,.12);color:var(--red)}
+
+/* Empty state */
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:.85rem}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 18px;font-size:.8rem;box-shadow:0 4px 20px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:200}
+#toast.show{opacity:1}
+#toast.toast-ok{border-color:var(--green);color:var(--green)}
+#toast.toast-err{border-color:var(--red);color:var(--red)}
+
+/* Loading overlay */
+#loading{position:fixed;inset:0;background:rgba(15,17,23,.7);display:flex;align-items:center;justify-content:center;z-index:300;font-size:.9rem;color:var(--muted)}
+#loading.hidden{display:none}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="hdr">
+  <div style="width:8px;height:8px;border-radius:50%;background:var(--brand)"></div>
+  <h1>Ingreso de Stock</h1>
+  <span class="hdr-badge">Semanal</span>
+  <div class="hdr-right">
+    <span id="user-info"></span>
+    <a href="tecnopanel.html" class="btn btn-sm" style="text-decoration:none">← Volver</a>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <label>Semana:</label>
+  <button class="btn btn-sm" id="btn-prev">◀</button>
+  <select id="semana-sel"></select>
+  <button class="btn btn-sm" id="btn-next">▶</button>
+  <button class="btn btn-sm" id="btn-hoy" style="color:var(--accent)">Actual</button>
+  <span id="semana-lbl"></span>
+  <div class="tsep"></div>
+  <label>Fecha referencia:</label>
+  <input type="date" id="fecha-input">
+  <div class="tsep"></div>
+  <button class="btn btn-primary" id="btn-guardar" onclick="guardarTodo()">💾 Guardar semana</button>
+  <span id="save-status"></span>
+</div>
+
+<!-- Stats bar -->
+<div id="stats-bar">
+  <div class="stat c-blue"><div class="lbl">Materiales en tabla</div><div class="val" id="st-total">0</div></div>
+  <div class="stat c-red"><div class="lbl">Stock crítico (&lt;5 mód)</div><div class="val" id="st-critico">0</div></div>
+  <div class="stat c-yellow"><div class="lbl">Stock bajo (5-14 mód)</div><div class="val" id="st-bajo">0</div></div>
+  <div class="stat c-green"><div class="lbl">Stock OK (≥15 mód)</div><div class="val" id="st-ok">0</div></div>
+  <div class="stat" style="margin-left:auto"><div class="lbl">Sin cant. por módulo</div><div class="val" id="st-sinref" style="color:var(--muted);font-size:1rem">0</div></div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <!-- Buscador -->
+  <div id="search-wrap">
+    <input id="search-input" type="text" placeholder="🔍 Buscar material del catálogo para agregar..." autocomplete="off"
+      oninput="onSearch(this.value)" onkeydown="onSearchKey(event)">
+    <button class="btn btn-sm" onclick="clearSearch()">✕</button>
+    <span style="font-size:.72rem;color:var(--muted)" id="catalog-count"></span>
+    <div id="sugg-box"></div>
+  </div>
+
+  <!-- Tabla de stock -->
+  <div class="card">
+    <div class="card-header">
+      <h3 id="table-title">📦 Stock de la semana</h3>
+      <span style="margin-left:auto;font-size:.7rem;color:var(--muted)" id="table-subtitle"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl-stock">
+        <thead>
+          <tr>
+            <th style="width:36px" class="c">#</th>
+            <th>Código</th>
+            <th>Material</th>
+            <th>Unidad</th>
+            <th class="r" style="width:130px">Stock físico</th>
+            <th class="r">Cant/módulo</th>
+            <th class="r">Alcance est.</th>
+            <th class="c" style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr><td colspan="8" class="empty">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Loading -->
+<div id="loading">Cargando...</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+const SUPA_URL = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+const PROD_URL = 'https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/productos.json';
+const H = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json' };
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let _session    = null;
+let _allProds   = [];   // catálogo completo [{codigo, descripcion, unidad, cantidad_por_modulo}]
+let _prodMap    = {};   // {codigo: producto}
+let _items      = [];   // items actuales en tabla [{codigo,material,unidad,qty_por_mod,stock_fisico,_dirty}]
+let _semanaKey  = null; // timestamp del lunes
+let _semanas    = [];   // lista de semanas disponibles [{key, label}]
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function weekKey(date) {
+  const d = new Date(date);
+  const day = d.getDay(), diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function weekLabel(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: '2-digit' });
+}
+
+function dateFromWeekKey(ts) {
+  const d = new Date(ts);
+  return d.toISOString().slice(0, 10);
+}
+
+function fmt(n) {
+  if (n == null || isNaN(n)) return '—';
+  return n.toLocaleString('es-CL', { maximumFractionDigits: 2 });
+}
+
+function alcance(stockFisico, qMod) {
+  if (!qMod || qMod <= 0) return null;
+  return stockFisico / qMod;
+}
+
+function alcanceBadge(alc) {
+  if (alc == null) return '<span class="badge-nd">Sin ref.</span>';
+  if (alc < 5)  return `<span class="badge-critico">Crítico ${fmt(alc)} mód</span>`;
+  if (alc < 15) return `<span class="badge-bajo">Bajo ${fmt(alc)} mód</span>`;
+  return `<span class="badge-ok">OK ${fmt(alc)} mód</span>`;
+}
+
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show toast-' + type;
+  clearTimeout(t._to);
+  t._to = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+function setLoading(v) {
+  document.getElementById('loading').classList.toggle('hidden', !v);
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // Auth
+  _session = AUTH.requireAuth('login.html');
+  if (!_session) return;
+  if (_session.role !== 'admin' && _session.role !== 'operador') {
+    alert('No tienes permiso para acceder a esta página.');
+    window.location.href = 'tecnopanel.html';
+    return;
+  }
+  document.getElementById('user-info').textContent = _session.name || _session.username;
+
+  setLoading(true);
+  try {
+    await Promise.all([loadCatalog(), loadSemanas()]);
+    initSemanaUI();
+    await loadSemana(_semanaKey);
+  } catch(e) {
+    showToast('Error al cargar datos: ' + e.message, 'err');
+    console.error(e);
+  }
+  setLoading(false);
+});
+
+// ─────────────────────────────────────────────
+// CATÁLOGO
+// ─────────────────────────────────────────────
+async function loadCatalog() {
+  // Base desde GitHub
+  let base = [];
+  try {
+    const r = await fetch(PROD_URL);
+    if (r.ok) {
+      const j = await r.json();
+      // productos.json puede tener {codigo, descripcion, unidad, cantidad_por_modulo} o {codigo, descripcion, unidad}
+      base = j;
+    }
+  } catch(e) { console.warn('No se pudo cargar productos.json, usando base inline'); }
+
+  // Custom desde Supabase
+  let custom = [];
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/productos_custom?activo=eq.true&select=codigo,descripcion,unidad,cantidad_por_modulo`, { headers: H });
+    if (r.ok) custom = await r.json();
+  } catch(e) {}
+
+  // Merge: custom sobreescribe base
+  const map = {};
+  base.forEach(p => {
+    const k = String(p.codigo).trim().toUpperCase();
+    map[k] = { codigo: p.codigo, descripcion: p.descripcion, unidad: p.unidad || 'UND', qty: p.cantidad_por_modulo || null };
+  });
+  custom.forEach(p => {
+    const k = String(p.codigo).trim().toUpperCase();
+    map[k] = { codigo: p.codigo, descripcion: p.descripcion, unidad: p.unidad || 'UND', qty: p.cantidad_por_modulo || null };
+  });
+
+  _allProds = Object.values(map).sort((a, b) => a.descripcion.localeCompare(b.descripcion));
+  _allProds.forEach(p => { _prodMap[String(p.codigo).trim().toUpperCase()] = p; });
+
+  document.getElementById('catalog-count').textContent = `Catálogo: ${_allProds.length} productos`;
+}
+
+// ─────────────────────────────────────────────
+// SEMANAS
+// ─────────────────────────────────────────────
+async function loadSemanas() {
+  // Cargar semanas existentes en Supabase
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/registro_stock?select=semana_key,fecha&order=semana_key.desc&limit=52`, { headers: H });
+    if (r.ok) {
+      const rows = await r.json();
+      const seen = new Set();
+      rows.forEach(x => { if (x.semana_key) seen.add(String(x.semana_key)); });
+      _semanas = [...seen].sort((a,b) => +b - +a).map(k => ({ key: k, label: 'Semana ' + weekLabel(+k) }));
+    }
+  } catch(e) {}
+
+  // Siempre incluir semana actual
+  const curKey = String(weekKey(new Date()));
+  if (!_semanas.find(s => s.key === curKey)) {
+    _semanas.unshift({ key: curKey, label: 'Semana ' + weekLabel(+curKey) + ' (actual)' });
+  }
+
+  _semanaKey = curKey;
+}
+
+function initSemanaUI() {
+  const sel = document.getElementById('semana-sel');
+  sel.innerHTML = _semanas.map(s => `<option value="${s.key}">${s.label}</option>`).join('');
+  sel.value = _semanaKey;
+  updateSemanaLabel();
+
+  // Fecha input: lunes de la semana actual
+  document.getElementById('fecha-input').value = dateFromWeekKey(+_semanaKey);
+
+  sel.addEventListener('change', async () => {
+    _semanaKey = sel.value;
+    document.getElementById('fecha-input').value = dateFromWeekKey(+_semanaKey);
+    updateSemanaLabel();
+    setLoading(true);
+    await loadSemana(_semanaKey);
+    setLoading(false);
+  });
+
+  document.getElementById('btn-prev').addEventListener('click', async () => {
+    const i = _semanas.findIndex(s => s.key === _semanaKey);
+    if (i < _semanas.length - 1) { await setSemana(_semanas[i + 1].key); }
+  });
+  document.getElementById('btn-next').addEventListener('click', async () => {
+    const i = _semanas.findIndex(s => s.key === _semanaKey);
+    if (i > 0) { await setSemana(_semanas[i - 1].key); }
+  });
+  document.getElementById('btn-hoy').addEventListener('click', async () => {
+    const curKey = String(weekKey(new Date()));
+    if (!_semanas.find(s => s.key === curKey)) {
+      _semanas.unshift({ key: curKey, label: 'Semana ' + weekLabel(+curKey) + ' (actual)' });
+      const sel2 = document.getElementById('semana-sel');
+      sel2.innerHTML = _semanas.map(s => `<option value="${s.key}">${s.label}</option>`).join('');
+    }
+    await setSemana(curKey);
+  });
+
+  document.getElementById('fecha-input').addEventListener('change', async e => {
+    const k = String(weekKey(new Date(e.target.value + 'T12:00:00')));
+    if (!_semanas.find(s => s.key === k)) {
+      _semanas.push({ key: k, label: 'Semana ' + weekLabel(+k) });
+      _semanas.sort((a,b) => +b.key - +a.key);
+      const sel2 = document.getElementById('semana-sel');
+      sel2.innerHTML = _semanas.map(s => `<option value="${s.key}">${s.label}</option>`).join('');
+    }
+    await setSemana(k);
+  });
+}
+
+async function setSemana(key) {
+  _semanaKey = key;
+  document.getElementById('semana-sel').value = key;
+  document.getElementById('fecha-input').value = dateFromWeekKey(+key);
+  updateSemanaLabel();
+  setLoading(true);
+  await loadSemana(key);
+  setLoading(false);
+}
+
+function updateSemanaLabel() {
+  const lbl = document.getElementById('semana-lbl');
+  const d = new Date(+_semanaKey);
+  const fin = new Date(d); fin.setDate(d.getDate() + 6);
+  const fmt2 = dt => dt.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
+  lbl.textContent = `${fmt2(d)} → ${fmt2(fin)}`;
+}
+
+// ─────────────────────────────────────────────
+// CARGAR SEMANA DESDE SUPABASE
+// ─────────────────────────────────────────────
+async function loadSemana(key) {
+  const r = await fetch(
+    `${SUPA_URL}/rest/v1/registro_stock?semana_key=eq.${key}&order=material.asc`,
+    { headers: H }
+  );
+  if (!r.ok) { showToast('Error al cargar stock', 'err'); return; }
+  const rows = await r.json();
+
+  _items = rows.map(row => {
+    const p = _prodMap[String(row.codigo).toUpperCase()] || {};
+    return {
+      _id: row.id,
+      codigo: row.codigo,
+      material: row.material,
+      unidad: row.unidad,
+      qty: p.qty != null ? p.qty : null,
+      stock_fisico: +row.stock_fisico,
+      _dirty: false
+    };
+  });
+
+  document.getElementById('table-subtitle').textContent =
+    rows.length ? `${rows.length} materiales registrados` : 'Sin datos aún — agrega materiales con el buscador';
+  renderTable();
+  updateStats();
+}
+
+// ─────────────────────────────────────────────
+// RENDER TABLE
+// ─────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('tbl-body');
+  if (!_items.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">Sin materiales — usa el buscador para agregar</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = _items.map((it, i) => {
+    const alc = alcance(it.stock_fisico, it.qty);
+    const qMod = it.qty != null ? fmt(it.qty) : '<span style="color:var(--muted)">—</span>';
+    return `<tr id="row-${i}">
+      <td class="c" style="color:var(--muted);font-size:.72rem">${i + 1}</td>
+      <td class="td-code">${esc(it.codigo)}</td>
+      <td class="td-mat" title="${esc(it.material)}">${esc(it.material)}</td>
+      <td class="td-um">${esc(it.unidad)}</td>
+      <td class="r">
+        <input type="number" class="stock-input${it._dirty ? ' changed' : ''}" min="0" step="any"
+          value="${it.stock_fisico}"
+          data-idx="${i}"
+          onchange="onStockChange(${i}, this.value)"
+          oninput="onStockInput(${i}, this)">
+      </td>
+      <td class="r" style="color:var(--muted);font-size:.75rem">${qMod}</td>
+      <td class="r">${alcanceBadge(alc)}</td>
+      <td class="c"><button class="del-btn" onclick="removeItem(${i})" title="Quitar de la tabla">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats() {
+  const total = _items.length;
+  let critico = 0, bajo = 0, ok = 0, sinref = 0;
+  _items.forEach(it => {
+    const alc = alcance(it.stock_fisico, it.qty);
+    if (alc == null) sinref++;
+    else if (alc < 5) critico++;
+    else if (alc < 15) bajo++;
+    else ok++;
+  });
+  document.getElementById('st-total').textContent   = total;
+  document.getElementById('st-critico').textContent = critico;
+  document.getElementById('st-bajo').textContent    = bajo;
+  document.getElementById('st-ok').textContent      = ok;
+  document.getElementById('st-sinref').textContent  = sinref;
+}
+
+// ─────────────────────────────────────────────
+// INPUTS
+// ─────────────────────────────────────────────
+function onStockInput(idx, input) {
+  _items[idx].stock_fisico = parseFloat(input.value) || 0;
+  _items[idx]._dirty = true;
+  input.classList.add('changed');
+  // Actualizar badge de alcance en la misma fila
+  const row = document.getElementById('row-' + idx);
+  if (row) {
+    const alc = alcance(_items[idx].stock_fisico, _items[idx].qty);
+    row.cells[6].innerHTML = alcanceBadge(alc);
+  }
+  updateStats();
+}
+
+function onStockChange(idx, val) {
+  _items[idx].stock_fisico = parseFloat(val) || 0;
+  _items[idx]._dirty = true;
+  updateStats();
+}
+
+function removeItem(idx) {
+  _items.splice(idx, 1);
+  renderTable();
+  updateStats();
+  document.getElementById('table-subtitle').textContent =
+    _items.length ? `${_items.length} materiales registrados` : 'Sin datos — agrega materiales con el buscador';
+}
+
+// ─────────────────────────────────────────────
+// BUSCADOR
+// ─────────────────────────────────────────────
+let _suggIdx = -1;
+
+function onSearch(q) {
+  q = q.trim().toLowerCase();
+  const box = document.getElementById('sugg-box');
+  if (!q) { box.style.display = 'none'; return; }
+
+  const already = new Set(_items.map(it => String(it.codigo).toUpperCase()));
+  const matches = _allProds
+    .filter(p => !already.has(String(p.codigo).toUpperCase()))
+    .filter(p => (String(p.codigo) + ' ' + p.descripcion).toLowerCase().includes(q))
+    .slice(0, 12);
+
+  if (!matches.length) {
+    box.style.display = 'none'; return;
+  }
+
+  box.innerHTML = matches.map((p, i) => `
+    <div class="sugg-item" data-idx="${i}" onclick="addProduct(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+      <div class="si-code">${esc(p.codigo)}</div>
+      <div class="si-desc">${esc(p.descripcion)}</div>
+      <div class="si-meta">${esc(p.unidad)} ${p.qty != null ? '· ' + fmt(p.qty) + ' ud/mód' : ''}</div>
+    </div>`).join('');
+  box.style.display = 'block';
+  box._matches = matches;
+  _suggIdx = -1;
+}
+
+function onSearchKey(e) {
+  const box = document.getElementById('sugg-box');
+  const items = box.querySelectorAll('.sugg-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _suggIdx = Math.min(_suggIdx + 1, items.length - 1);
+    items.forEach((el, i) => el.style.background = i === _suggIdx ? 'var(--surface2)' : '');
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _suggIdx = Math.max(_suggIdx - 1, -1);
+    items.forEach((el, i) => el.style.background = i === _suggIdx ? 'var(--surface2)' : '');
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (_suggIdx >= 0 && box._matches && box._matches[_suggIdx]) {
+      addProduct(box._matches[_suggIdx]);
+    }
+  } else if (e.key === 'Escape') {
+    clearSearch();
+  }
+}
+
+function clearSearch() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('sugg-box').style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#search-wrap')) {
+    document.getElementById('sugg-box').style.display = 'none';
+  }
+});
+
+function addProduct(p) {
+  const already = _items.find(it => String(it.codigo).toUpperCase() === String(p.codigo).toUpperCase());
+  if (already) { showToast('Ya está en la tabla: ' + p.codigo, 'err'); clearSearch(); return; }
+
+  _items.push({
+    _id: null,
+    codigo: p.codigo,
+    material: p.descripcion,
+    unidad: p.unidad || 'UND',
+    qty: p.qty != null ? +p.qty : null,
+    stock_fisico: 0,
+    _dirty: true
+  });
+
+  clearSearch();
+  renderTable();
+  updateStats();
+
+  document.getElementById('table-subtitle').textContent = `${_items.length} materiales registrados`;
+
+  // Enfocar el input de stock del nuevo item
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.stock-input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 50);
+}
+
+// ─────────────────────────────────────────────
+// GUARDAR
+// ─────────────────────────────────────────────
+async function guardarTodo() {
+  if (!_items.length) { showToast('Sin materiales que guardar', 'err'); return; }
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.textContent = '⏳ Guardando...';
+  const st = document.getElementById('save-status');
+  st.textContent = '';
+  st.className = '';
+
+  try {
+    const fecha = document.getElementById('fecha-input').value || dateFromWeekKey(+_semanaKey);
+    const payload = _items.map(it => ({
+      semana_key:   String(_semanaKey),
+      fecha:        fecha,
+      codigo:       String(it.codigo).trim(),
+      material:     it.material,
+      unidad:       it.unidad || 'UND',
+      stock_fisico: it.stock_fisico,
+      created_by:   _session.username || _session.name || 'sistema'
+    }));
+
+    // Upsert por (semana_key, codigo)
+    const r = await fetch(`${SUPA_URL}/rest/v1/registro_stock`, {
+      method: 'POST',
+      headers: {
+        ...H,
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!r.ok) {
+      const err = await r.text();
+      throw new Error(err);
+    }
+
+    // Eliminar los que se quitaron de la tabla para esta semana
+    // Primero cargo los IDs existentes
+    const rExist = await fetch(
+      `${SUPA_URL}/rest/v1/registro_stock?semana_key=eq.${_semanaKey}&select=id,codigo`,
+      { headers: H }
+    );
+    if (rExist.ok) {
+      const existing = await rExist.json();
+      const currentCodes = new Set(_items.map(it => String(it.codigo).trim().toUpperCase()));
+      const toDelete = existing.filter(x => !currentCodes.has(String(x.codigo).toUpperCase()));
+      for (const del of toDelete) {
+        await fetch(`${SUPA_URL}/rest/v1/registro_stock?id=eq.${del.id}`, {
+          method: 'DELETE', headers: H
+        });
+      }
+    }
+
+    // Marcar items como no sucios
+    _items.forEach(it => { it._dirty = false; });
+    renderTable();
+
+    // Actualizar semanas disponibles
+    if (!_semanas.find(s => s.key === String(_semanaKey))) {
+      _semanas.push({ key: String(_semanaKey), label: 'Semana ' + weekLabel(+_semanaKey) });
+      _semanas.sort((a,b) => +b.key - +a.key);
+      const sel = document.getElementById('semana-sel');
+      sel.innerHTML = _semanas.map(s => `<option value="${s.key}">${s.label}</option>`).join('');
+      sel.value = String(_semanaKey);
+    }
+
+    showToast(`✓ ${payload.length} materiales guardados`, 'ok');
+    st.textContent = `Guardado ${new Date().toLocaleTimeString('es-CL')}`;
+    st.className = 'ok';
+  } catch(e) {
+    showToast('Error: ' + e.message, 'err');
+    st.textContent = 'Error al guardar';
+    st.className = 'err';
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '💾 Guardar semana';
+}
+</script>
+</body>
+</html>

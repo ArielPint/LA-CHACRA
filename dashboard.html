@@ -291,6 +291,7 @@ tbody tr:hover td{background:var(--surface2)}
     <button id="stock-semana-next" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.82rem">▶</button>
     <button id="stock-semana-last" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.78rem;font-weight:600">Última</button>
     <span id="stock-semana-lbl" style="font-size:.78rem;color:var(--muted);margin-left:4px"></span>
+    <a id="btn-stock-ingreso" href="stock-ingreso.html" target="_blank" style="display:none;margin-left:auto;background:#4f8ef7;color:#fff;border:none;border-radius:6px;padding:5px 13px;font-size:.76rem;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap">📥 Ingresar stock</a>
   </div>
   <div class="kpi-row" id="kpi-stock"></div>
 
@@ -515,6 +516,41 @@ async function loadAvanceEconProy(){
     _supaAvanceProy=await r.json();
   }catch(e){console.warn('loadAvanceEconProy:',e);}
 }
+// STOCK desde Supabase
+async function loadStockSupa(){
+  try{
+    const r=await fetch(SUPA_URL+'/rest/v1/registro_stock?select=*&order=semana_key.desc,material.asc',{headers:SUPA_H});
+    if(!r.ok) return;
+    const rows=await r.json();
+    if(!rows.length) return;
+    const prodMap={};
+    (DATA.productos||[]).forEach(p=>{ if(p.codigo) prodMap[String(p.codigo).trim().toUpperCase()]=p; });
+    const modConstruidos=(DATA.modulos||[]).filter(x=>x.termReal).length;
+    const cantModTotal=(DATA.modulos||[]).length;
+    DATA.stock=rows.map(row=>{
+      const k=String(row.codigo).trim().toUpperCase();
+      const prod=prodMap[k]||{};
+      const sf=+(row.stock_fisico||0);
+      const consumoMod=prod.cantMod!=null?+prod.cantMod:null;
+      const valorUN=prod.precioUN!=null?+prod.precioUN:(prod.precioCompra!=null?+prod.precioCompra:null);
+      const consumo=prod.cantRec!=null?+prod.cantRec:null;
+      const alcanceMod=consumoMod&&consumoMod>0?+(sf/consumoMod).toFixed(4):null;
+      const valorStock=valorUN!=null?+(sf*valorUN).toFixed(2):null;
+      return{
+        fecha:row.fecha,codigo:row.codigo,material:row.material,um:row.unidad,
+        totalSol:null,cantMod:cantModTotal,stockFisico:sf,
+        desc:prod.grupo||row.material,solicitadoTF:null,consumo:consumo,
+        cubPpto:null,consumoMod:consumoMod,
+        alcanceMod:alcanceMod,alcanceFisico:null,
+        perdida:0,valorUN:valorUN,
+        valorPerdida:0,valorStock:valorStock,
+        modConstruidos:modConstruidos,
+        _semanaKey:row.semana_key
+      };
+    });
+    renderStock();
+  }catch(e){ console.warn('loadStockSupa:',e); }
+}
 
 // Construye el array homeAvance desde Supabase (av_econ calculado de _supaCompras)
 // Equivalente a DATA.homeAvance del Excel pero en tiempo real.
@@ -565,7 +601,7 @@ function getHomeAvance(){
           var pr = document.getElementById('prompt');
           if(pr) pr.style.display = 'none';
           renderAll();
-          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy()])
+          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
             .then(()=>{renderDespachos();renderCompras();renderResumen();});
           var t = document.querySelector('.tab[data-tab="resumen"]');
           if(t) t.click();
@@ -819,6 +855,8 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
   }
   var peLbl=document.getElementById('proy-extra-lbl');
   if(peLbl && AUTH.isAdmin()) peLbl.style.display='flex';
+  var btnSI=document.getElementById('btn-stock-ingreso');
+  if(btnSI){const _s=AUTH.getSession();if(_s&&(_s.role==='admin'||_s.role==='operador'))btnSI.style.display='inline-block';}
 
   // Ocultar tabs sin permiso
   var DASH_TABS = ['resumen','curva','modulos','compras','productos','stock','despachos'];
@@ -872,7 +910,7 @@ document.getElementById('file-input').addEventListener('change',function(e){
         document.getElementById('prompt').style.display='none';
         renderAll();
         document.querySelector('.tab[data-tab="resumen"]').click();
-        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy()])
+        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
           .then(()=>{renderDespachos();renderCompras();renderResumen();});
         st.textContent='✅ Cargado'; st.className='status-ok';
         // Save to localStorage for biblioteca
@@ -925,7 +963,7 @@ async function autoLoadFromRepo(){
     try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
     renderAll();
     try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
-    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy()])
+    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
       .then(()=>{renderDespachos();renderCompras();renderResumen();});
     showAutoStatus('✅ Datos cargados');
     try{
@@ -1010,16 +1048,7 @@ function parseAll(wb){
     pctAvPedidos:N(r[25]),saldoCompra:N(r[26])
   }));
 
-  d.stock=sheetRows(wb,'REG STOCK').slice(1).filter(r=>r[1]).map(r=>({
-    fecha:r[0],codigo:r[1],material:r[2],um:r[3],
-    totalSol:N(r[4]),cantMod:N(r[5]),stockFisico:N(r[6]),
-    desc:r[7],solicitadoTF:N(r[8]),consumo:N(r[9]),
-    cubPpto:N(r[10]),consumoMod:N(r[11]),
-    alcanceMod:N(r[12]),alcanceFisico:N(r[13]),
-    perdida:N(r[14]??0),valorUN:N(r[15]),
-    valorPerdida:N(r[16]??0),valorStock:N(r[17]),
-    modConstruidos:N(r[21])
-  }));
+  d.stock=[];// Stock: cargado desde Supabase por loadStockSupa()
 
   // GD_MODULOS: col A=FECHA GD, B=FECHA DESPACHO, C=GD, D=SERIE, E=CANT, F=MONTO, G=MODULO, H=TORRE, I=TIPO, J=ACUMULADO
   //             cols M-Q: proyección diaria (FECHA, MES, MÓDULOS DÍA, MÓDULOS ASIGNADOS, MÓDULOS ACUMULADOS)
