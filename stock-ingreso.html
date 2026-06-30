@@ -590,12 +590,19 @@ async function removeItem(idx) {
   const it = _items[idx];
   // Si ya está guardado en Supabase, borrarlo directamente
   if (it._id) {
+    let r;
     try {
-      await fetch(`${SUPA_URL}/rest/v1/registro_stock?id=eq.${it._id}`, {
-        method: 'DELETE', headers: H
+      r = await fetch(`${SUPA_URL}/rest/v1/registro_stock?id=eq.${it._id}`, {
+        method: 'DELETE',
+        headers: { ...H, 'Prefer': 'return=minimal' }
       });
     } catch(e) {
-      showToast('Error al eliminar de la base de datos', 'err');
+      showToast('Error de red al eliminar', 'err');
+      return;
+    }
+    if (!r.ok) {
+      const msg = await r.text().catch(() => r.status);
+      showToast('Error al eliminar: ' + msg, 'err');
       return;
     }
   }
@@ -604,7 +611,7 @@ async function removeItem(idx) {
   updateStats();
   document.getElementById('table-subtitle').textContent =
     _items.length ? `${_items.length} materiales registrados` : '';
-  if (it._id) showToast('Material eliminado', 'ok');
+  showToast('Material eliminado', 'ok');
 }
 
 // ─────────────────────────────────────────────
