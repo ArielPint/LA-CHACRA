@@ -198,6 +198,8 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
 .data-table-gd{width:100%;border-collapse:collapse;min-width:800px}
 .data-table-gd thead th{position:sticky;top:0;background:var(--surface);color:var(--muted);font-size:.64rem;text-transform:uppercase;letter-spacing:.4px;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2;font-weight:700}
 .data-table-gd thead th.r{text-align:right}
+.data-table-gd tfoot td{position:sticky;bottom:0;background:var(--surface2);border-top:2px solid var(--border);padding:7px 10px;font-size:.78rem;font-weight:700;white-space:nowrap}
+.data-table-gd tfoot td.r{text-align:right}
 .data-table-gd tbody tr{border-bottom:1px solid rgba(255,255,255,.04)}
 .data-table-gd tbody tr:hover{background:rgba(255,255,255,.03)}
 .data-table-gd tbody td{padding:7px 10px;font-size:.8rem}
@@ -361,6 +363,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
           <th></th>
         </tr></thead>
         <tbody id="cat-tbody-gd"></tbody>
+        <tfoot id="cat-tfoot-gd"></tfoot>
       </table>
     </div>
   </div>
@@ -1450,6 +1453,17 @@ function renderCatalogGD(){
     pppMap[k].cant+=cr;
   });
 
+  // Armar set de códigos filtrados para calcular totales
+  const filteredCodes=new Set(list.map(p=>String(p.codigo).trim().toUpperCase()));
+  let totalMonto=0, totalCant=0;
+  (registros||[]).forEach(r=>{
+    if(!filteredCodes.has(String(r.codigo).trim().toUpperCase())) return;
+    const cr=calcCR(r); if(cr<=0) return;
+    const vt=getVTI(r); if(vt<=0) return;
+    totalMonto+=vt; totalCant+=cr;
+  });
+  const withPPP=list.filter(p=>pppMap[String(p.codigo).trim().toUpperCase()]).length;
+
   tbody.innerHTML=list.map(p=>{
     const isCustom=customCodes.has(p.codigo.toUpperCase());
     const cpm=p.cantidad_por_modulo!=null?p.cantidad_por_modulo:'—';
@@ -1474,6 +1488,19 @@ function renderCatalogGD(){
       <td>${actions}</td>
     </tr>`;
   }).join('');
+
+  // Fila de totales
+  const tfoot=document.getElementById('cat-tfoot-gd');
+  if(tfoot){
+    const totalStr=totalMonto>0?fmtNum(totalMonto):'—';
+    const pppPromedioStr=withPPP>0?`${withPPP} con precio`:`sin precios`;
+    tfoot.innerHTML=`<tr>
+      <td colspan="2" style="color:var(--text)">${list.length} producto${list.length!==1?'s':''}</td>
+      <td colspan="3" style="color:var(--muted);font-weight:400;font-size:.73rem">${pppPromedioStr} · Monto comprado total</td>
+      <td class="r" style="color:var(--green);font-family:'Consolas',monospace">${totalStr}</td>
+      <td colspan="2"></td>
+    </tr>`;
+  }
 }
 
 function openEditProdGD(codigo){
