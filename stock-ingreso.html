@@ -586,12 +586,25 @@ function updateStats() {
 // ─────────────────────────────────────────────
 // TABLA — eliminar item
 // ─────────────────────────────────────────────
-function removeItem(idx) {
+async function removeItem(idx) {
+  const it = _items[idx];
+  // Si ya está guardado en Supabase, borrarlo directamente
+  if (it._id) {
+    try {
+      await fetch(`${SUPA_URL}/rest/v1/registro_stock?id=eq.${it._id}`, {
+        method: 'DELETE', headers: H
+      });
+    } catch(e) {
+      showToast('Error al eliminar de la base de datos', 'err');
+      return;
+    }
+  }
   _items.splice(idx, 1);
   renderTable();
   updateStats();
   document.getElementById('table-subtitle').textContent =
     _items.length ? `${_items.length} materiales registrados` : '';
+  if (it._id) showToast('Material eliminado', 'ok');
 }
 
 // ─────────────────────────────────────────────
@@ -791,7 +804,7 @@ async function guardarTodo() {
     }));
 
     // Upsert por (semana_key, codigo)
-    const r = await fetch(`${SUPA_URL}/rest/v1/registro_stock`, {
+    const r = await fetch(`${SUPA_URL}/rest/v1/registro_stock?on_conflict=semana_key,codigo`, {
       method: 'POST',
       headers: {
         ...H,
