@@ -2256,13 +2256,13 @@ function renderStockTable(){
   }).sort((a,b)=>(a.alcanceMod??999)-(b.alcanceMod??999));
 
   document.querySelector('#tbl-stock thead').innerHTML=
-    `<tr><th>Código</th><th>Material</th><th>Stock físico</th><th>Consumo</th><th>Consumo/mód</th><th>Alcance (mód)</th><th>Val. unitario</th><th>Valor stock</th><th>Estado</th></tr>`;
+    `<tr><th>Código</th><th>Descripción</th><th>Stock físico</th><th>Consumo</th><th>Consumo/mód</th><th>Alcance (mód)</th><th>Val. unitario</th><th>Valor stock</th><th>Estado</th></tr>`;
   document.querySelector('#tbl-stock tbody').innerHTML=filtered.map(x=>{
     const alc=x.alcanceMod||0;
     const badge=alc<5?'<span class="badge b-red">Crítico</span>':alc<15?'<span class="badge b-yellow">Bajo</span>':'<span class="badge b-green">OK</span>';
     return`<tr>
       <td style="color:var(--muted);font-size:.78rem">${x.codigo||'—'}</td>
-      <td title="${x.desc||x.material||''}">${(x.desc||x.material||'—').substring(0,40)}</td>
+      <td title="${x.desc||''}">${(x.desc||'—').substring(0,40)}</td>
       <td class="num">${fmt(x.stockFisico)}</td>
       <td class="num">${fmt(x.consumo)}</td>
       <td class="num">${x.consumoMod!=null?x.consumoMod.toFixed(2):'—'}</td>
