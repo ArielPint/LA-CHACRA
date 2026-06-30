@@ -138,6 +138,9 @@ body.sidebar-open iframe { visibility: hidden; }
     <div class="nav-item" id="dd-registro-gd" data-sheet="registro-gd" data-label="Registro GD" onclick="navSelect(this)" style="display:none">
       <span class="nav-icon">&#128722;</span><span class="nav-label">Registro GD</span>
     </div>
+    <div class="nav-item" id="dd-stock-ingreso" data-sheet="stock-ingreso" data-label="Ingreso Stock" onclick="navSelect(this)" style="display:none">
+      <span class="nav-icon">&#128451;</span><span class="nav-label">Ingreso Stock</span>
+    </div>
     <div class="nav-item" id="dd-despacho" data-sheet="despacho" data-label="Despacho GD" onclick="navSelect(this)">
       <span class="nav-icon">&#128230;</span><span class="nav-label">Despacho GD</span>
     </div>
@@ -181,6 +184,10 @@ body.sidebar-open iframe { visibility: hidden; }
       <div class="load-overlay" id="load-despacho"><div class="spinner"></div><span class="load-label">Cargando Despacho GD&#8230;</span></div>
       <iframe id="frame-despacho" src="" title="Despacho GD" onload="iframeLoaded('despacho')"></iframe>
     </div>
+    <div class="sheet" id="sheet-stock-ingreso">
+      <div class="load-overlay" id="load-stock-ingreso"><div class="spinner"></div><span class="load-label">Cargando Ingreso Stock&#8230;</span></div>
+      <iframe id="frame-stock-ingreso" src="" title="Ingreso Stock" onload="iframeLoaded('stock-ingreso')"></iframe>
+    </div>
   </div>
 </div>
 <div id="bottombar"><div id="bottombar-inner"></div></div>
@@ -204,8 +211,9 @@ var PAGE_TABS = {
     { id: 'detalle',  icon: '&#128203;', label: 'Detalle' },
   ],
   layout:        [],
-  'registro-gd': [],
-  despacho:      [],
+  'registro-gd':    [],
+  despacho:         [],
+  'stock-ingreso':  [],
 };
 var currentPage = 'dashboard';
 (function(){
@@ -218,6 +226,7 @@ var currentPage = 'dashboard';
     var ds = document.getElementById('dd-settings'); if (ds) ds.style.display = 'flex';
   }
   if (AUTH.canAccessPage('registro-gd')) { var elrg = document.getElementById('dd-registro-gd'); if (elrg) elrg.style.display = 'flex'; }
+  if (s.role === 'admin' || s.role === 'operador') { var elsi = document.getElementById('dd-stock-ingreso'); if (elsi) elsi.style.display = 'flex'; }
   if (AUTH.canAccessPage('solicitudes')) { var el = document.getElementById('dd-solicitudes'); if (el) el.style.display = 'flex'; }
   if (AUTH.canAccessPlanta()) { var el2 = document.getElementById('dd-planta'); if (el2) el2.style.display = 'flex'; }
   if (AUTH.canAccessPage('geovictoria')) { var el3 = document.getElementById('dd-asistencia'); if (el3) el3.style.display = 'flex'; }
@@ -273,8 +282,8 @@ function switchIframeTab(pageName, tabId) {
   if (frame && frame.contentDocument) { var btn = frame.contentDocument.querySelector('.tab[data-tab="' + tabId + '"]'); if (btn) btn.click(); }
   document.querySelectorAll('#bottombar-inner .tab-item').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tabId); });
 }
-var loaded = { dashboard: true, produccion: false, layout: false, 'registro-gd': false, despacho: false };
-var srcs   = { produccion: 'produccion.html', layout: 'layout.html', 'registro-gd': 'registro-gd.html', despacho: 'compras.html' };
+var loaded = { dashboard: true, produccion: false, layout: false, 'registro-gd': false, despacho: false, 'stock-ingreso': false };
+var srcs   = { produccion: 'produccion.html', layout: 'layout.html', 'registro-gd': 'registro-gd.html', despacho: 'compras.html', 'stock-ingreso': 'stock-ingreso.html' };
 function showSheet(name) { document.querySelectorAll('.sheet').forEach(function(s){ s.classList.remove('active'); }); var sh = document.getElementById('sheet-' + name); if (sh) sh.classList.add('active'); currentPage = name; loadSheet(name); updateBottomTabs(name); }
 function loadSheet(name) { if (!loaded[name] && srcs[name]) { document.getElementById('frame-' + name).src = srcs[name]; loaded[name] = true; } }
 function iframeLoaded(name) {

@@ -291,7 +291,7 @@ tbody tr:hover td{background:var(--surface2)}
     <button id="stock-semana-next" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.82rem">▶</button>
     <button id="stock-semana-last" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);border-radius:5px;padding:4px 10px;cursor:pointer;font-size:.78rem;font-weight:600">Última</button>
     <span id="stock-semana-lbl" style="font-size:.78rem;color:var(--muted);margin-left:4px"></span>
-    <a id="btn-stock-ingreso" href="stock-ingreso.html" target="_blank" style="display:none;margin-left:auto;background:#4f8ef7;color:#fff;border:none;border-radius:6px;padding:5px 13px;font-size:.76rem;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap">📥 Ingresar stock</a>
+    <button id="btn-stock-ingreso" onclick="abrirStockIngreso()" style="display:none;margin-left:auto;background:#4f8ef7;color:#fff;border:none;border-radius:6px;padding:5px 13px;font-size:.76rem;font-weight:600;cursor:pointer;white-space:nowrap">📥 Ingresar stock</button>
   </div>
   <div class="kpi-row" id="kpi-stock"></div>
 
@@ -1048,7 +1048,16 @@ function parseAll(wb){
     pctAvPedidos:N(r[25]),saldoCompra:N(r[26])
   }));
 
-  d.stock=[];// Stock: cargado desde Supabase por loadStockSupa()
+  d.stock=sheetRows(wb,'REG STOCK').slice(1).filter(r=>r[1]).map(r=>({
+    fecha:r[0],codigo:r[1],material:r[2],um:r[3],
+    totalSol:N(r[4]),cantMod:N(r[5]),stockFisico:N(r[6]),
+    desc:r[7],solicitadoTF:N(r[8]),consumo:N(r[9]),
+    cubPpto:N(r[10]),consumoMod:N(r[11]),
+    alcanceMod:N(r[12]),alcanceFisico:N(r[13]),
+    perdida:N(r[14]??0),valorUN:N(r[15]),
+    valorPerdida:N(r[16]??0),valorStock:N(r[17]),
+    modConstruidos:N(r[21])
+  }));// Histórico Excel — Supabase lo sobreescribe en loadStockSupa() si hay datos
 
   // GD_MODULOS: col A=FECHA GD, B=FECHA DESPACHO, C=GD, D=SERIE, E=CANT, F=MONTO, G=MODULO, H=TORRE, I=TIPO, J=ACUMULADO
   //             cols M-Q: proyección diaria (FECHA, MES, MÓDULOS DÍA, MÓDULOS ASIGNADOS, MÓDULOS ACUMULADOS)
@@ -2263,6 +2272,15 @@ function renderStockTable(){
       <td>${badge}</td>
     </tr>`;
   }).join('')||(filtered.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">Sin resultados</td></tr>':'');
+}
+
+function abrirStockIngreso(){
+  // Si está dentro de tecnopanel (iframe), navegar en el padre
+  if(window.parent && window.parent !== window && typeof window.parent.showSheet==='function'){
+    window.parent.showSheet('stock-ingreso');
+  } else {
+    window.open('stock-ingreso.html','_blank');
+  }
 }
 
 // ═══════════════════════════════════════════════
