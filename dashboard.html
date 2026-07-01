@@ -1269,11 +1269,15 @@ function renderResumen(){
   (function(){
     const tblCrec=document.getElementById('tbl-crec-mensual');
     if(!tblCrec) return;
+    const CREC_DESDE={n:3,y:2026}; // Mar 2026: primer mes con crecimiento calculado
     let acum=0, montoMesAnterior=null;
     const crecRows=mOrdered.map(m=>{
       const montoMes=mesReal[`${m.n}-${m.y}`]||0;
       acum+=montoMes;
-      const crecimiento=(montoMesAnterior!=null && montoMesAnterior>0) ? (montoMes-montoMesAnterior)/montoMesAnterior*100 : null;
+      const desdeInicio=(m.y>CREC_DESDE.y)||(m.y===CREC_DESDE.y&&m.n>=CREC_DESDE.n);
+      const esPrimerMes=(m.y===CREC_DESDE.y&&m.n===CREC_DESDE.n);
+      const crecimiento=(desdeInicio && !esPrimerMes && montoMesAnterior!=null && montoMesAnterior>0)
+        ? (montoMes-montoMesAnterior)/montoMesAnterior*100 : null;
       montoMesAnterior=montoMes;
       return {lbl:m.lbl, montoMes, acum, crecimiento};
     });
