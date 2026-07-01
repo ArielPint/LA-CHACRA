@@ -332,6 +332,45 @@ tr.just-saved td{animation:rowFlash 2.2s ease forwards}
       </div>
     </div>
   </div>
+
+  <!-- Ajuste manual de compras -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="card-icon icon-blue">🧾</div>
+        <div>
+          <div class="card-title">Ajuste manual de compras</div>
+          <div class="card-sub">Monto adicional por mes — se suma al total de compras reales del dashboard</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body padded">
+      <div class="year-row">
+        <label>Año</label>
+        <select id="ajuste-year-sel" class="year-sel" onchange="loadAjustesData()">
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+          <option value="2028">2028</option>
+        </select>
+      </div>
+      <table class="proy-table">
+        <thead>
+          <tr>
+            <th>Mes</th>
+            <th style="text-align:right">Ajuste ($)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="ajuste-tbody"></tbody>
+      </table>
+      <div class="save-row">
+        <button class="btn-save" id="btn-save-ajuste" onclick="saveAjustesData()">
+          <span>Guardar ajustes</span>
+        </button>
+        <span class="save-status" id="status-ajuste"></span>
+      </div>
+    </div>
+  </div>
 </div>
 </div>
 
@@ -556,7 +595,7 @@ if (_session) {
 }
 
 async function init(){
-  await Promise.all([loadFinanciero(), loadProyData()]);
+  await Promise.all([loadFinanciero(), loadProyData(), loadAjustesData()]);
   // Carga usuarios en segundo plano (tab puede no estar activo aún)
   renderTable();
 }
@@ -677,6 +716,54 @@ async function saveProyData(){
   }catch(e){
     showToast('Error al guardar: '+e.message,'error');
     setStatus('status-proy','Error: '+e.message,'err');
+  }finally{btn.disabled=false;}
+}
+
+let ajusteRows=[];
+
+async function loadAjustesData(){
+  const anio=parseInt(document.getElementById('ajuste-year-sel').value);
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/ajustes_compras?anio=eq.${anio}&order=mes.asc`,{headers:H});
+    const data=await r.json();
+    const map={};
+    (data||[]).forEach(d=>{ map[d.mes]=parseFloat(d.valor)||0; });
+    ajusteRows=MES.map((_,i)=>({mes:i+1,valor:map[i+1]??0}));
+    renderAjusteTable();
+  }catch(e){showToast('Error cargando ajustes: '+e.message,'error');}
+}
+
+function renderAjusteTable(){
+  const tbody=document.getElementById('ajuste-tbody');
+  tbody.innerHTML=ajusteRows.map((r,i)=>`
+    <tr>
+      <td class="mes-name">${MES[i]}</td>
+      <td style="text-align:right">
+        <input type="number" class="proy-input" data-mes="${r.mes}"
+          value="${r.valor}"
+          min="0" step="1"
+          onchange="ajusteRows[${i}].valor=parseFloat(this.value)||0">
+      </td>
+      <td class="proy-pct">$</td>
+    </tr>`).join('');
+}
+
+async function saveAjustesData(){
+  const anio=parseInt(document.getElementById('ajuste-year-sel').value);
+  const btn=document.getElementById('btn-save-ajuste');
+  btn.disabled=true;
+  try{
+    const payload=ajusteRows.map(r=>({anio,mes:r.mes,valor:r.valor}));
+    const r=await fetch(`${SUPA_URL}/rest/v1/ajustes_compras`,{
+      method:'POST',headers:{...H,'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    showToast('Ajustes guardados ✓','success');
+    setStatus('status-ajuste','Guardado ✓','ok');
+  }catch(e){
+    showToast('Error al guardar: '+e.message,'error');
+    setStatus('status-ajuste','Error: '+e.message,'err');
   }finally{btn.disabled=false;}
 }
 

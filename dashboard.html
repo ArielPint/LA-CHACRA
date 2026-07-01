@@ -484,6 +484,45 @@ async function loadComprasSupa(){
         _raw:       r
       };
     });
+
+    // Ajustes manuales (Configuración → Ajuste manual de compras): se inyectan
+    // como filas sintéticas para que impacten todos los totales de "compras del mes"
+    try{
+      const ra=await fetch(`${SUPA_URL}/rest/v1/ajustes_compras?select=*`,{headers:SUPA_H});
+      if(ra.ok){
+        const ajustes=await ra.json();
+        (ajustes||[]).forEach(a=>{
+          const valor=parseFloat(a.valor)||0;
+          if(!valor) return;
+          _supaCompras.push({
+            fechaGuia:  null,
+            anioGuia:   a.anio,
+            mes:        a.mes,
+            codigo:     null,
+            desc:       a.concepto||'Ajuste manual',
+            desc2:      a.concepto||'Ajuste manual',
+            um:         null,
+            cant:       0,
+            cantRec:    0,
+            valorUN:    0,
+            valorItem:  valor,
+            valorTotal: valor,
+            valorPpto:  0,
+            difUN:      0,
+            difTotal:   0,
+            difPct:     null,
+            gd:         null,
+            responsable:null,
+            montoGD:    0,
+            oc:         null,
+            presupuesto:null,
+            totalPpto:  0,
+            tipoProd:   'Ajuste',
+            _raw:       a
+          });
+        });
+      }
+    }catch(e){console.warn('loadAjustesCompras:',e);}
   }catch(e){console.warn('loadComprasSupa:',e);}
 }
 
