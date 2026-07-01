@@ -149,6 +149,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="card" id="card-av-econ" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px"><h3 style="margin:0">% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3><label id="proy-extra-lbl" style="display:none;align-items:center;gap:6px;font-size:.8rem;color:#7d8590;white-space:nowrap">Proyectado mes actual:<input id="proy-extra-val" type="number" min="0" max="100" step="0.1" value="4.5" style="width:64px;background:#1a1f2e;border:1px solid #3a3f5c;border-radius:4px;color:#e6edf3;padding:3px 6px;font-size:.85rem;text-align:right">%</label></div>
     <div class="chart-wrap" style="height:320px"><canvas id="ch-av-econ"></canvas></div>
+    <div id="tbl-crec-mensual" style="margin-top:10px;overflow-x:auto"></div>
   </div>
   <div class="card" id="card-av-econ-acum" style="margin-bottom:16px">
     <h3>Avance econ&#xF3;mico acumulado &mdash; proyectado vs real</h3>
@@ -1262,6 +1263,37 @@ function renderResumen(){
     {label:'Compras reales', data:mOrdered.map(m=>Math.round(mesReal[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(88,166,255,.85)', borderRadius:4},
     {label:'Presupuesto',    data:mOrdered.map(m=>Math.round(mesPpto[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(227,144,62,.65)', borderRadius:4},
   ],{yMoney:true, money:true, tooltipFull:true});
+
+  // Tabla: crecimiento mensual de compras reales acumuladas vs mes anterior
+  // crecimiento = (acumuladoMesActual - acumuladoMesAnterior) / acumuladoMesAnterior
+  (function(){
+    const tblCrec=document.getElementById('tbl-crec-mensual');
+    if(!tblCrec) return;
+    let acum=0;
+    const crecRows=mOrdered.map(m=>{
+      const montoMes=mesReal[`${m.n}-${m.y}`]||0;
+      const acumAnterior=acum;
+      acum+=montoMes;
+      const crecimiento=acumAnterior>0 ? (acum-acumAnterior)/acumAnterior*100 : null;
+      return {lbl:m.lbl, montoMes, acum, crecimiento};
+    });
+    if(!crecRows.length){ tblCrec.innerHTML=''; return; }
+    tblCrec.innerHTML=`
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead><tr style="color:var(--muted);border-bottom:1px solid var(--border)">
+          <th style="text-align:left;padding:6px 8px">Mes</th>
+          <th style="text-align:right;padding:6px 8px">Compras del mes</th>
+          <th style="text-align:right;padding:6px 8px">Compras acumuladas</th>
+          <th style="text-align:right;padding:6px 8px">Crecimiento vs mes anterior</th>
+        </tr></thead>
+        <tbody style="color:var(--text)">${crecRows.map(r=>`<tr>
+          <td style="padding:5px 8px">${r.lbl}</td>
+          <td style="text-align:right;padding:5px 8px">${fmtM(r.montoMes)}</td>
+          <td style="text-align:right;padding:5px 8px;color:var(--accent)">${fmtM(r.acum)}</td>
+          <td style="text-align:right;padding:5px 8px;font-weight:600;color:${r.crecimiento==null?'var(--muted)':(r.crecimiento>=0?'var(--green)':'var(--red)')}">${r.crecimiento==null?'—':(r.crecimiento>=0?'+':'')+r.crecimiento.toFixed(2)+'%'}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+  })();
 
   // % Avance económico mensual: barras real + línea proyectado
   const ha = getHomeAvance();
