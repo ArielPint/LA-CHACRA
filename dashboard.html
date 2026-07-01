@@ -131,10 +131,10 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="tab" data-tab="curva">📈 Curva S</div>
   <div class="tab" data-tab="modulos">🏗️ Módulos</div>
   <div class="tab" data-tab="compras">🛒 Compras</div>
-  <div class="tab" data-tab="productos">📦 Productos</div>
+  <div class="tab" data-tab="productos" style="display:none">📦 Productos</div>
   <div class="tab" data-tab="stock">🗄️ Stock</div>
   <div class="tab" data-tab="despachos">🚚 Despachos</div>
-  <div class="tab" data-tab="prod-diaria">📅 Prod. Diaria</div>
+  <div class="tab" data-tab="prod-diaria" style="display:none">📅 Prod. Diaria</div>
 </nav>
 
 <div id="prompt">
@@ -642,7 +642,7 @@ function getHomeAvance(){
           if(pr) pr.style.display = 'none';
           renderAll();
           Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
-            .then(()=>{renderDespachos();renderCompras();renderResumen();});
+            .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
           var t = document.querySelector('.tab[data-tab="resumen"]');
           if(t) t.click();
           var st = document.getElementById('load-status');
@@ -951,7 +951,7 @@ document.getElementById('file-input').addEventListener('change',function(e){
         renderAll();
         document.querySelector('.tab[data-tab="resumen"]').click();
         Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
-          .then(()=>{renderDespachos();renderCompras();renderResumen();});
+          .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
         st.textContent='✅ Cargado'; st.className='status-ok';
         // Save to localStorage for biblioteca
         try {
@@ -1004,7 +1004,7 @@ async function autoLoadFromRepo(){
     renderAll();
     try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
     Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
-      .then(()=>{renderDespachos();renderCompras();renderResumen();});
+      .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
     showAutoStatus('✅ Datos cargados');
     try{
       localStorage.setItem('tp_dashboard_data',JSON.stringify(DATA));
@@ -1268,13 +1268,15 @@ function renderResumen(){
     {lbl:'Módulos despachados',val:fmt(despachados),       cls:'c-blue',  sub:totalMod?fmtPr(despachados/totalMod*100)+' del total':''},
   ]);
 
-  // Distribución 10% buckets – solo ≥50%
-  const bucketDefs=['50–59%','60–69%','70–79%','80–89%','90–99%','COMPLETADO','DESPACHADOS'];
+  // Distribución 10% buckets – solo ≥50%, excluye completados y despachados
+  const bucketDefs=['50–59%','60–69%','70–79%','80–89%','90–99%'];
   const buckets={}; bucketDefs.forEach(b=>buckets[b]=0);
+  const despSetRes = new Set((_supaDesp.length?_supaDesp:(DATA.despachos||[])).map(d=>d.modulo).filter(Boolean));
   m.forEach(x=>{
-    if(x.termReal){ buckets['COMPLETADO']++; return; }
+    if(x.termReal) return;           // completado -> excluido (no cuenta, no aparece)
+    if(despSetRes.has(x.modulo)) return; // despachado -> excluido (no cuenta, no aparece)
     const p=(x.avance??0)*100;
-    if(p>=100)     { buckets['COMPLETADO']++; return; }
+    if(p>=100)     return;           // completado -> excluido
     if(p>=90)      buckets['90–99%']++;
     else if(p>=80) buckets['80–89%']++;
     else if(p>=70) buckets['70–79%']++;
@@ -1282,9 +1284,8 @@ function renderResumen(){
     else if(p>=50) buckets['50–59%']++;
     // < 50% excluidos de este gráfico
   });
-  buckets['DESPACHADOS'] = new Set((_supaDesp.length?_supaDesp:(DATA.despachos||[])).map(d=>d.modulo)).size;
-  // Gradiente naranja → verde + azul para despachados
-  const bColors=['rgba(227,144,62,.85)','rgba(210,185,50,.85)','rgba(163,200,60,.85)','rgba(100,200,80,.85)','rgba(63,185,80,.85)','rgba(40,160,60,.9)','rgba(52,152,219,.85)'];
+  // Gradiente naranja → verde
+  const bColors=['rgba(227,144,62,.85)','rgba(210,185,50,.85)','rgba(163,200,60,.85)','rgba(100,200,80,.85)','rgba(63,185,80,.85)'];
   barChart('ch-dist-res', bucketDefs, [{
     label:'Módulos', data:bucketDefs.map(b=>buckets[b]),
     backgroundColor:bColors, borderRadius:5
@@ -1298,8 +1299,13 @@ function renderResumen(){
     mesPpto[key]=(mesPpto[key]||0)+(g.totalPpto||0);
   });
   const mOrdered=MESES_ORDER.filter(m=>mesReal[`${m.n}-${m.y}`]||mesPpto[`${m.n}-${m.y}`]);
+  // Rojo cuando las compras reales del mes superan el presupuesto de ese mes
+  const comprasResColors=mOrdered.map(m=>{
+    const real=mesReal[`${m.n}-${m.y}`]||0, ppto=mesPpto[`${m.n}-${m.y}`]||0;
+    return (ppto>0 && real>ppto) ? 'rgba(248,81,73,.9)' : 'rgba(88,166,255,.85)';
+  });
   groupedBar('ch-compras-res', mOrdered.map(m=>m.lbl),[
-    {label:'Compras reales', data:mOrdered.map(m=>Math.round(mesReal[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(88,166,255,.85)', borderRadius:4},
+    {label:'Compras reales', data:mOrdered.map(m=>Math.round(mesReal[`${m.n}-${m.y}`]||0)), backgroundColor:comprasResColors, borderRadius:4},
     {label:'Presupuesto',    data:mOrdered.map(m=>Math.round(mesPpto[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(227,144,62,.65)', borderRadius:4},
   ],{yMoney:true, money:true, tooltipFull:true});
 
@@ -1759,7 +1765,7 @@ function renderModulos(){
   const despachados=_supaDesp.length?_supaDesp:(DATA.despachos||[]);
   const modsDespachados=new Set(despachados.map(x=>x.modulo).filter(Boolean));
   const nDespachados=modsDespachados.size;
-  const listosPendDesp=m.filter(x=>x.termReal&&!modsDespachados.has(x.modulo)).length;
+  const listosPendDesp=Math.max(0, terminados-nDespachados);
 
   document.getElementById('kpi-modulos').innerHTML=kpiHTML([
     {lbl:'% Avance promedio',       val:fmtPr(avProm),         cls:'c-purple'},
@@ -1770,14 +1776,13 @@ function renderModulos(){
     {lbl:'Listos — pend. despacho', val:fmt(listosPendDesp),   cls:'c-yellow'},
   ]);
 
-  // Distribución 10% buckets – todos los rangos (mismo estilo que Resumen)
-  // Distribución 10% buckets – desde 10% (excluye 0–9%)
-  const bd=['10–19%','20–29%','30–39%','40–49%','50–59%','60–69%','70–79%','80–89%','90–99%','COMPLETADO'];
+  // Distribución 10% buckets – desde 10% (excluye 0–9%), excluye completados (despachados sí se cuentan)
+  const bd=['10–19%','20–29%','30–39%','40–49%','50–59%','60–69%','70–79%','80–89%','90–99%'];
   const bk={}; bd.forEach(b=>bk[b]=0);
   m.forEach(x=>{
-    if(x.termReal){ bk['COMPLETADO']++; return; }
+    if(x.termReal) return;    // completado -> excluido (no cuenta, no aparece)
     const p=(x.avance??0)*100;
-    if(p>=100)     { bk['COMPLETADO']++; return; }
+    if(p>=100)     return;    // completado -> excluido
     if(p>=90)      bk['90–99%']++;
     else if(p>=80) bk['80–89%']++;
     else if(p>=70) bk['70–79%']++;
@@ -1789,7 +1794,7 @@ function renderModulos(){
     else if(p>=10) bk['10–19%']++;
     // <10%: excluidos
   });
-  const bColors10=['rgba(240,110,60,.8)','rgba(227,144,62,.8)','rgba(210,175,50,.8)','rgba(190,195,55,.8)','rgba(163,200,60,.8)','rgba(130,200,70,.8)','rgba(100,200,80,.8)','rgba(75,192,80,.8)','rgba(55,185,75,.8)','rgba(40,160,60,.9)'];
+  const bColors10=['rgba(240,110,60,.8)','rgba(227,144,62,.8)','rgba(210,175,50,.8)','rgba(190,195,55,.8)','rgba(163,200,60,.8)','rgba(130,200,70,.8)','rgba(100,200,80,.8)','rgba(75,192,80,.8)','rgba(55,185,75,.8)'];
   barChart('ch-dist-avance',bd,[{label:'Módulos',data:bd.map(b=>bk[b]),
     backgroundColor:bColors10, borderRadius:5}],{yMoney:false});
 
