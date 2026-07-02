@@ -64,6 +64,20 @@ input[type="date"]{color-scheme:dark}
 .tsep{width:1px;height:20px;background:var(--border);margin:0 2px;flex-shrink:0}
 .tlbl{font-size:.7rem;color:var(--muted);white-space:nowrap}
 
+/* Multi-select dropdown (filtro OC) */
+.ms-wrap{position:relative}
+.ms-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;min-width:140px;background:var(--surface2)!important}
+.ms-btn .ms-arrow{font-size:.6rem;color:var(--muted)}
+.ms-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:200px;max-height:260px;overflow-y:auto;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.5);padding:4px}
+.ms-menu.open{display:block}
+.ms-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:5px;cursor:pointer;font-size:.78rem;color:var(--text)}
+.ms-item:hover{background:var(--surface)}
+.ms-item input{accent-color:var(--accent);cursor:pointer}
+.ms-sep{border:none;border-top:1px solid var(--border);margin:4px 2px}
+.ms-footer{display:flex;justify-content:flex-end;padding:4px 6px 2px}
+.ms-clear{background:none;border:none;color:var(--accent);font-size:.72rem;cursor:pointer;padding:2px 4px}
+.ms-clear:hover{text-decoration:underline}
+
 #tbl-wrap{flex:1;overflow:auto;padding:0 18px 18px}
 table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1600px}
 #main-table tfoot td{position:sticky;bottom:0;background:var(--surface2);border-top:2px solid var(--border);padding:5px 8px;font-size:.77rem;font-weight:700;white-space:nowrap}
@@ -281,9 +295,12 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
       <span class="tlbl">Filtros:</span>
       <input type="text" id="f-buscar" placeholder="Código, descripción…" style="width:160px" oninput="renderTable()">
       <input type="text" id="f-gd" placeholder="N° GD" style="width:80px" oninput="renderTable()">
-      <select id="f-oc" onchange="renderTable()" style="width:120px">
-        <option value="">Todas las OC</option>
-      </select>
+      <div class="ms-wrap" id="oc-ms-wrap">
+        <button type="button" class="btn btn-sm ms-btn" id="f-oc-btn" onclick="toggleOCMenu(event)">
+          <span id="f-oc-label">Todas las OC</span><span class="ms-arrow">▾</span>
+        </button>
+        <div class="ms-menu" id="f-oc-menu"></div>
+      </div>
       <select id="f-resp" onchange="renderTable()" style="width:150px">
         <option value="">Todos los responsables</option>
       </select>
@@ -594,6 +611,8 @@ let productLines    = [];
 let ocGDs           = [];
 let prodMap         = {};
 let gdOCMap         = {};
+let respGrupoMap    = {};
+let ocFilterSelected = new Set();
 let _sbClient       = null;
 let activeSuggIdx   = null;
 let suggTimeout     = null;
@@ -702,50 +721,91 @@ function buildGdOCMap(){
   ocGuias.forEach(og=>{ const oc=ordenesCompra.find(o=>o.id===og.oc_id); if(oc) gdOCMap[String(og.gd)]=oc.numero; });
 }
 function populateRespSelect(){
-  buildRespOptions(document.getElementById('f_resp'), '— Seleccionar —', false);
-  buildRespOptions(document.getElementById('f-resp'), 'Todos los responsables', true);
+  buildRespOptions(document.getElementById('f_resp'), '— Seleccionar —');
+  buildRespGroupMap();
+  buildRespGroupFilter();
 }
-function buildRespOptions(sel, placeholder, includeOtros){
+function buildRespOptions(sel, placeholder){
   if(!sel) return;
   const cur=sel.value;
   sel.innerHTML=`<option value="">${placeholder}</option>`;
-  // Grouped (según pestaña Responsables)
+  // Grouped (según pestaña Responsables) — usado en el drawer para elegir una persona puntual
   const activos=responsables.filter(r=>r.activo);
-  const nombresConocidos=new Set();
   grupos.filter(g=>g.activo).forEach(g=>{
     const members=activos.filter(r=>r.grupo_id===g.id);
     if(!members.length) return;
     const og=document.createElement('optgroup'); og.label=g.nombre;
-    members.forEach(r=>{ nombresConocidos.add(r.nombre); const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
+    members.forEach(r=>{ const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
     sel.appendChild(og);
   });
   // Sin grupo
   const sinGrupo=activos.filter(r=>!r.grupo_id);
   if(sinGrupo.length){
     const og=document.createElement('optgroup'); og.label='Sin grupo';
-    sinGrupo.forEach(r=>{ nombresConocidos.add(r.nombre); const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
+    sinGrupo.forEach(r=>{ const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
     sel.appendChild(og);
   }
-  // Otros: responsables que aparecen en registros pero ya no están activos/en grupos (solo para el filtro)
-  if(includeOtros){
-    const otros=[...new Set(registros.map(r=>r.responsable).filter(Boolean))].filter(n=>!nombresConocidos.has(n)).sort();
-    if(otros.length){
-      const og=document.createElement('optgroup'); og.label='Otros';
-      otros.forEach(n=>{ const op=document.createElement('option'); op.value=n; op.textContent=n; og.appendChild(op); });
-      sel.appendChild(og);
-    }
+  if(cur) sel.value=cur;
+}
+function buildRespGroupMap(){
+  // nombre de responsable -> id de grupo (o null si no tiene grupo); usado para filtrar por grupo
+  respGrupoMap={};
+  responsables.forEach(r=>{ respGrupoMap[r.nombre]=r.grupo_id||null; });
+}
+function buildRespGroupFilter(){
+  const sel=document.getElementById('f-resp');
+  if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todos los responsables</option>';
+  grupos.filter(g=>g.activo).forEach(g=>{
+    const op=document.createElement('option'); op.value='g:'+g.id; op.textContent=g.nombre; sel.appendChild(op);
+  });
+  if(responsables.some(r=>!r.grupo_id)){
+    const op=document.createElement('option'); op.value='sin-grupo'; op.textContent='Sin grupo'; sel.appendChild(op);
   }
   if(cur) sel.value=cur;
 }
 function populateOCFilter(){
-  const sel=document.getElementById('f-oc');
-  if(!sel) return;
-  const cur=sel.value;
-  sel.innerHTML='<option value="">Todas las OC</option>';
+  const menu=document.getElementById('f-oc-menu');
+  if(!menu) return;
+  // Descartar de la selección OCs que ya no existen
   const nums=[...new Set(ordenesCompra.map(o=>o.numero).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
-  nums.forEach(n=>{ const op=document.createElement('option'); op.value=n; op.textContent=n; sel.appendChild(op); });
-  if(cur) sel.value=cur;
+  const validValues=new Set(['__sin_oc__',...nums]);
+  ocFilterSelected.forEach(v=>{ if(!validValues.has(v)) ocFilterSelected.delete(v); });
+  let html=`<label class="ms-item"><input type="checkbox" value="__sin_oc__" onchange="onOCCheckChange(this)" ${ocFilterSelected.has('__sin_oc__')?'checked':''}> Sin OC asignada</label><hr class="ms-sep">`;
+  nums.forEach(n=>{
+    html+=`<label class="ms-item"><input type="checkbox" value="${esc(n)}" onchange="onOCCheckChange(this)" ${ocFilterSelected.has(String(n))?'checked':''}> ${esc(n)}</label>`;
+  });
+  html+=`<div class="ms-footer"><button type="button" class="ms-clear" onclick="clearOCSelection()">Limpiar selección</button></div>`;
+  menu.innerHTML=html;
+  updateOCLabel();
 }
+function onOCCheckChange(cb){
+  if(cb.checked) ocFilterSelected.add(cb.value); else ocFilterSelected.delete(cb.value);
+  updateOCLabel();
+  renderTable();
+}
+function clearOCSelection(){
+  ocFilterSelected.clear();
+  populateOCFilter();
+  renderTable();
+}
+function updateOCLabel(){
+  const lbl=document.getElementById('f-oc-label');
+  if(!lbl) return;
+  const n=ocFilterSelected.size;
+  if(!n) lbl.textContent='Todas las OC';
+  else if(n===1){ const v=[...ocFilterSelected][0]; lbl.textContent=v==='__sin_oc__'?'Sin OC asignada':v; }
+  else lbl.textContent=`${n} OC seleccionadas`;
+}
+function toggleOCMenu(ev){
+  ev.stopPropagation();
+  document.getElementById('f-oc-menu').classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  const wrap=document.getElementById('oc-ms-wrap');
+  if(wrap && !wrap.contains(e.target)) document.getElementById('f-oc-menu').classList.remove('open');
+});
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function showTab(name, btn){
@@ -764,14 +824,21 @@ function getFiltered(){
   const buscar=document.getElementById('f-buscar').value.trim().toLowerCase();
   const gd=document.getElementById('f-gd').value.trim();
   const resp=document.getElementById('f-resp').value;
-  const oc=document.getElementById('f-oc').value;
   const desde=document.getElementById('f-desde').value;
   const hasta=document.getElementById('f-hasta').value;
   const tipo=document.getElementById('f-tipo').value;
   return registros.filter(r=>{
     if(gd && String(r.gd)!==gd) return false;
-    if(resp && (r.responsable||'')!==resp) return false;
-    if(oc && (gdOCMap[String(r.gd)]||'')!==oc) return false;
+    if(resp){
+      const rg=respGrupoMap[r.responsable]||null;
+      if(resp==='sin-grupo'){ if(rg) return false; }
+      else if(resp.startsWith('g:')){ if(String(rg||'')!==resp.slice(2)) return false; }
+    }
+    if(ocFilterSelected.size){
+      const rowOc=gdOCMap[String(r.gd)]||'';
+      const rowVal=rowOc?String(rowOc):'__sin_oc__';
+      if(!ocFilterSelected.has(rowVal)) return false;
+    }
     if(desde && r.fecha_guia<desde) return false;
     if(hasta && r.fecha_guia>hasta) return false;
     if(tipo && r.tipo_producto!==tipo) return false;
@@ -1505,7 +1572,7 @@ function exportExcel(){
 
 // ── Utils ──────────────────────────────────────────────────────────────────────
 function closeAllDrawers(){ closeDrawer(); closeOCDrawer(); }
-function clearFilters(){ ['f-buscar','f-gd','f-resp','f-oc','f-desde','f-hasta'].forEach(id=>document.getElementById(id).value=''); document.getElementById('f-tipo').value=''; renderTable(); }
+function clearFilters(){ ['f-buscar','f-gd','f-resp','f-desde','f-hasta'].forEach(id=>document.getElementById(id).value=''); document.getElementById('f-tipo').value=''; ocFilterSelected.clear(); populateOCFilter(); renderTable(); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtDate(d){ if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y}`; }
