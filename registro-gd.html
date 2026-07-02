@@ -24,6 +24,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .btn-danger{border-color:var(--red);color:var(--red)}
 .btn-danger:hover{background:rgba(247,95,95,.1)}
 .btn-sm{padding:3px 9px;font-size:.72rem}
+.btn-excel{background:var(--green);color:#0b1512;border-color:var(--green)}
+.btn-excel:hover{background:#35b87d;border-color:#35b87d;color:#0b1512}
 
 #tab-nav{display:flex;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
 .tab-btn{padding:10px 20px;font-size:.78rem;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
@@ -231,7 +233,6 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
   <span class="hdr-badge" id="user-badge"></span>
   <div class="hdr-right">
     <button class="btn btn-sm" id="btn-refresh" onclick="refreshData()" title="Recargar datos">↻ Actualizar</button>
-    <button class="btn btn-sm" id="btn-excel" onclick="exportExcel()">↓ Excel</button>
     <button class="btn btn-primary btn-sm" id="btn-nuevo" onclick="openDrawer(null)">+ Nueva entrada</button>
   </div>
 </div>
@@ -280,7 +281,12 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
       <span class="tlbl">Filtros:</span>
       <input type="text" id="f-buscar" placeholder="Código, descripción…" style="width:160px" oninput="renderTable()">
       <input type="text" id="f-gd" placeholder="N° GD" style="width:80px" oninput="renderTable()">
-      <input type="text" id="f-resp" placeholder="Responsable" style="width:110px" oninput="renderTable()">
+      <select id="f-oc" onchange="renderTable()" style="width:120px">
+        <option value="">Todas las OC</option>
+      </select>
+      <select id="f-resp" onchange="renderTable()" style="width:150px">
+        <option value="">Todos los responsables</option>
+      </select>
       <input type="date" id="f-desde" style="width:130px" oninput="renderTable()">
       <span class="tlbl">al</span>
       <input type="date" id="f-hasta" style="width:130px" oninput="renderTable()">
@@ -292,6 +298,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
       </select>
       <div class="tsep"></div>
       <button class="btn btn-sm" onclick="clearFilters()">✕ Limpiar</button>
+      <button class="btn btn-sm btn-excel" id="btn-excel" onclick="exportExcel()">↓ Excel</button>
       <span style="margin-left:auto;font-size:.72rem;color:var(--muted)" id="count-label"></span>
     </div>
     <div id="tbl-wrap">
@@ -619,6 +626,8 @@ async function init(){
   try {
     await Promise.all([loadProductos(), loadCustomProducts(), loadData(), loadResponsables(), loadOC()]);
     buildGdOCMap();
+    populateRespSelect();
+    populateOCFilter();
     // Show "Nuevo producto" button only for admins
     const s=AUTH.getSession?AUTH.getSession():null;
     if(s&&s.role==='admin') document.getElementById('btn-cat-add').style.display='';
@@ -693,25 +702,48 @@ function buildGdOCMap(){
   ocGuias.forEach(og=>{ const oc=ordenesCompra.find(o=>o.id===og.oc_id); if(oc) gdOCMap[String(og.gd)]=oc.numero; });
 }
 function populateRespSelect(){
-  const sel=document.getElementById('f_resp');
+  buildRespOptions(document.getElementById('f_resp'), '— Seleccionar —', false);
+  buildRespOptions(document.getElementById('f-resp'), 'Todos los responsables', true);
+}
+function buildRespOptions(sel, placeholder, includeOtros){
+  if(!sel) return;
   const cur=sel.value;
-  sel.innerHTML='<option value="">— Seleccionar —</option>';
-  // Grouped
+  sel.innerHTML=`<option value="">${placeholder}</option>`;
+  // Grouped (según pestaña Responsables)
   const activos=responsables.filter(r=>r.activo);
+  const nombresConocidos=new Set();
   grupos.filter(g=>g.activo).forEach(g=>{
     const members=activos.filter(r=>r.grupo_id===g.id);
     if(!members.length) return;
     const og=document.createElement('optgroup'); og.label=g.nombre;
-    members.forEach(r=>{ const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
+    members.forEach(r=>{ nombresConocidos.add(r.nombre); const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
     sel.appendChild(og);
   });
   // Sin grupo
   const sinGrupo=activos.filter(r=>!r.grupo_id);
   if(sinGrupo.length){
     const og=document.createElement('optgroup'); og.label='Sin grupo';
-    sinGrupo.forEach(r=>{ const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
+    sinGrupo.forEach(r=>{ nombresConocidos.add(r.nombre); const op=document.createElement('option'); op.value=r.nombre; op.textContent=r.nombre; og.appendChild(op); });
     sel.appendChild(og);
   }
+  // Otros: responsables que aparecen en registros pero ya no están activos/en grupos (solo para el filtro)
+  if(includeOtros){
+    const otros=[...new Set(registros.map(r=>r.responsable).filter(Boolean))].filter(n=>!nombresConocidos.has(n)).sort();
+    if(otros.length){
+      const og=document.createElement('optgroup'); og.label='Otros';
+      otros.forEach(n=>{ const op=document.createElement('option'); op.value=n; op.textContent=n; og.appendChild(op); });
+      sel.appendChild(og);
+    }
+  }
+  if(cur) sel.value=cur;
+}
+function populateOCFilter(){
+  const sel=document.getElementById('f-oc');
+  if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todas las OC</option>';
+  const nums=[...new Set(ordenesCompra.map(o=>o.numero).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
+  nums.forEach(n=>{ const op=document.createElement('option'); op.value=n; op.textContent=n; sel.appendChild(op); });
   if(cur) sel.value=cur;
 }
 
@@ -731,13 +763,15 @@ function showTab(name, btn){
 function getFiltered(){
   const buscar=document.getElementById('f-buscar').value.trim().toLowerCase();
   const gd=document.getElementById('f-gd').value.trim();
-  const resp=document.getElementById('f-resp').value.trim().toLowerCase();
+  const resp=document.getElementById('f-resp').value;
+  const oc=document.getElementById('f-oc').value;
   const desde=document.getElementById('f-desde').value;
   const hasta=document.getElementById('f-hasta').value;
   const tipo=document.getElementById('f-tipo').value;
   return registros.filter(r=>{
     if(gd && String(r.gd)!==gd) return false;
-    if(resp && !(r.responsable||'').toLowerCase().includes(resp)) return false;
+    if(resp && (r.responsable||'')!==resp) return false;
+    if(oc && (gdOCMap[String(r.gd)]||'')!==oc) return false;
     if(desde && r.fecha_guia<desde) return false;
     if(hasta && r.fecha_guia>hasta) return false;
     if(tipo && r.tipo_producto!==tipo) return false;
@@ -853,6 +887,8 @@ async function refreshData(){
   btn.disabled=true; btn.textContent='↻ Cargando…';
   try{
     await Promise.all([loadData(), loadOC()]);
+    buildGdOCMap();
+    populateOCFilter();
     renderTable(); updateStats();
   } catch(e){ alert('Error al recargar: '+e.message); }
   finally{ btn.disabled=false; btn.textContent='↻ Actualizar'; }
@@ -1446,9 +1482,12 @@ async function deleteResp(id){
 
 // ── Excel ─────────────────────────────────────────────────────────────────────
 function exportExcel(){
+  const filtered=getFiltered();
+  if(!filtered.length){ toast('No hay registros para exportar con los filtros actuales','err'); return; }
+  // El monto total por GD se calcula sobre todos los ítems de esa guía (no solo los filtrados)
   const montoGD={};
   registros.forEach(r=>{montoGD[r.gd]=(montoGD[r.gd]||0)+getVTI(r);});
-  const rows=registros.map(r=>({
+  const rows=filtered.map(r=>({
     'FECHA GUIA':r.fecha_guia,'FECHA SOLICITUD':r.fecha_sol,'OBS. MODULO':r.obs_modulo,'MES':r.mes,
     'GD':r.gd,'OC':gdOCMap[String(r.gd)]||r.oc||'','CODIGO':r.codigo,'DESCRIPCION':r.descripcion,
     'UNIDAD':r.unidad,'CANTIDAD SOLICITADA':r.cantidad_sol,'DEVOLUCIÓN':r.devolucion,
@@ -1461,12 +1500,12 @@ function exportExcel(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'DETALLE GD');
   XLSX.writeFile(wb,`Registro_GD_${new Date().toISOString().split('T')[0]}.xlsx`);
-  toast('Excel descargado ✓','ok');
+  toast(`Excel descargado ✓ (${filtered.length} de ${registros.length} registros)`,'ok');
 }
 
 // ── Utils ──────────────────────────────────────────────────────────────────────
 function closeAllDrawers(){ closeDrawer(); closeOCDrawer(); }
-function clearFilters(){ ['f-buscar','f-gd','f-resp','f-desde','f-hasta'].forEach(id=>document.getElementById(id).value=''); document.getElementById('f-tipo').value=''; renderTable(); }
+function clearFilters(){ ['f-buscar','f-gd','f-resp','f-oc','f-desde','f-hasta'].forEach(id=>document.getElementById(id).value=''); document.getElementById('f-tipo').value=''; renderTable(); }
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtDate(d){ if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y}`; }
