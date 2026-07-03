@@ -826,6 +826,33 @@ async function loadAvanceData() {
   // ubicaciones.xlsx queda EXCLUIDO como origen de posiciones (todo vive en Supabase)
   M   = {};
   try {
+    // Misma fuente que la pestaña "Módulos" del dashboard (hoja AVANCE de lachacra.xlsm),
+    // que se actualiza a diario. avance.xlsx queda solo como complemento de "pendientes"
+    // (ver más abajo), porque esa hoja no trae esas columnas.
+    let resp = await fetch('data/lachacra.xlsm');
+    if (!resp.ok) resp = await fetch('data/LACHACRA.xlsm');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const buf  = await resp.arrayBuffer();
+    const wb   = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true, dense: true });
+    const ws   = wb.Sheets['AVANCE'];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r[1]) continue;
+      const id = String(r[1]).trim();
+      M[id] = {
+        avance:      r[4]  != null ? Math.round(+r[4] * 100) : 0,
+        status:      (r[3] || 'SECO').toString().trim().toUpperCase(),
+        fecha:       r[6]  instanceof Date ? r[6].toISOString().slice(0, 10) : null,
+        pendientes:  null,
+        nPendientes: 0,
+      };
+    }
+    document.querySelector('header .subtitle').textContent =
+      'Estado y progreso por ubicación · Datos desde lachacra.xlsm';
+  } catch (e) { console.warn('lachacra.xlsm:', e.message); }
+  // Complementar "partidas pendientes" desde avance.xlsx (esa hoja no existe en lachacra.xlsm)
+  try {
     const resp = await fetch('data/avance.xlsx');
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const buf  = await resp.arrayBuffer();
@@ -836,17 +863,11 @@ async function loadAvanceData() {
       const r = rows[i];
       if (!r[1]) continue;
       const id = String(r[1]).trim();
-      M[id] = {
-        avance:      r[4]  != null ? Math.round(+r[4] * 100) : 0,
-        status:      (r[3] || 'SECO').toString().trim().toUpperCase(),
-        fecha:       r[6]  instanceof Date ? r[6].toISOString().slice(0, 10) : null,
-        pendientes:  r[97] != null ? String(r[97]).trim() : null,
-        nPendientes: r[99] != null ? +r[99] : 0,
-      };
+      if (!M[id]) continue;
+      M[id].pendientes  = r[97] != null ? String(r[97]).trim() : null;
+      M[id].nPendientes = r[99] != null ? +r[99] : 0;
     }
-    document.querySelector('header .subtitle').textContent =
-      'Estado y progreso por ubicación · Datos desde avance.xlsx';
-  } catch (e) { console.warn('avance.xlsx:', e.message); }
+  } catch (e) { console.warn('avance.xlsx (pendientes):', e.message); }
   // Guardar todos los IDs ANTES del filtro para que sigan disponibles en el dropdown
   ALL_LOC_IDS = new Set(Object.keys(M));
   // Filtrar módulos despachados: no deben aparecer en el mapa
