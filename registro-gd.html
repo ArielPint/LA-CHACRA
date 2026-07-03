@@ -272,12 +272,17 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
     <div id="resumen-wrap">
       <div id="resumen-inner">
         <div class="resumen-title">Resumen por mes y año</div>
+        <div id="resumen-kpis" style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+          <div class="stat sc-yellow"><div class="lbl">Ppto mensual (suma)</div><div class="val val-full" id="res-kpi-ppto">—</div></div>
+          <div class="stat sc-red"><div class="lbl">Diferencia (Real − Ppto)</div><div class="val val-full" id="res-kpi-dif">—</div></div>
+        </div>
         <table id="tbl-resumen">
           <thead><tr>
             <th>Año</th><th>Mes</th>
             <th class="r">GDs emitidas</th>
             <th class="r">Ítems</th>
             <th class="r">Monto total</th>
+            <th class="r">Ppto mensual</th>
             <th class="r">Desviación prom.</th>
           </tr></thead>
           <tbody id="resumen-body"></tbody>
@@ -286,6 +291,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
             <td class="r" id="res-tot-gds">—</td>
             <td class="r" id="res-tot-items">—</td>
             <td class="r" id="res-tot-monto" style="color:var(--green)">—</td>
+            <td class="r" id="res-tot-ppto" style="color:var(--yellow)">—</td>
             <td class="r" id="res-tot-desv">—</td>
           </tr></tfoot>
         </table>
@@ -976,25 +982,27 @@ function renderResumen(){
     if(!fecha) return;
     const d=new Date(fecha+'T12:00:00');
     const key=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
-    if(!groups[key]) groups[key]={year:d.getFullYear(),mes:d.getMonth()+1,gds:new Set(),items:0,monto:0,desvArr:[]};
+    if(!groups[key]) groups[key]={year:d.getFullYear(),mes:d.getMonth()+1,gds:new Set(),items:0,monto:0,ppto:0,desvArr:[]};
     groups[key].gds.add(r.gd);
     groups[key].items++;
     groups[key].monto+=(parseFloat(r.valor_total_item)||0);
+    groups[key].ppto+=calcCR(r)*(parseFloat(r.valor_ppto)||0);
     const p=calcPct(r); if(p!==null) groups[key].desvArr.push(p);
   });
   const keys=Object.keys(groups).sort();
-  let totGds=new Set(),totItems=0,totMonto=0,totDesvArr=[];
+  let totGds=new Set(),totItems=0,totMonto=0,totPpto=0,totDesvArr=[];
   const rows=keys.map(k=>{
     const g=groups[k];
     const avgD=g.desvArr.length?g.desvArr.reduce((a,b)=>a+b,0)/g.desvArr.length:null;
     const dc=avgD===null?'':avgD>0?'color:var(--red)':'color:var(--green)';
-    g.gds.forEach(x=>totGds.add(x)); totItems+=g.items; totMonto+=g.monto; totDesvArr=totDesvArr.concat(g.desvArr);
+    g.gds.forEach(x=>totGds.add(x)); totItems+=g.items; totMonto+=g.monto; totPpto+=g.ppto; totDesvArr=totDesvArr.concat(g.desvArr);
     return `<tr>
       <td style="color:var(--muted);font-weight:700">${g.year}</td>
       <td style="font-weight:600">${MES[g.mes-1]}</td>
       <td class="r" style="color:var(--accent);font-weight:700">${g.gds.size}</td>
       <td class="r">${g.items}</td>
       <td class="r" style="color:var(--green);font-weight:700">${fmtNum(g.monto)}</td>
+      <td class="r" style="color:var(--yellow)">${g.ppto?fmtNum(g.ppto):'—'}</td>
       <td class="r" style="${dc}">${avgD!==null?avgD.toFixed(1)+'%':'—'}</td>
     </tr>`;
   });
@@ -1003,7 +1011,13 @@ function renderResumen(){
   document.getElementById('res-tot-gds').textContent=totGds.size;
   document.getElementById('res-tot-items').textContent=totItems;
   document.getElementById('res-tot-monto').textContent=fmtNum(totMonto);
+  document.getElementById('res-tot-ppto').textContent=fmtNum(totPpto);
   document.getElementById('res-tot-desv').textContent=totAvg!==null?totAvg.toFixed(1)+'%':'—';
+  const dif=totMonto-totPpto;
+  document.getElementById('res-kpi-ppto').textContent=fmtNum(totPpto);
+  const kpiDif=document.getElementById('res-kpi-dif');
+  kpiDif.textContent=(dif>0?'+':'')+fmtNum(dif);
+  kpiDif.style.color=dif<=0?'var(--green)':'var(--red)';
 }
 
 // ── Drawer Registro ───────────────────────────────────────────────────────────
