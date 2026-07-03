@@ -265,6 +265,10 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
     <div id="stats">
       <div class="stat sc-blue"><div class="lbl">Total GDs</div><div class="val" id="st-gds">—</div></div>
       <div class="stat sc-green"><div class="lbl">Monto total</div><div class="val val-full" id="st-monto">—</div></div>
+      <div class="stat sc-yellow"><div class="lbl">Ppto mensual (suma)</div><div class="val val-full" id="res-kpi-ppto">—</div></div>
+      <div class="stat sc-red"><div class="lbl">Diferencia (Real − Ppto)</div><div class="val val-full" id="res-kpi-dif">—</div></div>
+      <div class="stat sc-green"><div class="lbl">Suma dif. negativas (ahorro)</div><div class="val val-full" id="res-kpi-dif-neg">—</div></div>
+      <div class="stat sc-red"><div class="lbl">Suma dif. positivas (sobregasto)</div><div class="val val-full" id="res-kpi-dif-pos">—</div></div>
       <div class="stat sc-yellow"><div class="lbl">Ítems mes actual</div><div class="val" id="st-items">—</div></div>
       <div class="stat sc-red"><div class="lbl">% Desviación prom.</div><div class="val" id="st-desv">—</div></div>
       <button class="btn btn-sm btn-resumen" id="btn-resumen" onclick="toggleResumen()">📊 Resumen mes/año</button>
@@ -272,10 +276,6 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
     <div id="resumen-wrap">
       <div id="resumen-inner">
         <div class="resumen-title">Resumen por mes y año</div>
-        <div id="resumen-kpis" style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-          <div class="stat sc-yellow"><div class="lbl">Ppto mensual (suma)</div><div class="val val-full" id="res-kpi-ppto">—</div></div>
-          <div class="stat sc-red"><div class="lbl">Diferencia (Real − Ppto)</div><div class="val val-full" id="res-kpi-dif">—</div></div>
-        </div>
         <table id="tbl-resumen">
           <thead><tr>
             <th>Año</th><th>Mes</th>
@@ -990,12 +990,14 @@ function renderResumen(){
     const p=calcPct(r); if(p!==null) groups[key].desvArr.push(p);
   });
   const keys=Object.keys(groups).sort();
-  let totGds=new Set(),totItems=0,totMonto=0,totPpto=0,totDesvArr=[];
+  let totGds=new Set(),totItems=0,totMonto=0,totPpto=0,totDesvArr=[],sumDifNeg=0,sumDifPos=0;
   const rows=keys.map(k=>{
     const g=groups[k];
     const avgD=g.desvArr.length?g.desvArr.reduce((a,b)=>a+b,0)/g.desvArr.length:null;
     const dc=avgD===null?'':avgD>0?'color:var(--red)':'color:var(--green)';
     g.gds.forEach(x=>totGds.add(x)); totItems+=g.items; totMonto+=g.monto; totPpto+=g.ppto; totDesvArr=totDesvArr.concat(g.desvArr);
+    const gDif=g.monto-g.ppto;
+    if(gDif<0) sumDifNeg+=gDif; else if(gDif>0) sumDifPos+=gDif;
     return `<tr>
       <td style="color:var(--muted);font-weight:700">${g.year}</td>
       <td style="font-weight:600">${MES[g.mes-1]}</td>
@@ -1018,6 +1020,8 @@ function renderResumen(){
   const kpiDif=document.getElementById('res-kpi-dif');
   kpiDif.textContent=(dif>0?'+':'')+fmtNum(dif);
   kpiDif.style.color=dif<=0?'var(--green)':'var(--red)';
+  document.getElementById('res-kpi-dif-neg').textContent=sumDifNeg?fmtNum(sumDifNeg):'—';
+  document.getElementById('res-kpi-dif-pos').textContent=sumDifPos?'+'+fmtNum(sumDifPos):'—';
 }
 
 // ── Drawer Registro ───────────────────────────────────────────────────────────
