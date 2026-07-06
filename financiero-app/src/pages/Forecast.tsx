@@ -1,8 +1,11 @@
 import { useMemo } from 'react'
+import { TrendingUp } from 'lucide-react'
 import { useForecast } from '@/hooks/useForecast'
 import { usePresupuestosLookup } from '@/hooks/usePresupuestosLookup'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import FormularioForecast from '@/components/FormularioForecast'
+import EmptyState from '@/components/EmptyState'
+import TableSkeleton from '@/components/TableSkeleton'
 import { formatCLP, nombreMes } from '@/utils/formatters'
 
 export default function Forecast() {
@@ -27,38 +30,48 @@ export default function Forecast() {
         <FormularioForecast onUpsert={upsertForecast} />
       </div>
 
-      {loading ? (
-        <p className="text-muted-foreground">Cargando…</p>
+      {!loading && filasOrdenadas.length === 0 ? (
+        <EmptyState
+          icon={TrendingUp}
+          title="Todavía no hay forecast cargado"
+          description='Agregá el primero con el botón "Agregar forecast".'
+        />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Código WIP</TableHead>
-              <TableHead>Descripción</TableHead>
-              <TableHead>Mes</TableHead>
-              <TableHead className="text-right">Monto Forecast</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filasOrdenadas.map((f) => {
-              const presupuesto = presupuestoPorId.get(f.presupuesto_id)
-              return (
-                <TableRow key={f.id}>
-                  <TableCell className="font-medium">{presupuesto?.tarea_wip ?? '—'}</TableCell>
-                  <TableCell>{presupuesto?.nombre ?? '—'}</TableCell>
-                  <TableCell>
-                    {nombreMes(f.mes)} {f.anio}
-                  </TableCell>
-                  <TableCell className="text-right">{formatCLP(f.monto_forecast)}</TableCell>
-                  <TableCell>
-                    <FormularioForecast forecastExistente={f} onUpsert={upsertForecast} />
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código WIP</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Mes</TableHead>
+                <TableHead className="text-right">Monto Forecast</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            {loading ? (
+              <TableSkeleton columns={5} />
+            ) : (
+              <TableBody>
+                {filasOrdenadas.map((f) => {
+                  const presupuesto = presupuestoPorId.get(f.presupuesto_id)
+                  return (
+                    <TableRow key={f.id}>
+                      <TableCell className="font-medium">{presupuesto?.tarea_wip ?? '—'}</TableCell>
+                      <TableCell>{presupuesto?.nombre ?? '—'}</TableCell>
+                      <TableCell>
+                        {nombreMes(f.mes)} {f.anio}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCLP(f.monto_forecast)}</TableCell>
+                      <TableCell>
+                        <FormularioForecast forecastExistente={f} onUpsert={upsertForecast} />
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            )}
+          </Table>
+        </div>
       )}
     </div>
   )

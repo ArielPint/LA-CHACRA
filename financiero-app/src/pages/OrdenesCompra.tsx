@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ShoppingCart } from 'lucide-react'
 import { useOrdenesCompra } from '@/hooks/useOrdenesCompra'
 import { usePresupuestosLookup } from '@/hooks/usePresupuestosLookup'
 import { useAuth } from '@/hooks/useAuth'
@@ -8,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import FiltrosFinanciero from '@/components/FiltrosFinanciero'
 import FormularioOC from '@/components/FormularioOC'
 import VisorPDF from '@/components/VisorPDF'
+import EmptyState from '@/components/EmptyState'
+import TableSkeleton from '@/components/TableSkeleton'
 import { formatCLP, formatFecha } from '@/utils/formatters'
 import { exportarExcel } from '@/utils/exportExcel'
 
@@ -39,8 +42,10 @@ export default function OrdenesCompra() {
     })
   }, [ordenesCompra, search, presupuestoId])
 
-  if (loading) return <p className="text-muted-foreground">Cargando…</p>
   if (error) return <p className="text-destructive">{error}</p>
+
+  const hayFiltrosActivos = !!search || !!presupuestoId
+  const columnas = 8 + (canEditOC ? 1 : 0)
 
   return (
     <div className="space-y-4">
@@ -55,6 +60,7 @@ export default function OrdenesCompra() {
         <div className="flex gap-2">
           <Button
             variant="outline"
+            disabled={loading || filtradas.length === 0}
             onClick={() =>
               exportarExcel(
                 'ordenes_compra',
@@ -76,42 +82,62 @@ export default function OrdenesCompra() {
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>N° OC</TableHead>
-            <TableHead>Presupuesto</TableHead>
-            <TableHead>Proveedor</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead className="text-right">Neto</TableHead>
-            <TableHead>Detalle</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>PDF</TableHead>
-            {canEditOC && <TableHead />}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filtradas.map((oc) => (
-            <TableRow key={oc.id}>
-              <TableCell className="font-medium">{oc.numero_oc}</TableCell>
-              <TableCell>{nombrePresupuesto(oc.presupuesto_id)}</TableCell>
-              <TableCell>{oc.proveedor_rut ?? '—'}</TableCell>
-              <TableCell>{formatFecha(oc.fecha)}</TableCell>
-              <TableCell className="text-right">{formatCLP(oc.neto)}</TableCell>
-              <TableCell className="max-w-56 truncate">{oc.detalle ?? '—'}</TableCell>
-              <TableCell>
-                <Badge variant={ESTADO_VARIANT[oc.estado]}>{oc.estado}</Badge>
-              </TableCell>
-              <TableCell>{oc.pdf_path ? <VisorPDF pdfPath={oc.pdf_path} /> : '—'}</TableCell>
-              {canEditOC && (
-                <TableCell>
-                  <FormularioOC ordenCompra={oc} onCreate={createOrdenCompra} onUpdate={updateOrdenCompra} />
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {!loading && filtradas.length === 0 ? (
+        <EmptyState
+          icon={ShoppingCart}
+          title={hayFiltrosActivos ? 'Ninguna OC coincide con el filtro' : 'Todavía no hay órdenes de compra'}
+          description={
+            hayFiltrosActivos
+              ? 'Probá con otro término de búsqueda o quitá el filtro de presupuesto.'
+              : canEditOC
+                ? 'Creá la primera con el botón "Nueva OC".'
+                : undefined
+          }
+        />
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>N° OC</TableHead>
+                <TableHead>Presupuesto</TableHead>
+                <TableHead>Proveedor</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Neto</TableHead>
+                <TableHead>Detalle</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>PDF</TableHead>
+                {canEditOC && <TableHead />}
+              </TableRow>
+            </TableHeader>
+            {loading ? (
+              <TableSkeleton columns={columnas} />
+            ) : (
+              <TableBody>
+                {filtradas.map((oc) => (
+                  <TableRow key={oc.id}>
+                    <TableCell className="font-medium">{oc.numero_oc}</TableCell>
+                    <TableCell>{nombrePresupuesto(oc.presupuesto_id)}</TableCell>
+                    <TableCell>{oc.proveedor_rut ?? '—'}</TableCell>
+                    <TableCell>{formatFecha(oc.fecha)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCLP(oc.neto)}</TableCell>
+                    <TableCell className="max-w-56 truncate">{oc.detalle ?? '—'}</TableCell>
+                    <TableCell>
+                      <Badge variant={ESTADO_VARIANT[oc.estado]}>{oc.estado}</Badge>
+                    </TableCell>
+                    <TableCell>{oc.pdf_path ? <VisorPDF pdfPath={oc.pdf_path} /> : '—'}</TableCell>
+                    {canEditOC && (
+                      <TableCell>
+                        <FormularioOC ordenCompra={oc} onCreate={createOrdenCompra} onUpdate={updateOrdenCompra} />
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+          </Table>
+        </div>
+      )}
     </div>
   )
 }

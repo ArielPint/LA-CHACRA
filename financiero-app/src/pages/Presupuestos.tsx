@@ -1,12 +1,14 @@
+import { Wallet } from 'lucide-react'
 import { usePresupuestos } from '@/hooks/usePresupuestos'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import FormularioPresupuesto from '@/components/FormularioPresupuesto'
+import EmptyState from '@/components/EmptyState'
+import TableSkeleton from '@/components/TableSkeleton'
 import { formatCLP } from '@/utils/formatters'
 
 export default function Presupuestos() {
   const { presupuestos, loading, error, createPresupuesto, updatePresupuesto } = usePresupuestos()
 
-  if (loading) return <p className="text-muted-foreground">Cargando…</p>
   if (error) return <p className="text-destructive">{error}</p>
 
   return (
@@ -15,32 +17,46 @@ export default function Presupuestos() {
         <FormularioPresupuesto onCreate={createPresupuesto} onUpdate={updatePresupuesto} />
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Código</TableHead>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Tarea WIP</TableHead>
-            <TableHead className="text-right">Presupuesto Original</TableHead>
-            <TableHead className="text-right">Valor Servicio</TableHead>
-            <TableHead />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {presupuestos.map((p) => (
-            <TableRow key={p.id}>
-              <TableCell className="font-medium">{p.codigo_articulo}</TableCell>
-              <TableCell>{p.nombre}</TableCell>
-              <TableCell>{p.tarea_wip ?? '—'}</TableCell>
-              <TableCell className="text-right">{formatCLP(p.presupuesto_original)}</TableCell>
-              <TableCell className="text-right">{formatCLP(p.valor_servicio)}</TableCell>
-              <TableCell>
-                <FormularioPresupuesto presupuesto={p} onCreate={createPresupuesto} onUpdate={updatePresupuesto} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {!loading && presupuestos.length === 0 ? (
+        <EmptyState
+          icon={Wallet}
+          title="Todavía no hay presupuestos"
+          description='Creá el primero con el botón "Nuevo Presupuesto".'
+        />
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Tarea WIP</TableHead>
+                <TableHead className="text-right">Presupuesto Original</TableHead>
+                <TableHead className="text-right">Valor Servicio</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            {loading ? (
+              <TableSkeleton columns={6} />
+            ) : (
+              <TableBody>
+                {presupuestos.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.codigo_articulo}</TableCell>
+                    <TableCell>{p.nombre}</TableCell>
+                    <TableCell>{p.tarea_wip ?? '—'}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCLP(p.presupuesto_original)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCLP(p.valor_servicio)}</TableCell>
+                    <TableCell>
+                      <FormularioPresupuesto presupuesto={p} onCreate={createPresupuesto} onUpdate={updatePresupuesto} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+          </Table>
+        </div>
+      )}
     </div>
   )
 }

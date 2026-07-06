@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Receipt } from 'lucide-react'
 import { useFacturas } from '@/hooks/useFacturas'
 import { useOrdenesCompra } from '@/hooks/useOrdenesCompra'
 import { usePresupuestosLookup } from '@/hooks/usePresupuestosLookup'
@@ -9,6 +10,8 @@ import FormularioFactura from '@/components/FormularioFactura'
 import AlertaSobreepaso from '@/components/AlertaSobreepaso'
 import VisorPDF from '@/components/VisorPDF'
 import FiltrosFinanciero from '@/components/FiltrosFinanciero'
+import EmptyState from '@/components/EmptyState'
+import TableSkeleton from '@/components/TableSkeleton'
 import { exportarExcel } from '@/utils/exportExcel'
 import { Button } from '@/components/ui/button'
 import { formatCLP, formatFecha } from '@/utils/formatters'
@@ -47,8 +50,9 @@ export default function Facturas() {
   }, [facturas, search, presupuestoId, ocPorId])
 
   const haySuperapaso = filtradas.some((f) => f.estado === 'SUPERA_OC')
+  const hayFiltrosActivos = !!search || !!presupuestoId
+  const columnas = 9 + (canEditOC ? 1 : 0)
 
-  if (loading) return <p className="text-muted-foreground">Cargando…</p>
   if (error) return <p className="text-destructive">{error}</p>
 
   return (
@@ -66,6 +70,7 @@ export default function Facturas() {
         <div className="flex gap-2">
           <Button
             variant="outline"
+            disabled={loading || filtradas.length === 0}
             onClick={() =>
               exportarExcel(
                 'facturas',
@@ -90,52 +95,72 @@ export default function Facturas() {
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>N° Factura</TableHead>
-            <TableHead>N° OC</TableHead>
-            <TableHead>Presupuesto</TableHead>
-            <TableHead>Proveedor</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead className="text-right">Monto</TableHead>
-            <TableHead>Observación</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>PDF</TableHead>
-            {canEditOC && <TableHead />}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filtradas.map((f) => {
-            const oc = ocPorId.get(f.ordenes_compra_id)
-            return (
-              <TableRow key={f.id} className={cn(f.estado === 'SUPERA_OC' && 'bg-destructive/10')}>
-                <TableCell className="font-medium">{f.numero_factura ?? '(sin número)'}</TableCell>
-                <TableCell>{oc?.numero_oc ?? '—'}</TableCell>
-                <TableCell>{nombrePresupuesto(f.presupuesto_id)}</TableCell>
-                <TableCell>{f.proveedor_rut ?? '—'}</TableCell>
-                <TableCell>{formatFecha(f.fecha)}</TableCell>
-                <TableCell className="text-right">{formatCLP(f.monto)}</TableCell>
-                <TableCell className="max-w-56 truncate">{f.observacion ?? '—'}</TableCell>
-                <TableCell>
-                  <Badge variant={ESTADO_VARIANT[f.estado]}>{f.estado}</Badge>
-                </TableCell>
-                <TableCell>{f.pdf_path ? <VisorPDF pdfPath={f.pdf_path} /> : '—'}</TableCell>
-                {canEditOC && (
-                  <TableCell>
-                    <FormularioFactura
-                      factura={f}
-                      ordenesCompra={ordenesCompra}
-                      onCreate={createFactura}
-                      onUpdate={updateFactura}
-                    />
-                  </TableCell>
-                )}
+      {!loading && filtradas.length === 0 ? (
+        <EmptyState
+          icon={Receipt}
+          title={hayFiltrosActivos ? 'Ninguna factura coincide con el filtro' : 'Todavía no hay facturas'}
+          description={
+            hayFiltrosActivos
+              ? 'Probá con otro término de búsqueda o quitá el filtro de presupuesto.'
+              : canEditOC
+                ? 'Creá la primera con el botón "Nueva Factura".'
+                : undefined
+          }
+        />
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>N° Factura</TableHead>
+                <TableHead>N° OC</TableHead>
+                <TableHead>Presupuesto</TableHead>
+                <TableHead>Proveedor</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Monto</TableHead>
+                <TableHead>Observación</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>PDF</TableHead>
+                {canEditOC && <TableHead />}
               </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            {loading ? (
+              <TableSkeleton columns={columnas} />
+            ) : (
+              <TableBody>
+                {filtradas.map((f) => {
+                  const oc = ocPorId.get(f.ordenes_compra_id)
+                  return (
+                    <TableRow key={f.id} className={cn(f.estado === 'SUPERA_OC' && 'bg-destructive/10')}>
+                      <TableCell className="font-medium">{f.numero_factura ?? '(sin número)'}</TableCell>
+                      <TableCell>{oc?.numero_oc ?? '—'}</TableCell>
+                      <TableCell>{nombrePresupuesto(f.presupuesto_id)}</TableCell>
+                      <TableCell>{f.proveedor_rut ?? '—'}</TableCell>
+                      <TableCell>{formatFecha(f.fecha)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCLP(f.monto)}</TableCell>
+                      <TableCell className="max-w-56 truncate">{f.observacion ?? '—'}</TableCell>
+                      <TableCell>
+                        <Badge variant={ESTADO_VARIANT[f.estado]}>{f.estado}</Badge>
+                      </TableCell>
+                      <TableCell>{f.pdf_path ? <VisorPDF pdfPath={f.pdf_path} /> : '—'}</TableCell>
+                      {canEditOC && (
+                        <TableCell>
+                          <FormularioFactura
+                            factura={f}
+                            ordenesCompra={ordenesCompra}
+                            onCreate={createFactura}
+                            onUpdate={updateFactura}
+                          />
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            )}
+          </Table>
+        </div>
+      )}
     </div>
   )
 }
