@@ -12,6 +12,12 @@
       "runtimeExecutable": "powershell",
       "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\A_Pinto\\AppData\\Local\\Temp\\claude\\C--LA-CHACRA---copia-LA-CHACRA\\a1adad21-57d7-4bce-94b0-7182728864c5\\scratchpad\\server.ps1"],
       "port": 3000
+    },
+    {
+      "name": "financiero-app",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PATH=C:\\Program Files\\nodejs;%PATH% && npm run dev --prefix financiero-app"],
+      "port": 5173
     }
   ]
 }
