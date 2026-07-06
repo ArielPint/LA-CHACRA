@@ -24,6 +24,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: financiero-app/package-lock.json
+
+      - name: Build financiero-app
+        working-directory: financiero-app
+        run: |
+          npm ci
+          npm run build
+        env:
+          # Anon key: diseñada para exponerse en el cliente (mismo valor ya
+          # hardcodeado en auth.js del sitio estático), no es un secreto.
+          VITE_SUPABASE_URL: https://vtrpxsgcbojqgdcsplim.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA
+
+      - name: Place financiero build under /financiero
+        run: |
+          rm -rf financiero
+          mv financiero-app/dist financiero
+          rm -rf financiero-app/node_modules
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
