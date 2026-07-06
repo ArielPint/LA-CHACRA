@@ -14,6 +14,18 @@ export function formatPct(value: number | null | undefined) {
   return `${(value * 100).toFixed(1)}%`
 }
 
+const CLP_COMPACT = new Intl.NumberFormat('es-CL', {
+  style: 'currency',
+  currency: 'CLP',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
+
+export function formatCLPCompact(value: number | null | undefined) {
+  if (value === null || value === undefined) return '—'
+  return CLP_COMPACT.format(value)
+}
+
 export function formatFecha(value: string | null | undefined) {
   if (!value) return '—'
   return new Date(value).toLocaleDateString('es-CL')

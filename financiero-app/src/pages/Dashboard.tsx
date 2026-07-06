@@ -1,7 +1,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import TablaPresupuestoResumen from '@/components/TablaPresupuestoResumen'
 import TablaForecastMensual from '@/components/TablaForecastMensual'
 import KpiCardsResumen from '@/components/KpiCardsResumen'
+import GraficoPresupuestoPorPartida from '@/components/GraficoPresupuestoPorPartida'
+import GraficoComposicionGlobal from '@/components/GraficoComposicionGlobal'
+import GraficoFacturadoPorMes from '@/components/GraficoFacturadoPorMes'
 import { useSeguimiento } from '@/hooks/useSeguimiento'
 
 export default function Dashboard() {
@@ -14,12 +18,41 @@ export default function Dashboard() {
         <TabsList>
           <TabsTrigger value="total">Total</TabsTrigger>
           <TabsTrigger value="por-mes">Por Mes</TabsTrigger>
+          <TabsTrigger value="graficos">Gráficos</TabsTrigger>
         </TabsList>
         <TabsContent value="total" className="mt-4">
           <TablaPresupuestoResumen seguimiento={seguimiento} loading={loading} error={error} />
         </TabsContent>
         <TabsContent value="por-mes" className="mt-4">
           <TablaForecastMensual />
+        </TabsContent>
+        <TabsContent value="graficos" className="mt-4 space-y-4">
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Presupuesto vs. OC vs. Facturado por partida</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <GraficoPresupuestoPorPartida seguimiento={seguimiento} loading={loading} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Avance global</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <GraficoComposicionGlobal seguimiento={seguimiento} loading={loading} />
+              </CardContent>
+            </Card>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Facturado por mes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <GraficoFacturadoPorMes />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
