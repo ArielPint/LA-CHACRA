@@ -664,12 +664,13 @@ async function init(){
   }
 }
 
+function normCod(c){ return String(c||'').trim().toUpperCase(); }
 async function loadProductos(){
   const r = await fetch(PROD_URL+'?v='+Date.now());
   if (!r.ok) throw new Error('No se pudo cargar catálogo');
   productos = await r.json();
   prodMap = {};
-  productos.forEach(p=>{ prodMap[String(p.codigo).trim()]=p; });
+  productos.forEach(p=>{ prodMap[normCod(p.codigo)]=p; });
   rebuildAllProducts();
 }
 async function loadCustomProducts(){
@@ -1097,7 +1098,7 @@ function onSingleCodigoInput(){
   const q=getF('s_codigo');
   hideSingleSugg();
   if(!q){clearSingle();return;}
-  const exact=prodMap[q]||allProducts.find(p=>String(p.codigo).trim()===q);
+  const exact=prodMap[normCod(q)]||allProducts.find(p=>normCod(p.codigo)===normCod(q));
   if(exact){applySingle(exact);return;}
   clearTimeout(suggTimeout);
   suggTimeout=setTimeout(()=>{
@@ -1122,7 +1123,7 @@ function showSingleSugg(list){
 }
 function hideSingleSugg(){ const b=document.getElementById('s-sugg'); b.style.display='none'; b.innerHTML=''; }
 function applySingle(p){
-  const fromMap=prodMap[String(p.codigo).trim()]||{};
+  const fromMap=prodMap[normCod(p.codigo)]||{};
   setF('s_codigo',p.codigo); setF('s_desc',p.descripcion);
   setF('s_unidad',p.unidad||fromMap.unidad||'');
   setF('s_tipo',fromMap.tipo||p.tipo||'');
@@ -1138,7 +1139,7 @@ function recalcSingle(){
   const cr=cs-dv;
   const vu=cr?vt/cr:0;
   const codigo=getF('s_codigo');
-  const prod=prodMap[codigo]||null;
+  const prod=prodMap[normCod(codigo)]||null;
   const ppto=prod?prod.ppto:(editId?(registros.find(r=>r.id===editId)||{}).valor_ppto||0:0);
   const difU=vu-ppto;
   const difT=vt-cr*ppto;
@@ -1238,7 +1239,7 @@ function onPLCode(idx,inp){
   if(!line) return;
   clearTimeout(suggTimeout);
   line.codigo=inp.value;
-  const exact=prodMap[inp.value.trim()]||allProducts.find(p=>String(p.codigo).trim()===inp.value.trim());
+  const exact=prodMap[normCod(inp.value)]||allProducts.find(p=>normCod(p.codigo)===normCod(inp.value));
   if(exact){applyPLProduct(idx,exact);return;}
   if(!inp.value.trim()){clearPLProduct(idx);hidePLSugg();return;}
   activeSuggIdx=idx;
@@ -1274,7 +1275,7 @@ function hidePLSugg(){ const b=document.getElementById('pl-sugg'); b.style.displ
 function applyPLProduct(idx,p){
   const line=productLines.find(l=>l.idx===idx);
   if(!line) return;
-  const fromMap=prodMap[String(p.codigo).trim()]||{};
+  const fromMap=prodMap[normCod(p.codigo)]||{};
   line.codigo=p.codigo; line.descripcion=p.descripcion; line.unidad=p.unidad||fromMap.unidad||'';
   line.tipo=fromMap.tipo||p.tipo||''; line.ppto=fromMap.ppto||p.ppto||0;
   hidePLSugg();
@@ -1351,7 +1352,7 @@ async function saveRecord(){
       const cs=parseFloat(getF('s_cant_sol'))||0, dv=parseFloat(getF('s_devol'))||0;
       const vt=parseFloat(getF('s_valor_total'))||0, cr=cs-dv, vu=cr?vt/cr:0;
       const codigo=getF('s_codigo');
-      const prod=prodMap[codigo]||null;
+      const prod=prodMap[normCod(codigo)]||null;
       const ppto=prod?prod.ppto:(registros.find(r=>r.id===editId)||{}).valor_ppto||0;
       const record={ fecha_guia:fechaG||null, fecha_sol:fechaSol||null, obs_modulo:obs, mes:fechaMes, gd, oc:gdOCMap[gd]||'',
         codigo, descripcion:getF('s_desc'), unidad:getF('s_unidad'), tipo_producto:getF('s_tipo'),
