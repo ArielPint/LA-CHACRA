@@ -456,11 +456,13 @@ async function loadComprasSupa(){
       // Excel col Q = ppto - real (positivo = más barato = verde)
       const difTotal=cantRec*valorPpto-valorTotal;
       const base=cantRec*valorPpto;
-      const fd=r.fecha_guia?new Date(r.fecha_guia):null;
+      // Agrupar por fecha de solicitud (igual que el resumen de Registro GD), con fallback a fecha_guia
+      const fechaAgr=r.fecha_sol||r.fecha_guia;
+      const fd=fechaAgr?new Date(fechaAgr+'T12:00:00'):null;
       return {
         fechaGuia:  r.fecha_guia,
         anioGuia:   fd?fd.getFullYear():null,
-        mes:        r.mes,
+        mes:        fd?fd.getMonth()+1:r.mes,
         codigo:     r.codigo,
         desc:       r.descripcion,
         desc2:      r.descripcion,   // descripcion es la col G equivalente
@@ -535,10 +537,47 @@ async function loadPresupuestoSupa(){
   }catch(e){console.warn('loadPresupuestoSupa:',e);}
 }
 
+// Ppto vigente por código, resuelto en vivo contra el catálogo (igual que registro-gd.html),
+// en vez de la foto guardada en registro_compras.valor_ppto al momento de la compra.
+const PROD_URL='https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/productos.json';
+let _pptoCatalogMap={};
+async function loadPptoCatalogo(){
+  try{
+    const [rCat,rCustom]=await Promise.all([
+      fetch(PROD_URL+'?v='+Date.now()),
+      fetch(`${SUPA_URL}/rest/v1/productos_custom?activo=eq.true&select=codigo,ppto`,{headers:SUPA_H})
+    ]);
+    const map={};
+    if(rCat.ok){
+      (await rCat.json()||[]).forEach(p=>{
+        if(p.codigo&&p.ppto!=null) map[String(p.codigo).trim().toUpperCase()]=parseFloat(p.ppto)||0;
+      });
+    }
+    if(rCustom.ok){
+      (await rCustom.json()||[]).forEach(p=>{
+        if(p.codigo&&p.ppto!=null) map[String(p.codigo).trim().toUpperCase()]=parseFloat(p.ppto)||0;
+      });
+    }
+    _pptoCatalogMap=map;
+  }catch(e){console.warn('loadPptoCatalogo:',e);}
+}
+
 // Devuelve el array de compras a usar: Supabase si está cargado, Excel como fallback
 function getCompras(){
   if(_supaCompras.length){
     if(_presupuestoTotal!=null) _supaCompras[0].presupuesto=_presupuestoTotal;
+    if(Object.keys(_pptoCatalogMap).length){
+      _supaCompras.forEach(row=>{
+        const livePpto=_pptoCatalogMap[String(row.codigo||'').trim().toUpperCase()];
+        if(livePpto==null) return;
+        row.valorPpto=livePpto;
+        row.difUN=livePpto-row.valorUN;
+        row.totalPpto=row.cantRec*livePpto;
+        row.difTotal=row.cantRec*livePpto-row.valorTotal;
+        const base=row.cantRec*livePpto;
+        row.difPct=base?row.difTotal/base:null;
+      });
+    }
     return _supaCompras;
   }
   // FALLBACK_EXCEL: DATA.detalleGD del archivo LACHACRA.xlsm
@@ -641,7 +680,7 @@ function getHomeAvance(){
           var pr = document.getElementById('prompt');
           if(pr) pr.style.display = 'none';
           renderAll();
-          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
+          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo()])
             .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
           var t = document.querySelector('.tab[data-tab="resumen"]');
           if(t) t.click();
@@ -950,7 +989,7 @@ document.getElementById('file-input').addEventListener('change',function(e){
         document.getElementById('prompt').style.display='none';
         renderAll();
         document.querySelector('.tab[data-tab="resumen"]').click();
-        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
+        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo()])
           .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
         st.textContent='✅ Cargado'; st.className='status-ok';
         // Save to localStorage for biblioteca
@@ -1003,7 +1042,7 @@ async function autoLoadFromRepo(){
     try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
     renderAll();
     try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
-    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa()])
+    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo()])
       .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
     showAutoStatus('✅ Datos cargados');
     try{
