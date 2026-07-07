@@ -628,6 +628,7 @@ let suggTimeout     = null;
 let _lineCounter    = 0;
 let productosCustom = [];
 let allProducts     = [];
+let allProductsMap  = {};
 let _editingProdCod = null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -695,6 +696,13 @@ function rebuildAllProducts(){
     if(p.ppto==null){ const cat=prodMap[normCod(p.codigo)]; if(cat) p.ppto=cat.ppto; }
   });
   allProducts=Object.values(base).sort((a,b)=>a.descripcion.localeCompare(b.descripcion));
+  allProductsMap={};
+  allProducts.forEach(p=>{ allProductsMap[normCod(p.codigo)]=p; });
+}
+// Ppto vigente del catálogo para un registro (siempre en vivo, no la foto guardada al momento de la compra)
+function getPPTO(r){
+  const p=allProductsMap[normCod(r.codigo)];
+  return p&&p.ppto!=null?(parseFloat(p.ppto)||0):(parseFloat(r.valor_ppto)||0);
 }
 async function loadData(){
   const sb = await sbClient();
@@ -883,7 +891,7 @@ function renderTable(){
         <td class="c">${esc(r.unidad||'')}</td>
         <td class="r">${fmt0(r.cantidad_sol)}</td><td class="r">${r.devolucion?fmt0(r.devolucion):'—'}</td><td class="r">${fmt0(cr)}</td>
         <td class="r" style="font-weight:600">${fmtNum(vti)}</td><td class="r">${fmtNum(vund)}</td>
-        <td class="r" style="color:var(--muted)">${fmtNum(r.valor_ppto)}</td>
+        <td class="r" style="color:var(--muted)">${fmtNum(getPPTO(r))}</td>
         <td class="r ${dc}">${fmtNum(calcDifUnd(r))}</td><td class="r ${dc}">${fmtNum(difT)}</td>
         <td class="r ${pc}">${pct!==null?pct.toFixed(1)+'%':'—'}</td>
         <td>${esc(r.responsable||'')}</td><td class="c">${tipoChip(r.tipo_producto)}</td>
@@ -900,7 +908,7 @@ function renderTable(){
     else {
       let sumCantSol=0, sumDevol=0, sumCantRec=0, sumVTI=0, sumPpto=0, sumDifT=0;
       filtered.forEach(r=>{
-        const cr=calcCR(r), vti=getVTI(r), ppto=(parseFloat(r.valor_ppto)||0)*cr;
+        const cr=calcCR(r), vti=getVTI(r), ppto=getPPTO(r)*cr;
         sumCantSol+=(parseFloat(r.cantidad_sol)||0);
         sumDevol+=(parseFloat(r.devolucion)||0);
         sumCantRec+=cr;
@@ -944,9 +952,9 @@ function getVTI(r){
 }
 function calcCR(r){ return (parseFloat(r.cantidad_sol)||0)-(parseFloat(r.devolucion)||0); }
 function calcVUnd(r){ const cr=calcCR(r); return cr?getVTI(r)/cr:0; }
-function calcDifUnd(r){ return calcVUnd(r)-(parseFloat(r.valor_ppto)||0); }
-function calcDifT(r){ return getVTI(r)-calcCR(r)*(parseFloat(r.valor_ppto)||0); }
-function calcPct(r){ const b=calcCR(r)*(parseFloat(r.valor_ppto)||0); return b?calcDifT(r)/b*100:null; }
+function calcDifUnd(r){ return calcVUnd(r)-getPPTO(r); }
+function calcDifT(r){ return getVTI(r)-calcCR(r)*getPPTO(r); }
+function calcPct(r){ const b=calcCR(r)*getPPTO(r); return b?calcDifT(r)/b*100:null; }
 
 function updateStats(){
   const gds=new Set(registros.map(r=>r.gd)).size;
@@ -993,7 +1001,7 @@ function renderResumen(){
     groups[key].gds.add(r.gd);
     groups[key].items++;
     groups[key].monto+=(parseFloat(r.valor_total_item)||0);
-    groups[key].ppto+=calcCR(r)*(parseFloat(r.valor_ppto)||0);
+    groups[key].ppto+=calcCR(r)*getPPTO(r);
     const p=calcPct(r); if(p!==null) groups[key].desvArr.push(p);
   });
   const keys=Object.keys(groups).sort();
@@ -1584,7 +1592,7 @@ function exportExcel(){
     'GD':r.gd,'OC':gdOCMap[String(r.gd)]||r.oc||'','CODIGO':r.codigo,'DESCRIPCION':r.descripcion,
     'UNIDAD':r.unidad,'CANTIDAD SOLICITADA':r.cantidad_sol,'DEVOLUCIÓN':r.devolucion,
     'CANTIDAD RECIBIDA':calcCR(r),'VALOR TOTAL ITEM GD':getVTI(r),'VALOR X UN':calcVUnd(r),
-    'VALOR PPTO':r.valor_ppto,'DIF. VALOR UND.':calcDifUnd(r),'DIF VALOR TOTAL':calcDifT(r),
+    'VALOR PPTO':getPPTO(r),'DIF. VALOR UND.':calcDifUnd(r),'DIF VALOR TOTAL':calcDifT(r),
     'DIF %':calcPct(r)!==null?calcPct(r)/100:'','RESPONSABLE':r.responsable,
     'TIPO PRODUCTO':r.tipo_producto,'MONTO TOTAL GD':montoGD[r.gd]||0,'CREADO POR':r.created_by
   }));
