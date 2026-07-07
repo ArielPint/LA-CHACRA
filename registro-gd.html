@@ -392,6 +392,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
           <th>Unidad</th>
           <th class="r">Cant/Módulo</th>
           <th>Grupo</th>
+          <th class="r">Valor Ppto.</th>
           <th class="r">Precio PPP</th>
           <th>Fuente</th>
           <th></th>
@@ -553,6 +554,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
       </div>
       <div class="mfg"><label>Subgrupo</label><input id="gd-ep-subgrupo" placeholder="Ej: FIJACION"></div>
     </div>
+    <div class="mfg"><label>Valor Ppto.</label><input id="gd-ep-ppto" type="number" min="0" step="any" placeholder="Ej: 15000"></div>
     <div class="modal-gd-actions">
       <button class="btn btn-sm" onclick="closeEditProdGD()">Cancelar</button>
       <button class="btn btn-primary btn-sm" id="gd-ep-save-btn" onclick="saveEditProdGD()">Guardar cambios</button>
@@ -584,6 +586,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
       </div>
     </div>
     <div class="mfg"><label>Subgrupo</label><input id="gd-np-subgrupo" placeholder="Ej: FIJACION (opcional)"></div>
+    <div class="mfg"><label>Valor Ppto.</label><input id="gd-np-ppto" type="number" min="0" step="any" placeholder="Ej: 15000 (opcional)"></div>
     <div class="modal-gd-actions">
       <button class="btn btn-sm" onclick="closeAddProdGD()">Cancelar</button>
       <button class="btn btn-primary btn-sm" id="gd-np-save-btn" onclick="saveAddProdGD()">Guardar producto</button>
@@ -686,7 +689,10 @@ function rebuildAllProducts(){
   productosCustom.forEach(c=>{
     const k=c.codigo.toUpperCase();
     if(base[k]){ const bCpm=base[k].cantidad_por_modulo; Object.assign(base[k],c); if(c.cantidad_por_modulo==null&&bCpm!=null) base[k].cantidad_por_modulo=bCpm; }
-    else base[k]=c;
+    else base[k]={...c};
+  });
+  Object.values(base).forEach(p=>{
+    if(p.ppto==null){ const cat=prodMap[normCod(p.codigo)]; if(cat) p.ppto=cat.ppto; }
   });
   allProducts=Object.values(base).sort((a,b)=>a.descripcion.localeCompare(b.descripcion));
 }
@@ -1645,6 +1651,7 @@ function renderCatalogGD(){
     const pppData=pppMap[String(p.codigo).trim().toUpperCase()];
     const ppp=pppData&&pppData.cant>0?pppData.monto/pppData.cant:null;
     const pppStr=ppp!=null?fmtNum(ppp):'<span style="color:var(--muted)">—</span>';
+    const pptoStr=p.ppto!=null&&p.ppto>0?fmtNum(p.ppto):'<span style="color:var(--muted)">—</span>';
     const actions=isAdmin?`<div style="display:flex;gap:5px">
       <button class="btn btn-sm" style="font-size:.7rem;background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.3);padding:3px 8px" onclick="openEditProdGD('${esc(p.codigo)}')">Editar</button>
       <button class="btn btn-sm" style="font-size:.7rem;background:rgba(247,95,95,.1);color:var(--red);border:1px solid rgba(247,95,95,.25);padding:3px 8px" onclick="deleteProdGD('${esc(p.codigo)}')">Eliminar</button>
@@ -1655,6 +1662,7 @@ function renderCatalogGD(){
       <td style="color:var(--muted);font-size:.78rem">${esc(p.unidad||'—')}</td>
       <td class="r" style="${typeof cpm==='number'?'color:var(--accent);font-weight:600':'color:var(--muted)'};font-size:.78rem">${cpmStr}</td>
       <td style="font-size:.75rem;color:var(--muted)">${esc(p.grupo||'—')}</td>
+      <td class="r" style="font-size:.78rem;font-weight:600;font-family:'Consolas',monospace;color:var(--yellow)">${pptoStr}</td>
       <td class="r" style="font-size:.78rem;font-weight:600;font-family:'Consolas',monospace;color:var(--green)">${pppStr}</td>
       <td><span class="badge-src ${fClass}">${fuente}</span></td>
       <td>${actions}</td>
@@ -1668,7 +1676,7 @@ function renderCatalogGD(){
     const pppPromedioStr=withPPP>0?`${withPPP} con precio`:`sin precios`;
     tfoot.innerHTML=`<tr>
       <td colspan="2" style="color:var(--text)">${list.length} producto${list.length!==1?'s':''}</td>
-      <td colspan="3" style="color:var(--muted);font-weight:400;font-size:.73rem">${pppPromedioStr} · Monto comprado total</td>
+      <td colspan="4" style="color:var(--muted);font-weight:400;font-size:.73rem">${pppPromedioStr} · Monto comprado total</td>
       <td class="r" style="color:var(--green);font-family:'Consolas',monospace">${totalStr}</td>
       <td colspan="2"></td>
     </tr>`;
@@ -1685,6 +1693,7 @@ function openEditProdGD(codigo){
   document.getElementById('gd-ep-grupo').value=p.grupo||'';
   document.getElementById('gd-ep-subgrupo').value=p.subgrupo||'';
   document.getElementById('gd-ep-cpm').value=p.cantidad_por_modulo!=null?p.cantidad_por_modulo:'';
+  document.getElementById('gd-ep-ppto').value=p.ppto!=null?p.ppto:'';
   document.getElementById('modal-edit-prod-gd').classList.add('open');
   setTimeout(()=>document.getElementById('gd-ep-desc').focus(),50);
 }
@@ -1700,12 +1709,14 @@ async function saveEditProdGD(){
   const subgrupo=document.getElementById('gd-ep-subgrupo').value.trim();
   const cpmRaw=document.getElementById('gd-ep-cpm').value.trim();
   const cantidad_por_modulo=cpmRaw!==''?parseFloat(cpmRaw):null;
+  const pptoRaw=document.getElementById('gd-ep-ppto').value.trim();
+  const ppto=pptoRaw!==''?parseFloat(pptoRaw):null;
   if(!descripcion){toast('La descripción es obligatoria','err');return;}
   const btn=document.getElementById('gd-ep-save-btn');
   btn.disabled=true; btn.textContent='Guardando…';
   try {
     const session=AUTH.getSession?AUTH.getSession():null;
-    const payload={codigo:_editingProdCod,descripcion,unidad,grupo,subgrupo,cantidad_por_modulo,activo:true,creado_por:session?session.id:'admin'};
+    const payload={codigo:_editingProdCod,descripcion,unidad,grupo,subgrupo,cantidad_por_modulo,ppto,activo:true,creado_por:session?session.id:'admin'};
     const r=await fetch(`${SUPA_URL}/rest/v1/productos_custom`,{method:'POST',headers:{...SUPA_HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     toast('Producto actualizado ✓','ok');
@@ -1722,6 +1733,7 @@ function openAddProductGD(){
   document.getElementById('gd-np-subgrupo').value='';
   document.getElementById('gd-np-unidad').value='UND';
   document.getElementById('gd-np-grupo').value='';
+  document.getElementById('gd-np-ppto').value='';
   document.getElementById('modal-add-prod-gd').classList.add('open');
   setTimeout(()=>document.getElementById('gd-np-codigo').focus(),50);
 }
@@ -1734,13 +1746,15 @@ async function saveAddProdGD(){
   const unidad=document.getElementById('gd-np-unidad').value;
   const grupo=document.getElementById('gd-np-grupo').value;
   const subgrupo=document.getElementById('gd-np-subgrupo').value.trim();
+  const pptoRaw=document.getElementById('gd-np-ppto').value.trim();
+  const ppto=pptoRaw!==''?parseFloat(pptoRaw):null;
   if(!codigo||!descripcion){toast('Código y descripción son obligatorios','err');return;}
   if(allProducts.find(p=>p.codigo.toUpperCase()===codigo.toUpperCase())){toast('Ya existe un producto con ese código','err');return;}
   const btn=document.getElementById('gd-np-save-btn');
   btn.disabled=true; btn.textContent='Guardando…';
   try {
     const session=AUTH.getSession?AUTH.getSession():null;
-    const r=await fetch(`${SUPA_URL}/rest/v1/productos_custom`,{method:'POST',headers:{...SUPA_HEADERS,'Prefer':'return=representation'},body:JSON.stringify({codigo,descripcion,unidad,grupo,subgrupo,creado_por:session?session.username:'admin'})});
+    const r=await fetch(`${SUPA_URL}/rest/v1/productos_custom`,{method:'POST',headers:{...SUPA_HEADERS,'Prefer':'return=representation'},body:JSON.stringify({codigo,descripcion,unidad,grupo,subgrupo,ppto,creado_por:session?session.username:'admin'})});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const [newP]=await r.json();
     productosCustom.push(newP);
@@ -1756,7 +1770,7 @@ async function deleteProdGD(codigo){
   try {
     const p=allProducts.find(x=>x.codigo===codigo)||{};
     const session=AUTH.getSession?AUTH.getSession():null;
-    const payload={codigo,descripcion:p.descripcion||'',unidad:p.unidad||'UND',grupo:p.grupo||'',subgrupo:p.subgrupo||'',cantidad_por_modulo:p.cantidad_por_modulo!=null?p.cantidad_por_modulo:null,activo:false,creado_por:session?session.id:'admin'};
+    const payload={codigo,descripcion:p.descripcion||'',unidad:p.unidad||'UND',grupo:p.grupo||'',subgrupo:p.subgrupo||'',cantidad_por_modulo:p.cantidad_por_modulo!=null?p.cantidad_por_modulo:null,ppto:p.ppto!=null?p.ppto:null,activo:false,creado_por:session?session.id:'admin'};
     const r=await fetch(`${SUPA_URL}/rest/v1/productos_custom`,{method:'POST',headers:{...SUPA_HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(payload)});
     if(!r.ok) throw new Error('HTTP '+r.status);
     toast('Producto ocultado del catálogo','ok');
