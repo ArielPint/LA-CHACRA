@@ -6,8 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatCLP, formatCLPCompact, formatPct } from '@/utils/formatters'
 
 const chartConfig = {
-  facturado: { label: 'Facturado', color: 'var(--chart-2)' },
-  pendiente: { label: 'Pendiente por facturar', color: 'var(--chart-5)' },
+  facturado: { label: 'Facturado', color: 'var(--success)' },
+  pendiente: { label: 'Pendiente por facturar', color: 'var(--muted-foreground)' },
 } satisfies ChartConfig
 
 interface GraficoComposicionGlobalProps {

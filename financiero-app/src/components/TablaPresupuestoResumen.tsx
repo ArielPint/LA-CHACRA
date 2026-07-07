@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 
 function colorAvance(pct: number) {
   if (pct >= 1) return 'text-destructive font-medium'
-  if (pct >= 0.7) return 'text-amber-600 font-medium'
+  if (pct >= 0.7) return 'text-warning font-medium'
   return 'text-foreground'
 }
 

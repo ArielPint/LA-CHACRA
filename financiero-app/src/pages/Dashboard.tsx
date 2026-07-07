@@ -30,7 +30,9 @@ export default function Dashboard() {
           <div className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle className="text-sm font-medium">Presupuesto vs. OC vs. Facturado por partida</CardTitle>
+                <CardTitle className="text-[.75rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                  Presupuesto vs. OC vs. Facturado por partida
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <GraficoPresupuestoPorPartida seguimiento={seguimiento} loading={loading} />
@@ -38,7 +40,9 @@ export default function Dashboard() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-medium">Avance global</CardTitle>
+                <CardTitle className="text-[.75rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                  Avance global
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <GraficoComposicionGlobal seguimiento={seguimiento} loading={loading} />
@@ -47,7 +51,9 @@ export default function Dashboard() {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Facturado por mes</CardTitle>
+              <CardTitle className="text-[.75rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                Facturado por mes
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <GraficoFacturadoPorMes />

@@ -27,11 +27,14 @@
   --ring: #4f8ef7;
   --brand: #d42b1e;
   --success: #3ecf8e;
+  --warning: #f7a74f;
+  --purple: #bc8cff;
+  /* Orden categórico fijo tomado del donut de dashboard.html (chart 2: valor por tipo) */
   --chart-1: #4f8ef7;
-  --chart-2: #3ecf8e;
-  --chart-3: #d42b1e;
-  --chart-4: #f75f5f;
-  --chart-5: #7a7f99;
+  --chart-2: #d42b1e;
+  --chart-3: #3ecf8e;
+  --chart-4: #f7a74f;
+  --chart-5: #bc8cff;
   --sidebar: #1a1d27;
   --sidebar-foreground: #e8eaf0;
   --sidebar-primary: #4f8ef7;
@@ -63,11 +66,13 @@
   --ring: #4f8ef7;
   --brand: #d42b1e;
   --success: #3ecf8e;
+  --warning: #f7a74f;
+  --purple: #bc8cff;
   --chart-1: #4f8ef7;
-  --chart-2: #3ecf8e;
-  --chart-3: #d42b1e;
-  --chart-4: #f75f5f;
-  --chart-5: #7a7f99;
+  --chart-2: #d42b1e;
+  --chart-3: #3ecf8e;
+  --chart-4: #f7a74f;
+  --chart-5: #bc8cff;
   --sidebar: #1a1d27;
   --sidebar-foreground: #e8eaf0;
   --sidebar-primary: #4f8ef7;
@@ -103,6 +108,8 @@
   --color-ring: var(--ring);
   --color-brand: var(--brand);
   --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-purple: var(--purple);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);

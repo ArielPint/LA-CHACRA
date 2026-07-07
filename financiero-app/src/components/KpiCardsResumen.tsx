@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { Wallet, Receipt, TrendingUp, AlertTriangle } from 'lucide-react'
 import type { SeguimientoPresupuesto } from '@/types/financiero'
 import { formatCLP, formatPct } from '@/utils/formatters'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,11 +9,21 @@ interface KpiCardsResumenProps {
   loading: boolean
 }
 
+type Tono = 'success' | 'warning' | 'destructive' | undefined
+
 interface Kpi {
   label: string
   value: string
-  icon: typeof Wallet
-  tone?: 'destructive' | 'amber'
+  sub?: string
+  tono?: Tono
+}
+
+// Mismo umbral de 3 niveles que produccion.html/dashboard.html (pc(p) / pct>=100/75/50),
+// invertido en dirección: acá "avance" alto es riesgo de sobrepaso, no una meta.
+function tonoAvance(pct: number): Tono {
+  if (pct >= 1) return 'destructive'
+  if (pct >= 0.7) return 'warning'
+  return 'success'
 }
 
 export default function KpiCardsResumen({ seguimiento, loading }: KpiCardsResumenProps) {
@@ -25,10 +34,15 @@ export default function KpiCardsResumen({ seguimiento, loading }: KpiCardsResume
     const sobrepasados = seguimiento.filter((r) => r.pct_avance >= 1).length
 
     return [
-      { label: 'Presupuesto Total', value: formatCLP(totalPresupuesto), icon: Wallet },
-      { label: 'Total Facturado', value: formatCLP(totalFacturado), icon: Receipt },
-      { label: '% Avance Global', value: formatPct(pctGlobal), icon: TrendingUp, tone: pctGlobal >= 1 ? 'destructive' : pctGlobal >= 0.7 ? 'amber' : undefined },
-      { label: 'Partidas Sobrepasadas', value: String(sobrepasados), icon: AlertTriangle, tone: sobrepasados > 0 ? 'destructive' : undefined },
+      { label: 'Presupuesto Total', value: formatCLP(totalPresupuesto), sub: `${seguimiento.length} partidas` },
+      { label: 'Total Facturado', value: formatCLP(totalFacturado), sub: `${formatPct(pctGlobal)} del presupuesto`, tono: 'success' },
+      { label: '% Avance Global', value: formatPct(pctGlobal), tono: tonoAvance(pctGlobal) },
+      {
+        label: 'Partidas Sobrepasadas',
+        value: String(sobrepasados),
+        sub: `de ${seguimiento.length} partidas`,
+        tono: sobrepasados > 0 ? 'destructive' : 'success',
+      },
     ]
   }, [seguimiento])
 
@@ -36,23 +50,22 @@ export default function KpiCardsResumen({ seguimiento, loading }: KpiCardsResume
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {kpis.map((kpi) => (
         <div key={kpi.label} className="rounded-lg border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <kpi.icon className="size-4" />
-            <span className="text-xs font-medium">{kpi.label}</span>
-          </div>
+          <p className="text-[.7rem] font-semibold tracking-wide text-muted-foreground uppercase">{kpi.label}</p>
           {loading ? (
             <Skeleton className="mt-2 h-7 w-24" />
           ) : (
             <p
               className={cn(
-                'mt-1 text-2xl font-semibold tabular-nums',
-                kpi.tone === 'destructive' && 'text-destructive',
-                kpi.tone === 'amber' && 'text-amber-600',
+                'mt-1 text-2xl font-bold tabular-nums',
+                kpi.tono === 'success' && 'text-success',
+                kpi.tono === 'warning' && 'text-warning',
+                kpi.tono === 'destructive' && 'text-destructive',
               )}
             >
               {kpi.value}
             </p>
           )}
+          {!loading && kpi.sub && <p className="mt-0.5 text-xs text-muted-foreground">{kpi.sub}</p>}
         </div>
       ))}
     </div>

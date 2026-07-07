@@ -17,8 +17,8 @@ import { Button } from '@/components/ui/button'
 import { formatCLP, formatFecha } from '@/utils/formatters'
 import { cn } from '@/lib/utils'
 
-const ESTADO_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  VALIDADA: 'default',
+const ESTADO_VARIANT: Record<string, 'secondary' | 'success' | 'destructive'> = {
+  VALIDADA: 'success',
   SUPERA_OC: 'destructive',
   ANULADA: 'secondary',
 }

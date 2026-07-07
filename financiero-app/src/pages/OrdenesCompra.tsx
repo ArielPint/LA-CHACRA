@@ -14,10 +14,10 @@ import TableSkeleton from '@/components/TableSkeleton'
 import { formatCLP, formatFecha } from '@/utils/formatters'
 import { exportarExcel } from '@/utils/exportExcel'
 
-const ESTADO_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
+const ESTADO_VARIANT: Record<string, 'secondary' | 'success' | 'destructive'> = {
   ABIERTA: 'secondary',
-  COMPLETA: 'default',
-  ANULADA: 'destructive',
+  COMPLETA: 'success',
+  ANULADA: 'secondary',
 }
 
 export default function OrdenesCompra() {

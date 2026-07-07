@@ -6,9 +6,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatCLPCompact } from '@/utils/formatters'
 
 const chartConfig = {
-  presupuesto_original: { label: 'Presupuesto', color: 'var(--chart-5)' },
-  oc_ingresadas: { label: 'OC Ingresadas', color: 'var(--chart-1)' },
-  facturado: { label: 'Facturado', color: 'var(--chart-2)' },
+  presupuesto_original: { label: 'Presupuesto', color: 'var(--muted-foreground)' },
+  oc_ingresadas: { label: 'OC Ingresadas', color: 'var(--primary)' },
+  facturado: { label: 'Facturado', color: 'var(--success)' },
 } satisfies ChartConfig
 
 function truncar(texto: string, max = 22) {
