@@ -141,6 +141,9 @@ export default function FormularioFactura({ factura, ordenesCompra, onCreate, on
               ordenesCompra={ordenesCompra}
               value={ordenesCompraId}
               onChange={setOrdenesCompraId}
+              onSelectOC={(oc) => {
+                if (oc.proveedor_rut) setProveedorRut(oc.proveedor_rut)
+              }}
             />
           </div>
           <div className="flex flex-col gap-1.5">

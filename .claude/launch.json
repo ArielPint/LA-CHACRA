@@ -17,7 +17,20 @@
       "name": "financiero-app",
       "runtimeExecutable": "cmd",
       "runtimeArgs": ["/c", "set PATH=C:\\Program Files\\nodejs;%PATH% && npm run dev --prefix financiero-app"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "n8n-dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "LA-CHACRA-3005",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "3005"],
+      "port": 3005
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { ShoppingCart } from 'lucide-react'
+import { Receipt, ShoppingCart } from 'lucide-react'
 import { useOrdenesCompra } from '@/hooks/useOrdenesCompra'
+import { useFacturas } from '@/hooks/useFacturas'
 import { usePresupuestosLookup } from '@/hooks/usePresupuestosLookup'
 import { useAuth } from '@/hooks/useAuth'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -20,9 +21,16 @@ const ESTADO_VARIANT: Record<string, 'secondary' | 'success' | 'destructive'> = 
   ANULADA: 'secondary',
 }
 
+const ESTADO_FACTURA_VARIANT: Record<string, 'secondary' | 'success' | 'destructive'> = {
+  VALIDADA: 'success',
+  SUPERA_OC: 'destructive',
+  ANULADA: 'secondary',
+}
+
 export default function OrdenesCompra() {
   const { canEditOC } = useAuth()
   const { ordenesCompra, loading, error, createOrdenCompra, updateOrdenCompra } = useOrdenesCompra()
+  const { facturas, loading: loadingFacturas } = useFacturas()
   const { presupuestos } = usePresupuestosLookup()
   const [search, setSearch] = useState('')
   const [presupuestoId, setPresupuestoId] = useState('')
@@ -41,6 +49,14 @@ export default function OrdenesCompra() {
       return true
     })
   }, [ordenesCompra, search, presupuestoId])
+
+  const buscandoPorOC = !!search.trim()
+
+  const facturasAsociadas = useMemo(() => {
+    if (!buscandoPorOC) return []
+    const ids = new Set(filtradas.map((oc) => oc.id))
+    return facturas.filter((f) => ids.has(f.ordenes_compra_id))
+  }, [buscandoPorOC, filtradas, facturas])
 
   if (error) return <p className="text-destructive">{error}</p>
 
@@ -136,6 +152,66 @@ export default function OrdenesCompra() {
               </TableBody>
             )}
           </Table>
+        </div>
+      )}
+
+      {buscandoPorOC && filtradas.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-medium text-muted-foreground">Facturas asociadas</h2>
+          {loadingFacturas ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>N° Factura</TableHead>
+                    <TableHead>N° OC</TableHead>
+                    <TableHead>Proveedor</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>PDF</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableSkeleton columns={7} />
+              </Table>
+            </div>
+          ) : facturasAsociadas.length === 0 ? (
+            <EmptyState icon={Receipt} title="Esta OC todavía no tiene facturas asociadas" />
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>N° Factura</TableHead>
+                    <TableHead>N° OC</TableHead>
+                    <TableHead>Proveedor</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>PDF</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {facturasAsociadas.map((f) => {
+                    const oc = filtradas.find((o) => o.id === f.ordenes_compra_id)
+                    return (
+                      <TableRow key={f.id}>
+                        <TableCell className="font-medium">{f.numero_factura ?? '(sin número)'}</TableCell>
+                        <TableCell>{oc?.numero_oc ?? '—'}</TableCell>
+                        <TableCell>{f.proveedor_rut ?? '—'}</TableCell>
+                        <TableCell>{formatFecha(f.fecha)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatCLP(f.monto)}</TableCell>
+                        <TableCell>
+                          <Badge variant={ESTADO_FACTURA_VARIANT[f.estado]}>{f.estado}</Badge>
+                        </TableCell>
+                        <TableCell>{f.pdf_path ? <VisorPDF pdfPath={f.pdf_path} /> : '—'}</TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       )}
     </div>
