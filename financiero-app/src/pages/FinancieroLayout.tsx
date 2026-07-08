@@ -6,11 +6,12 @@ import {
   Receipt,
   Wallet,
   TrendingUp,
+  Users,
   History,
   LogOut,
   Menu,
 } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, type FinancieroTab } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
@@ -21,17 +22,22 @@ interface NavItem {
   to: string
   label: string
   icon: typeof LayoutDashboard
+  tab: FinancieroTab
   end?: boolean
-  adminOnly?: boolean
+  // Color fijo del ícono (independiente del estado activo), igual a la
+  // convención de dashboard.html: cada ítem del sidebar tiene un color propio.
+  iconColorClase: string
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, adminOnly: true },
-  { to: '/ordenes-compra', label: 'Órdenes de Compra', icon: ShoppingCart },
-  { to: '/facturas', label: 'Facturas', icon: Receipt },
-  { to: '/presupuestos', label: 'Presupuestos', icon: Wallet, adminOnly: true },
-  { to: '/forecast', label: 'Forecast', icon: TrendingUp, adminOnly: true },
-  { to: '/auditoria', label: 'Auditoría', icon: History, adminOnly: true },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, tab: 'dashboard', end: true, iconColorClase: 'text-primary' },
+  { to: '/ordenes-compra', label: 'Órdenes de Compra', icon: ShoppingCart, tab: 'ordenes-compra', iconColorClase: 'text-warning' },
+  { to: '/facturas', label: 'Facturas', icon: Receipt, tab: 'facturas', iconColorClase: 'text-cyan' },
+  { to: '/presupuestos', label: 'Presupuestos', icon: Wallet, tab: 'presupuestos', iconColorClase: 'text-purple' },
+  { to: '/forecast', label: 'Forecast', icon: TrendingUp, tab: 'forecast', iconColorClase: 'text-pink' },
+  { to: '/remuneraciones', label: 'Remuneraciones', icon: Users, tab: 'remuneraciones', iconColorClase: 'text-warning' },
+  { to: '/ingresos', label: 'Ingreso del Proyecto', icon: TrendingUp, tab: 'ingresos', iconColorClase: 'text-success' },
+  { to: '/auditoria', label: 'Auditoría', icon: History, tab: 'auditoria', iconColorClase: 'text-muted-foreground' },
 ]
 
 const PAGE_TITLES: Record<string, string> = {
@@ -40,6 +46,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/facturas': 'Facturas',
   '/presupuestos': 'Presupuestos',
   '/forecast': 'Forecast',
+  '/remuneraciones': 'Remuneraciones',
+  '/ingresos': 'Ingreso del Proyecto',
   '/auditoria': 'Auditoría',
 }
 
@@ -53,10 +61,10 @@ function iniciales(nombre: string | undefined) {
     .join('')
 }
 
-function SidebarNav({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: () => void }) {
+function SidebarNav({ puedeVer, onNavigate }: { puedeVer: (tab: FinancieroTab) => boolean; onNavigate?: () => void }) {
   return (
     <nav className="flex flex-col gap-1 px-3">
-      {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+      {NAV_ITEMS.filter((item) => puedeVer(item.tab)).map((item) => {
         const Icon = item.icon
         return (
           <NavLink
@@ -73,8 +81,12 @@ function SidebarNav({ isAdmin, onNavigate }: { isAdmin: boolean; onNavigate?: ()
               )
             }
           >
-            <Icon className="size-4 shrink-0" />
-            {item.label}
+            {({ isActive }) => (
+              <>
+                <Icon className={cn('size-4 shrink-0', !isActive && item.iconColorClase)} />
+                {item.label}
+              </>
+            )}
           </NavLink>
         )
       })}
@@ -100,7 +112,7 @@ function SidebarFooter({ nombre, rol, onSignOut }: { nombre?: string; rol?: stri
 }
 
 export default function FinancieroLayout() {
-  const { perfil, isAdmin, signOut } = useAuth()
+  const { perfil, puedeVer, signOut } = useAuth()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const tituloPagina = PAGE_TITLES[location.pathname] ?? 'Financiero'
@@ -113,7 +125,7 @@ export default function FinancieroLayout() {
           <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">LA CHACRA</p>
           <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
         </div>
-        <SidebarNav isAdmin={isAdmin} />
+        <SidebarNav puedeVer={puedeVer} />
         <div className="mt-auto pt-4">
           <Separator className="mb-4 bg-sidebar-border" />
           <SidebarFooter nombre={perfil?.name} rol={perfil?.role} onSignOut={signOut} />
@@ -138,7 +150,7 @@ export default function FinancieroLayout() {
                   </p>
                   <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
                 </div>
-                <SidebarNav isAdmin={isAdmin} onNavigate={() => setMobileOpen(false)} />
+                <SidebarNav puedeVer={puedeVer} onNavigate={() => setMobileOpen(false)} />
                 <div className="mt-auto pt-4">
                   <Separator className="mb-4 bg-sidebar-border" />
                   <SidebarFooter nombre={perfil?.name} rol={perfil?.role} onSignOut={signOut} />

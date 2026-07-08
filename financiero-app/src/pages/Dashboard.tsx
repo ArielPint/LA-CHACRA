@@ -13,9 +13,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4">
+      <p className="text-[.7rem] font-semibold tracking-wide text-muted-foreground uppercase">Indicadores</p>
       <KpiCardsResumen seguimiento={seguimiento} loading={loading} />
       <Tabs defaultValue="total">
-        <TabsList>
+        <TabsList variant="line" className="border-b">
           <TabsTrigger value="total">Total</TabsTrigger>
           <TabsTrigger value="por-mes">Por Mes</TabsTrigger>
           <TabsTrigger value="graficos">Gráficos</TabsTrigger>

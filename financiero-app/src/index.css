@@ -29,6 +29,8 @@
   --success: #3ecf8e;
   --warning: #f7a74f;
   --purple: #bc8cff;
+  --cyan: #38bdf8;
+  --pink: #f472b6;
   /* Orden categórico fijo tomado del donut de dashboard.html (chart 2: valor por tipo) */
   --chart-1: #4f8ef7;
   --chart-2: #d42b1e;
@@ -68,6 +70,8 @@
   --success: #3ecf8e;
   --warning: #f7a74f;
   --purple: #bc8cff;
+  --cyan: #38bdf8;
+  --pink: #f472b6;
   --chart-1: #4f8ef7;
   --chart-2: #d42b1e;
   --chart-3: #3ecf8e;
@@ -110,6 +114,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-purple: var(--purple);
+  --color-cyan: var(--cyan);
+  --color-pink: var(--pink);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);

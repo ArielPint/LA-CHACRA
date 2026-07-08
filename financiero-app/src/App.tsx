@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, type FinancieroTab } from '@/hooks/useAuth'
 import Login from '@/pages/Login'
 import FinancieroLayout from '@/pages/FinancieroLayout'
 import Dashboard from '@/pages/Dashboard'
@@ -8,18 +8,32 @@ import OrdenesCompra from '@/pages/OrdenesCompra'
 import Facturas from '@/pages/Facturas'
 import Presupuestos from '@/pages/Presupuestos'
 import Forecast from '@/pages/Forecast'
+import Remuneraciones from '@/pages/Remuneraciones'
+import Ingresos from '@/pages/Ingresos'
 import Auditoria from '@/pages/Auditoria'
+import SinAcceso from '@/pages/SinAcceso'
 
-// Presupuestos/forecast/seguimiento son admin-only de punta a punta (RLS),
-// así que el Dashboard (que depende de la vista de seguimiento) también lo es.
-function SoloAdmin({ children }: { children: React.ReactNode }) {
-  const { isAdmin } = useAuth()
-  return isAdmin ? <>{children}</> : <Navigate to="/ordenes-compra" replace />
+const ORDEN_TABS: FinancieroTab[] = [
+  'dashboard',
+  'ordenes-compra',
+  'facturas',
+  'presupuestos',
+  'forecast',
+  'remuneraciones',
+  'ingresos',
+  'auditoria',
+]
+
+function RequiereTab({ tab, children }: { tab: FinancieroTab; children: React.ReactNode }) {
+  const { puedeVer } = useAuth()
+  return puedeVer(tab) ? <>{children}</> : <Navigate to="/sin-acceso" replace />
 }
 
 function IndexRoute() {
-  const { isAdmin } = useAuth()
-  return isAdmin ? <Dashboard /> : <Navigate to="/ordenes-compra" replace />
+  const { puedeVer } = useAuth()
+  const primerTabDisponible = ORDEN_TABS.find((tab) => puedeVer(tab))
+  if (!primerTabDisponible) return <Navigate to="/sin-acceso" replace />
+  return primerTabDisponible === 'dashboard' ? <Dashboard /> : <Navigate to={`/${primerTabDisponible}`} replace />
 }
 
 function App() {
@@ -33,32 +47,63 @@ function App() {
       <Routes>
         <Route element={<FinancieroLayout />}>
           <Route index element={<IndexRoute />} />
-          <Route path="ordenes-compra" element={<OrdenesCompra />} />
-          <Route path="facturas" element={<Facturas />} />
+          <Route
+            path="ordenes-compra"
+            element={
+              <RequiereTab tab="ordenes-compra">
+                <OrdenesCompra />
+              </RequiereTab>
+            }
+          />
+          <Route
+            path="facturas"
+            element={
+              <RequiereTab tab="facturas">
+                <Facturas />
+              </RequiereTab>
+            }
+          />
           <Route
             path="presupuestos"
             element={
-              <SoloAdmin>
+              <RequiereTab tab="presupuestos">
                 <Presupuestos />
-              </SoloAdmin>
+              </RequiereTab>
             }
           />
           <Route
             path="forecast"
             element={
-              <SoloAdmin>
+              <RequiereTab tab="forecast">
                 <Forecast />
-              </SoloAdmin>
+              </RequiereTab>
+            }
+          />
+          <Route
+            path="remuneraciones"
+            element={
+              <RequiereTab tab="remuneraciones">
+                <Remuneraciones />
+              </RequiereTab>
+            }
+          />
+          <Route
+            path="ingresos"
+            element={
+              <RequiereTab tab="ingresos">
+                <Ingresos />
+              </RequiereTab>
             }
           />
           <Route
             path="auditoria"
             element={
-              <SoloAdmin>
+              <RequiereTab tab="auditoria">
                 <Auditoria />
-              </SoloAdmin>
+              </RequiereTab>
             }
           />
+          <Route path="sin-acceso" element={<SinAcceso />} />
         </Route>
       </Routes>
       <Toaster />

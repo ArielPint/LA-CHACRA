@@ -82,6 +82,17 @@ export interface SeguimientoPresupuesto {
   deficit_o_superavit: number
 }
 
+export interface MontoMensual {
+  id: string
+  mes: number
+  anio: number
+  monto: number
+  observacion: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface AuditLogEntry {
   id: string
   tabla_afectada: string

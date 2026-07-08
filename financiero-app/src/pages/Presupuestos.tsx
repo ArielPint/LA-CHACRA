@@ -1,5 +1,6 @@
 import { Wallet } from 'lucide-react'
 import { usePresupuestos } from '@/hooks/usePresupuestos'
+import { useAuth } from '@/hooks/useAuth'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import FormularioPresupuesto from '@/components/FormularioPresupuesto'
 import EmptyState from '@/components/EmptyState'
@@ -7,21 +8,25 @@ import TableSkeleton from '@/components/TableSkeleton'
 import { formatCLP } from '@/utils/formatters'
 
 export default function Presupuestos() {
+  const { puedeEditar } = useAuth()
+  const editable = puedeEditar('presupuestos')
   const { presupuestos, loading, error, createPresupuesto, updatePresupuesto } = usePresupuestos()
 
   if (error) return <p className="text-destructive">{error}</p>
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <FormularioPresupuesto onCreate={createPresupuesto} onUpdate={updatePresupuesto} />
-      </div>
+      {editable && (
+        <div className="flex justify-end">
+          <FormularioPresupuesto onCreate={createPresupuesto} onUpdate={updatePresupuesto} />
+        </div>
+      )}
 
       {!loading && presupuestos.length === 0 ? (
         <EmptyState
           icon={Wallet}
           title="Todavía no hay presupuestos"
-          description='Creá el primero con el botón "Nuevo Presupuesto".'
+          description={editable ? 'Creá el primero con el botón "Nuevo Presupuesto".' : undefined}
         />
       ) : (
         <div className="rounded-md border">
@@ -33,11 +38,11 @@ export default function Presupuestos() {
                 <TableHead>Tarea WIP</TableHead>
                 <TableHead className="text-right">Presupuesto Original</TableHead>
                 <TableHead className="text-right">Valor Servicio</TableHead>
-                <TableHead />
+                {editable && <TableHead />}
               </TableRow>
             </TableHeader>
             {loading ? (
-              <TableSkeleton columns={6} />
+              <TableSkeleton columns={editable ? 6 : 5} />
             ) : (
               <TableBody>
                 {presupuestos.map((p) => (
@@ -47,9 +52,11 @@ export default function Presupuestos() {
                     <TableCell>{p.tarea_wip ?? '—'}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatCLP(p.presupuesto_original)}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatCLP(p.valor_servicio)}</TableCell>
-                    <TableCell>
-                      <FormularioPresupuesto presupuesto={p} onCreate={createPresupuesto} onUpdate={updatePresupuesto} />
-                    </TableCell>
+                    {editable && (
+                      <TableCell>
+                        <FormularioPresupuesto presupuesto={p} onCreate={createPresupuesto} onUpdate={updatePresupuesto} />
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

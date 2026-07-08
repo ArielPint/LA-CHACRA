@@ -10,12 +10,26 @@ interface Perfil {
   permissions: Record<string, unknown>
 }
 
+export type FinancieroTab =
+  | 'dashboard'
+  | 'ordenes-compra'
+  | 'facturas'
+  | 'presupuestos'
+  | 'forecast'
+  | 'remuneraciones'
+  | 'ingresos'
+  | 'auditoria'
+
+export type FinancieroSeccionEditable = 'oc' | 'presupuestos' | 'remuneraciones' | 'ingresos'
+
 interface AuthValue {
   perfil: Perfil | null
   loading: boolean
   isAuthenticated: boolean
   isAdmin: boolean
   canEditOC: boolean
+  puedeVer: (tab: FinancieroTab) => boolean
+  puedeEditar: (seccion: FinancieroSeccionEditable) => boolean
   signOut: () => Promise<void>
 }
 
@@ -61,7 +75,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const isAdmin = perfil?.role === 'admin'
-  const canEditOC = isAdmin || perfil?.permissions?.permiso_financiero_oc === true
+
+  const puedeVer = (tab: FinancieroTab): boolean => {
+    if (isAdmin) return true
+    const pages = perfil?.permissions?.pages as Record<string, { access?: boolean; tabs?: string[] }> | undefined
+    const financiero = pages?.financiero
+    return financiero?.access === true && Array.isArray(financiero.tabs) && financiero.tabs.includes(tab)
+  }
+
+  const puedeEditar = (seccion: FinancieroSeccionEditable): boolean => {
+    if (isAdmin) return true
+    return perfil?.permissions?.[`permiso_financiero_${seccion}`] === true
+  }
+
+  const canEditOC = puedeEditar('oc')
 
   return (
     <AuthContext.Provider
@@ -71,6 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!perfil,
         isAdmin,
         canEditOC,
+        puedeVer,
+        puedeEditar,
         signOut: async () => {
           await supabase.auth.signOut()
         },

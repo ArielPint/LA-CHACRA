@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { TrendingUp } from 'lucide-react'
 import { useForecast } from '@/hooks/useForecast'
 import { usePresupuestosLookup } from '@/hooks/usePresupuestosLookup'
+import { useAuth } from '@/hooks/useAuth'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import FormularioForecast from '@/components/FormularioForecast'
 import EmptyState from '@/components/EmptyState'
@@ -9,6 +10,8 @@ import TableSkeleton from '@/components/TableSkeleton'
 import { formatCLP, nombreMes } from '@/utils/formatters'
 
 export default function Forecast() {
+  const { puedeEditar } = useAuth()
+  const editable = puedeEditar('presupuestos')
   const { forecast, loading, upsertForecast } = useForecast()
   const { presupuestos } = usePresupuestosLookup()
 
@@ -26,15 +29,17 @@ export default function Forecast() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <FormularioForecast onUpsert={upsertForecast} />
-      </div>
+      {editable && (
+        <div className="flex justify-end">
+          <FormularioForecast onUpsert={upsertForecast} />
+        </div>
+      )}
 
       {!loading && filasOrdenadas.length === 0 ? (
         <EmptyState
           icon={TrendingUp}
           title="Todavía no hay forecast cargado"
-          description='Agregá el primero con el botón "Agregar forecast".'
+          description={editable ? 'Agregá el primero con el botón "Agregar forecast".' : undefined}
         />
       ) : (
         <div className="rounded-md border">
@@ -45,11 +50,11 @@ export default function Forecast() {
                 <TableHead>Descripción</TableHead>
                 <TableHead>Mes</TableHead>
                 <TableHead className="text-right">Monto Forecast</TableHead>
-                <TableHead />
+                {editable && <TableHead />}
               </TableRow>
             </TableHeader>
             {loading ? (
-              <TableSkeleton columns={5} />
+              <TableSkeleton columns={editable ? 5 : 4} />
             ) : (
               <TableBody>
                 {filasOrdenadas.map((f) => {
@@ -62,9 +67,11 @@ export default function Forecast() {
                         {nombreMes(f.mes)} {f.anio}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{formatCLP(f.monto_forecast)}</TableCell>
-                      <TableCell>
-                        <FormularioForecast forecastExistente={f} onUpsert={upsertForecast} />
-                      </TableCell>
+                      {editable && (
+                        <TableCell>
+                          <FormularioForecast forecastExistente={f} onUpsert={upsertForecast} />
+                        </TableCell>
+                      )}
                     </TableRow>
                   )
                 })}
