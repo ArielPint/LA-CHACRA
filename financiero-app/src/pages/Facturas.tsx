@@ -90,7 +90,12 @@ export default function Facturas() {
             Exportar a Excel
           </Button>
           {canEditOC && (
-            <FormularioFactura ordenesCompra={ordenesCompra} onCreate={createFactura} onUpdate={updateFactura} />
+            <FormularioFactura
+              facturas={facturas}
+              ordenesCompra={ordenesCompra}
+              onCreate={createFactura}
+              onUpdate={updateFactura}
+            />
           )}
         </div>
       </div>
@@ -147,6 +152,7 @@ export default function Facturas() {
                         <TableCell>
                           <FormularioFactura
                             factura={f}
+                            facturas={facturas}
                             ordenesCompra={ordenesCompra}
                             onCreate={createFactura}
                             onUpdate={updateFactura}

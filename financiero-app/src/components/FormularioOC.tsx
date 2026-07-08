@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
+import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,6 +22,7 @@ import type { OrdenCompra } from '@/types/financiero'
 
 interface FormularioOCProps {
   ordenCompra?: OrdenCompra
+  ordenesCompra: OrdenCompra[]
   onCreate: (input: {
     numero_oc: string
     presupuesto_id: string
@@ -34,7 +36,7 @@ interface FormularioOCProps {
   onUpdate: (id: string, patch: Partial<OrdenCompra>) => Promise<OrdenCompra>
 }
 
-export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: FormularioOCProps) {
+export default function FormularioOC({ ordenCompra, ordenesCompra, onCreate, onUpdate }: FormularioOCProps) {
   const { presupuestos } = usePresupuestosLookup()
   const [open, setOpen] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -51,6 +53,14 @@ export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: Formul
   const [detalle, setDetalle] = useState(ordenCompra?.detalle ?? '')
   const [archivoPdf, setArchivoPdf] = useState<File | null>(null)
   const [extrayendo, setExtrayendo] = useState(false)
+
+  // El N° de OC es único: si ya existe otra línea con el mismo número,
+  // probablemente se está por cargar un duplicado.
+  const ocDuplicada = useMemo(() => {
+    const numero = numeroOc.trim().toLowerCase()
+    if (!numero) return null
+    return ordenesCompra.find((oc) => oc.id !== ordenCompra?.id && oc.numero_oc.trim().toLowerCase() === numero)
+  }, [ordenesCompra, numeroOc, ordenCompra?.id])
 
   // Al elegir un PDF nuevo, se manda a extraer los datos con IA y se
   // precargan los campos — el usuario siempre puede corregirlos antes de
@@ -169,6 +179,12 @@ export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: Formul
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="numero_oc">N° OC</Label>
             <Input id="numero_oc" value={numeroOc} onChange={(e) => setNumeroOc(e.target.value)} required />
+            {ocDuplicada && (
+              <p className="flex items-center gap-1.5 text-sm text-warning">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                Ya existe la OC {ocDuplicada.numero_oc} — revisá que no sea un duplicado.
+              </p>
+            )}
           </div>
           <BuscadorPresupuestoWip codigoWip={codigoWip} onCodigoWipChange={setCodigoWip} onResolved={setPresupuesto} />
           <div className="flex flex-col gap-1.5">

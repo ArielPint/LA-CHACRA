@@ -94,7 +94,9 @@ export default function OrdenesCompra() {
           >
             Exportar a Excel
           </Button>
-          {canEditOC && <FormularioOC onCreate={createOrdenCompra} onUpdate={updateOrdenCompra} />}
+          {canEditOC && (
+            <FormularioOC ordenesCompra={ordenesCompra} onCreate={createOrdenCompra} onUpdate={updateOrdenCompra} />
+          )}
         </div>
       </div>
 
@@ -144,7 +146,12 @@ export default function OrdenesCompra() {
                     <TableCell>{oc.pdf_path ? <VisorPDF pdfPath={oc.pdf_path} /> : '—'}</TableCell>
                     {canEditOC && (
                       <TableCell>
-                        <FormularioOC ordenCompra={oc} onCreate={createOrdenCompra} onUpdate={updateOrdenCompra} />
+                        <FormularioOC
+                          ordenCompra={oc}
+                          ordenesCompra={ordenesCompra}
+                          onCreate={createOrdenCompra}
+                          onUpdate={updateOrdenCompra}
+                        />
                       </TableCell>
                     )}
                   </TableRow>

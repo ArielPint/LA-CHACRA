@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
+import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +23,7 @@ import type { Factura, OrdenCompra } from '@/types/financiero'
 
 interface FormularioFacturaProps {
   factura?: Factura
+  facturas: Factura[]
   ordenesCompra: OrdenCompra[]
   onCreate: (input: {
     numero_factura: string | null
@@ -35,7 +37,7 @@ interface FormularioFacturaProps {
   onUpdate: (id: string, patch: Partial<Factura>) => Promise<Factura>
 }
 
-export default function FormularioFactura({ factura, ordenesCompra, onCreate, onUpdate }: FormularioFacturaProps) {
+export default function FormularioFactura({ factura, facturas, ordenesCompra, onCreate, onUpdate }: FormularioFacturaProps) {
   const { presupuestos } = usePresupuestosLookup()
   const [open, setOpen] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -48,6 +50,21 @@ export default function FormularioFactura({ factura, ordenesCompra, onCreate, on
   const [monto, setMonto] = useState(String(factura?.monto ?? ''))
   const [observacion, setObservacion] = useState(factura?.observacion ?? '')
   const [archivoPdf, setArchivoPdf] = useState<File | null>(null)
+
+  // Un mismo N° de factura puede repetirse entre OC distintas si una factura
+  // real se reparte en varias líneas — pero si además coincide el RUT
+  // proveedor, es casi seguro que se está por cargar la misma factura de nuevo.
+  const facturaDuplicada = useMemo(() => {
+    const numero = numeroFactura.trim().toLowerCase()
+    const rut = proveedorRut.trim().toLowerCase()
+    if (!numero || !rut) return null
+    return facturas.find(
+      (f) =>
+        f.id !== factura?.id &&
+        f.numero_factura?.trim().toLowerCase() === numero &&
+        f.proveedor_rut?.trim().toLowerCase() === rut,
+    )
+  }, [facturas, numeroFactura, proveedorRut, factura?.id])
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -149,6 +166,13 @@ export default function FormularioFactura({ factura, ordenesCompra, onCreate, on
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="proveedor_rut">RUT proveedor</Label>
             <Input id="proveedor_rut" value={proveedorRut ?? ''} onChange={(e) => setProveedorRut(e.target.value)} />
+            {facturaDuplicada && (
+              <p className="flex items-center gap-1.5 text-sm text-warning">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                Ya existe una factura {facturaDuplicada.numero_factura} de este proveedor — revisá que no sea un
+                duplicado.
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="fecha">Fecha</Label>
