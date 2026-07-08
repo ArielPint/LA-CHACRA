@@ -109,8 +109,32 @@ const AUTH = (() => {
       label: 'Asistencia GeoVictoria',
       restricted: true,
       tabs: {}
+    },
+    financiero: {
+      label: 'Financiero',
+      restricted: true, // apagado por defecto: hay que habilitarlo a mano por usuario
+      tabs: {
+        dashboard:        'Dashboard',
+        'ordenes-compra': 'Órdenes de Compra',
+        facturas:         'Facturas',
+        presupuestos:     'Presupuestos',
+        forecast:         'Forecast',
+        remuneraciones:   'Remuneraciones',
+        ingresos:         'Ingreso del Proyecto',
+        auditoria:        'Auditoría'
+      }
     }
   };
+
+  // Pestañas del Financiero que tienen edición propia (aparte de solo verlas).
+  // Varias pestañas comparten un mismo flag de edición porque van de la mano
+  // (ver financiero-app: permiso_financiero_<seccion> en user_profiles.permissions).
+  const FINANCIERO_EDIT_GROUPS = [
+    { key: 'oc',             label: 'Puede editar Órdenes de Compra y Facturas', tabs: ['ordenes-compra', 'facturas'] },
+    { key: 'presupuestos',   label: 'Puede editar Presupuestos y Forecast',       tabs: ['presupuestos', 'forecast'] },
+    { key: 'remuneraciones', label: 'Puede editar Remuneraciones',                tabs: ['remuneraciones'] },
+    { key: 'ingresos',       label: 'Puede editar Ingreso del Proyecto',          tabs: ['ingresos'] }
+  ];
 
   function defaultPagePerms() {
     const pages = {};
@@ -188,7 +212,7 @@ const AUTH = (() => {
   }
 
   // ─── createUser (via Edge Function con service_role) ─────────────────────
-  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride, permisoStockOverride, plantaRol, planta_marks }) {
+  async function createUser({ username, password, name, email, role, customPages, readonly, canEditLayoutOverride, canEditProductsOverride, permisoStockOverride, financieroEditOverride, plantaRol, planta_marks }) {
     const roleDef = DEFAULT_ROLES[role] || DEFAULT_ROLES.viewer;
     const permissions = {
       pages: customPages || roleDef.pages(),
@@ -198,6 +222,9 @@ const AUTH = (() => {
     if (canEditProductsOverride !== undefined) permissions.canEditProducts = canEditProductsOverride;
     if (permisoStockOverride    !== undefined) permissions.permiso_stock    = permisoStockOverride;
     if (planta_marks            !== undefined) permissions.planta_marks     = planta_marks || null;
+    if (financieroEditOverride  !== undefined) {
+      for (const [k, v] of Object.entries(financieroEditOverride)) permissions[`permiso_financiero_${k}`] = v;
+    }
 
     const token = await _getAccessToken();
     const resp = await fetch(MANAGE_URL, {
@@ -226,7 +253,7 @@ const AUTH = (() => {
   }
 
   // ─── updateUser ───────────────────────────────────────────────────────────
-  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride, permisoStockOverride, plantaRol, planta_marks }) {
+  async function updateUser(id, { username, password, name, email, role, customPages, readonly, active, canEditLayoutOverride, canEditProductsOverride, permisoStockOverride, financieroEditOverride, plantaRol, planta_marks }) {
     const sb = await _client();
 
     const { data: current, error: fetchErr } = await sb
@@ -251,6 +278,9 @@ const AUTH = (() => {
     if (canEditProductsOverride  !== undefined) perms.canEditProducts = canEditProductsOverride;
     if (permisoStockOverride     !== undefined) perms.permiso_stock    = permisoStockOverride;
     if (planta_marks             !== undefined) perms.planta_marks     = planta_marks || null;
+    if (financieroEditOverride   !== undefined) {
+      for (const [k, v] of Object.entries(financieroEditOverride)) perms[`permiso_financiero_${k}`] = v;
+    }
 
     const updates = { role: newRole, permissions: perms, updated_at: new Date().toISOString() };
     if (username  !== undefined) updates.username  = username.trim().toLowerCase();
@@ -513,6 +543,7 @@ const AUTH = (() => {
   function getPageLabel(pageId)    { return PAGE_MAP[pageId] ? PAGE_MAP[pageId].label : pageId; }
   function getTabLabel(pid, tid)   { return PAGE_MAP[pid]?.tabs[tid] || tid; }
   function getAllTabs()             { return Object.keys(PAGE_MAP.layout.tabs); }
+  function getFinancieroEditGroups(){ return FINANCIERO_EDIT_GROUPS; }
 
   // ─── Estadísticas de login (Supabase) ────────────────────────────────────
   async function getLoginStats() {
@@ -563,6 +594,7 @@ const AUTH = (() => {
     canAccessPage, canViewTab, isReadonly, isAdmin, canEditLayout, canEditProducts,
     getPlantaRol, canAccessPlanta, canMarkInPlanta,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,
+    getFinancieroEditGroups,
     hashPassword, getLoginStats
   };
 

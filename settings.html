@@ -191,6 +191,9 @@ tr.just-saved td{animation:rowFlash 2.2s ease forwards}
 .tab-check-sm input{accent-color:var(--brand)}
 .all-none-btns{display:flex;gap:6px;margin-bottom:6px}
 .btn-all-none{font-size:.7rem;padding:2px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--muted)}
+.fin-edit-group{margin-top:10px;padding:8px 10px;border:1.5px dashed var(--border);border-radius:8px}
+.fin-edit-check:has(input:checked){border-color:var(--blue)!important;background:var(--blue2)!important;color:var(--blue)!important}
+.fin-edit-check input{accent-color:var(--blue)}
 .btn-all-none:hover{color:var(--text)}
 
 /* ── Toggle switch ───────────────────────────────────────── */
@@ -878,22 +881,29 @@ function getPlantaMarksFromForm(){
 }
 
 // ── Permisos por página ─────────────────────────────────────
-function buildPagePerms(currentPages){
+function buildPagePerms(currentPerms){
+  const currentPages=currentPerms&&currentPerms.pages;
   const pages=AUTH.getPages();
   const container=document.getElementById('pagePermsContainer');
   container.innerHTML='';
   Object.entries(pages).forEach(([pageId,pageDef])=>{
-    const curPg=(currentPages&&currentPages[pageId])||{access:true,tabs:Object.keys(pageDef.tabs)};
+    const curPg=(currentPages&&currentPages[pageId])||{access:!pageDef.restricted,tabs:pageDef.restricted?[]:Object.keys(pageDef.tabs)};
     const hasAccess=!!curPg.access;
     const allowedTabs=curPg.tabs||Object.keys(pageDef.tabs);
     const div=document.createElement('div');
     div.className='perm-page'+(hasAccess?' enabled open':'');
     div.id='perm-page-'+pageId;
-    const tabsHtml=Object.entries(pageDef.tabs).map(([tabId,tabLabel])=>
-      `<label class="tab-check-sm">
-        <input type="checkbox" data-page="${pageId}" data-tab="${tabId}" ${allowedTabs.includes(tabId)?'checked':''}>
-        ${tabLabel}
-      </label>`).join('');
+    const bodyHtml=pageId==='financiero'
+      ?financieroTabsHtml(allowedTabs,currentPerms)
+      :`<div class="all-none-btns">
+          <button class="btn-all-none" onclick="selectAllTabs('${pageId}',true)">Todas</button>
+          <button class="btn-all-none" onclick="selectAllTabs('${pageId}',false)">Ninguna</button>
+        </div>
+        <div class="tabs-grid-sm">${Object.entries(pageDef.tabs).map(([tabId,tabLabel])=>
+          `<label class="tab-check-sm">
+            <input type="checkbox" data-page="${pageId}" data-tab="${tabId}" ${allowedTabs.includes(tabId)?'checked':''}>
+            ${tabLabel}
+          </label>`).join('')}</div>`;
     div.innerHTML=`
       <div class="perm-page-header" onclick="togglePageSection('${pageId}')">
         <div class="perm-page-title">
@@ -905,15 +915,54 @@ function buildPagePerms(currentPages){
         </div>
         <span style="font-size:.72rem;color:var(--muted)">${hasAccess?Object.keys(pageDef.tabs).length+' pestañas':'sin acceso'} ▾</span>
       </div>
-      <div class="perm-page-body">
-        <div class="all-none-btns">
-          <button class="btn-all-none" onclick="selectAllTabs('${pageId}',true)">Todas</button>
-          <button class="btn-all-none" onclick="selectAllTabs('${pageId}',false)">Ninguna</button>
-        </div>
-        <div class="tabs-grid-sm">${tabsHtml}</div>
-      </div>`;
+      <div class="perm-page-body">${bodyHtml}</div>`;
     container.appendChild(div);
   });
+}
+
+// Financiero: además de "ver" cada pestaña, algunas tienen su propio permiso
+// de edición (compartido entre pestañas relacionadas, ver FINANCIERO_EDIT_GROUPS).
+function financieroTabsHtml(allowedTabs,currentPerms){
+  const pageDef=AUTH.getPages().financiero;
+  const editGroups=AUTH.getFinancieroEditGroups();
+  const tabToGroup={};
+  editGroups.forEach(g=>g.tabs.forEach(t=>{tabToGroup[t]=g;}));
+  const soloVer=Object.entries(pageDef.tabs).filter(([tabId])=>!tabToGroup[tabId]);
+  const soloVerHtml=soloVer.map(([tabId,tabLabel])=>
+    `<label class="tab-check-sm">
+      <input type="checkbox" data-page="financiero" data-tab="${tabId}" ${allowedTabs.includes(tabId)?'checked':''}>
+      ${tabLabel}
+    </label>`).join('');
+  const gruposHtml=editGroups.map(g=>{
+    const verHtml=g.tabs.map(tabId=>
+      `<label class="tab-check-sm">
+        <input type="checkbox" data-page="financiero" data-tab="${tabId}" ${allowedTabs.includes(tabId)?'checked':''}>
+        ${pageDef.tabs[tabId]}
+      </label>`).join('');
+    const editChecked=!!(currentPerms&&currentPerms[`permiso_financiero_${g.key}`]);
+    return `<div class="fin-edit-group">
+      <div class="tabs-grid-sm">${verHtml}</div>
+      <label class="tab-check-sm fin-edit-check">
+        <input type="checkbox" data-financiero-edit="${g.key}" ${editChecked?'checked':''}>
+        ✏️ ${g.label}
+      </label>
+    </div>`;
+  }).join('');
+  return `
+    <div class="all-none-btns">
+      <button class="btn-all-none" onclick="selectAllTabs('financiero',true)">Todas</button>
+      <button class="btn-all-none" onclick="selectAllTabs('financiero',false)">Ninguna</button>
+    </div>
+    <div class="tabs-grid-sm">${soloVerHtml}</div>
+    ${gruposHtml}`;
+}
+
+function getFinancieroEditFromForm(){
+  const result={};
+  document.querySelectorAll('input[data-financiero-edit]').forEach(cb=>{
+    result[cb.dataset.financieroEdit]=cb.checked;
+  });
+  return result;
 }
 
 function togglePageSection(pageId){document.getElementById('perm-page-'+pageId).classList.toggle('open');}
@@ -940,7 +989,7 @@ function getPagePermsFromForm(){
 
 function onRoleChange(){
   const role=document.getElementById('fRole').value;
-  buildPagePerms(AUTH.getDefaultPages(role));
+  buildPagePerms({pages:AUTH.getDefaultPages(role)});
   const roles=AUTH.getRoles();
   document.getElementById('fReadonly').checked      =roles[role]?roles[role].readonly:false;
   document.getElementById('fCanEditLayout').checked =roles[role]?!!roles[role].canEditLayout:false;
@@ -987,7 +1036,7 @@ async function editUser(id){
   loadPlantaMarks(user.permissions&&user.permissions.planta_marks);
   document.getElementById('passHint').textContent='(dejar vacío para no cambiar)';
   document.getElementById('modalTitle').textContent='Editar usuario';
-  buildPagePerms(user.permissions.pages);
+  buildPagePerms(user.permissions);
   document.getElementById('modalOverlay').classList.add('open');
 }
 
@@ -1011,6 +1060,7 @@ async function saveUser(){
   const act  =document.getElementById('fActive').checked;
   const pages=getPagePermsFromForm();
   const plantaMarks=getPlantaMarksFromForm();
+  const financieroEdit=getFinancieroEditFromForm();
   if(!name||!user){showToast('Nombre y usuario son requeridos','error');return;}
   if(!id&&pass.length<6){showToast('La contraseña debe tener al menos 6 caracteres','error');return;}
   const hasAnyAccess=Object.values(pages).some(p=>p.access&&p.tabs.length>0);
@@ -1019,10 +1069,10 @@ async function saveUser(){
   try{
     let savedUser;
     if(id){
-      savedUser=await AUTH.updateUser(id,{username:user,name,email,role,customPages:pages,readonly:ro,active:act,password:pass||undefined,canEditLayoutOverride:cel,canEditProductsOverride:cep,permisoStockOverride:ps,planta_marks:plantaMarks});
+      savedUser=await AUTH.updateUser(id,{username:user,name,email,role,customPages:pages,readonly:ro,active:act,password:pass||undefined,canEditLayoutOverride:cel,canEditProductsOverride:cep,permisoStockOverride:ps,financieroEditOverride:financieroEdit,planta_marks:plantaMarks});
       showToast('Usuario actualizado','success');
     }else{
-      savedUser=await AUTH.createUser({username:user,password:pass,name,email,role,customPages:pages,readonly:ro,canEditLayoutOverride:cel,canEditProductsOverride:cep,permisoStockOverride:ps,planta_marks:plantaMarks});
+      savedUser=await AUTH.createUser({username:user,password:pass,name,email,role,customPages:pages,readonly:ro,canEditLayoutOverride:cel,canEditProductsOverride:cep,permisoStockOverride:ps,financieroEditOverride:financieroEdit,planta_marks:plantaMarks});
       showToast('Usuario creado','success');
     }
     closeModal();
