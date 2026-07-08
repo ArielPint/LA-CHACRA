@@ -16,6 +16,7 @@ import UploadPDF from '@/components/UploadPDF'
 import BuscadorPresupuestoWip from '@/components/BuscadorPresupuestoWip'
 import { usePresupuestosLookup, type PresupuestoLookup } from '@/hooks/usePresupuestosLookup'
 import { pdfPath, subirPdf } from '@/services/pdfStorage'
+import { extraerDatosOC } from '@/services/extraccionOC'
 import type { OrdenCompra } from '@/types/financiero'
 
 interface FormularioOCProps {
@@ -24,6 +25,7 @@ interface FormularioOCProps {
     numero_oc: string
     presupuesto_id: string
     proveedor_rut: string | null
+    nombre_proveedor_raw: string | null
     fecha: string
     neto: number
     detalle: string | null
@@ -43,10 +45,57 @@ export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: Formul
   const [codigoWip, setCodigoWip] = useState(presupuestoActual?.tarea_wip ?? '')
   const [presupuesto, setPresupuesto] = useState<PresupuestoLookup | null>(presupuestoActual ?? null)
   const [proveedorRut, setProveedorRut] = useState(ordenCompra?.proveedor_rut ?? '')
+  const [nombreProveedorRaw, setNombreProveedorRaw] = useState(ordenCompra?.nombre_proveedor_raw ?? '')
   const [fecha, setFecha] = useState(ordenCompra?.fecha ?? new Date().toISOString().slice(0, 10))
   const [neto, setNeto] = useState(String(ordenCompra?.neto ?? ''))
   const [detalle, setDetalle] = useState(ordenCompra?.detalle ?? '')
   const [archivoPdf, setArchivoPdf] = useState<File | null>(null)
+  const [extrayendo, setExtrayendo] = useState(false)
+
+  // Al elegir un PDF nuevo, se manda a extraer los datos con IA y se
+  // precargan los campos — el usuario siempre puede corregirlos antes de
+  // guardar, nada se autocompleta "a ciegas" sin pasar por acá.
+  const onArchivoChange = async (file: File | null) => {
+    setArchivoPdf(file)
+    if (!file) return
+    setExtrayendo(true)
+    try {
+      const datos = await extraerDatosOC(file)
+      const faltantes: string[] = []
+
+      if (datos.numero_oc !== 'NO_ENCONTRADO') setNumeroOc(datos.numero_oc)
+      else faltantes.push('N° OC')
+
+      if (datos.proveedor_rut !== 'NO_ENCONTRADO') setProveedorRut(datos.proveedor_rut)
+      else faltantes.push('RUT proveedor')
+
+      if (datos.proveedor !== 'NO_ENCONTRADO') setNombreProveedorRaw(datos.proveedor)
+
+      if (datos.fecha !== 'NO_ENCONTRADO') setFecha(datos.fecha)
+      else faltantes.push('fecha')
+
+      // El "total" que lee el PDF viene con IVA incluido (verificado contra
+      // datos reales: OC 5900 tiene total $4.284.000 en el PDF y neto
+      // $3.600.000 en la base — $3.600.000 × 1.19 = $4.284.000 exacto).
+      // El campo Neto de la OC va sin IVA, así que se ajusta acá.
+      const totalConIva = Number(datos.total)
+      if (datos.total !== 'NO_ENCONTRADO' && !Number.isNaN(totalConIva)) {
+        setNeto(String(Math.round(totalConIva / 1.19)))
+      } else {
+        faltantes.push('total')
+      }
+
+      if (faltantes.length > 0) {
+        toast.warning(`No se pudo leer del PDF: ${faltantes.join(', ')}. Completalo manualmente.`)
+      } else {
+        toast.success('Datos extraídos del PDF — revisá antes de guardar')
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo extraer datos del PDF, completá el formulario manualmente')
+    } finally {
+      setExtrayendo(false)
+    }
+  }
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -62,6 +111,7 @@ export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: Formul
           numero_oc: numeroOc,
           presupuesto_id: presupuesto.id,
           proveedor_rut: proveedorRut || null,
+          nombre_proveedor_raw: nombreProveedorRaw || null,
           fecha,
           neto: Number(neto),
           detalle: detalle || null,
@@ -71,6 +121,7 @@ export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: Formul
           numero_oc: numeroOc,
           presupuesto_id: presupuesto.id,
           proveedor_rut: proveedorRut || null,
+          nombre_proveedor_raw: nombreProveedorRaw || null,
           fecha,
           neto: Number(neto),
           detalle: detalle || null,
@@ -90,6 +141,7 @@ export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: Formul
         setCodigoWip('')
         setPresupuesto(null)
         setProveedorRut('')
+        setNombreProveedorRaw('')
         setNeto('')
         setDetalle('')
         setArchivoPdf(null)
@@ -124,6 +176,15 @@ export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: Formul
             <Input id="proveedor_rut" value={proveedorRut ?? ''} onChange={(e) => setProveedorRut(e.target.value)} />
           </div>
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="nombre_proveedor_raw">Nombre proveedor</Label>
+            <Input
+              id="nombre_proveedor_raw"
+              value={nombreProveedorRaw ?? ''}
+              onChange={(e) => setNombreProveedorRaw(e.target.value)}
+              placeholder="Se completa solo al leer el PDF, o escribilo a mano"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="fecha">Fecha</Label>
             <Input id="fecha" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
           </div>
@@ -135,7 +196,8 @@ export default function FormularioOC({ ordenCompra, onCreate, onUpdate }: Formul
             <Label htmlFor="detalle">Detalle</Label>
             <Textarea id="detalle" value={detalle ?? ''} onChange={(e) => setDetalle(e.target.value)} />
           </div>
-          <UploadPDF tienePdfExistente={!!ordenCompra?.pdf_path} onFileChange={setArchivoPdf} />
+          <UploadPDF tienePdfExistente={!!ordenCompra?.pdf_path} onFileChange={onArchivoChange} />
+          {extrayendo && <p className="text-xs text-muted-foreground">Extrayendo datos del PDF…</p>}
           <DialogFooter>
             <Button type="submit" disabled={enviando}>
               {enviando ? 'Guardando…' : 'Guardar'}

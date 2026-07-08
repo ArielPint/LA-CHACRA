@@ -51,6 +51,17 @@ export interface OrdenCompra {
   updated_at: string
 }
 
+// Respuesta de la Edge Function extraer-oc-pdf. Los campos string vienen en
+// "NO_ENCONTRADO" cuando el modelo no pudo leerlos del PDF.
+export interface ExtraccionOC {
+  numero_oc: string
+  proveedor: string
+  proveedor_rut: string
+  fecha: string
+  total: string
+  status: 'OK' | 'ERROR'
+}
+
 export interface Factura {
   id: string
   numero_factura: string | null

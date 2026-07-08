@@ -8,6 +8,7 @@ type NuevaOrdenCompra = Pick<
   | 'numero_oc'
   | 'presupuesto_id'
   | 'proveedor_rut'
+  | 'nombre_proveedor_raw'
   | 'fecha'
   | 'neto'
   | 'detalle'

@@ -155,6 +155,9 @@ body.sidebar-open iframe { visibility: hidden; }
     <div class="nav-item" id="dd-asistencia" data-label="Asistencia GeoVictoria" onclick="window.location.href='asistencia.html'" style="display:none">
       <span class="nav-icon">&#128119;</span><span class="nav-label">Asistencia GeoVictoria</span>
     </div>
+    <div class="nav-item" id="dd-financiero" data-label="Financiero" onclick="openFinanciero()" style="display:none">
+      <span class="nav-icon">&#128176;</span><span class="nav-label">Financiero</span>
+    </div>
     <div class="nav-sep"></div>
     <div class="nav-section">Sistema</div>
     <div class="nav-item" id="dd-settings" data-label="Configuración" onclick="window.location.href='settings.html'" style="display:none">
@@ -230,6 +233,7 @@ var currentPage = 'dashboard';
   if (AUTH.canAccessPage('solicitudes')) { var el = document.getElementById('dd-solicitudes'); if (el) el.style.display = 'flex'; }
   if (AUTH.canAccessPlanta()) { var el2 = document.getElementById('dd-planta'); if (el2) el2.style.display = 'flex'; }
   if (AUTH.canAccessPage('geovictoria')) { var el3 = document.getElementById('dd-asistencia'); if (el3) el3.style.display = 'flex'; }
+  if (AUTH.canAccessPage('financiero')) { var el4 = document.getElementById('dd-financiero'); if (el4) el4.style.display = 'flex'; }
   var pages = ['dashboard','produccion','layout','registro-gd','despacho'];
   var firstVisible = null;
   pages.forEach(function(p) {
@@ -293,6 +297,11 @@ function iframeLoaded(name) {
   if (name === currentPage) updateBottomTabs(name);
 }
 function openPlanta() { window.open('control-planta.html', '_blank'); }
+// financiero-app es una SPA aparte (Vite/React), se compila y se sube a
+// /financiero en cada deploy (ver .github/workflows/deploy.yml) — se abre en
+// pestaña nueva igual que otras herramientas externas, no por iframe.
+var FINANCIERO_URL = 'https://arielpint.github.io/LA-CHACRA/financiero/#/';
+function openFinanciero() { window.open(FINANCIERO_URL, '_blank'); }
 function doLogout() { AUTH.logout(); window.location.href = 'login.html'; }
 function recargar() { Object.keys(loaded).forEach(function(name) { if (loaded[name]) { var f = document.getElementById('frame-' + name); if (f && f.src) { var ov = document.getElementById('load-' + name); if (ov) ov.classList.remove('done'); f.src = f.src; } } }); }
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSidebarMobile(); });
