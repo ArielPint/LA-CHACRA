@@ -1757,11 +1757,11 @@ function renderCurva(){
     const modsF=(DATA.modulos||[]).filter(x=>{
       if(!x.initReal) return false;
       if(filterTorre && x.torre!==filterTorre) return false;
-      if(filterMonth){
+      if(filterMonths.size){
         const d=parseDate(x.initReal);
         if(!d||isNaN(d)) return false;
         const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        if(ym!==filterMonth) return false;
+        if(!filterMonths.has(ym)) return false;
       }
       return true;
     });
