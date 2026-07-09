@@ -1623,8 +1623,7 @@ function renderCatalogGD(){
   const customCodes=new Set(productosCustom.map(p=>p.codigo.toUpperCase()));
   document.getElementById('cat-count-gd').textContent=list.length+' productos';
   const tbody=document.getElementById('cat-tbody-gd');
-  const session=AUTH.getSession?AUTH.getSession():null;
-  const isAdmin=session&&session.role==='admin';
+  const isAdmin=AUTH.canEditProducts?AUTH.canEditProducts():false;
 
   // Calcular Precio Promedio Ponderado por código
   const pppMap={};

@@ -21,12 +21,6 @@
       "autoPort": true
     },
     {
-      "name": "n8n-dashboard",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3000
-    },
-    {
       "name": "LA-CHACRA-3005",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "3005"],
