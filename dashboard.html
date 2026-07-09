@@ -200,9 +200,11 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="chart-wrap" style="height:280px"><canvas id="ch-activos"></canvas></div>
     </div>
   </div>
-  <div class="filter-bar" style="margin-top:12px">
+  <div class="filter-bar" style="margin-top:12px;align-items:center">
     <label>🏗 Filtrar por torre:</label>
-    <select id="curva-torre-sel"></select>
+    <div id="curva-torre-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <button onclick="curvaTorreFilterAll(true)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Todos</button>
+    <button onclick="curvaTorreFilterAll(false)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Ninguno</button>
   </div>
   <div class="grid-1">
     <div class="card">
@@ -1631,6 +1633,19 @@ function renderCurvaFiltered(){
   _curvaMesFilter=checked.size===cbs.length?null:checked;
   if(_curvaRenderCharts) _curvaRenderCharts();
 }
+let _curvaTorreFilter=null; // null = all torres, Set = filtered
+function curvaTorreFilterAll(val){
+  document.querySelectorAll('#curva-torre-filter input[type=checkbox]').forEach(cb=>cb.checked=val);
+  _curvaTorreFilter=val?null:new Set();
+  if(_curvaRenderCharts) _curvaRenderCharts();
+}
+function renderCurvaTorreFiltered(){
+  const cbs=[...document.querySelectorAll('#curva-torre-filter input[type=checkbox]')];
+  if(!cbs.length) return;
+  const checked=new Set(cbs.filter(c=>c.checked).map(c=>c.value));
+  _curvaTorreFilter=checked.size===cbs.length?null:checked;
+  if(_curvaRenderCharts) _curvaRenderCharts();
+}
 function renderCurva(){
   const today=new Date(); today.setHours(23,59,59,999);
 
@@ -1657,9 +1672,14 @@ function renderCurva(){
   // Build torre filter for tiempo charts
   const torreSet=new Set((DATA.modulos||[]).map(x=>x.torre).filter(Boolean));
   const torres=[...torreSet].sort();
-  const selTorre=document.getElementById('curva-torre-sel');
-  selTorre.innerHTML='<option value="">Todas las torres</option>'+
-    torres.map(t=>`<option value="${t}">${t}</option>`).join('');
+  const torreFilterDiv=document.getElementById('curva-torre-filter');
+  if(torreFilterDiv&&torreFilterDiv.children.length!==torres.length){
+    torreFilterDiv.innerHTML=torres.map(t=>
+      `<label style="display:flex;align-items:center;gap:3px;font-size:.78rem;color:var(--text);cursor:pointer;padding:2px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:4px">
+        <input type="checkbox" value="${t}" checked onchange="renderCurvaTorreFiltered()" style="cursor:pointer">${t}</label>`
+    ).join('');
+    _curvaTorreFilter=null;
+  }
 
   // KPIs (always based on full data up to today)
   const curvaHoy=(DATA.curva||[]).filter(x=>{const d=parseDate(x.fecha);return d&&!isNaN(d)&&d<=today;});
@@ -1773,10 +1793,10 @@ function renderCurva(){
     ],{legend:true});
 
     // ── Charts: Tiempo real vs proyectado por módulo (Húmedo / Seco) ──
-    const filterTorre=selTorre.value;
+    const filterTorres=_curvaTorreFilter||new Set();
     const modsF=(DATA.modulos||[]).filter(x=>{
       if(!x.initReal) return false;
-      if(filterTorre && x.torre!==filterTorre) return false;
+      if(filterTorres.size && !filterTorres.has(x.torre)) return false;
       if(filterMonths.size){
         const d=parseDate(x.initReal);
         if(!d||isNaN(d)) return false;
@@ -1806,7 +1826,6 @@ function renderCurva(){
     });
   };
 
-  selTorre.onchange=renderCurvaCharts;
   _curvaRenderCharts=renderCurvaCharts;
   renderCurvaCharts();
 }
