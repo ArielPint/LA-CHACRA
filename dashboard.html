@@ -2863,6 +2863,28 @@ function proyFilterAll(val){
   renderProyeccion();
 }
 
+// Agenda ítems (cada uno con una fecha en que "estaría listo") contra una capacidad compartida
+// (ritmoPerWeek), en orden de cuál está listo primero. Sin esto, cada torre calculada de forma
+// independiente contra la misma capacidad total termina cayendo todas en la misma fecha.
+function scheduleQueue(items, ritmoPerWeek, today){
+  const result=new Map();
+  if(!items.length) return result;
+  if(!(ritmoPerWeek>0)){ items.forEach(it=>result.set(it.key,it.readyMs)); return result; }
+  const sorted=[...items].sort((a,b)=>a.readyMs-b.readyMs);
+  let wk=weekKey(today), disponible=0, i=0, iter=0;
+  const MAX_ITER=520; // guard: ~10 años de semanas, evita loop infinito
+  while(i<sorted.length && iter<MAX_ITER){
+    disponible+=ritmoPerWeek;
+    while(i<sorted.length && disponible>=1 && weekKey(new Date(sorted[i].readyMs))<=wk){
+      result.set(sorted[i].key, wk); disponible-=1; i++;
+    }
+    const d=new Date(wk); d.setDate(d.getDate()+7); wk=d.getTime();
+    iter++;
+  }
+  while(i<sorted.length){ result.set(sorted[i].key, sorted[i].readyMs); i++; } // guard alcanzado: usa su propia fecha
+  return result;
+}
+
 function renderProyeccion(){
   const m=DATA.modulos||[];
   const today=new Date(); today.setHours(0,0,0,0);
@@ -2923,19 +2945,10 @@ function renderProyeccion(){
     if(!tendenciaDias||n==null) return null;
     return Math.max(tendenciaDias.slope*n+tendenciaDias.intercept,FLOOR_DIAS);
   };
-  // Techo de capacidad: ritmo real actual sumado, pero solo de torres que TODAVÍA tienen pendientes.
-  // Si se suman entregas recientes de una torre ya 100% completada (ej. su ráfaga final), el ritmo
-  // queda inflado con capacidad que ya no existe hacia adelante y una torre sin dato "adelanta" a
-  // una que sí tiene ritmo real más lento — justo lo que este techo tiene que evitar.
-  const ritmoCapacidadActual=torres.reduce((sum,t)=>{
-    const mt=m.filter(x=>x.torre===t);
-    if(mt.every(x=>x.termReal)) return sum; // torre completa: ya no aporta capacidad futura
-    const fechasT=mt.filter(x=>x.termReal).map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d));
-    return sum+fechasT.filter(d=>d>=limite&&d<=today).length/RITMO_SEMANAS;
-  },0);
-
-  const torresChart=filterTorres?[...filterTorres].sort():torres;
-  const torreStats=torresChart.map(t=>{
+  // Stats base por torre — sobre TODAS las torres, no solo las filtradas (la agenda de capacidad
+  // compartida tiene que ser real independiente de qué torres esté mirando el usuario ahora).
+  const statsBase={};
+  torres.forEach(t=>{
     const mt=m.filter(x=>x.torre===t);
     const finT=mt.filter(x=>x.termReal);
     const termDatesT=finT.map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d));
@@ -2944,37 +2957,81 @@ function renderProyeccion(){
     const pendT=mt.length-finT.length;
     const doneConTiempo=finT.filter(x=>(x.avance??0)>=0.99&&x.tiempoReal>0);
     const avgDiasT=doneConTiempo.length?doneConTiempo.reduce((s,x)=>s+x.tiempoReal,0)/doneConTiempo.length:null;
+    statsBase[t]={mt,ritmoT,pendT,avgDiasT};
+  });
 
-    let fechaT=null,metodo='sin-dato';
-    if(pendT===0){
-      metodo='completa';
-    } else if(ritmoT>0){
-      fechaT=new Date(today.getTime()+(pendT/ritmoT)*7*86400000); metodo='ritmo';
-    } else {
-      // Torre sin entregas propias: estima cada módulo pendiente y toma el último en terminar.
-      // Activo -> días restantes según su propio % avance. Sin iniciar -> inicio teórico + duración.
-      // Referencia de duración: tendencia de días por torre (piso 45), o promedio global del tipo si no hay.
-      let huboActivo=false;
-      const avgRefTorre=avgTendenciaTorre(t);
-      const fechasModulos=mt.filter(x=>!x.termReal).map(x=>{
-        const avg=avgRefTorre??avgDurTipoGlobal[(x.tipo||'').toUpperCase()];
-        if(avg==null) return null;
-        if(x.initReal){
-          huboActivo=true;
-          return today.getTime()+Math.max(avg*(1-(x.avance??0)),0)*86400000;
-        }
-        const it=parseDate(x.initTeorico); if(!it||isNaN(it)) return null;
-        return it.getTime()+avg*86400000;
-      }).filter(v=>v!=null);
-      if(fechasModulos.length){
-        const fechaIndividual=new Date(Math.max(...fechasModulos));
-        const fechaCapacidad=ritmoCapacidadActual>0?new Date(today.getTime()+(pendT/ritmoCapacidadActual)*7*86400000):null;
-        fechaT=fechaCapacidad&&fechaCapacidad>fechaIndividual?fechaCapacidad:fechaIndividual;
-        metodo=huboActivo?'tendencia':'inicio-teorico';
-      }
+  // Torres completas o con ritmo propio: fecha directa, no entran a la cola compartida
+  const resultado={};
+  torres.forEach(t=>{
+    const{pendT,ritmoT}=statsBase[t];
+    if(pendT===0) resultado[t]={fecha:null,metodo:'completa'};
+    else if(ritmoT>0) resultado[t]={fecha:new Date(today.getTime()+(pendT/ritmoT)*7*86400000),metodo:'ritmo'};
+  });
+
+  // Capacidad de la 2da cuadrilla (la que trabaja las torres sin ritmo propio, en paralelo a la
+  // torre con ritmo propio): se estima de la torre con más módulos activos en curso ahora mismo
+  // (la que tiene el lote completo de esa cuadrilla) / la tendencia de días de esa torre.
+  let ritmoCrewB=0;
+  {
+    const candidatas=torres.filter(t=>!resultado[t]);
+    const activosPorTorre=candidatas.map(t=>({t,activos:statsBase[t].mt.filter(x=>x.initReal&&!x.termReal).length}));
+    const ref=activosPorTorre.reduce((a,b)=>b.activos>a.activos?b:a,{t:null,activos:0});
+    if(ref.t&&ref.activos>0){
+      const avgRef=avgTendenciaTorre(ref.t)??avgDurTipoGlobal.SECO??avgDurTipoGlobal.HUMEDO;
+      if(avgRef>0) ritmoCrewB=(ref.activos/avgRef)*7;
     }
+  }
+
+  // Cola de la 2da cuadrilla: todo módulo pendiente de una torre sin ritmo propio estima cuándo
+  // ESTARÍA listo (activo -> según su % avance; sin iniciar -> inicio teórico + duración), y se
+  // agenda en orden de cuál está listo primero contra la capacidad real de esa cuadrilla (ritmoCrewB).
+  // Así las torres no "se pisan" la misma fecha por calcularse cada una de forma independiente.
+  const pendientesCola=[];
+  torres.forEach(t=>{
+    if(resultado[t]) return;
+    const{mt}=statsBase[t];
+    const avgRefTorre=avgTendenciaTorre(t);
+    mt.filter(x=>!x.termReal).forEach(x=>{
+      const avg=avgRefTorre??avgDurTipoGlobal[(x.tipo||'').toUpperCase()];
+      if(avg==null) return;
+      let readyMs;
+      if(x.initReal) readyMs=today.getTime()+Math.max(avg*(1-(x.avance??0)),0)*86400000;
+      else{
+        const it=parseDate(x.initTeorico); if(!it||isNaN(it)) return;
+        readyMs=it.getTime()+avg*86400000;
+      }
+      pendientesCola.push({torre:t,readyMs,activo:!!x.initReal});
+    });
+  });
+  const agenda=scheduleQueue(pendientesCola.map((it,idx)=>({key:idx,readyMs:it.readyMs})),ritmoCrewB,today);
+  torres.forEach(t=>{
+    if(resultado[t]) return;
+    const items=pendientesCola.map((it,idx)=>({...it,idx})).filter(it=>it.torre===t);
+    if(!items.length){ resultado[t]={fecha:null,metodo:'sin-dato'}; return; }
+    const finMs=Math.max(...items.map(it=>agenda.get(it.idx)));
+    resultado[t]={fecha:new Date(finMs),metodo:items.some(it=>it.activo)?'tendencia':'inicio-teorico'};
+  });
+
+  // Orden físico real de construcción: una torre no puede quedar terminada antes que la anterior
+  // en la secuencia (torre 3 antes que torre 4, torre 4 antes que torre 5, etc.), sin importar
+  // que el modelo de capacidad por cuadrilla dé una fecha más temprana para la torre siguiente.
+  {
+    const ordenTorres=[...torres].sort((a,b)=>(torreNum(a)??0)-(torreNum(b)??0));
+    let fechaMinima=null;
+    ordenTorres.forEach(t=>{
+      const r=resultado[t];
+      if(!r||!r.fecha) return;
+      if(fechaMinima&&r.fecha<fechaMinima) r.fecha=new Date(fechaMinima.getTime()+7*86400000);
+      fechaMinima=r.fecha;
+    });
+  }
+
+  const torresChart=filterTorres?[...filterTorres].sort():torres;
+  const torreStats=torresChart.map(t=>{
+    const{pendT,ritmoT,avgDiasT}=statsBase[t];
+    const fechaT=resultado[t].fecha;
     const semanas=fechaT?Math.max((fechaT-today)/(7*86400000),0):null;
-    return{torre:t,avgDias:avgDiasT,pendientes:pendT,ritmo:ritmoT,semanas,fecha:fechaT,metodo};
+    return{torre:t,avgDias:avgDiasT,pendientes:pendT,ritmo:ritmoT,semanas,fecha:fechaT,metodo:resultado[t].metodo};
   });
 
   // Proyecto completo = la torre más lenta (fecha más tardía) entre las que tienen fecha estimable
