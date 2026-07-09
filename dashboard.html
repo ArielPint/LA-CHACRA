@@ -2891,6 +2891,28 @@ function renderProyeccion(){
   const pendientesF=totalF-terminadosF;
   const sinIniciarF=modsF.filter(x=>!x.initReal).length;
 
+  // Días promedio real por tipo, global (todos los módulos terminados del proyecto) — fallback
+  const avgDurTipoGlobal={};
+  ['HUMEDO','SECO'].forEach(tipo=>{
+    const done=m.filter(x=>(x.tipo||'').toUpperCase()===tipo&&x.termReal&&(x.avance??0)>=0.99&&x.tiempoReal>0);
+    avgDurTipoGlobal[tipo]=done.length?done.reduce((s,x)=>s+x.tiempoReal,0)/done.length:null;
+  });
+  // Torre "última entregada": 100% terminada, con la fecha de término más reciente — referencia para
+  // torres activas que todavía no entregan ningún módulo propio (sin ritmo propio calculable)
+  let ultimaEntregadaAvgDias=null;
+  {
+    const completas=torres.map(t=>{
+      const mt=m.filter(x=>x.torre===t);
+      if(!mt.length||mt.some(x=>!x.termReal)) return null;
+      const fechas=mt.map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d));
+      if(!fechas.length) return null;
+      const conTiempo=mt.filter(x=>(x.avance??0)>=0.99&&x.tiempoReal>0);
+      const avg=conTiempo.length?conTiempo.reduce((s,x)=>s+x.tiempoReal,0)/conTiempo.length:null;
+      return{maxFecha:new Date(Math.max(...fechas)),avg};
+    }).filter(Boolean);
+    if(completas.length) ultimaEntregadaAvgDias=completas.reduce((a,b)=>b.maxFecha>a.maxFecha?b:a).avg;
+  }
+
   const torresChart=filterTorres?[...filterTorres].sort():torres;
   const torreStats=torresChart.map(t=>{
     const mt=m.filter(x=>x.torre===t);
@@ -2899,14 +2921,36 @@ function renderProyeccion(){
     const recT=termDatesT.filter(d=>d>=limite&&d<=today).length;
     const ritmoT=recT/RITMO_SEMANAS;
     const pendT=mt.length-finT.length;
-    const semT=ritmoT>0?pendT/ritmoT:null;
-    const fechaT=semT!=null?new Date(today.getTime()+semT*7*86400000):null;
     const doneConTiempo=finT.filter(x=>(x.avance??0)>=0.99&&x.tiempoReal>0);
     const avgDiasT=doneConTiempo.length?doneConTiempo.reduce((s,x)=>s+x.tiempoReal,0)/doneConTiempo.length:null;
-    return{torre:t,avgDias:avgDiasT,pendientes:pendT,ritmo:ritmoT,semanas:semT,fecha:fechaT};
+
+    let fechaT=null,metodo='sin-dato';
+    if(pendT===0){
+      metodo='completa';
+    } else if(ritmoT>0){
+      fechaT=new Date(today.getTime()+(pendT/ritmoT)*7*86400000); metodo='ritmo';
+    } else {
+      // Torre sin entregas propias: estima cada módulo pendiente y toma el último en terminar.
+      // Activo -> días restantes según su propio % avance. Sin iniciar -> inicio teórico + duración.
+      // Referencia de duración: la última torre 100% entregada (o el promedio global del tipo si no hay).
+      let huboActivo=false;
+      const fechasModulos=mt.filter(x=>!x.termReal).map(x=>{
+        const avg=ultimaEntregadaAvgDias??avgDurTipoGlobal[(x.tipo||'').toUpperCase()];
+        if(avg==null) return null;
+        if(x.initReal){
+          huboActivo=true;
+          return today.getTime()+Math.max(avg*(1-(x.avance??0)),0)*86400000;
+        }
+        const it=parseDate(x.initTeorico); if(!it||isNaN(it)) return null;
+        return it.getTime()+avg*86400000;
+      }).filter(v=>v!=null);
+      if(fechasModulos.length){ fechaT=new Date(Math.max(...fechasModulos)); metodo=huboActivo?'ultima-torre':'inicio-teorico'; }
+    }
+    const semanas=fechaT?Math.max((fechaT-today)/(7*86400000),0):null;
+    return{torre:t,avgDias:avgDiasT,pendientes:pendT,ritmo:ritmoT,semanas,fecha:fechaT,metodo};
   });
 
-  // Proyecto completo = la torre más lenta (fecha más tardía) entre las que tienen ritmo reciente
+  // Proyecto completo = la torre más lenta (fecha más tardía) entre las que tienen fecha estimable
   const conFecha=torreStats.filter(x=>x.fecha);
   const torreLenta=conFecha.length?conFecha.reduce((a,b)=>b.fecha>a.fecha?b:a):null;
   const fechaEtaTotal=torreLenta?torreLenta.fecha:null;
@@ -2995,11 +3039,14 @@ function renderProyeccion(){
       if(!b.fecha) return -1;
       return b.fecha-a.fecha;
     });
-    tbl.querySelector('thead').innerHTML='<tr><th>Torre</th><th>Días promedio módulo</th><th>Pendientes</th><th>Ritmo (mód/sem)</th><th>Semanas restantes</th><th>Fecha estimada</th></tr>';
+    const METODO_LBL={completa:'Torre completa',ritmo:'Ritmo propio (mód/sem)',
+      'ultima-torre':'Torre completada más reciente','sin-dato':'Sin dato','inicio-teorico':'Inicio teórico + duración promedio'};
+    tbl.querySelector('thead').innerHTML='<tr><th>Torre</th><th>Días promedio módulo</th><th>Pendientes</th><th>Ritmo (mód/sem)</th><th>Semanas restantes</th><th>Fecha estimada</th><th>Base del cálculo</th></tr>';
     tbl.querySelector('tbody').innerHTML=rows.length
       ? rows.map(x=>`<tr><td>${x.torre}</td><td>${x.avgDias!=null?Math.round(x.avgDias):'—'}</td><td>${x.pendientes}</td>
-          <td>${x.ritmo?x.ritmo.toFixed(1):'—'}</td><td>${x.semanas!=null?x.semanas.toFixed(1):'—'}</td><td>${x.fecha?fmtDate(x.fecha):'—'}</td></tr>`).join('')
-      : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
+          <td>${x.ritmo?x.ritmo.toFixed(1):'—'}</td><td>${x.semanas!=null?x.semanas.toFixed(1):'—'}</td><td>${x.fecha?fmtDate(x.fecha):'—'}</td>
+          <td>${METODO_LBL[x.metodo]||'—'}</td></tr>`).join('')
+      : '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
   }
 
   // ── Chart: avance económico mensual — real vs proyección manual vs burn rate ──
