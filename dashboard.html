@@ -134,6 +134,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="tab" data-tab="productos" style="display:none">📦 Productos</div>
   <div class="tab" data-tab="stock">🗄️ Stock</div>
   <div class="tab" data-tab="despachos">🚚 Despachos</div>
+  <div class="tab" data-tab="proyeccion">🔮 Proyección</div>
   <div class="tab" data-tab="prod-diaria" style="display:none">📅 Prod. Diaria</div>
 </nav>
 
@@ -376,6 +377,45 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<!-- PROYECCIÓN -->
+<div class="page" id="page-proyeccion">
+  <div class="kpi-row" id="kpi-proyeccion"></div>
+
+  <div class="filter-bar" style="align-items:center">
+    <label>🏗 Filtrar por torre:</label>
+    <div id="proy-torre-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <button onclick="proyFilterAll(true)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Todos</button>
+    <button onclick="proyFilterAll(false)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Ninguno</button>
+  </div>
+
+  <div class="grid-1">
+    <div class="card">
+      <h3>Proyección término de módulos — Total proyecto</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-proy-modulos-total"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Semanas restantes estimadas por torre (ritmo real)</h3>
+      <div class="chart-wrap" style="height:280px"><canvas id="ch-proy-modulos-torre"></canvas></div>
+    </div>
+  </div>
+  <div class="sec-title">Módulos activos — término estimado (método tiempo por módulo)</div>
+  <div class="card"><div class="tbl-wrap"><table id="tbl-proy-eta"><thead></thead><tbody></tbody></table></div></div>
+
+  <div class="grid-1" style="margin-top:16px">
+    <div class="card">
+      <h3>Avance económico mensual — real vs proyección manual vs burn rate</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-proy-econ"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Avance económico acumulado — real vs proyección manual vs burn rate</h3>
+      <div class="chart-wrap" style="height:320px"><canvas id="ch-proy-econ-acum"></canvas></div>
+    </div>
+  </div>
+</div>
 
 <!-- PRODUCCION DIARIA -->
 <div class="page" id="page-prod-diaria">
@@ -942,7 +982,7 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
   if(btnSI){const _s=AUTH.getSession();if(_s&&_s.permissions&&_s.permissions.permiso_stock)btnSI.style.display='inline-block';}
 
   // Ocultar tabs sin permiso
-  var DASH_TABS = ['resumen','curva','modulos','compras','productos','stock','despachos'];
+  var DASH_TABS = ['resumen','curva','modulos','compras','productos','stock','despachos','proyeccion'];
   DASH_TABS.forEach(function(tabId){
     if (!AUTH.canViewTab('dashboard', tabId)){
       var btn = document.querySelector('.tab[data-tab="' + tabId + '"]');
@@ -2813,6 +2853,219 @@ async function renderProdDiaria(){
     }
     await renderProdDiaria();
   });
+})();
+
+// ═══════════════════════════════════════════════
+// PROYECCIÓN
+// ═══════════════════════════════════════════════
+function proyFilterAll(val){
+  document.querySelectorAll('#proy-torre-filter input[type=checkbox]').forEach(cb=>cb.checked=val);
+  renderProyeccion();
+}
+
+function renderProyeccion(){
+  const m=DATA.modulos||[];
+  const today=new Date(); today.setHours(0,0,0,0);
+
+  const torreSet=new Set(m.map(x=>x.torre).filter(Boolean));
+  const torres=[...torreSet].sort();
+  const torreFilterDiv=document.getElementById('proy-torre-filter');
+  if(torreFilterDiv && torreFilterDiv.children.length!==torres.length){
+    torreFilterDiv.innerHTML=torres.map(t=>
+      `<label style="display:flex;align-items:center;gap:3px;font-size:.78rem;color:var(--text);cursor:pointer;padding:2px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:4px">
+        <input type="checkbox" value="${t}" checked onchange="renderProyeccion()" style="cursor:pointer">${t}</label>`
+    ).join('');
+  }
+  const cbs=torreFilterDiv?[...torreFilterDiv.querySelectorAll('input[type=checkbox]')]:[];
+  const checked=new Set(cbs.filter(c=>c.checked).map(c=>c.value));
+  const filterTorres=checked.size && checked.size!==cbs.length ? checked : null;
+  const modsF=filterTorres ? m.filter(x=>filterTorres.has(x.torre)) : m;
+
+  // ── Método A: ritmo real reciente (módulos terminados/semana, últimas N semanas) ──
+  const RITMO_SEMANAS=8;
+  const limite=new Date(today); limite.setDate(limite.getDate()-RITMO_SEMANAS*7);
+  const termFechas=modsF.filter(x=>x.termReal).map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d)).sort((a,b)=>a-b);
+  const termRecientes=termFechas.filter(d=>d>=limite&&d<=today).length;
+  const ritmoSemanalA=termRecientes/RITMO_SEMANAS;
+
+  const totalF=modsF.length;
+  const terminadosF=termFechas.length;
+  const pendientesF=totalF-terminadosF;
+  const semanasRestA=ritmoSemanalA>0 ? pendientesF/ritmoSemanalA : null;
+  const fechaEtaA=semanasRestA!=null ? new Date(today.getTime()+semanasRestA*7*86400000) : null;
+
+  // ── Método B: tiempo restante por módulo activo (tiempo real promedio por tipo, según % avance) ──
+  const avgDur={};
+  ['HUMEDO','SECO'].forEach(tipo=>{
+    const done=modsF.filter(x=>(x.tipo||'').toUpperCase()===tipo&&x.termReal&&(x.avance??0)>=0.99&&x.tiempoReal>0);
+    avgDur[tipo]=done.length?done.reduce((s,x)=>s+x.tiempoReal,0)/done.length:null;
+  });
+  const activos=modsF.filter(x=>x.initReal&&!x.termReal);
+  const etaActivos=activos.map(x=>{
+    const avg=avgDur[(x.tipo||'').toUpperCase()];
+    const restanteDias=avg!=null?Math.max(avg*(1-(x.avance??0)),0):null;
+    const eta=restanteDias!=null?new Date(today.getTime()+restanteDias*86400000):null;
+    return{...x,restanteDias,eta};
+  }).filter(x=>x.eta).sort((a,b)=>a.eta-b.eta);
+
+  const sinIniciar=modsF.filter(x=>!x.initReal).length;
+  const ultimoActivoEta=etaActivos.length?etaActivos[etaActivos.length-1].eta:today;
+  const semanasBacklogB=ritmoSemanalA>0?sinIniciar/ritmoSemanalA:null;
+  const fechaEtaB = etaActivos.length||semanasBacklogB!=null
+    ? new Date(Math.max(ultimoActivoEta.getTime(),today.getTime())+(semanasBacklogB||0)*7*86400000)
+    : null;
+
+  // ── Económico: proyección manual (avance_econ_proy) vs burn rate real ──
+  const ha=getHomeAvance();
+  const curMes=today.getMonth()+1;
+  const MES_ABBR={'Enero':'Ene','Febrero':'Feb','Marzo':'Mar','Abril':'Abr','Mayo':'May','Junio':'Jun',
+    'Julio':'Jul','Agosto':'Ago','Septiembre':'Sep','Octubre':'Oct','Noviembre':'Nov','Diciembre':'Dic'};
+  const haLabels=ha.map(x=>MES_ABBR[x.mes]||x.mes.slice(0,3));
+  const haReal=ha.map(x=>x.avEcon!=null?+((x.avEcon)*100).toFixed(2):null);
+  const haProyManual=ha.map(x=>x.avEconProy!=null?+((x.avEconProy)*100).toFixed(2):null);
+
+  const realesPasados=ha.map((x,i)=>({mesN:i+1,frac:x.avEcon})).filter(x=>x.frac!=null&&x.mesN<=curMes);
+  const ultimos3=realesPasados.slice(-3);
+  const burnMensual=ultimos3.length?ultimos3.reduce((s,x)=>s+x.frac,0)/ultimos3.length:0;
+  const haBurn=ha.map((x,i)=>(i+1)>curMes&&burnMensual>0?+(burnMensual*100).toFixed(2):null);
+
+  let sumReal=0,sumManual=0,sumBurn=0,mesAgotamiento=null;
+  const haRealAcum=[],haManualAcum=[],haBurnAcum=[];
+  for(let i=0;i<haLabels.length;i++){
+    const mesN=i+1;
+    if(haReal[i]!=null){sumReal+=haReal[i];haRealAcum.push(+sumReal.toFixed(2));} else haRealAcum.push(null);
+    if(haProyManual[i]!=null){sumManual+=haProyManual[i];haManualAcum.push(+sumManual.toFixed(2));} else haManualAcum.push(null);
+    const burnVal=mesN<=curMes?haReal[i]:haBurn[i];
+    if(burnVal!=null){
+      sumBurn+=burnVal;
+      haBurnAcum.push(+sumBurn.toFixed(2));
+      if(mesAgotamiento==null&&sumBurn>=100) mesAgotamiento=haLabels[i];
+    } else haBurnAcum.push(null);
+  }
+
+  // ── KPIs ──
+  document.getElementById('kpi-proyeccion').innerHTML=kpiHTML([
+    {lbl:'Término estimado — ritmo real',val:fechaEtaA?fmtDateLong(fechaEtaA):'—',cls:'c-blue',
+     sub:ritmoSemanalA?`${ritmoSemanalA.toFixed(1)} mód/sem (últ. ${RITMO_SEMANAS} sem)`:'sin ritmo reciente'},
+    {lbl:'Término estimado — tiempo por módulo',val:fechaEtaB?fmtDateLong(fechaEtaB):'—',cls:'c-purple',
+     sub:`${activos.length} módulos activos`},
+    {lbl:'Módulos pendientes',val:fmt(pendientesF),cls:'c-orange',sub:`${sinIniciar} sin iniciar`},
+    {lbl:'Semanas restantes (ritmo real)',val:semanasRestA!=null?semanasRestA.toFixed(1):'—',cls:'c-green'},
+    {lbl:'Presupuesto — mes estimado agotamiento',val:mesAgotamiento||'—',cls:'c-red',
+     sub:burnMensual?`burn rate ⌀ ${(burnMensual*100).toFixed(2)}%/mes`:'sin gasto reciente'},
+  ]);
+
+  // ── Chart: proyección término total ──
+  // ponytail: proyección lineal entre hoy y fecha ETA, no simula aceleración/desaceleración de curva-S
+  const weekSet=new Set(termFechas.map(d=>weekKey(d)));
+  weekSet.add(weekKey(today));
+  [fechaEtaA,fechaEtaB].filter(Boolean).forEach(d=>weekSet.add(weekKey(d)));
+  let weeks=[...weekSet].sort((a,b)=>a-b);
+  if(weeks.length){
+    const first=weeks[0], last=weeks[weeks.length-1];
+    weeks=[]; for(let w=first;w<=last;w+=7*86400000) weeks.push(w);
+  }
+  const todayWk=weekKey(today);
+  const realCum=weeks.map(w=>w>todayWk?null:termFechas.filter(d=>weekKey(d)<=w).length);
+  const linProj=eta=>{
+    if(!eta) return weeks.map(()=>null);
+    const etaWk=weekKey(eta);
+    return weeks.map(w=>{
+      if(w<todayWk) return null;
+      if(w>=etaWk) return totalF;
+      const frac=etaWk>todayWk?(w-todayWk)/(etaWk-todayWk):1;
+      return +(terminadosF+frac*(totalF-terminadosF)).toFixed(1);
+    });
+  };
+  lineChart('ch-proy-modulos-total', weeks.map(weekLabel),[
+    {label:'Real acumulado',data:realCum,borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,.08)',fill:true,tension:.2,pointRadius:2,borderWidth:2},
+    {label:'Proyección — ritmo real',data:linProj(fechaEtaA),borderColor:'rgba(88,166,255,1)',backgroundColor:'transparent',borderDash:[6,4],tension:0,pointRadius:0,borderWidth:2},
+    {label:'Proyección — tiempo por módulo',data:linProj(fechaEtaB),borderColor:'rgba(188,140,255,1)',backgroundColor:'transparent',borderDash:[2,3],tension:0,pointRadius:0,borderWidth:2},
+  ],{legend:true});
+
+  // ── Chart: semanas restantes estimadas por torre (Método A) ──
+  const torresChart=filterTorres?[...filterTorres].sort():torres;
+  const torreStats=torresChart.map(t=>{
+    const mt=m.filter(x=>x.torre===t);
+    const termT=mt.filter(x=>x.termReal).map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d));
+    const recT=termT.filter(d=>d>=limite&&d<=today).length;
+    const ritmoT=recT/RITMO_SEMANAS;
+    const pendT=mt.length-termT.length;
+    const semT=ritmoT>0?pendT/ritmoT:null;
+    return{torre:t,semanas:semT};
+  });
+  barChart('ch-proy-modulos-torre', torreStats.map(x=>x.torre),[{
+    label:'Semanas restantes',data:torreStats.map(x=>x.semanas!=null?+x.semanas.toFixed(1):0),
+    backgroundColor:'rgba(79,142,247,.8)',borderRadius:5
+  }],{yMoney:false});
+
+  // ── Tabla: módulos activos, ETA método B ──
+  const tbl=document.getElementById('tbl-proy-eta');
+  if(tbl){
+    tbl.querySelector('thead').innerHTML='<tr><th>Módulo</th><th>Torre</th><th>Tipo</th><th>% Avance</th><th>Días restantes est.</th><th>Fecha estimada</th></tr>';
+    tbl.querySelector('tbody').innerHTML=etaActivos.length
+      ? etaActivos.map(x=>`<tr><td>${x.modulo||'—'}</td><td>${x.torre||'—'}</td><td>${x.tipo||'—'}</td>
+          <td>${fmtPr((x.avance??0)*100)}</td><td>${Math.round(x.restanteDias)}</td><td>${fmtDate(x.eta)}</td></tr>`).join('')
+      : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin módulos activos con dato de tiempo promedio</td></tr>';
+  }
+
+  // ── Chart: avance económico mensual — real vs proyección manual vs burn rate ──
+  killChart('ch-proy-econ');
+  const ctxEcon=document.getElementById('ch-proy-econ')?.getContext('2d');
+  if(ctxEcon){
+    CHARTS['ch-proy-econ']=new Chart(ctxEcon,{
+      data:{labels:haLabels,datasets:[
+        {type:'bar',label:'Real',data:haReal,backgroundColor:'rgba(212,43,30,.78)',borderRadius:5,order:3},
+        {type:'line',label:'Proyección manual',data:haProyManual,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.12)',
+         pointBackgroundColor:'#4f8ef7',borderWidth:2.5,pointRadius:4,tension:0.35,fill:false,order:1,spanGaps:true},
+        {type:'line',label:'Burn rate proyectado',data:haBurn,borderColor:'rgba(245,166,35,.95)',backgroundColor:'transparent',
+         borderDash:[6,4],pointRadius:3,borderWidth:2.5,tension:0,fill:false,order:2,spanGaps:true},
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+          tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y==null?'—':(+c.parsed.y).toFixed(2)+'%'}`}},
+          datalabels:{display:false}
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  }
+
+  // ── Chart: avance económico acumulado — real vs manual vs burn rate ──
+  killChart('ch-proy-econ-acum');
+  const ctxAcum=document.getElementById('ch-proy-econ-acum')?.getContext('2d');
+  if(ctxAcum){
+    CHARTS['ch-proy-econ-acum']=new Chart(ctxAcum,{
+      type:'line',
+      data:{labels:haLabels,datasets:[
+        {label:'Real acumulado',data:haRealAcum,borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,.08)',fill:true,tension:.2,pointRadius:3,borderWidth:2,spanGaps:true},
+        {label:'Proyección manual acumulada',data:haManualAcum,borderColor:'#4f8ef7',backgroundColor:'transparent',borderDash:[6,4],pointRadius:2,borderWidth:2,tension:0,spanGaps:true},
+        {label:'Burn rate acumulado',data:haBurnAcum,borderColor:'rgba(245,166,35,.95)',backgroundColor:'transparent',borderDash:[2,3],pointRadius:2,borderWidth:2,tension:0,spanGaps:true},
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+          tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y==null?'—':(+c.parsed.y).toFixed(2)+'%'}`}},
+          datalabels:{display:false}
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},border:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  }
+}
+
+(function(){
+  const proyTab=document.querySelector('.tab[data-tab="proyeccion"]');
+  if(proyTab) proyTab.addEventListener('click',renderProyeccion);
 })();
 
 </script>
