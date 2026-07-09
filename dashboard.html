@@ -172,10 +172,11 @@ tbody tr:hover td{background:var(--surface2)}
 <!-- CURVA S -->
 <div class="page" id="page-curva">
   <div class="kpi-row" id="kpi-curva"></div>
-  <div class="filter-bar">
+  <div class="filter-bar" style="align-items:center">
     <label>🗓 Filtrar por mes:</label>
-    <select id="curva-mes-sel" multiple size="4" style="min-width:170px"></select>
-    <span style="font-size:.72rem;color:var(--muted)">(Ctrl/Cmd+clic para varios)</span>
+    <div id="curva-mes-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <button onclick="curvaFilterAll(true)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Todos</button>
+    <button onclick="curvaFilterAll(false)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Ninguno</button>
   </div>
   <div class="grid-1">
     <div class="card">
@@ -205,13 +206,13 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="grid-1">
     <div class="card">
-      <h3>Tiempo real vs proyectado — Módulos Húmedos</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center">Tiempo real vs proyectado — Módulos Húmedos<span id="avg-tiempo-humedo" style="font-size:.85rem;font-weight:700;color:var(--accent)"></span></h3>
       <div class="chart-wrap" style="height:320px"><canvas id="ch-tiempo-humedo"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
     <div class="card">
-      <h3>Tiempo real vs proyectado — Módulos Secos</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center">Tiempo real vs proyectado — Módulos Secos<span id="avg-tiempo-seco" style="font-size:.85rem;font-weight:700;color:var(--accent)"></span></h3>
       <div class="chart-wrap" style="height:320px"><canvas id="ch-tiempo-seco"></canvas></div>
     </div>
   </div>
@@ -1616,6 +1617,20 @@ function renderResumen(){
 // ═══════════════════════════════════════════════
 // CURVA S
 // ═══════════════════════════════════════════════
+let _curvaMesFilter=null; // null = all months, Set = filtered
+let _curvaRenderCharts=null;
+function curvaFilterAll(val){
+  document.querySelectorAll('#curva-mes-filter input[type=checkbox]').forEach(cb=>cb.checked=val);
+  _curvaMesFilter=val?null:new Set();
+  if(_curvaRenderCharts) _curvaRenderCharts();
+}
+function renderCurvaFiltered(){
+  const cbs=[...document.querySelectorAll('#curva-mes-filter input[type=checkbox]')];
+  if(!cbs.length) return;
+  const checked=new Set(cbs.filter(c=>c.checked).map(c=>c.value));
+  _curvaMesFilter=checked.size===cbs.length?null:checked;
+  if(_curvaRenderCharts) _curvaRenderCharts();
+}
 function renderCurva(){
   const today=new Date(); today.setHours(23,59,59,999);
 
@@ -1629,10 +1644,15 @@ function renderCurva(){
   });
   const months=[...monthSet].sort();
   const MN={1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
-  const sel=document.getElementById('curva-mes-sel');
-  const prevSel=new Set([...sel.selectedOptions].map(o=>o.value));
-  sel.innerHTML=months.map(m=>{const[y,mn]=m.split('-');return`<option value="${m}">${MN[+mn]} ${y}</option>`;}).join('');
-  [...sel.options].forEach(o=>{if(prevSel.has(o.value)) o.selected=true;});
+  const mesFilterDiv=document.getElementById('curva-mes-filter');
+  if(mesFilterDiv&&mesFilterDiv.children.length!==months.length){
+    mesFilterDiv.innerHTML=months.map(m=>{
+      const[y,mn]=m.split('-');
+      return`<label style="display:flex;align-items:center;gap:3px;font-size:.78rem;color:var(--text);cursor:pointer;padding:2px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:4px">
+        <input type="checkbox" value="${m}" checked onchange="renderCurvaFiltered()" style="cursor:pointer">${MN[+mn]} ${y}</label>`;
+    }).join('');
+    _curvaMesFilter=null;
+  }
 
   // Build torre filter for tiempo charts
   const torreSet=new Set((DATA.modulos||[]).map(x=>x.torre).filter(Boolean));
@@ -1665,7 +1685,7 @@ function renderCurva(){
   ]);
 
   const renderCurvaCharts=()=>{
-    const filterMonths=new Set([...sel.selectedOptions].map(o=>o.value));
+    const filterMonths=_curvaMesFilter||new Set();
 
     // Filter CURVA to today, then optionally to selected months
     let curvaF=(DATA.curva||[]).filter(x=>{
@@ -1770,6 +1790,8 @@ function renderCurva(){
         .filter(x=>(x.tipo||'').toUpperCase()===tipo && x.initReal && (x.avance??0)>=0.99 && x.tiempoReal>0)
         .sort((a,b)=>(a.modulo||'').localeCompare(b.modulo||'','es',{numeric:true}));
       const labels=mods.map(x=>x.modulo||'?');
+      const badgeEl=document.getElementById(id==='ch-tiempo-humedo'?'avg-tiempo-humedo':'avg-tiempo-seco');
+      if(badgeEl) badgeEl.textContent=mods.length?`⌀ ${(mods.reduce((s,x)=>s+(x.tiempoReal||0),0)/mods.length).toFixed(1)} días reales`:'';
       mixedChart(id, labels,
         [{label:'Tiempo Real (días)',data:mods.map(x=>Math.round(x.tiempoReal)),
           backgroundColor:'rgba(63,185,80,0.7)',
@@ -1784,8 +1806,8 @@ function renderCurva(){
     });
   };
 
-  sel.onchange=renderCurvaCharts;
   selTorre.onchange=renderCurvaCharts;
+  _curvaRenderCharts=renderCurvaCharts;
   renderCurvaCharts();
 }
 
