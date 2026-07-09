@@ -2897,8 +2897,8 @@ function renderProyeccion(){
     const done=m.filter(x=>(x.tipo||'').toUpperCase()===tipo&&x.termReal&&(x.avance??0)>=0.99&&x.tiempoReal>0);
     avgDurTipoGlobal[tipo]=done.length?done.reduce((s,x)=>s+x.tiempoReal,0)/done.length:null;
   });
-  // Torre "última entregada": 100% terminada, con la fecha de término más reciente — referencia para
-  // torres activas que todavía no entregan ningún módulo propio (sin ritmo propio calculable)
+  // Torre "última entregada": 100% terminada, con la fecha de término más reciente — referencia de
+  // duración para torres que todavía no entregan ningún módulo propio (sin ritmo propio calculable)
   let ultimaEntregadaAvgDias=null;
   {
     const completas=torres.map(t=>{
@@ -2912,6 +2912,16 @@ function renderProyeccion(){
     }).filter(Boolean);
     if(completas.length) ultimaEntregadaAvgDias=completas.reduce((a,b)=>b.maxFecha>a.maxFecha?b:a).avg;
   }
+  // Techo de capacidad: ritmo real actual sumado, pero solo de torres que TODAVÍA tienen pendientes.
+  // Si se suman entregas recientes de una torre ya 100% completada (ej. su ráfaga final), el ritmo
+  // queda inflado con capacidad que ya no existe hacia adelante y una torre sin dato "adelanta" a
+  // una que sí tiene ritmo real más lento — justo lo que este techo tiene que evitar.
+  const ritmoCapacidadActual=torres.reduce((sum,t)=>{
+    const mt=m.filter(x=>x.torre===t);
+    if(mt.every(x=>x.termReal)) return sum; // torre completa: ya no aporta capacidad futura
+    const fechasT=mt.filter(x=>x.termReal).map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d));
+    return sum+fechasT.filter(d=>d>=limite&&d<=today).length/RITMO_SEMANAS;
+  },0);
 
   const torresChart=filterTorres?[...filterTorres].sort():torres;
   const torreStats=torresChart.map(t=>{
@@ -2944,7 +2954,12 @@ function renderProyeccion(){
         const it=parseDate(x.initTeorico); if(!it||isNaN(it)) return null;
         return it.getTime()+avg*86400000;
       }).filter(v=>v!=null);
-      if(fechasModulos.length){ fechaT=new Date(Math.max(...fechasModulos)); metodo=huboActivo?'ultima-torre':'inicio-teorico'; }
+      if(fechasModulos.length){
+        const fechaIndividual=new Date(Math.max(...fechasModulos));
+        const fechaCapacidad=ritmoCapacidadActual>0?new Date(today.getTime()+(pendT/ritmoCapacidadActual)*7*86400000):null;
+        fechaT=fechaCapacidad&&fechaCapacidad>fechaIndividual?fechaCapacidad:fechaIndividual;
+        metodo=huboActivo?'ultima-torre':'inicio-teorico';
+      }
     }
     const semanas=fechaT?Math.max((fechaT-today)/(7*86400000),0):null;
     return{torre:t,avgDias:avgDiasT,pendientes:pendT,ritmo:ritmoT,semanas,fecha:fechaT,metodo};
