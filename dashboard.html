@@ -174,7 +174,8 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="kpi-row" id="kpi-curva"></div>
   <div class="filter-bar">
     <label>🗓 Filtrar por mes:</label>
-    <select id="curva-mes-sel"></select>
+    <select id="curva-mes-sel" multiple size="4" style="min-width:170px"></select>
+    <span style="font-size:.72rem;color:var(--muted)">(Ctrl/Cmd+clic para varios)</span>
   </div>
   <div class="grid-1">
     <div class="card">
@@ -1629,8 +1630,9 @@ function renderCurva(){
   const months=[...monthSet].sort();
   const MN={1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
   const sel=document.getElementById('curva-mes-sel');
-  sel.innerHTML='<option value="">Todos los meses</option>'+
-    months.map(m=>{const[y,mn]=m.split('-');return`<option value="${m}">${MN[+mn]} ${y}</option>`;}).join('');
+  const prevSel=new Set([...sel.selectedOptions].map(o=>o.value));
+  sel.innerHTML=months.map(m=>{const[y,mn]=m.split('-');return`<option value="${m}">${MN[+mn]} ${y}</option>`;}).join('');
+  [...sel.options].forEach(o=>{if(prevSel.has(o.value)) o.selected=true;});
 
   // Build torre filter for tiempo charts
   const torreSet=new Set((DATA.modulos||[]).map(x=>x.torre).filter(Boolean));
@@ -1663,19 +1665,19 @@ function renderCurva(){
   ]);
 
   const renderCurvaCharts=()=>{
-    const filterMonth=sel.value;
+    const filterMonths=new Set([...sel.selectedOptions].map(o=>o.value));
 
-    // Filter CURVA to today, then optionally to selected month
+    // Filter CURVA to today, then optionally to selected months
     let curvaF=(DATA.curva||[]).filter(x=>{
       const d=parseDate(x.fecha); if(!d||isNaN(d)||d>today) return false;
-      if(filterMonth){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return ym===filterMonth;}
+      if(filterMonths.size){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return filterMonths.has(ym);}
       return true;
     });
 
     // Filter AV_PLAN similarly
     let avF=(DATA.avplan||[]).filter(x=>{
       const d=parseDate(x.fecha); if(!d||isNaN(d)||d>today) return false;
-      if(filterMonth){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return ym===filterMonth;}
+      if(filterMonths.size){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return filterMonths.has(ym);}
       return true;
     });
 
