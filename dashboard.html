@@ -400,8 +400,8 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="chart-wrap" style="height:280px"><canvas id="ch-proy-modulos-torre"></canvas></div>
     </div>
   </div>
-  <div class="sec-title">Módulos activos — término estimado (método tiempo por módulo)</div>
-  <div class="card"><div class="tbl-wrap"><table id="tbl-proy-eta"><thead></thead><tbody></tbody></table></div></div>
+  <div class="sec-title">Detalle por torre — días promedio, ritmo y término estimado</div>
+  <div class="card"><div class="tbl-wrap"><table id="tbl-proy-torre-detalle"><thead></thead><tbody></tbody></table></div></div>
 
   <div class="grid-1" style="margin-top:16px">
     <div class="card">
@@ -2881,39 +2881,35 @@ function renderProyeccion(){
   const filterTorres=checked.size && checked.size!==cbs.length ? checked : null;
   const modsF=filterTorres ? m.filter(x=>filterTorres.has(x.torre)) : m;
 
-  // ── Método A: ritmo real reciente (módulos terminados/semana, últimas N semanas) ──
+  // ── Proyección término módulos: ritmo real por torre (módulos entregados/semana) ──
+  // ponytail: el ritmo ya refleja el paralelismo real de cada torre, no hace falta modelarlo aparte
   const RITMO_SEMANAS=8;
   const limite=new Date(today); limite.setDate(limite.getDate()-RITMO_SEMANAS*7);
   const termFechas=modsF.filter(x=>x.termReal).map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d)).sort((a,b)=>a-b);
-  const termRecientes=termFechas.filter(d=>d>=limite&&d<=today).length;
-  const ritmoSemanalA=termRecientes/RITMO_SEMANAS;
-
   const totalF=modsF.length;
   const terminadosF=termFechas.length;
   const pendientesF=totalF-terminadosF;
-  const semanasRestA=ritmoSemanalA>0 ? pendientesF/ritmoSemanalA : null;
-  const fechaEtaA=semanasRestA!=null ? new Date(today.getTime()+semanasRestA*7*86400000) : null;
+  const sinIniciarF=modsF.filter(x=>!x.initReal).length;
 
-  // ── Método B: tiempo restante por módulo activo (tiempo real promedio por tipo, según % avance) ──
-  const avgDur={};
-  ['HUMEDO','SECO'].forEach(tipo=>{
-    const done=modsF.filter(x=>(x.tipo||'').toUpperCase()===tipo&&x.termReal&&(x.avance??0)>=0.99&&x.tiempoReal>0);
-    avgDur[tipo]=done.length?done.reduce((s,x)=>s+x.tiempoReal,0)/done.length:null;
+  const torresChart=filterTorres?[...filterTorres].sort():torres;
+  const torreStats=torresChart.map(t=>{
+    const mt=m.filter(x=>x.torre===t);
+    const finT=mt.filter(x=>x.termReal);
+    const termDatesT=finT.map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d));
+    const recT=termDatesT.filter(d=>d>=limite&&d<=today).length;
+    const ritmoT=recT/RITMO_SEMANAS;
+    const pendT=mt.length-finT.length;
+    const semT=ritmoT>0?pendT/ritmoT:null;
+    const fechaT=semT!=null?new Date(today.getTime()+semT*7*86400000):null;
+    const doneConTiempo=finT.filter(x=>(x.avance??0)>=0.99&&x.tiempoReal>0);
+    const avgDiasT=doneConTiempo.length?doneConTiempo.reduce((s,x)=>s+x.tiempoReal,0)/doneConTiempo.length:null;
+    return{torre:t,avgDias:avgDiasT,pendientes:pendT,ritmo:ritmoT,semanas:semT,fecha:fechaT};
   });
-  const activos=modsF.filter(x=>x.initReal&&!x.termReal);
-  const etaActivos=activos.map(x=>{
-    const avg=avgDur[(x.tipo||'').toUpperCase()];
-    const restanteDias=avg!=null?Math.max(avg*(1-(x.avance??0)),0):null;
-    const eta=restanteDias!=null?new Date(today.getTime()+restanteDias*86400000):null;
-    return{...x,restanteDias,eta};
-  }).filter(x=>x.eta).sort((a,b)=>a.eta-b.eta);
 
-  const sinIniciar=modsF.filter(x=>!x.initReal).length;
-  const ultimoActivoEta=etaActivos.length?etaActivos[etaActivos.length-1].eta:today;
-  const semanasBacklogB=ritmoSemanalA>0?sinIniciar/ritmoSemanalA:null;
-  const fechaEtaB = etaActivos.length||semanasBacklogB!=null
-    ? new Date(Math.max(ultimoActivoEta.getTime(),today.getTime())+(semanasBacklogB||0)*7*86400000)
-    : null;
+  // Proyecto completo = la torre más lenta (fecha más tardía) entre las que tienen ritmo reciente
+  const conFecha=torreStats.filter(x=>x.fecha);
+  const torreLenta=conFecha.length?conFecha.reduce((a,b)=>b.fecha>a.fecha?b:a):null;
+  const fechaEtaTotal=torreLenta?torreLenta.fecha:null;
 
   // ── Económico: proyección manual (avance_econ_proy) vs burn rate real ──
   const ha=getHomeAvance();
@@ -2945,12 +2941,10 @@ function renderProyeccion(){
 
   // ── KPIs ──
   document.getElementById('kpi-proyeccion').innerHTML=kpiHTML([
-    {lbl:'Término estimado — ritmo real',val:fechaEtaA?fmtDateLong(fechaEtaA):'—',cls:'c-blue',
-     sub:ritmoSemanalA?`${ritmoSemanalA.toFixed(1)} mód/sem (últ. ${RITMO_SEMANAS} sem)`:'sin ritmo reciente'},
-    {lbl:'Término estimado — tiempo por módulo',val:fechaEtaB?fmtDateLong(fechaEtaB):'—',cls:'c-purple',
-     sub:`${activos.length} módulos activos`},
-    {lbl:'Módulos pendientes',val:fmt(pendientesF),cls:'c-orange',sub:`${sinIniciar} sin iniciar`},
-    {lbl:'Semanas restantes (ritmo real)',val:semanasRestA!=null?semanasRestA.toFixed(1):'—',cls:'c-green'},
+    {lbl:'Término estimado — proyecto completo',val:fechaEtaTotal?fmtDateLong(fechaEtaTotal):'—',cls:'c-blue',
+     sub:torreLenta?`torre más lenta: ${torreLenta.torre}`:'sin ritmo reciente en ninguna torre'},
+    {lbl:'Módulos pendientes',val:fmt(pendientesF),cls:'c-orange',sub:`${sinIniciarF} sin iniciar`},
+    {lbl:'Semanas restantes — torre más lenta',val:torreLenta?torreLenta.semanas.toFixed(1):'—',cls:'c-green'},
     {lbl:'Presupuesto — mes estimado agotamiento',val:mesAgotamiento||'—',cls:'c-red',
      sub:burnMensual?`burn rate ⌀ ${(burnMensual*100).toFixed(2)}%/mes`:'sin gasto reciente'},
   ]);
@@ -2959,11 +2953,15 @@ function renderProyeccion(){
   // ponytail: proyección lineal entre hoy y fecha ETA, no simula aceleración/desaceleración de curva-S
   const weekSet=new Set(termFechas.map(d=>weekKey(d)));
   weekSet.add(weekKey(today));
-  [fechaEtaA,fechaEtaB].filter(Boolean).forEach(d=>weekSet.add(weekKey(d)));
-  let weeks=[...weekSet].sort((a,b)=>a-b);
-  if(weeks.length){
-    const first=weeks[0], last=weeks[weeks.length-1];
-    weeks=[]; for(let w=first;w<=last;w+=7*86400000) weeks.push(w);
+  if(fechaEtaTotal) weekSet.add(weekKey(fechaEtaTotal));
+  let weeks=[];
+  if(weekSet.size){
+    // ponytail: setDate (no ms fijos) para no desalinear por el cambio de horario (DST) entre jul-oct
+    const sorted=[...weekSet].sort((a,b)=>a-b);
+    const lastMs=sorted[sorted.length-1];
+    let d=new Date(sorted[0]);
+    while(d.getTime()<=lastMs){ weeks.push(d.getTime()); d=new Date(d); d.setDate(d.getDate()+7); }
+    if(weeks[weeks.length-1]!==lastMs) weeks.push(lastMs);
   }
   const todayWk=weekKey(today);
   const realCum=weeks.map(w=>w>todayWk?null:termFechas.filter(d=>weekKey(d)<=w).length);
@@ -2979,34 +2977,29 @@ function renderProyeccion(){
   };
   lineChart('ch-proy-modulos-total', weeks.map(weekLabel),[
     {label:'Real acumulado',data:realCum,borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,.08)',fill:true,tension:.2,pointRadius:2,borderWidth:2},
-    {label:'Proyección — ritmo real',data:linProj(fechaEtaA),borderColor:'rgba(88,166,255,1)',backgroundColor:'transparent',borderDash:[6,4],tension:0,pointRadius:0,borderWidth:2},
-    {label:'Proyección — tiempo por módulo',data:linProj(fechaEtaB),borderColor:'rgba(188,140,255,1)',backgroundColor:'transparent',borderDash:[2,3],tension:0,pointRadius:0,borderWidth:2},
+    {label:'Proyección — torre más lenta',data:linProj(fechaEtaTotal),borderColor:'rgba(88,166,255,1)',backgroundColor:'transparent',borderDash:[6,4],tension:0,pointRadius:0,borderWidth:2},
   ],{legend:true});
 
-  // ── Chart: semanas restantes estimadas por torre (Método A) ──
-  const torresChart=filterTorres?[...filterTorres].sort():torres;
-  const torreStats=torresChart.map(t=>{
-    const mt=m.filter(x=>x.torre===t);
-    const termT=mt.filter(x=>x.termReal).map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d));
-    const recT=termT.filter(d=>d>=limite&&d<=today).length;
-    const ritmoT=recT/RITMO_SEMANAS;
-    const pendT=mt.length-termT.length;
-    const semT=ritmoT>0?pendT/ritmoT:null;
-    return{torre:t,semanas:semT};
-  });
+  // ── Chart: semanas restantes estimadas por torre ──
   barChart('ch-proy-modulos-torre', torreStats.map(x=>x.torre),[{
     label:'Semanas restantes',data:torreStats.map(x=>x.semanas!=null?+x.semanas.toFixed(1):0),
     backgroundColor:'rgba(79,142,247,.8)',borderRadius:5
   }],{yMoney:false});
 
-  // ── Tabla: módulos activos, ETA método B ──
-  const tbl=document.getElementById('tbl-proy-eta');
+  // ── Tabla: detalle por torre (días promedio, ritmo, término estimado) ──
+  const tbl=document.getElementById('tbl-proy-torre-detalle');
   if(tbl){
-    tbl.querySelector('thead').innerHTML='<tr><th>Módulo</th><th>Torre</th><th>Tipo</th><th>% Avance</th><th>Días restantes est.</th><th>Fecha estimada</th></tr>';
-    tbl.querySelector('tbody').innerHTML=etaActivos.length
-      ? etaActivos.map(x=>`<tr><td>${x.modulo||'—'}</td><td>${x.torre||'—'}</td><td>${x.tipo||'—'}</td>
-          <td>${fmtPr((x.avance??0)*100)}</td><td>${Math.round(x.restanteDias)}</td><td>${fmtDate(x.eta)}</td></tr>`).join('')
-      : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin módulos activos con dato de tiempo promedio</td></tr>';
+    const rows=[...torreStats].sort((a,b)=>{
+      if(!a.fecha&&!b.fecha) return 0;
+      if(!a.fecha) return 1;
+      if(!b.fecha) return -1;
+      return b.fecha-a.fecha;
+    });
+    tbl.querySelector('thead').innerHTML='<tr><th>Torre</th><th>Días promedio módulo</th><th>Pendientes</th><th>Ritmo (mód/sem)</th><th>Semanas restantes</th><th>Fecha estimada</th></tr>';
+    tbl.querySelector('tbody').innerHTML=rows.length
+      ? rows.map(x=>`<tr><td>${x.torre}</td><td>${x.avgDias!=null?Math.round(x.avgDias):'—'}</td><td>${x.pendientes}</td>
+          <td>${x.ritmo?x.ritmo.toFixed(1):'—'}</td><td>${x.semanas!=null?x.semanas.toFixed(1):'—'}</td><td>${x.fecha?fmtDate(x.fecha):'—'}</td></tr>`).join('')
+      : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
   }
 
   // ── Chart: avance económico mensual — real vs proyección manual vs burn rate ──
