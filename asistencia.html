@@ -318,6 +318,13 @@ const ALLOWED_GROUPS = ['ICG', 'Ingelagos', 'PDuarte', 'Terra Sur', 'Wedo'];
 function inAllowedGroup(groupDesc) {
   return ALLOWED_GROUPS.some(g => g.toLowerCase() === (groupDesc || '').trim().toLowerCase());
 }
+// Normaliza el nombre de grupo devuelto por GeoVictoria a la capitalización
+// canónica de ALLOWED_GROUPS (la API puede devolver distinta may/min).
+function canonicalGroup(groupDesc) {
+  const d = (groupDesc || '').trim();
+  const match = ALLOWED_GROUPS.find(g => g.toLowerCase() === d.toLowerCase());
+  return match || d;
+}
 
 // ─── Estado global ──────────────────────────────────────────────────────────
 let _punches        = [];
@@ -492,7 +499,7 @@ async function getWorkerIdsForGroup(groupDescription) {
 
   // Fuente 1: _workers desde apiv3
   const fromWorkers = _workers
-    .filter(w => (w.GroupDescription || '').trim() === groupDescription.trim())
+    .filter(w => canonicalGroup(w.GroupDescription) === canonicalGroup(groupDescription))
     .map(w => w.Identifier)
     .filter(Boolean);
   if (fromWorkers.length > 0) return fromWorkers;
@@ -500,8 +507,8 @@ async function getWorkerIdsForGroup(groupDescription) {
   // Fuente 2: _cachedUsers acumulados de queries a AttendanceBook
   const fromCache = _cachedUsers
     .filter(u => {
-      const grp = (u.GroupDescription || u.Group || u.GroupName || '').trim();
-      return grp === groupDescription.trim();
+      const grp = canonicalGroup(u.GroupDescription || u.Group || u.GroupName || '');
+      return grp === canonicalGroup(groupDescription);
     })
     .map(u => u.Identifier || u.UserIdentifier)
     .filter(Boolean);
@@ -665,8 +672,8 @@ async function loadAttendance() {
     // Filtrar por grupo si fue seleccionado y la respuesta tiene info de grupo
     if (groupFilter) {
       const filtered = _attendanceData.filter(u => {
-        const grp = (u.GroupDescription || u.Group || u.GroupName || '').trim();
-        return grp === groupFilter || grp === '';
+        const grp = canonicalGroup(u.GroupDescription || u.Group || u.GroupName || '');
+        return grp === canonicalGroup(groupFilter) || grp === '';
       });
       if (filtered.length > 0) _attendanceData = filtered;
     }
@@ -792,7 +799,7 @@ function renderResumen(users, from, to, groupFilter) {
   }
 
   const hasGroupInfo = users.some(u => u.GroupDescription || u.Group || u.GroupName);
-  const getGroup = u => (u.GroupDescription || u.Group || u.GroupName || '').trim();
+  const getGroup = u => canonicalGroup(u.GroupDescription || u.Group || u.GroupName || '');
 
   // Filtrar: si hay grupo específico seleccionado, solo ese; si no, todos los permitidos
   const filteredUsers = hasGroupInfo
@@ -964,7 +971,7 @@ async function loadWorkers() {
           LastName:         u.LastName || '',
           Identifier:       u.Identifier || u.UserIdentifier || '',
           Email:            u.Email || '',
-          GroupDescription: (u.GroupDescription || u.Group || u.GroupName || '').trim(),
+          GroupDescription: canonicalGroup(u.GroupDescription || u.Group || u.GroupName || ''),
           positionName:     u.positionName || u.Position || '',
           Enabled:          1,
           ContractDate:     u.ContractDate || '',
@@ -1046,7 +1053,7 @@ async function loadGroups() {
     // apiv3 no disponible → construir grupos desde _cachedUsers
     const byGroup = {};
     _cachedUsers.forEach(u => {
-      const grp = (u.GroupDescription || u.Group || u.GroupName || '').trim();
+      const grp = canonicalGroup(u.GroupDescription || u.Group || u.GroupName || '');
       if (!grp || !inAllowedGroup(grp)) return;
       if (!byGroup[grp]) byGroup[grp] = 0;
       byGroup[grp]++;
