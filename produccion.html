@@ -1145,9 +1145,14 @@ var ACR_LABELS = {
     "Alcantarillado Domiciliario (Red Interior)", "Alcantarillado Domiciliario (Prueba Estanqueidad)"],
   wedoconbes: ["Balcon (terminaciones)", "Revestimiento interior Zona seca", "Revestimiento interior Zonas Húmedas",
     "Puertas Acceso", "Puertas Logia y Baño", "Puertas dormitorio", "Extraccion Forzada - Baño y Cocina",
-    "Ventilacion Pasiva", "Pavimento Zona Húmeda (Instalacion vinilico)", "Molduras", "Pintura exterior"],
-  ventanas: ["Ventanas Dormitorios", "Ventanas Living – Comedor y baño", "Celosia Loggia"]
+    "Ventilacion Pasiva", "Pavimento Zona Húmeda (Instalacion vinilico)", "Molduras", "Pintura exterior", "Celosia Loggia"],
+  ventanas: ["Ventanas Dormitorios", "Ventanas Living – Comedor y baño"]
 };
+
+/* Partidas de Ventanas que sólo aplican a un tipo de módulo (el otro tipo se muestra "-") */
+var ACR_TIPO_EXCLUDE = {};
+ACR_TIPO_EXCLUDE[acrNormalize(ACR_LABELS.ventanas[0])] = 'HÚMEDO'; /* Ventanas Dormitorios: no aplica a Húmedo */
+ACR_TIPO_EXCLUDE[acrNormalize(ACR_LABELS.ventanas[1])] = 'SECO';   /* Ventanas Living: no aplica a Seco */
 
 var acrState = { crWb: null, crParsed: null, crFileName: null, pdfHojas: null, pdfFileName: null, lastResult: null };
 
@@ -1211,7 +1216,24 @@ function acrParseCRWorkbook(wb){
     }
   }
 
-  return { rows2d: rows2d, moduleCol: moduleCol, moduleTipo: moduleTipo, labelRowMap: labelRowMap };
+  var grayCells = acrBuildGraySet(ws);
+
+  return { rows2d: rows2d, moduleCol: moduleCol, moduleTipo: moduleTipo, labelRowMap: labelRowMap, grayCells: grayCells };
+}
+
+/* Celdas con relleno gris en el CR = la partida no corresponde a ese módulo */
+function acrBuildGraySet(ws){
+  var gray = {};
+  if(!ws['!ref']) return gray;
+  var range = XLSX.utils.decode_range(ws['!ref']);
+  for(var R=range.s.r; R<=range.e.r; R++){
+    for(var C=range.s.c; C<=range.e.c; C++){
+      var cell = ws[XLSX.utils.encode_cell({r:R, c:C})];
+      var fg = cell && cell.s && cell.s.fgColor && cell.s.fgColor.rgb;
+      if(typeof fg === 'string' && /BFBFBF$/i.test(fg)) gray[R + ',' + C] = true;
+    }
+  }
+  return gray;
 }
 
 function acrResolvePartidaRows(labelRowMap, labels){
@@ -1229,9 +1251,10 @@ function acrResolvePartidaRows(labelRowMap, labels){
   return { rowMap: out, warnings: warnings };
 }
 
-function acrCellDone(rows2d, rowIdx, colIdx){
+function acrCellDone(cr, rowIdx, colIdx){
   if(rowIdx == null || colIdx == null) return null;
-  var row = rows2d[rowIdx];
+  if(cr.grayCells && cr.grayCells[rowIdx + ',' + colIdx]) return 'NA';
+  var row = cr.rows2d[rowIdx];
   if(!row) return 0;
   var v = row[colIdx];
   return (v !== null && v !== undefined && v !== '') ? 1 : 0;
@@ -1287,11 +1310,15 @@ function acrBuildGrid(schedule, labels, cr){
   });
   var rows = labels.map(function(label){
     var rowIdx = resolved.rowMap[label];
-    var values = columns.map(function(c){ return acrCellDone(cr.rows2d, rowIdx, c.col); });
+    var excludeTipo = ACR_TIPO_EXCLUDE[acrNormalize(label)];
+    var values = columns.map(function(c){
+      if(excludeTipo && c.tipo === excludeTipo) return 'NA';
+      return acrCellDone(cr, rowIdx, c.col);
+    });
     return { label: label, values: values };
   });
   var total = 0, done = 0;
-  rows.forEach(function(row){ row.values.forEach(function(v){ if(v !== null){ total++; if(v === 1) done++; } }); });
+  rows.forEach(function(row){ row.values.forEach(function(v){ if(v !== null && v !== 'NA'){ total++; if(v === 1) done++; } }); });
   return { columns: columns, rows: rows, total: total, done: done, warnings: resolved.warnings };
 }
 
@@ -1320,6 +1347,7 @@ function acrTableHtml(titulo, grid, extraNote){
   grid.rows.forEach(function(row){
     html += '<tr><td>' + row.label.trim() + '</td>' + row.values.map(function(v){
       if(v === null) return '<td style="text-align:center;color:var(--muted)">N/D</td>';
+      if(v === 'NA') return '<td style="text-align:center;color:var(--muted)">-</td>';
       return '<td style="text-align:center"><span class="badge ' + (v===1?'b-green':'b-red') + '">' + (v===1?'✓':'✗') + '</span></td>';
     }).join('') + '</tr>';
   });
@@ -1372,7 +1400,7 @@ function acrGridToAoa(titulo, grid){
   aoa.push(['Módulo'].concat(grid.columns.map(function(c){ return 'M-' + String(c.modulo).padStart(5,'0'); })));
   aoa.push(['Tipo'].concat(grid.columns.map(function(c){ return c.tipo || ''; })));
   grid.rows.forEach(function(row){
-    aoa.push([row.label.trim()].concat(row.values.map(function(v){ return v === null ? 'N/D' : v; })));
+    aoa.push([row.label.trim()].concat(row.values.map(function(v){ return v === null ? 'N/D' : (v === 'NA' ? '-' : v); })));
   });
   return aoa;
 }
@@ -1446,7 +1474,7 @@ function acrReadFileAsBase64(file){
 function acrOnCrFile(file){
   document.getElementById('acr-cr-status').textContent = 'Leyendo ' + file.name + '...';
   acrReadFileAsArrayBuffer(file).then(function(buf){
-    var wb = XLSX.read(new Uint8Array(buf), {type:'array'});
+    var wb = XLSX.read(new Uint8Array(buf), {type:'array', cellStyles:true});
     acrState.crWb = wb;
     acrState.crParsed = acrParseCRWorkbook(wb);
     acrState.crFileName = file.name;
