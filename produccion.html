@@ -1287,11 +1287,14 @@ function acrClassifyHojas(hojas){
     var dates = {};
     Object.keys(out.electrico).forEach(function(d){ dates[d] = 1; });
     Object.keys(out.sanitario).forEach(function(d){ dates[d] = 1; });
-    Object.keys(dates).forEach(function(d){
+    var seenModulos = {};
+    Object.keys(dates).sort().forEach(function(d){
       var set = {};
       (out.electrico[d] || []).forEach(function(mm){ set[mm] = 1; });
       (out.sanitario[d] || []).forEach(function(mm){ set[mm] = 1; });
-      out.ventanas[d] = Object.keys(set).map(Number).sort(function(a,b){ return a-b; });
+      var nuevos = Object.keys(set).map(Number).filter(function(mm){ return !seenModulos[mm]; });
+      nuevos.forEach(function(mm){ seenModulos[mm] = true; });
+      out.ventanas[d] = nuevos.sort(function(a,b){ return a-b; });
     });
     out.ventanasEstimado = true;
   }
