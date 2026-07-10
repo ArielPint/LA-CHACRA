@@ -117,6 +117,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="tab" data-tab="partidas">&#128295; Partidas</div>
   <div class="tab" data-tab="alertas">&#9888; Alertas</div>
   <div class="tab" data-tab="detalle">&#128203; Detalle</div>
+  <div class="tab" data-tab="avance-cr">&#128229; Avance CR</div>
 </nav>
 <div class="page active" id="page-resumen">
   <div class="kpi-row" id="kpi-resumen"></div>
@@ -184,6 +185,48 @@ tbody tr:hover td{background:var(--surface2)}
     <input id="f-q" placeholder="Buscar m&#243;dulo...">
   </div>
   <div class="card"><h3>Detalle m&#243;dulo a m&#243;dulo<button class="card-toggle" style="right:44px" onclick="exportTableToExcel('tbl-det','detalle-modulos')">⬇ Excel</button></h3><div class="tbl-wrap"><table id="tbl-det"><thead></thead><tbody></tbody></table></div></div>
+</div>
+<div class="page" id="page-avance-cr">
+  <div class="card">
+    <h3>Cargar archivos de la semana</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;align-items:end">
+      <div>
+        <label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:6px">CR AVANCE (.xlsx)</label>
+        <input type="file" id="acr-file-cr" accept=".xlsx,.xls" style="width:100%;font-size:.8rem">
+        <div id="acr-cr-status" style="font-size:.75rem;color:var(--muted);margin-top:4px">Sin archivo cargado.</div>
+      </div>
+      <div>
+        <label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:6px">Programa de contratistas (PDF)</label>
+        <input type="file" id="acr-file-pdf" accept=".pdf" style="width:100%;font-size:.8rem">
+        <div id="acr-pdf-status" style="font-size:.75rem;color:var(--muted);margin-top:4px">Sin archivo cargado.</div>
+      </div>
+      <div>
+        <label style="font-size:.78rem;color:var(--muted);display:block;margin-bottom:6px">A&#241;o de referencia (fechas del PDF no traen a&#241;o)</label>
+        <input type="number" id="acr-anio" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:.82rem">
+      </div>
+    </div>
+    <div id="acr-progress" style="display:none;margin-top:14px">
+      <div id="acr-progress-label" style="font-size:.8rem;color:var(--muted)">Procesando...</div>
+      <div style="background:var(--surface2);border-radius:99px;height:6px;overflow:hidden;margin-top:6px"><div id="acr-progress-bar" style="height:100%;border-radius:99px;background:var(--accent);width:0%;transition:width .3s"></div></div>
+    </div>
+    <div id="acr-banner" style="display:none;margin-top:14px;padding:10px 14px;border-radius:8px;font-size:.83rem;font-weight:600"></div>
+  </div>
+
+  <div id="acr-results" style="display:none">
+    <div class="kpi-row" id="acr-kpi"></div>
+    <div class="card">
+      <h3>Avance por contratista<button class="card-toggle" onclick="acrExportExcel()">&#11015; Excel</button></h3>
+      <div id="acr-tablas"></div>
+    </div>
+    <div class="card">
+      <h3 style="cursor:pointer" onclick="acrToggleDebug()">Datos extra&#237;dos del PDF (verificaci&#243;n) &#9660;</h3>
+      <div id="acr-debug" style="display:none;font-size:.78rem;color:var(--muted);max-height:320px;overflow:auto"></div>
+    </div>
+  </div>
+
+  <div id="acr-empty" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;color:var(--muted);font-size:.85rem">
+    Sube el CR AVANCE (.xlsx) y el PDF del programa de contratistas para generar el avance. Se recalcula autom&#225;ticamente cada vez que reemplazas alguno de los dos archivos.
+  </div>
 </div>
 <script>
 if(Chart.defaults.plugins && Chart.defaults.plugins.datalabels) Chart.defaults.plugins.datalabels.display = false;
@@ -978,6 +1021,7 @@ document.querySelector(".tab[data-tab=\"torres\"]").addEventListener("click", fu
 document.querySelector(".tab[data-tab=\"partidas\"]").addEventListener("click", function(){ renderPartidas(); }, {once:true});
 document.querySelector(".tab[data-tab=\"alertas\"]").addEventListener("click", function(){ renderAlertas(); }, {once:true});
 document.querySelector(".tab[data-tab=\"detalle\"]").addEventListener("click", function(){ renderDetalle(); }, {once:true});
+document.querySelector(".tab[data-tab=\"avance-cr\"]").addEventListener("click", function(){ if(typeof acrOnTabShown === 'function') acrOnTabShown(); });
 addToggles();
 
 // ── Auto-load from repo ───────────────────────────────────────────
@@ -1084,6 +1128,392 @@ if(typeof XLSX !== 'undefined'){
   var xlsxScript = document.querySelector('script[src*="xlsx"]');
   if(xlsxScript) xlsxScript.addEventListener('load', autoLoadProd);
 }
+</script>
+<script>
+/* ===================== AVANCE CR (WEDO/CONBES/Electrico/Sanitario/Ventanas) ===================== */
+(function(){
+
+var ACR_SUPA_URL  = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
+var ACR_SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
+var ACR_FN_URL = ACR_SUPA_URL + '/functions/v1/extraer-programa-pdf';
+
+var ACR_LABELS = {
+  electrico: ["Tablero de Distribución de Alumbrado ", "Canalizacion ", "Conductores", "Artefactos",
+    "Prueba de Funcionamiento Electrico", "Iluminacion", "Corrientes debiles (caja pau)", "Corrientes debiles (canalizaciones y salida)"],
+  sanitario: ["Lavamanos", "Tina", "W.C.", "Lavaplatos", "Lavadero Exterior", "Lavadora (Llaves y descarga)",
+    "A:P. distribución interior (Red Interior)", "A:P. distribución interior (Prueba presion)",
+    "Alcantarillado Domiciliario (Red Interior)", "Alcantarillado Domiciliario (Prueba Estanqueidad)"],
+  wedoconbes: ["Balcon (terminaciones)", "Revestimiento interior Zona seca", "Revestimiento interior Zonas Húmedas",
+    "Puertas Acceso", "Puertas Logia y Baño", "Puertas dormitorio", "Extraccion Forzada - Baño y Cocina",
+    "Ventilacion Pasiva", "Pavimento Zona Húmeda (Instalacion vinilico)", "Molduras", "Pintura exterior"],
+  ventanas: ["Ventanas Dormitorios", "Ventanas Living – Comedor y baño", "Celosia Loggia"]
+};
+
+var acrState = { crWb: null, crParsed: null, crFileName: null, pdfHojas: null, pdfFileName: null, lastResult: null };
+
+function acrNormalize(s){
+  return String(s == null ? '' : s)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function acrSetProgress(pct, label){
+  document.getElementById('acr-progress').style.display = 'block';
+  document.getElementById('acr-progress-bar').style.width = pct + '%';
+  document.getElementById('acr-progress-label').textContent = label;
+}
+function acrHideProgress(){ document.getElementById('acr-progress').style.display = 'none'; }
+function acrBanner(msg, ok){
+  var b = document.getElementById('acr-banner');
+  b.textContent = msg;
+  b.style.display = 'block';
+  b.style.background = ok ? 'rgba(62,207,142,.12)' : 'rgba(247,95,95,.12)';
+  b.style.color = ok ? 'var(--green)' : 'var(--red)';
+  b.style.border = '1px solid ' + (ok ? 'rgba(62,207,142,.25)' : 'rgba(247,95,95,.25)');
+  setTimeout(function(){ b.style.display = 'none'; }, 7000);
+}
+
+/* ---------- CR (.xlsx) parsing ---------- */
+function acrParseCRWorkbook(wb){
+  var ws = wb.Sheets['CR'];
+  if(!ws) throw new Error('El archivo no tiene una hoja llamada "CR".');
+  var rows2d = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+
+  var serieRowIdx = -1;
+  for(var r=0; r<rows2d.length && serieRowIdx<0; r++){
+    var row = rows2d[r];
+    for(var c=0; c<row.length; c++){
+      if(typeof row[c] === 'string' && acrNormalize(row[c]).indexOf('serie tf') >= 0){ serieRowIdx = r; break; }
+    }
+  }
+  if(serieRowIdx < 0) throw new Error('No se encontró la fila "N°serie TF" en la hoja CR.');
+
+  var moduleCol = {}, moduleTipo = {};
+  var serieRow = rows2d[serieRowIdx];
+  for(var c2=0; c2<serieRow.length; c2++){
+    var v = serieRow[c2];
+    if(typeof v === 'string'){
+      var m = v.trim().match(/^(\d+)-(\d+)$/);
+      if(m){
+        var prefix = m[1], num = parseInt(m[2], 10);
+        if(num !== 0){ moduleCol[num] = c2; moduleTipo[num] = prefix === '228' ? 'SECO' : (prefix === '230' ? 'HÚMEDO' : prefix); }
+      }
+    }
+  }
+  if(Object.keys(moduleCol).length === 0) throw new Error('No se encontraron módulos válidos en la fila "N°serie TF".');
+
+  var labelRowMap = {};
+  for(var r2=0; r2<rows2d.length; r2++){
+    var b = rows2d[r2][1];
+    if(typeof b === 'string' && b.trim()){
+      var key = acrNormalize(b);
+      if(!(key in labelRowMap)) labelRowMap[key] = r2;
+    }
+  }
+
+  return { rows2d: rows2d, moduleCol: moduleCol, moduleTipo: moduleTipo, labelRowMap: labelRowMap };
+}
+
+function acrResolvePartidaRows(labelRowMap, labels){
+  var out = {}, warnings = [];
+  labels.forEach(function(label){
+    var key = acrNormalize(label);
+    if(key in labelRowMap){ out[label] = labelRowMap[key]; return; }
+    var found = null;
+    for(var k in labelRowMap){
+      if(k.indexOf(key) >= 0 || key.indexOf(k) >= 0){ found = labelRowMap[k]; break; }
+    }
+    if(found !== null){ out[label] = found; warnings.push('Coincidencia aproximada: "' + label + '"'); }
+    else warnings.push('No se encontró la partida "' + label + '" en el CR (se omite).');
+  });
+  return { rowMap: out, warnings: warnings };
+}
+
+function acrCellDone(rows2d, rowIdx, colIdx){
+  if(rowIdx == null || colIdx == null) return null;
+  var row = rows2d[rowIdx];
+  if(!row) return 0;
+  var v = row[colIdx];
+  return (v !== null && v !== undefined && v !== '') ? 1 : 0;
+}
+
+/* ---------- PDF hoja classification ---------- */
+function acrClassifyHojas(hojas){
+  var out = { wedo: {}, conbes: {}, electrico: {}, sanitario: {}, ventanas: {}, otros: [], ventanasEstimado: false };
+  var foundVentanas = false;
+  (hojas || []).forEach(function(h){
+    var t = acrNormalize(h.titulo), s = acrNormalize(h.subtitulo);
+    var registros = h.registros || [];
+    if(t.indexOf('electric') >= 0){
+      registros.forEach(function(reg){ (out.electrico[reg.fecha] = out.electrico[reg.fecha] || []).push(reg.modulo); });
+    } else if(t.indexOf('sanitario') >= 0){
+      registros.forEach(function(reg){ (out.sanitario[reg.fecha] = out.sanitario[reg.fecha] || []).push(reg.modulo); });
+    } else if(t.indexOf('ventana') >= 0){
+      foundVentanas = true;
+      registros.forEach(function(reg){ (out.ventanas[reg.fecha] = out.ventanas[reg.fecha] || []).push(reg.modulo); });
+    } else if(t.indexOf('entrega') >= 0 || s.indexOf('wedo') >= 0 || s.indexOf('conbes') >= 0){
+      registros.forEach(function(reg){
+        var bucket = reg.resaltado ? out.wedo : out.conbes;
+        (bucket[reg.fecha] = bucket[reg.fecha] || []).push(reg.modulo);
+      });
+    } else {
+      out.otros.push(h);
+    }
+  });
+  if(!foundVentanas){
+    var dates = {};
+    Object.keys(out.electrico).forEach(function(d){ dates[d] = 1; });
+    Object.keys(out.sanitario).forEach(function(d){ dates[d] = 1; });
+    Object.keys(dates).forEach(function(d){
+      var set = {};
+      (out.electrico[d] || []).forEach(function(mm){ set[mm] = 1; });
+      (out.sanitario[d] || []).forEach(function(mm){ set[mm] = 1; });
+      out.ventanas[d] = Object.keys(set).map(Number).sort(function(a,b){ return a-b; });
+    });
+    out.ventanasEstimado = true;
+  }
+  return out;
+}
+
+/* ---------- Grid building ---------- */
+function acrBuildGrid(schedule, labels, cr){
+  var resolved = acrResolvePartidaRows(cr.labelRowMap, labels);
+  var dates = Object.keys(schedule).filter(function(d){ return (schedule[d]||[]).length; }).sort();
+  var columns = [];
+  dates.forEach(function(d){
+    schedule[d].slice().sort(function(a,b){ return a-b; }).forEach(function(mnum){
+      columns.push({ fecha: d, modulo: mnum, tipo: cr.moduleTipo[mnum] || null, col: cr.moduleCol[mnum] });
+    });
+  });
+  var rows = labels.map(function(label){
+    var rowIdx = resolved.rowMap[label];
+    var values = columns.map(function(c){ return acrCellDone(cr.rows2d, rowIdx, c.col); });
+    return { label: label, values: values };
+  });
+  var total = 0, done = 0;
+  rows.forEach(function(row){ row.values.forEach(function(v){ if(v !== null){ total++; if(v === 1) done++; } }); });
+  return { columns: columns, rows: rows, total: total, done: done, warnings: resolved.warnings };
+}
+
+/* ---------- Rendering ---------- */
+function acrFmtFecha(iso){
+  var p = iso.split('-');
+  return p[2] + '/' + p[1];
+}
+
+function acrTableHtml(titulo, grid, extraNote){
+  if(!grid.columns.length){
+    return '<div style="margin-bottom:22px"><h4 style="font-size:.82rem;color:var(--text);margin-bottom:6px">' + titulo + '</h4>' +
+      '<div style="font-size:.78rem;color:var(--muted)">Sin módulos programados en el PDF para este frente.</div></div>';
+  }
+  var pct = grid.total ? (grid.done/grid.total*100) : 0;
+  var html = '<div style="margin-bottom:26px">';
+  html += '<h4 style="font-size:.82rem;color:var(--text);margin-bottom:2px">' + titulo +
+    ' <span class="badge ' + (pct>=50?'b-green':(pct>=20?'b-orange':'b-red')) + '" style="margin-left:6px">' + pct.toFixed(1) + '% avance</span></h4>';
+  if(extraNote) html += '<div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">' + extraNote + '</div>';
+  html += '<div class="tbl-wrap"><table style="font-size:.74rem"><thead>';
+  html += '<tr><th style="min-width:220px">Partida</th>' + grid.columns.map(function(c){ return '<th style="text-align:center">' + acrFmtFecha(c.fecha) + '</th>'; }).join('') + '</tr>';
+  html += '<tr><th>Módulo</th>' + grid.columns.map(function(c){
+    return '<th style="text-align:center;font-weight:400;color:var(--muted)">M-' + String(c.modulo).padStart(5,'0') + (c.tipo ? '<br>' + c.tipo : '') + '</th>';
+  }).join('') + '</tr>';
+  html += '</thead><tbody>';
+  grid.rows.forEach(function(row){
+    html += '<tr><td>' + row.label.trim() + '</td>' + row.values.map(function(v){
+      if(v === null) return '<td style="text-align:center;color:var(--muted)">N/D</td>';
+      return '<td style="text-align:center"><span class="badge ' + (v===1?'b-green':'b-red') + '">' + (v===1?'✓':'✗') + '</span></td>';
+    }).join('') + '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  return html;
+}
+
+function acrRenderAll(result){
+  document.getElementById('acr-empty').style.display = 'none';
+  document.getElementById('acr-results').style.display = 'block';
+
+  var totalAll = 0, doneAll = 0;
+  result.grids.forEach(function(g){ totalAll += g.grid.total; doneAll += g.grid.done; });
+  var pctAll = totalAll ? (doneAll/totalAll*100) : 0;
+
+  var kpiHtml = '';
+  kpiHtml += '<div class="kpi c-brand"><div class="kpi-lbl">Avance general</div><div class="kpi-val">' + pctAll.toFixed(1) + '%</div><div class="kpi-sub">' + doneAll + ' / ' + totalAll + ' celdas partida&#215;módulo</div></div>';
+  result.grids.forEach(function(g){
+    var p = g.grid.total ? (g.grid.done/g.grid.total*100) : 0;
+    kpiHtml += '<div class="kpi c-blue"><div class="kpi-lbl">' + g.titulo + '</div><div class="kpi-val">' + p.toFixed(1) + '%</div><div class="kpi-sub">' + g.grid.done + ' / ' + g.grid.total + '</div></div>';
+  });
+  document.getElementById('acr-kpi').innerHTML = kpiHtml;
+
+  var tablasHtml = '';
+  result.grids.forEach(function(g){ tablasHtml += acrTableHtml(g.titulo, g.grid, g.nota); });
+  document.getElementById('acr-tablas').innerHTML = tablasHtml;
+
+  var warn = [];
+  result.grids.forEach(function(g){ (g.grid.warnings || []).forEach(function(w){ warn.push(g.titulo + ': ' + w); }); });
+  var debugHtml = '';
+  if(warn.length) debugHtml += '<div style="color:var(--yellow);margin-bottom:10px">' + warn.join('<br>') + '</div>';
+  debugHtml += '<div><b>Hojas detectadas en el PDF:</b><br>' + (result.pdfHojas || []).map(function(h){
+    return '&#8226; "' + h.titulo + '" / "' + h.subtitulo + '" — ' + (h.registros||[]).length + ' módulos';
+  }).join('<br>') + '</div>';
+  document.getElementById('acr-debug').innerHTML = debugHtml;
+}
+
+function acrToggleDebug(){
+  var el = document.getElementById('acr-debug');
+  el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+}
+window.acrToggleDebug = acrToggleDebug;
+
+/* ---------- Excel export ---------- */
+function acrGridToAoa(titulo, grid){
+  var aoa = [];
+  aoa.push([titulo]);
+  aoa.push([]);
+  aoa.push(['PARTIDA'].concat(grid.columns.map(function(c){ return acrFmtFecha(c.fecha); })));
+  aoa.push(['Módulo'].concat(grid.columns.map(function(c){ return 'M-' + String(c.modulo).padStart(5,'0'); })));
+  aoa.push(['Tipo'].concat(grid.columns.map(function(c){ return c.tipo || ''; })));
+  grid.rows.forEach(function(row){
+    aoa.push([row.label.trim()].concat(row.values.map(function(v){ return v === null ? 'N/D' : v; })));
+  });
+  return aoa;
+}
+
+function acrExportExcel(){
+  if(!acrState.lastResult){ alert('Aún no hay resultados para exportar.'); return; }
+  if(typeof XLSX === 'undefined'){ alert('Librería XLSX no cargada.'); return; }
+  var wb = XLSX.utils.book_new();
+  var resumen = [['RESUMEN AVANCE CR'], [], ['Frente', 'Celdas', 'Completadas', '% Avance']];
+  var totalAll=0, doneAll=0;
+  acrState.lastResult.grids.forEach(function(g){
+    var pct = g.grid.total ? (g.grid.done/g.grid.total) : 0;
+    resumen.push([g.titulo, g.grid.total, g.grid.done, (pct*100).toFixed(1)+'%']);
+    totalAll += g.grid.total; doneAll += g.grid.done;
+  });
+  resumen.push(['TOTAL', totalAll, doneAll, (totalAll? (doneAll/totalAll*100):0).toFixed(1)+'%']);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen');
+  acrState.lastResult.grids.forEach(function(g){
+    var sheetName = g.titulo.replace(/[\\/*?:\[\]]/g,'').slice(0,31);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(acrGridToAoa(g.titulo, g.grid)), sheetName);
+  });
+  var fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, 'Avance CR ' + fecha + '.xlsx');
+}
+window.acrExportExcel = acrExportExcel;
+
+/* ---------- Orchestration ---------- */
+function acrCompute(){
+  if(!acrState.crParsed || !acrState.pdfHojas) return;
+  try {
+    var cats = acrClassifyHojas(acrState.pdfHojas);
+    var cr = acrState.crParsed;
+    var grids = [
+      { titulo: 'Electrico', grid: acrBuildGrid(cats.electrico, ACR_LABELS.electrico, cr) },
+      { titulo: 'Sanitario', grid: acrBuildGrid(cats.sanitario, ACR_LABELS.sanitario, cr) },
+      { titulo: 'WEDO',      grid: acrBuildGrid(cats.wedo,      ACR_LABELS.wedoconbes, cr) },
+      { titulo: 'CONBES',    grid: acrBuildGrid(cats.conbes,    ACR_LABELS.wedoconbes, cr) },
+      { titulo: 'Ventanas',  grid: acrBuildGrid(cats.ventanas,  ACR_LABELS.ventanas, cr),
+        nota: cats.ventanasEstimado ? 'El PDF no trajo programación propia de ventanas esta semana: se usa la unión de módulos de Electrico + Sanitario como estimación.' : null }
+    ];
+    var result = { grids: grids, pdfHojas: acrState.pdfHojas, crFileName: acrState.crFileName, pdfFileName: acrState.pdfFileName, generatedAt: new Date().toISOString() };
+    acrState.lastResult = result;
+    acrRenderAll(result);
+    try {
+      localStorage.setItem('tp_avance_cr_result', JSON.stringify(result));
+    } catch(e){}
+    acrBanner('✅ Avance generado correctamente.', true);
+  } catch(err){
+    console.error('acrCompute:', err);
+    acrBanner('❌ ' + err.message, false);
+  }
+}
+
+function acrReadFileAsArrayBuffer(file){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(e){ resolve(e.target.result); };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+function acrReadFileAsBase64(file){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(e){ resolve(e.target.result.split(',')[1]); };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function acrOnCrFile(file){
+  document.getElementById('acr-cr-status').textContent = 'Leyendo ' + file.name + '...';
+  acrReadFileAsArrayBuffer(file).then(function(buf){
+    var wb = XLSX.read(new Uint8Array(buf), {type:'array'});
+    acrState.crWb = wb;
+    acrState.crParsed = acrParseCRWorkbook(wb);
+    acrState.crFileName = file.name;
+    document.getElementById('acr-cr-status').textContent = '✅ ' + file.name + ' (' + Object.keys(acrState.crParsed.moduleCol).length + ' módulos)';
+    acrCompute();
+  }).catch(function(err){
+    console.error(err);
+    document.getElementById('acr-cr-status').textContent = '❌ ' + err.message;
+    acrBanner('❌ Error leyendo CR: ' + err.message, false);
+  });
+}
+
+function acrOnPdfFile(file){
+  document.getElementById('acr-pdf-status').textContent = 'Enviando ' + file.name + ' a extracción...';
+  acrSetProgress(20, 'Leyendo PDF...');
+  acrReadFileAsBase64(file).then(function(b64){
+    acrSetProgress(45, 'Extrayendo tabla del programa (esto puede tardar unos segundos)...');
+    var anio = parseInt(document.getElementById('acr-anio').value, 10) || new Date().getFullYear();
+    return fetch(ACR_FN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': ACR_SUPA_ANON },
+      body: JSON.stringify({ pdfBase64: b64, anio: anio })
+    });
+  }).then(function(resp){
+    return resp.json().then(function(data){
+      if(!resp.ok || data.error) throw new Error(data.error || 'Error al extraer el PDF.');
+      return data;
+    });
+  }).then(function(data){
+    acrSetProgress(90, 'Procesando resultado...');
+    acrState.pdfHojas = data.hojas;
+    acrState.pdfFileName = file.name;
+    document.getElementById('acr-pdf-status').textContent = '✅ ' + file.name + ' (' + data.hojas.length + ' hojas detectadas)';
+    acrHideProgress();
+    acrCompute();
+  }).catch(function(err){
+    console.error(err);
+    acrHideProgress();
+    document.getElementById('acr-pdf-status').textContent = '❌ ' + err.message;
+    acrBanner('❌ Error extrayendo PDF: ' + err.message, false);
+  });
+}
+
+function acrOnTabShown(){
+  var yearInput = document.getElementById('acr-anio');
+  if(yearInput && !yearInput.value) yearInput.value = new Date().getFullYear();
+  if(acrState.lastResult){ acrRenderAll(acrState.lastResult); return; }
+  try {
+    var cached = JSON.parse(localStorage.getItem('tp_avance_cr_result') || 'null');
+    if(cached){
+      acrState.lastResult = cached;
+      document.getElementById('acr-cr-status').textContent = '✅ ' + (cached.crFileName || '') + ' (última carga)';
+      document.getElementById('acr-pdf-status').textContent = '✅ ' + (cached.pdfFileName || '') + ' (última carga)';
+      acrRenderAll(cached);
+    }
+  } catch(e){}
+}
+window.acrOnTabShown = acrOnTabShown;
+
+document.addEventListener('DOMContentLoaded', function(){
+  var crInput = document.getElementById('acr-file-cr');
+  var pdfInput = document.getElementById('acr-file-pdf');
+  if(crInput) crInput.addEventListener('change', function(){ if(crInput.files[0]) acrOnCrFile(crInput.files[0]); });
+  if(pdfInput) pdfInput.addEventListener('change', function(){ if(pdfInput.files[0]) acrOnPdfFile(pdfInput.files[0]); });
+});
+
+})();
 </script>
 </body>
 </html>
