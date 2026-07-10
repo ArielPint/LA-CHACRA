@@ -9,13 +9,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="auth.js"></script>
 <style>
-:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--r:10px}
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--btn-bg:rgba(255,255,255,0.1);--r:10px}
+:root[data-theme="light"]{--bg:#f2f3f8;--surface:#ffffff;--surface2:#eef0f7;--accent:#2f6fe0;--brand:#D42B1E;--green:#1f9d63;--red:#d43f3f;--yellow:#b98900;--orange:#c97a1f;--purple:#7c4fd1;--text:#1a1d27;--muted:#5c6079;--border:#dde1ee;--btn-bg:rgba(0,0,0,0.05)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:14px}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
 .header-right{font-size:.75rem;color:var(--muted);text-align:right;display:flex;align-items:center;gap:10px}
-.auth-user-badge{font-size:.72rem;background:rgba(255,255,255,0.08);padding:3px 9px;border-radius:20px;white-space:nowrap}
-.auth-btn{font-size:.72rem;padding:4px 11px;background:rgba(255,255,255,0.1);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s}
+.auth-user-badge{font-size:.72rem;background:var(--btn-bg);padding:3px 9px;border-radius:20px;white-space:nowrap}
+.auth-btn{font-size:.72rem;padding:4px 11px;background:var(--btn-bg);color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-decoration:none;transition:all .15s}
 .auth-btn:hover{color:var(--text);border-color:var(--accent)}
 nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:2px;overflow-x:auto}
 .tab{padding:10px 18px;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
@@ -32,7 +33,7 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:relative;margin-bottom:16px}
 .card h3{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px;padding-right:52px}
 .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:16px;margin-bottom:16px}
-.card-toggle{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:10px;padding:3px 8px;line-height:1.4;z-index:2}
+.card-toggle{position:absolute;top:10px;right:10px;background:var(--btn-bg);border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:10px;padding:3px 8px;line-height:1.4;z-index:2}
 .card-toggle:hover{color:var(--text)}
 .card.collapsed>*:not(h3):not(.card-toggle){display:none!important}
 .card.collapsed{padding-bottom:14px}
@@ -100,6 +101,24 @@ tbody tr:hover td{background:var(--surface2)}
     });
   }
 })();
+// Tema claro/oscuro: aplicar preferencia guardada antes de pintar
+(function(){
+  if(localStorage.getItem('tp_theme') === 'light'){
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+function acrToggleTheme(){
+  var root = document.documentElement;
+  var goingLight = root.getAttribute('data-theme') !== 'light';
+  if(goingLight){ root.setAttribute('data-theme', 'light'); localStorage.setItem('tp_theme', 'light'); }
+  else { root.removeAttribute('data-theme'); localStorage.setItem('tp_theme', 'dark'); }
+  var btn = document.getElementById('theme-toggle-btn');
+  if(btn) btn.textContent = goingLight ? '🌙 Oscuro' : '☀️ Claro';
+}
+document.addEventListener('DOMContentLoaded', function(){
+  var btn = document.getElementById('theme-toggle-btn');
+  if(btn) btn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '🌙 Oscuro' : '☀️ Claro';
+});
 </script>
 </head>
 <body>
@@ -107,6 +126,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="logo"><div><span style="font-size:30px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:30px;font-weight:900;color:#D42B1E;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:12px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup></div><div style="font-size:10px;color:#7a7f99;margin-top:3px;letter-spacing:.3px">Producci&#243;n &#8212; Avance por M&#243;dulo</div></div>
   <div class="header-right">
     <span class="auth-user-badge" id="prod-user-badge"></span>
+    <button class="auth-btn" id="theme-toggle-btn" onclick="acrToggleTheme()">☀️ Claro</button>
     <a href="admin.html" class="auth-btn" id="prod-admin-btn" style="display:none">⚙️ Admin</a>
     <button class="auth-btn" onclick="AUTH.logout();window.top.location.href='login.html'">Salir</button>
   </div>
