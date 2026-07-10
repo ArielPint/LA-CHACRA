@@ -1204,7 +1204,7 @@ function acrParseCRWorkbook(wb){
 
   var labelRowMap = {};
   for(var r2=0; r2<rows2d.length; r2++){
-    var b = rows2d[r2][1];
+    var b = rows2d[r2][0];
     if(typeof b === 'string' && b.trim()){
       var key = acrNormalize(b);
       if(!(key in labelRowMap)) labelRowMap[key] = r2;
@@ -1461,14 +1461,27 @@ function acrOnCrFile(file){
 
 function acrOnPdfFile(file){
   document.getElementById('acr-pdf-status').textContent = 'Enviando ' + file.name + ' a extracción...';
-  acrSetProgress(20, 'Leyendo PDF...');
-  acrReadFileAsBase64(file).then(function(b64){
-    acrSetProgress(45, 'Extrayendo tabla del programa (esto puede tardar unos segundos)...');
-    var anio = parseInt(document.getElementById('acr-anio').value, 10) || new Date().getFullYear();
-    return fetch(ACR_FN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': ACR_SUPA_ANON },
-      body: JSON.stringify({ pdfBase64: b64, anio: anio })
+  acrSetProgress(15, 'Verificando sesión...');
+  var b64Cache = null;
+  (typeof AUTH !== 'undefined' ? AUTH.getAccessToken() : Promise.reject(new Error('Sesión no disponible.')))
+  .catch(function(err){
+    throw new Error('No se pudo validar tu sesión (' + err.message + '). Volvé a iniciar sesión e intentá de nuevo.');
+  })
+  .then(function(token){
+    acrSetProgress(20, 'Leyendo PDF...');
+    return acrReadFileAsBase64(file).then(function(b64){
+      b64Cache = b64;
+      acrSetProgress(45, 'Extrayendo tabla del programa (esto puede tardar unos segundos)...');
+      var anio = parseInt(document.getElementById('acr-anio').value, 10) || new Date().getFullYear();
+      return fetch(ACR_FN_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': ACR_SUPA_ANON,
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ pdfBase64: b64Cache, anio: anio })
+      });
     });
   }).then(function(resp){
     return resp.json().then(function(data){

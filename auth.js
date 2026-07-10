@@ -596,7 +596,8 @@ const AUTH = (() => {
     getPlantaRol, canAccessPlanta, canMarkInPlanta,
     getPages, getRoles, getDefaultPages, getPageLabel, getTabLabel, getAllTabs,
     getFinancieroEditGroups,
-    hashPassword, getLoginStats
+    hashPassword, getLoginStats,
+    getAccessToken: _getAccessToken
   };
 
 })();
