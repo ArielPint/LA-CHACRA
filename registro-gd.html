@@ -1619,7 +1619,7 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function fmtDate(d){ if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y}`; }
 function fmt0(n){ return (n||0).toLocaleString('es-CL'); }
 function fmtNum(n){ if(n===null||n===undefined||isNaN(n)) return '—'; return '$'+Math.round(n).toLocaleString('es-CL'); }
-function fmtCompact(n){ if(n>=1e9) return '$'+(n/1e9).toFixed(1)+'B'; if(n>=1e6) return '$'+(n/1e6).toFixed(1)+'M'; if(n>=1e3) return '$'+(n/1e3).toFixed(0)+'K'; return '$'+Math.round(n).toLocaleString('es-CL'); }
+function fmtCompact(n){ if(n>=1e6) return '$'+new Intl.NumberFormat('es-CL',{maximumFractionDigits:0}).format(n/1e6)+'M'; if(n>=1e3) return '$'+(n/1e3).toFixed(0)+'K'; return '$'+Math.round(n).toLocaleString('es-CL'); }
 function tipoChip(t){ if(!t) return ''; const c=t.includes('CRITICO')&&!t.includes('NO'); return `<span class="chip ${c?'chip-critico':'chip-normal'}">${c?'Crítico':'No crítico'}</span>`; }
 function toast(msg,type){ const el=document.getElementById('toast'); el.textContent=msg; el.className='show '+(type||''); clearTimeout(toast._t); toast._t=setTimeout(()=>{el.className='';},2800); }
 

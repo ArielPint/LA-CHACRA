@@ -446,8 +446,7 @@ function fmtD(v){if(!v)return'—';const[y,m,d]=v.split('-');return`${d}-${m}-${
 function fmtM(v,short){
   if(v===null||v===undefined||v==='')return'—';
   const n=parseFloat(v);if(isNaN(n))return'—';
-  if(short&&n>=1e9)return'$'+(n/1e9).toFixed(1)+'B';
-  if(short&&n>=1e6)return'$'+(n/1e6).toFixed(1)+'M';
+  if(short&&n>=1e6)return'$'+new Intl.NumberFormat('es-CL',{maximumFractionDigits:0}).format(n/1e6)+'M';
   return'$'+Math.round(n).toLocaleString('es-CL');
 }
 function tipoChip(t){if(!t)return'—';return`<span class="chip ${t==='SECO'?'chip-seco':'chip-humedo'}">${t}</span>`;}
