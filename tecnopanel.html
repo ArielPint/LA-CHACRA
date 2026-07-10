@@ -17,9 +17,23 @@
   --text: #e8eaf0;
   --muted: #7a7f99;
   --border: #2e3350;
+  --btn-bg: rgba(255,255,255,.06);
   --sidebar-w: 220px;
   --topbar-h: 54px;
   --bottombar-h: 62px;
+}
+:root[data-theme="light"] {
+  --bg: #f2f3f8;
+  --surface: #ffffff;
+  --surface2: #eef0f7;
+  --accent: #2f6fe0;
+  --brand: #D42B1E;
+  --green: #1f9d63;
+  --red: #d43f3f;
+  --text: #1a1d27;
+  --muted: #5c6079;
+  --border: #dde1ee;
+  --btn-bg: rgba(0,0,0,.05);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
@@ -38,7 +52,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
 .tb-right { display: flex; align-items: center; gap: 6px; }
 .btn-ghost { display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 7px; font-size: .74rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--muted); text-decoration: none; transition: all .15s; white-space: nowrap; }
 .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
-.auth-badge { font-size: .7rem; background: rgba(255,255,255,.06); padding: 4px 10px; border-radius: 20px; color: var(--muted); border: 1px solid var(--border); white-space: nowrap; cursor: pointer; transition: border-color .15s, color .15s; }
+.auth-badge { font-size: .7rem; background: var(--btn-bg); padding: 4px 10px; border-radius: 20px; color: var(--muted); border: 1px solid var(--border); white-space: nowrap; cursor: pointer; transition: border-color .15s, color .15s; }
 .auth-badge:hover { border-color: var(--accent); color: var(--text); }
 .pwd-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
 .pwd-overlay.open { display: flex; }
@@ -108,6 +122,13 @@ iframe { border: none; width: 100%; height: 100%; display: block; }
 body.sidebar-open iframe { visibility: hidden; }
 @media (max-width: 380px) { #tp-admin-btn { display: none !important; } .btn-ghost.hide-xs { display: none; } }
 </style>
+<script>
+(function(){
+  if(localStorage.getItem('tp_theme') === 'light'){
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+</script>
 </head>
 <body>
 <div id="topbar">
@@ -117,6 +138,7 @@ body.sidebar-open iframe { visibility: hidden; }
   <div class="tb-spacer"></div>
   <div class="tb-right">
     <button class="btn-ghost hide-xs" onclick="recargar()">&#8635; Actualizar</button>
+    <button class="btn-ghost" id="theme-toggle-btn" onclick="tpToggleTheme()">&#9728;&#65039; Claro</button>
     <span class="auth-badge" id="tp-user-badge" onclick="openPwdModal()" title="Cambiar contrasena"></span>
     <a href="settings.html" class="btn-ghost" id="tp-admin-btn" style="display:none">&#9881;&#65039; Admin</a>
     <button class="btn-ghost" onclick="doLogout()">Salir</button>
@@ -294,8 +316,24 @@ function iframeLoaded(name) {
   var ov = document.getElementById('load-' + name); if (ov) ov.classList.add('done');
   var frame = document.getElementById('frame-' + name);
   if (frame && frame.contentDocument && frame.contentDocument.head) { var s = frame.contentDocument.createElement('style'); s.id = 'tp-embedded-style'; s.textContent = 'header { display:none !important; }' + (isMobile() ? ' nav { display:none !important; }' : ''); frame.contentDocument.head.appendChild(s); }
+  if (frame && frame.contentDocument && frame.contentDocument.documentElement) { frame.contentDocument.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || ''); }
   if (name === currentPage) updateBottomTabs(name);
 }
+function tpToggleTheme() {
+  var root = document.documentElement;
+  var light = root.getAttribute('data-theme') !== 'light';
+  if (light) { root.setAttribute('data-theme', 'light'); localStorage.setItem('tp_theme', 'light'); }
+  else { root.removeAttribute('data-theme'); localStorage.setItem('tp_theme', 'dark'); }
+  document.querySelectorAll('iframe').forEach(function(f) {
+    try { if (f.contentDocument && f.contentDocument.documentElement) { if (light) f.contentDocument.documentElement.setAttribute('data-theme', 'light'); else f.contentDocument.documentElement.removeAttribute('data-theme'); } } catch (e) {}
+  });
+  var btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.innerHTML = light ? '&#127769; Oscuro' : '&#9728;&#65039; Claro';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.innerHTML = document.documentElement.getAttribute('data-theme') === 'light' ? '&#127769; Oscuro' : '&#9728;&#65039; Claro';
+});
 function openPlanta() { window.open('control-planta.html', '_blank'); }
 // financiero-app es una SPA aparte (Vite/React), se compila y se sube a
 // /financiero en cada deploy (ver .github/workflows/deploy.yml) — se abre en

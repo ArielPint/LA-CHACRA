@@ -7,6 +7,13 @@
 <script src="auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="excel-export.js"></script>
+<script>
+(function(){
+  if(localStorage.getItem('tp_theme') === 'light'){
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -17,7 +24,17 @@
   --yellow2:rgba(251,191,36,0.15);
   --purple2:rgba(139,92,246,0.15);
   --border:#2e3350;--bg:#0f1117;--surface:#1a1d27;--surface2:#12151f;
-  --text:#e8eaf0;--muted:#7a7f99;--text2:#9ca3b8;
+  --text:#e8eaf0;--muted:#7a7f99;--text2:#9ca3b8;--btn-bg:rgba(255,255,255,.06);
+}
+:root[data-theme="light"]{
+  --brand:#D42B1E;--brand2:rgba(212,43,30,.10);
+  --green:#1f9d63;--green2:rgba(31,157,99,.12);
+  --red:#d43f3f;--red2:rgba(212,63,63,.12);
+  --blue:#2f6fe0;--blue2:rgba(47,111,224,.12);
+  --yellow2:rgba(185,137,0,0.12);
+  --purple2:rgba(124,79,209,0.12);
+  --border:#dde1ee;--bg:#f2f3f8;--surface:#ffffff;--surface2:#eef0f7;
+  --text:#1a1d27;--muted:#5c6079;--text2:#3f4457;--btn-bg:rgba(0,0,0,.05);
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 

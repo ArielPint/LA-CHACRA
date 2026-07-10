@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mapa de Módulos — Planta Productiva</title>
 <script src="auth.js"></script>
+<script>
+(function(){
+  if(localStorage.getItem('tp_theme') === 'light'){
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -18,6 +25,17 @@
     --gray:    #7a7f99;
     --accent:  #cd1c18;
     --navy:    #1a2c4e;
+  }
+  :root[data-theme="light"] {
+    --bg:      #f2f3f8;
+    --surface: #ffffff;
+    --surface2:#eef0f7;
+    --border:  #dde1ee;
+    --text:    #1a1d27;
+    --text2:   #3f4457;
+    --gray:    #5c6079;
+    --accent:  #cd1c18;
+    --navy:    #2f6fe0;
   }
 
   body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); }
