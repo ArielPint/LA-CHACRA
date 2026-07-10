@@ -579,6 +579,20 @@ async function loadPresupuestoSupa(){
   }catch(e){console.warn('loadPresupuestoSupa:',e);}
 }
 
+// Parámetros del cálculo de escenarios en la pestaña Proyección (editables en Configuración)
+let _proyRitmoTope=15, _proyRitmoTorre3=6;
+async function loadRitmoProyeccionSupa(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/config?key=in.(proy_ritmo_tope,proy_ritmo_torre3_fijo)&select=key,value`,{headers:SUPA_H});
+    if(!r.ok)return;
+    const rows=await r.json();
+    (rows||[]).forEach(x=>{
+      if(x.key==='proy_ritmo_tope'&&x.value) _proyRitmoTope=parseFloat(x.value)||_proyRitmoTope;
+      if(x.key==='proy_ritmo_torre3_fijo'&&x.value) _proyRitmoTorre3=parseFloat(x.value)||_proyRitmoTorre3;
+    });
+  }catch(e){console.warn('loadRitmoProyeccionSupa:',e);}
+}
+
 // Ppto vigente por código, resuelto en vivo contra el catálogo (igual que registro-gd.html),
 // en vez de la foto guardada en registro_compras.valor_ppto al momento de la compra.
 const PROD_URL='https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/productos.json';
@@ -722,7 +736,7 @@ function getHomeAvance(){
           var pr = document.getElementById('prompt');
           if(pr) pr.style.display = 'none';
           renderAll();
-          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo()])
+          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa()])
             .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
           var t = document.querySelector('.tab[data-tab="resumen"]');
           if(t) t.click();
@@ -1031,7 +1045,7 @@ document.getElementById('file-input').addEventListener('change',function(e){
         document.getElementById('prompt').style.display='none';
         renderAll();
         document.querySelector('.tab[data-tab="resumen"]').click();
-        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo()])
+        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa()])
           .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
         st.textContent='✅ Cargado'; st.className='status-ok';
         // Save to localStorage for biblioteca
@@ -1084,7 +1098,7 @@ async function autoLoadFromRepo(){
     try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
     renderAll();
     try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
-    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo()])
+    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa()])
       .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
     showAutoStatus('✅ Datos cargados');
     try{
@@ -2859,7 +2873,7 @@ async function renderProdDiaria(){
 // Ritmo real de una torre (módulos terminados/semana, últimas RITMO_SEMANAS semanas), salvo
 // torre 3 que usa un valor fijo mientras no quede 100% terminada (ritmo objetivo, no el reciente).
 function ritmoTorre(m, t, limite, today, RITMO_SEMANAS){
-  if(t==='TORRE 03') return 6;
+  if(t==='TORRE 03') return _proyRitmoTorre3;
   const fechasT=m.filter(x=>x.torre===t&&x.termReal).map(x=>parseDate(x.termReal)).filter(d=>d&&!isNaN(d));
   return fechasT.filter(d=>d>=limite&&d<=today).length/RITMO_SEMANAS;
 }
@@ -2871,7 +2885,7 @@ function renderProyeccion(){
 
   // ── Escenario: ritmo de una torre con módulos terminados, aplicado al total pendiente del proyecto ──
   const RITMO_SEMANAS=8;
-  const RITMO_TOPE=15; // el ritmo total del proyecto no debería superar esto
+  const RITMO_TOPE=_proyRitmoTope; // el ritmo total del proyecto no debería superar esto (Configuración)
   const limite=new Date(today); limite.setDate(limite.getDate()-RITMO_SEMANAS*7);
 
   const totalF=m.length;

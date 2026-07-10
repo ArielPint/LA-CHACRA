@@ -297,6 +297,37 @@ tr.just-saved td{animation:rowFlash 2.2s ease forwards}
     </div>
   </div>
 
+  <!-- Ritmo de módulos — pestaña Proyección -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="card-icon icon-blue">🔮</div>
+        <div>
+          <div class="card-title">Proyección — ritmo de módulos</div>
+          <div class="card-sub">Parámetros del cálculo de escenarios en la pestaña Proyección del dashboard</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body padded">
+      <div class="field-row">
+        <span class="field-label">Ritmo tope del proyecto (mód/semana)</span>
+        <input type="number" id="inp-ritmo-tope" class="field-input" placeholder="ej. 15" min="0" step="0.5">
+        <span class="field-hint">Ningún escenario puede superar este ritmo</span>
+      </div>
+      <div class="field-row">
+        <span class="field-label">Ritmo Torre 3 (mód/semana)</span>
+        <input type="number" id="inp-ritmo-torre3" class="field-input" placeholder="ej. 6" min="0" step="0.5">
+        <span class="field-hint">Ritmo objetivo fijo mientras Torre 3 no esté 100% terminada</span>
+      </div>
+      <div class="save-row">
+        <button class="btn-save" id="btn-save-ritmo" onclick="saveRitmoProyeccion()">
+          <span>Guardar ritmo</span>
+        </button>
+        <span class="save-status" id="status-ritmo"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Avance económico proyectado -->
   <div class="card">
     <div class="card-header">
@@ -598,7 +629,7 @@ if (_session) {
 }
 
 async function init(){
-  await Promise.all([loadFinanciero(), loadProyData(), loadAjustesData()]);
+  await Promise.all([loadFinanciero(), loadProyData(), loadAjustesData(), loadRitmoProyeccion()]);
   // Carga usuarios en segundo plano (tab puede no estar activo aún)
   renderTable();
 }
@@ -671,6 +702,38 @@ async function savePresupuesto(){
   }catch(e){
     showToast('Error al guardar: '+e.message,'error');
     setStatus('status-ppto','Error: '+e.message,'err');
+  }finally{btn.disabled=false;}
+}
+
+async function loadRitmoProyeccion(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/config?key=in.(proy_ritmo_tope,proy_ritmo_torre3_fijo)&select=key,value`,{headers:H});
+    const rows=await r.json();
+    const map={}; (rows||[]).forEach(x=>map[x.key]=parseFloat(x.value));
+    document.getElementById('inp-ritmo-tope').value=map.proy_ritmo_tope??15;
+    document.getElementById('inp-ritmo-torre3').value=map.proy_ritmo_torre3_fijo??6;
+  }catch(e){showToast('Error cargando ritmo de proyección: '+e.message,'error');}
+}
+
+async function saveRitmoProyeccion(){
+  const tope=parseFloat(document.getElementById('inp-ritmo-tope').value);
+  const torre3=parseFloat(document.getElementById('inp-ritmo-torre3').value);
+  if(!tope||tope<=0||!torre3||torre3<=0){showToast('Ingresá valores válidos','error');return;}
+  const btn=document.getElementById('btn-save-ritmo');
+  btn.disabled=true;
+  try{
+    const [r1,r2]=await Promise.all([
+      fetch(`${SUPA_URL}/rest/v1/config?key=eq.proy_ritmo_tope`,{
+        method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({value:String(tope)})}),
+      fetch(`${SUPA_URL}/rest/v1/config?key=eq.proy_ritmo_torre3_fijo`,{
+        method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({value:String(torre3)})})
+    ]);
+    if(!r1.ok||!r2.ok) throw new Error('HTTP '+(!r1.ok?r1.status:r2.status));
+    showToast('Ritmo guardado ✓','success');
+    setStatus('status-ritmo','Guardado ✓','ok');
+  }catch(e){
+    showToast('Error al guardar: '+e.message,'error');
+    setStatus('status-ritmo','Error: '+e.message,'err');
   }finally{btn.disabled=false;}
 }
 
