@@ -227,6 +227,12 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="chart-wrap" style="height:320px"><canvas id="ch-tiempo-seco"></canvas></div>
     </div>
   </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Promedio de días en galpón por torre (inicio módulo → término Membrana Cielo)</h3>
+      <div class="tbl-wrap"><table id="tbl-galpon-torre"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
 </div>
 
 <!-- MÓDULOS -->
@@ -1901,6 +1907,30 @@ function renderCurva(){
         {datalabels:{display:'auto'}}
       );
     });
+
+    // ── Tabla: promedio de días en galpón por torre (Piso → Membrana Cielo) ──
+    const galponPorTorre=new Map();
+    (DATA.membranaCielo||[]).forEach(r=>{
+      if(filterTorres.size && !filterTorres.has(r.torre)) return;
+      const dIni=parseDate(r.pisoFecha), dFin=parseDate(r.membranaFecha);
+      if(!dIni||isNaN(dIni)||!dFin||isNaN(dFin)) return;
+      const dias=(dFin-dIni)/86400000;
+      if(dias<0) return;
+      if(!galponPorTorre.has(r.torre)) galponPorTorre.set(r.torre,{sum:0,n:0});
+      const g=galponPorTorre.get(r.torre);
+      g.sum+=dias; g.n+=1;
+    });
+    const galponTorreRows=[...galponPorTorre.entries()]
+      .map(([torre,g])=>({torre,prom:g.sum/g.n,n:g.n}))
+      .sort((a,b)=>a.torre.localeCompare(b.torre,'es',{numeric:true}));
+
+    const tblGalponTorre=document.getElementById('tbl-galpon-torre');
+    if(tblGalponTorre){
+      tblGalponTorre.querySelector('thead').innerHTML='<tr><th>Torre</th><th>Promedio días en galpón</th><th>Módulos con dato</th></tr>';
+      tblGalponTorre.querySelector('tbody').innerHTML=galponTorreRows.length
+        ? galponTorreRows.map(x=>`<tr><td>${x.torre}</td><td>${x.prom.toFixed(1)}</td><td>${x.n}</td></tr>`).join('')
+        : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
+    }
   };
 
   _curvaRenderCharts=renderCurvaCharts;
