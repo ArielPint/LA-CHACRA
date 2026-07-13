@@ -205,7 +205,7 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="grid-1">
     <div class="card">
-      <h3>Módulos iniciados por semana: real vs planificado</h3>
+      <h3>Módulos que salen del galpón por semana</h3>
       <div class="chart-wrap" style="height:280px"><canvas id="ch-activos"></canvas></div>
     </div>
   </div>
@@ -1145,6 +1145,12 @@ function parseAll(wb){
     m2RealAcum:N(r[12]), m2RealDiario:N(r[13])
   }));
 
+  // Salida de galpón: módulo, torre, estado/fecha Piso (inicio) y Membrana Cielo (salida galpón)
+  d.membranaCielo=sheetRows(wb,'MEMBRANA_CIELO').slice(1).filter(r=>r[0]).map(r=>({
+    torre:r[0], serie:r[1], pisoEstado:r[2], pisoFecha:r[3],
+    membranaEstado:r[4], membranaFecha:r[5]
+  }));
+
   d.avplan=sheetRows(wb,'AV_PLAN').slice(1).filter(r=>r[0]).map(r=>({
     fecha:r[0], initPlan:N(r[1]), planAcum:N(r[2]),
     initReal:N(r[3]), realAcum:N(r[4]),
@@ -1843,13 +1849,25 @@ function renderCurva(){
        borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,0.08)',fill:true,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
     ],{legend:true});
 
-    // ── Chart: Iniciados por semana real vs planificado (línea) ──
-    lineChart('ch-activos', avLabels,[
-      {label:'Planificado',data:avByWeek.map(w=>w.initPlan),
-       borderColor:'rgba(227,144,62,1)',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
-      {label:'Real',       data:avByWeek.map(w=>w.initReal),
-       borderColor:'rgba(88,166,255,1)',backgroundColor:'transparent',fill:false,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
-    ],{legend:true});
+    // ── Aggregate MEMBRANA_CIELO by week (salida de galpón) ──
+    let galponF=(DATA.membranaCielo||[]).filter(x=>{
+      const d=parseDate(x.membranaFecha); if(!d||isNaN(d)||d>today) return false;
+      if(filterMonths.size){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return filterMonths.has(ym);}
+      return true;
+    });
+    const galponWeeks=new Map();
+    galponF.forEach(r=>{
+      const d=parseDate(r.membranaFecha); if(!d||isNaN(d)) return;
+      const wk=weekKey(d);
+      galponWeeks.set(wk,(galponWeeks.get(wk)||0)+1);
+    });
+    const galponByWeek=[...galponWeeks.entries()].sort((a,b)=>a[0]-b[0]).map(([wk,count])=>({label:weekLabel(wk),count}));
+
+    // ── Chart: Módulos que salen del galpón por semana (membrana cielo terminada) ──
+    barChart('ch-activos', galponByWeek.map(w=>w.label),[
+      {label:'Módulos',data:galponByWeek.map(w=>w.count),
+       backgroundColor:'rgba(88,166,255,0.7)',borderColor:'rgba(88,166,255,1)',borderWidth:1},
+    ],{legend:false});
 
     // ── Charts: Tiempo real vs proyectado por módulo (Húmedo / Seco) ──
     const filterTorres=_curvaTorreFilter||new Set();
