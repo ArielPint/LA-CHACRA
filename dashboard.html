@@ -1949,10 +1949,12 @@ function renderCurva(){
       .map(([torre,g])=>{
         const diasOG=(g.pisoMin && g.membranaMax)?businessDaysBetween(g.pisoMin,g.membranaMax):null;
         const diasTerm=(g.membranaMin && g.termMax)?businessDaysBetween(g.membranaMin,g.termMax):null;
+        const diasTotal=(g.pisoMin && g.termMax)?businessDaysBetween(g.pisoMin,g.termMax):null;
         return {
           torre, total:g.total,
           diasOG, promOG:diasOG?g.total/diasOG:null,
           diasTerm, promTerm:diasTerm?g.total/diasTerm:null,
+          diasTotal,
           fechaMembrana:g.membranaMax, fechaTermino:g.termMax,
         };
       })
@@ -1965,13 +1967,15 @@ function renderCurva(){
         '<tr><th>Torre</th><th>Módulos torre</th>'+
         '<th>Días Obra Gruesa</th><th>Modulos por dia</th>'+
         '<th>Dias Terminaciones</th><th>Modulos por dia</th>'+
+        '<th>Días Totales Torre</th>'+
         '<th>Salida Galpón</th><th>Fecha Término</th></tr>';
       tblGalponTorre.querySelector('tbody').innerHTML=ritmoTorreRows.length
         ? ritmoTorreRows.map(x=>`<tr><td>${x.torre}</td><td>${x.total}</td>
             <td>${x.diasOG!=null?x.diasOG.toFixed(0):'—'}</td><td>${x.promOG!=null?x.promOG.toFixed(2):'—'}</td>
             <td>${x.diasTerm!=null?x.diasTerm.toFixed(0):'—'}</td><td>${x.promTerm!=null?x.promTerm.toFixed(2):'—'}</td>
+            <td>${x.diasTotal!=null?x.diasTotal.toFixed(0):'—'}</td>
             <td>${x.fechaMembrana?fmtDate(x.fechaMembrana):'—'}</td><td>${x.fechaTermino?fmtDate(x.fechaTermino):'—'}</td></tr>`).join('')
-        : '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
+        : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
     }
   };
 
