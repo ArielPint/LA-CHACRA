@@ -1963,9 +1963,9 @@ function renderCurva(){
     if(tblGalponTorre){
       tblGalponTorre.querySelector('thead').innerHTML=
         '<tr><th>Torre</th><th>Módulos torre</th>'+
-        '<th>Días hábiles Obra Gruesa (inicio → térm. membrana)</th><th>Módulos/día hábil Obra Gruesa</th>'+
-        '<th>Días hábiles Terminaciones (térm. membrana → térm. módulo)</th><th>Módulos/día hábil Terminaciones</th>'+
-        '<th>Fecha Membrana Cielo (Salida Galpón)</th><th>Fecha Término</th></tr>';
+        '<th>Días Obra Gruesa</th><th>Modulos por dia</th>'+
+        '<th>Dias Terminaciones</th><th>Modulos por dia</th>'+
+        '<th>Salida Galpón</th><th>Fecha Término</th></tr>';
       tblGalponTorre.querySelector('tbody').innerHTML=ritmoTorreRows.length
         ? ritmoTorreRows.map(x=>`<tr><td>${x.torre}</td><td>${x.total}</td>
             <td>${x.diasOG!=null?x.diasOG.toFixed(0):'—'}</td><td>${x.promOG!=null?x.promOG.toFixed(2):'—'}</td>
