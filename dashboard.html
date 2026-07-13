@@ -823,6 +823,19 @@ function weekLabel(ts){
   return d.toLocaleDateString('es-CL',{day:'2-digit',month:'short',year:'2-digit'});
 }
 
+// Días hábiles (lun-vie) entre dos fechas, sin contar el día de inicio (no considera feriados)
+function businessDaysBetween(d1,d2){
+  const cur=new Date(d1); cur.setHours(0,0,0,0);
+  const end=new Date(d2); end.setHours(0,0,0,0);
+  let count=0;
+  while(cur<end){
+    cur.setDate(cur.getDate()+1);
+    const dow=cur.getDay();
+    if(dow!==0 && dow!==6) count++;
+  }
+  return count;
+}
+
 // ═══════════════════════════════════════════════
 // CHART HELPERS
 // ═══════════════════════════════════════════════
@@ -1908,28 +1921,54 @@ function renderCurva(){
       );
     });
 
-    // ── Tabla: promedio de días en galpón por torre (Piso → Membrana Cielo) ──
-    const galponPorTorre=new Map();
+    // ── Tabla: ritmo por torre (módulos totales / días hábiles), Obra Gruesa y Terminaciones ──
+    // Obra Gruesa: desde inicio del módulo más temprano de la torre (Piso) hasta el término
+    //   de Membrana Cielo del último módulo de la torre.
+    // Terminaciones: desde el término de Membrana Cielo del módulo más temprano de la torre
+    //   hasta el término (FECHA TERMINO, hoja AVANCE) del último módulo de la torre.
+    const serieTermReal=new Map((DATA.modulos||[]).map(x=>[x.serie,x.termReal]));
+    const ritmoPorTorre=new Map();
     (DATA.membranaCielo||[]).forEach(r=>{
       if(filterTorres.size && !filterTorres.has(r.torre)) return;
-      const dIni=parseDate(r.pisoFecha), dFin=parseDate(r.membranaFecha);
-      if(!dIni||isNaN(dIni)||!dFin||isNaN(dFin)) return;
-      const dias=(dFin-dIni)/86400000;
-      if(dias<0) return;
-      if(!galponPorTorre.has(r.torre)) galponPorTorre.set(r.torre,{sum:0,n:0});
-      const g=galponPorTorre.get(r.torre);
-      g.sum+=dias; g.n+=1;
+      if(!ritmoPorTorre.has(r.torre)) ritmoPorTorre.set(r.torre,{
+        pisoMin:null,membranaMin:null,membranaMax:null,termMax:null,total:0
+      });
+      const g=ritmoPorTorre.get(r.torre);
+      g.total+=1;
+      const dIni=parseDate(r.pisoFecha);
+      if(dIni && !isNaN(dIni) && (!g.pisoMin || dIni<g.pisoMin)) g.pisoMin=dIni;
+      const dMem=parseDate(r.membranaFecha);
+      if(dMem && !isNaN(dMem)){
+        if(!g.membranaMin || dMem<g.membranaMin) g.membranaMin=dMem;
+        if(!g.membranaMax || dMem>g.membranaMax) g.membranaMax=dMem;
+      }
+      const dTerm=parseDate(serieTermReal.get(r.serie));
+      if(dTerm && !isNaN(dTerm) && (!g.termMax || dTerm>g.termMax)) g.termMax=dTerm;
     });
-    const galponTorreRows=[...galponPorTorre.entries()]
-      .map(([torre,g])=>({torre,prom:g.sum/g.n,n:g.n}))
+    const ritmoTorreRows=[...ritmoPorTorre.entries()]
+      .map(([torre,g])=>{
+        const diasOG=(g.pisoMin && g.membranaMax)?businessDaysBetween(g.pisoMin,g.membranaMax):null;
+        const diasTerm=(g.membranaMin && g.termMax)?businessDaysBetween(g.membranaMin,g.termMax):null;
+        return {
+          torre, total:g.total,
+          diasOG, promOG:diasOG?g.total/diasOG:null,
+          diasTerm, promTerm:diasTerm?g.total/diasTerm:null,
+        };
+      })
+      .filter(x=>x.diasOG!=null || x.diasTerm!=null)
       .sort((a,b)=>a.torre.localeCompare(b.torre,'es',{numeric:true}));
 
     const tblGalponTorre=document.getElementById('tbl-galpon-torre');
     if(tblGalponTorre){
-      tblGalponTorre.querySelector('thead').innerHTML='<tr><th>Torre</th><th>Promedio días en galpón</th><th>Módulos con dato</th></tr>';
-      tblGalponTorre.querySelector('tbody').innerHTML=galponTorreRows.length
-        ? galponTorreRows.map(x=>`<tr><td>${x.torre}</td><td>${x.prom.toFixed(1)}</td><td>${x.n}</td></tr>`).join('')
-        : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
+      tblGalponTorre.querySelector('thead').innerHTML=
+        '<tr><th>Torre</th><th>Módulos torre</th>'+
+        '<th>Días hábiles Obra Gruesa (inicio → térm. membrana)</th><th>Módulos/día hábil Obra Gruesa</th>'+
+        '<th>Días hábiles Terminaciones (térm. membrana → térm. módulo)</th><th>Módulos/día hábil Terminaciones</th></tr>';
+      tblGalponTorre.querySelector('tbody').innerHTML=ritmoTorreRows.length
+        ? ritmoTorreRows.map(x=>`<tr><td>${x.torre}</td><td>${x.total}</td>
+            <td>${x.diasOG!=null?x.diasOG.toFixed(0):'—'}</td><td>${x.promOG!=null?x.promOG.toFixed(2):'—'}</td>
+            <td>${x.diasTerm!=null?x.diasTerm.toFixed(0):'—'}</td><td>${x.promTerm!=null?x.promTerm.toFixed(2):'—'}</td></tr>`).join('')
+        : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
     }
   };
 
