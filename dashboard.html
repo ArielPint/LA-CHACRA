@@ -1953,6 +1953,7 @@ function renderCurva(){
           torre, total:g.total,
           diasOG, promOG:diasOG?g.total/diasOG:null,
           diasTerm, promTerm:diasTerm?g.total/diasTerm:null,
+          fechaMembrana:g.membranaMax, fechaTermino:g.termMax,
         };
       })
       .filter(x=>x.diasOG!=null || x.diasTerm!=null)
@@ -1963,12 +1964,14 @@ function renderCurva(){
       tblGalponTorre.querySelector('thead').innerHTML=
         '<tr><th>Torre</th><th>Módulos torre</th>'+
         '<th>Días hábiles Obra Gruesa (inicio → térm. membrana)</th><th>Módulos/día hábil Obra Gruesa</th>'+
-        '<th>Días hábiles Terminaciones (térm. membrana → térm. módulo)</th><th>Módulos/día hábil Terminaciones</th></tr>';
+        '<th>Días hábiles Terminaciones (térm. membrana → térm. módulo)</th><th>Módulos/día hábil Terminaciones</th>'+
+        '<th>Fecha Membrana Cielo (Salida Galpón)</th><th>Fecha Término</th></tr>';
       tblGalponTorre.querySelector('tbody').innerHTML=ritmoTorreRows.length
         ? ritmoTorreRows.map(x=>`<tr><td>${x.torre}</td><td>${x.total}</td>
             <td>${x.diasOG!=null?x.diasOG.toFixed(0):'—'}</td><td>${x.promOG!=null?x.promOG.toFixed(2):'—'}</td>
-            <td>${x.diasTerm!=null?x.diasTerm.toFixed(0):'—'}</td><td>${x.promTerm!=null?x.promTerm.toFixed(2):'—'}</td></tr>`).join('')
-        : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
+            <td>${x.diasTerm!=null?x.diasTerm.toFixed(0):'—'}</td><td>${x.promTerm!=null?x.promTerm.toFixed(2):'—'}</td>
+            <td>${x.fechaMembrana?fmtDate(x.fechaMembrana):'—'}</td><td>${x.fechaTermino?fmtDate(x.fechaTermino):'—'}</td></tr>`).join('')
+        : '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
     }
   };
 
