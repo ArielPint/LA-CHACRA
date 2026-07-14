@@ -468,6 +468,19 @@ tbody tr:hover td{background:var(--surface2)}
 try{ Chart.register(ChartDataLabels); Chart.defaults.plugins.datalabels.display = false; }catch(e){ console.warn('ChartDataLabels not loaded:', e); }
 
 const CHARTS = {};
+let CHART_TEXT = document.documentElement.getAttribute('data-theme')==='light' ? '#1a1d27' : '#e8eaf0';
+new MutationObserver(()=>{
+  const prev=CHART_TEXT;
+  CHART_TEXT = document.documentElement.getAttribute('data-theme')==='light' ? '#1a1d27' : '#e8eaf0';
+  if(CHART_TEXT===prev) return;
+  [...Object.values(CHARTS), typeof _chPD!=='undefined'?_chPD:null].forEach(ch=>{
+    if(!ch) return;
+    const p=ch.options.plugins||{};
+    if(p.legend?.labels?.color===prev) p.legend.labels.color=CHART_TEXT;
+    if(p.datalabels?.color===prev) p.datalabels.color=CHART_TEXT;
+    ch.update();
+  });
+}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 let DATA = {};
 const SUPA_URL='https://vtrpxsgcbojqgdcsplim.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
@@ -870,7 +883,7 @@ function barChart(id, labels, datasets, opts={}){
           return ' '+(opts.fullMoney?fmtFull(v):opts.money?fmtM(v):opts.pct?(+v).toFixed(2)+'%':fmt(v));
         }}},
         datalabels: single?{
-          display:true, color:'#e6edf3', font:{size:10,weight:'600'},
+          display:true, color:CHART_TEXT, font:{size:10,weight:'600'},
           anchor:'end', align:'end', offset:2, clip:false,
           formatter:dlFmt
         }:{display:false}
@@ -903,7 +916,7 @@ function groupedBar(id, labels, datasets, opts={}){
           const v=c.parsed.y;
           return ` ${c.dataset.label}: ${opts.tooltipFull||opts.fullMoney?fmtFull(v):opts.money?fmtM(v):opts.pct?(+v).toFixed(2)+'%':fmt(v)}`;
         }}},
-        datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},
+        datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},
           anchor:'end',align:'end',offset:1,clip:false,formatter:dlFmt}
       },
       scales:{
@@ -985,14 +998,14 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
       responsive:true,maintainAspectRatio:false,
       layout:{padding:20},
       plugins:{
-        legend:{position:'bottom',labels:{color:'#e6edf3',padding:10,boxWidth:12,font:{size:11}}},
+        legend:{position:'bottom',labels:{color:CHART_TEXT,padding:10,boxWidth:12,font:{size:11}}},
         tooltip:{callbacks:{label:c=>{
           const tot=c.dataset.data.reduce((a,b)=>a+b,0);
           const v=c.parsed;
           return ` ${c.label}: ${moneyLabels?fmtFull(v):fmt(v)} (${tot?(v/tot*100).toFixed(2):'0'}%)`;
         }}},
         datalabels:{
-          display:true,color:'#e6edf3',font:{size:10,weight:'700'},
+          display:true,color:CHART_TEXT,font:{size:10,weight:'700'},
           formatter:(v,ctx)=>{
             const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
             const pct=tot?(v/tot*100).toFixed(1):'0';
@@ -1551,7 +1564,7 @@ function renderResumen(){
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
             datalabels:{
             display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
-            color:'#e6edf3',font:{size:10,weight:'600'},
+            color:CHART_TEXT,font:{size:10,weight:'600'},
             anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
             align:ctx=>ctx.dataset.type==='bar'?'end':'top',
             offset:2,
@@ -1642,7 +1655,7 @@ function renderResumen(){
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
             datalabels:{
             display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
-            color:'#e6edf3',font:{size:10,weight:'600'},
+            color:CHART_TEXT,font:{size:10,weight:'600'},
             anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
             align:ctx=>ctx.dataset.type==='bar'?'end':'top',
             offset:2,
@@ -1908,7 +1921,7 @@ function renderCurva(){
     mixedChart('ch-tiempo-torre', torreTiempoKeys,
       [{label:'Tiempo Real (días)',data:torreTiempoKeys.map(t=>+(torreTiempoMap.get(t).realSum/torreTiempoMap.get(t).realCnt).toFixed(1)),
         backgroundColor:'rgba(63,185,80,0.7)',
-        datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},
+        datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},
           anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v!=null?String(v):''}}],
       [{label:'Tiempo Proyectado (días)',data:torreTiempoKeys.map(t=>{const g=torreTiempoMap.get(t);return g.proyCnt?+(g.proySum/g.proyCnt).toFixed(1):null;}),
         borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
@@ -1940,7 +1953,7 @@ function renderCurva(){
       mixedChart(id, labels,
         [{label:'Tiempo Real (días)',data:mods.map(x=>Math.round(x.tiempoReal)),
           backgroundColor:'rgba(63,185,80,0.7)',
-          datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},
+          datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},
             anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v!=null?String(v):''}}],
         [{label:'Tiempo Proyectado (días)',data:mods.map(x=>x.tiempoProy>0?Math.round(x.tiempoProy):null),
           borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
@@ -2480,7 +2493,7 @@ function _stockRenderCharts(){
         layout:{padding:{right:60}},
         plugins:{
           legend:{display:false},
-          datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
+          datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
           tooltip:{callbacks:{
             title:items=>[tipos[items[0].dataIndex]],
             label:c=>` Cobertura: ${c.parsed.x.toFixed(2)} módulos`
@@ -2527,7 +2540,7 @@ function _stockRenderCharts(){
         layout:{padding:{right:60}},
         plugins:{
           legend:{display:false},
-          datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
+          datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
           tooltip:{callbacks:{
             title:items=>[fullNames[items[0].dataIndex]+(codes[items[0].dataIndex]?' ['+codes[items[0].dataIndex]+']':'')],
             label:c=>` Alcance: ${c.parsed.x.toFixed(2)} módulos`
@@ -2949,7 +2962,7 @@ async function renderProdDiaria(){
       options:{
         responsive:true,maintainAspectRatio:false,
         plugins:{
-          legend:{labels:{color:'#e8eaf0',font:{size:11}}},
+          legend:{labels:{color:CHART_TEXT,font:{size:11}}},
           datalabels:{
             display:ctx=>ctx.dataset.data[ctx.dataIndex]>0,
             color:'#fff',font:{size:10,weight:'bold'},

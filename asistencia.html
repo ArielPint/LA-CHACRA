@@ -314,6 +314,7 @@ tbody tr:hover td{background:var(--surface2)}
 
 <script>
 // ─── Grupos permitidos ───────────────────────────────────────────────────────
+let CHART_TEXT = document.documentElement.getAttribute('data-theme')==='light' ? '#1a1d27' : '#e8eaf0';
 const ALLOWED_GROUPS = ['ICG', 'Ingelagos', 'PDuarte', 'Terra Sur', 'Wedo'];
 function inAllowedGroup(groupDesc) {
   return ALLOWED_GROUPS.some(g => g.toLowerCase() === (groupDesc || '').trim().toLowerCase());
@@ -334,6 +335,15 @@ let _attendanceData = [];
 let _cachedPunchIds = [];
 let _cachedUsers    = []; // usuarios acumulados de todas las queries a AttendanceBook
 let _summaryChart   = null;
+new MutationObserver(()=>{
+  const prev=CHART_TEXT;
+  CHART_TEXT = document.documentElement.getAttribute('data-theme')==='light' ? '#1a1d27' : '#e8eaf0';
+  if(CHART_TEXT===prev || !_summaryChart) return;
+  const p=_summaryChart.options.plugins||{};
+  if(p.legend?.labels?.color===prev) p.legend.labels.color=CHART_TEXT;
+  if(p.datalabels?.color===prev) p.datalabels.color=CHART_TEXT;
+  _summaryChart.update();
+}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 const session = AUTH.requireAuth('login.html');
@@ -921,7 +931,7 @@ function renderResumen(users, from, to, groupFilter) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          labels: { color: '#e8eaf0', font: { size: 12 }, padding: 16 }
+          labels: { color: CHART_TEXT, font: { size: 12 }, padding: 16 }
         },
         tooltip: {
           backgroundColor: '#1a1d27',
