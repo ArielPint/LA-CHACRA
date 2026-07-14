@@ -85,6 +85,7 @@ export interface SeguimientoPresupuesto {
   codigo_articulo: string
   nombre: string
   presupuesto_original: number
+  forecast_actual: number
   valor_servicio: number | null
   oc_ingresadas: number
   facturado: number
