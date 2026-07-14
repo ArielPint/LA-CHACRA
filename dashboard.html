@@ -478,6 +478,9 @@ new MutationObserver(()=>{
     const p=ch.options.plugins||{};
     if(p.legend?.labels?.color===prev) p.legend.labels.color=CHART_TEXT;
     if(p.datalabels?.color===prev) p.datalabels.color=CHART_TEXT;
+    (ch.data?.datasets||[]).forEach(ds=>{
+      if(ds.datalabels?.color===prev) ds.datalabels.color=CHART_TEXT;
+    });
     ch.update();
   });
 }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
