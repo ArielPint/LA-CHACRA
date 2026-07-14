@@ -20,15 +20,15 @@ export default function FiltrosFinanciero({
   const { presupuestos } = usePresupuestosLookup()
 
   return (
-    <div className="flex gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row">
       <Input
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder={placeholder}
-        className="max-w-xs"
+        className="w-full sm:max-w-xs"
       />
       <Select value={presupuestoId || 'todos'} onValueChange={(v) => onPresupuestoChange(v === 'todos' ? '' : v)}>
-        <SelectTrigger className="w-64">
+        <SelectTrigger className="w-full sm:w-64">
           <SelectValue placeholder="Todos los presupuestos" />
         </SelectTrigger>
         <SelectContent>

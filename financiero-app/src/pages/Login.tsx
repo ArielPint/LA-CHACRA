@@ -24,8 +24,8 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center">
-      <Card className="w-80">
+    <div className="flex min-h-svh items-center justify-center px-4">
+      <Card className="w-full max-w-80">
         <CardHeader>
           <CardTitle>Financiero — LA CHACRA</CardTitle>
         </CardHeader>

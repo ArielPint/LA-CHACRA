@@ -63,7 +63,7 @@ export default function TablaForecastMensual() {
   return (
     <div className="space-y-4">
       <Select value={presupuestoId} onValueChange={setPresupuestoId} disabled={loadingPresupuestos}>
-        <SelectTrigger className="w-80">
+        <SelectTrigger className="w-full sm:w-80">
           <SelectValue placeholder="Elegí un presupuesto" />
         </SelectTrigger>
         <SelectContent>
