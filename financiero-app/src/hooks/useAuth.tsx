@@ -18,9 +18,10 @@ export type FinancieroTab =
   | 'forecast'
   | 'remuneraciones'
   | 'ingresos'
+  | 'gastos-directos'
   | 'auditoria'
 
-export type FinancieroSeccionEditable = 'oc' | 'presupuestos' | 'remuneraciones' | 'ingresos'
+export type FinancieroSeccionEditable = 'oc' | 'presupuestos' | 'remuneraciones' | 'ingresos' | 'gastos-directos'
 
 interface AuthValue {
   perfil: Perfil | null

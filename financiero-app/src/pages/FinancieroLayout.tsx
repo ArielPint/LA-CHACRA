@@ -7,6 +7,7 @@ import {
   Wallet,
   TrendingUp,
   Users,
+  Banknote,
   History,
   LogOut,
   Menu,
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/forecast', label: 'Forecast', icon: TrendingUp, tab: 'forecast', iconColorClase: 'text-pink' },
   { to: '/remuneraciones', label: 'Remuneraciones', icon: Users, tab: 'remuneraciones', iconColorClase: 'text-warning' },
   { to: '/ingresos', label: 'Ingreso del Proyecto', icon: TrendingUp, tab: 'ingresos', iconColorClase: 'text-success' },
+  { to: '/gastos-directos', label: 'Gastos Directos', icon: Banknote, tab: 'gastos-directos', iconColorClase: 'text-warning' },
   { to: '/auditoria', label: 'Auditoría', icon: History, tab: 'auditoria', iconColorClase: 'text-muted-foreground' },
 ]
 
@@ -48,6 +50,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/forecast': 'Forecast',
   '/remuneraciones': 'Remuneraciones',
   '/ingresos': 'Ingreso del Proyecto',
+  '/gastos-directos': 'Gastos Directos',
   '/auditoria': 'Auditoría',
 }
 

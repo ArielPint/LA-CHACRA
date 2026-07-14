@@ -10,6 +10,7 @@ import Presupuestos from '@/pages/Presupuestos'
 import Forecast from '@/pages/Forecast'
 import Remuneraciones from '@/pages/Remuneraciones'
 import Ingresos from '@/pages/Ingresos'
+import GastosDirectos from '@/pages/GastosDirectos'
 import Auditoria from '@/pages/Auditoria'
 import SinAcceso from '@/pages/SinAcceso'
 
@@ -21,6 +22,7 @@ const ORDEN_TABS: FinancieroTab[] = [
   'forecast',
   'remuneraciones',
   'ingresos',
+  'gastos-directos',
   'auditoria',
 ]
 
@@ -92,6 +94,14 @@ function App() {
             element={
               <RequiereTab tab="ingresos">
                 <Ingresos />
+              </RequiereTab>
+            }
+          />
+          <Route
+            path="gastos-directos"
+            element={
+              <RequiereTab tab="gastos-directos">
+                <GastosDirectos />
               </RequiereTab>
             }
           />

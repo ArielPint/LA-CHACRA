@@ -17,6 +17,7 @@ const TABLAS = [
   { value: 'financiero_facturas', label: 'Facturas' },
   { value: 'financiero_remuneraciones', label: 'Remuneraciones' },
   { value: 'financiero_ingresos', label: 'Ingreso del Proyecto' },
+  { value: 'financiero_gastos_directos', label: 'Gastos Directos' },
 ]
 
 export default function Auditoria() {
