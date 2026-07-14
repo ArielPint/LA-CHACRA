@@ -209,6 +209,12 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="chart-wrap" style="height:280px"><canvas id="ch-activos"></canvas></div>
     </div>
   </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Tiempo real vs proyectado por torre</h3>
+      <div class="chart-wrap" style="height:280px"><canvas id="ch-tiempo-torre"></canvas></div>
+    </div>
+  </div>
   <div class="filter-bar" style="margin-top:12px;align-items:center">
     <label>🏗 Filtrar por torre:</label>
     <div id="curva-torre-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
@@ -1887,6 +1893,29 @@ function renderCurva(){
       {label:'Módulos',data:galponByWeek.map(w=>w.count),
        backgroundColor:'rgba(88,166,255,0.7)',borderColor:'rgba(88,166,255,1)',borderWidth:1},
     ],{legend:false});
+
+    // ── Chart: Tiempo real vs proyectado por torre (no afectado por filtros) ──
+    const modsTorreAll=(DATA.modulos||[]).filter(x=>x.initReal && (x.avance??0)>=0.99 && x.tiempoReal>0);
+    const torreTiempoMap=new Map();
+    modsTorreAll.forEach(x=>{
+      const t=x.torre||'S/T';
+      if(!torreTiempoMap.has(t)) torreTiempoMap.set(t,{realSum:0,realCnt:0,proySum:0,proyCnt:0});
+      const g=torreTiempoMap.get(t);
+      g.realSum+=x.tiempoReal; g.realCnt++;
+      if(x.tiempoProy>0){ g.proySum+=x.tiempoProy; g.proyCnt++; }
+    });
+    const torreTiempoKeys=[...torreTiempoMap.keys()].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+    mixedChart('ch-tiempo-torre', torreTiempoKeys,
+      [{label:'Tiempo Real (días)',data:torreTiempoKeys.map(t=>+(torreTiempoMap.get(t).realSum/torreTiempoMap.get(t).realCnt).toFixed(1)),
+        backgroundColor:'rgba(63,185,80,0.7)',
+        datalabels:{display:true,color:'#e6edf3',font:{size:10,weight:'600'},
+          anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v!=null?String(v):''}}],
+      [{label:'Tiempo Proyectado (días)',data:torreTiempoKeys.map(t=>{const g=torreTiempoMap.get(t);return g.proyCnt?+(g.proySum/g.proyCnt).toFixed(1):null;}),
+        borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
+        datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:10,weight:'600'},
+          anchor:'end',align:'top',offset:4,clip:false,formatter:v=>v!=null?String(v):''}}],
+      {datalabels:{display:'auto'}}
+    );
 
     // ── Charts: Tiempo real vs proyectado por módulo (Húmedo / Seco) ──
     const filterTorres=_curvaTorreFilter||new Set();
