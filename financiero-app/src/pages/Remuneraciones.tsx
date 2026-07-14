@@ -3,6 +3,17 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRemuneraciones } from '@/hooks/useRemuneraciones'
 import MontoMensualView from '@/components/MontoMensualView'
 
+const CATEGORIAS = [
+  { value: 'operaciones', label: 'Operaciones' },
+  { value: 'administrativos', label: 'Administrativos' },
+  { value: 'adm_ventas', label: 'Adm y Ventas' },
+]
+
+const GRUPOS = [
+  { label: 'Mano de Obra (WIP 20010)', categorias: ['operaciones', 'administrativos'] },
+  { label: 'Remuneraciones Adm y Ventas (WIP 30124)', categorias: ['adm_ventas'] },
+]
+
 export default function Remuneraciones() {
   const { puedeEditar } = useAuth()
   const { remuneraciones, loading, error, upsertRemuneracion } = useRemuneraciones()
@@ -21,6 +32,8 @@ export default function Remuneraciones() {
       colorVar="--warning"
       colorClase="text-warning"
       puedeEditar={puedeEditar('remuneraciones')}
+      categorias={CATEGORIAS}
+      grupos={GRUPOS}
       onUpsert={upsertRemuneracion}
     />
   )

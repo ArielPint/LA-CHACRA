@@ -9,6 +9,16 @@ import type { MontoMensual } from '@/types/financiero'
 import { formatCLP, nombreMes } from '@/utils/formatters'
 import { cn } from '@/lib/utils'
 
+interface CategoriaOpcion {
+  value: string
+  label: string
+}
+
+interface GrupoWip {
+  label: string
+  categorias: string[]
+}
+
 interface MontoMensualViewProps {
   registros: MontoMensual[]
   loading: boolean
@@ -22,7 +32,16 @@ interface MontoMensualViewProps {
   colorVar: string
   colorClase: string
   puedeEditar: boolean
-  onUpsert: (input: { id?: string; mes: number; anio: number; monto: number; observacion: string | null }) => Promise<MontoMensual>
+  categorias?: CategoriaOpcion[]
+  grupos?: GrupoWip[]
+  onUpsert: (input: {
+    id?: string
+    mes: number
+    anio: number
+    monto: number
+    observacion: string | null
+    categoria?: string
+  }) => Promise<MontoMensual>
 }
 
 export default function MontoMensualView({
@@ -38,14 +57,36 @@ export default function MontoMensualView({
   colorVar,
   colorClase,
   puedeEditar,
+  categorias,
+  grupos,
   onUpsert,
 }: MontoMensualViewProps) {
-  const { total, promedio, ultimo } = useMemo(() => {
+  const categoriaLabel = useMemo(
+    () => new Map((categorias ?? []).map((c) => [c.value, c.label])),
+    [categorias],
+  )
+
+  const { total, promedio, ultimo, totalesPorGrupo } = useMemo(() => {
     const total = registros.reduce((acc, r) => acc + r.monto, 0)
-    const promedio = registros.length > 0 ? total / registros.length : 0
-    const ultimo = [...registros].sort((a, b) => b.anio - a.anio || b.mes - a.mes)[0]
-    return { total, promedio, ultimo }
-  }, [registros])
+
+    const porMes = new Map<string, { mes: number; anio: number; monto: number }>()
+    for (const r of registros) {
+      const key = `${r.anio}-${r.mes}`
+      const acc = porMes.get(key) ?? { mes: r.mes, anio: r.anio, monto: 0 }
+      acc.monto += r.monto
+      porMes.set(key, acc)
+    }
+    const meses = [...porMes.values()]
+    const promedio = meses.length > 0 ? total / meses.length : 0
+    const ultimo = meses.sort((a, b) => b.anio - a.anio || b.mes - a.mes)[0]
+
+    const totalesPorGrupo = (grupos ?? []).map((g) => ({
+      label: g.label,
+      total: registros.filter((r) => r.categoria && g.categorias.includes(r.categoria)).reduce((acc, r) => acc + r.monto, 0),
+    }))
+
+    return { total, promedio, ultimo, totalesPorGrupo }
+  }, [registros, grupos])
 
   if (error) return <p className="text-destructive">{error}</p>
 
@@ -73,6 +114,17 @@ export default function MontoMensualView({
         </div>
       </div>
 
+      {totalesPorGrupo.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {totalesPorGrupo.map((g) => (
+            <div key={g.label} className="rounded-lg border bg-card p-4">
+              <p className="text-[.7rem] font-semibold tracking-wide text-muted-foreground uppercase">{g.label}</p>
+              <p className={cn('mt-1 text-2xl font-bold tabular-nums', colorClase)}>{loading ? '—' : formatCLP(g.total)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {!loading && registros.length > 0 && (
         <div className="rounded-lg border bg-card p-4">
           <GraficoMontoMensual registros={registros} loading={loading} colorVar={colorVar} etiqueta={etiquetaGrafico} />
@@ -80,7 +132,14 @@ export default function MontoMensualView({
       )}
 
       <div className="flex justify-end">
-        {puedeEditar && <FormularioMontoMensual tituloNuevo={tituloNuevo} tituloEditar={tituloEditar} onUpsert={onUpsert} />}
+        {puedeEditar && (
+          <FormularioMontoMensual
+            tituloNuevo={tituloNuevo}
+            tituloEditar={tituloEditar}
+            categorias={categorias}
+            onUpsert={onUpsert}
+          />
+        )}
       </div>
 
       {!loading && registros.length === 0 ? (
@@ -91,13 +150,14 @@ export default function MontoMensualView({
             <TableHeader>
               <TableRow>
                 <TableHead>Mes</TableHead>
+                {categorias && <TableHead>Categoría</TableHead>}
                 <TableHead className="text-right">Monto</TableHead>
                 <TableHead>Observación</TableHead>
                 {puedeEditar && <TableHead />}
               </TableRow>
             </TableHeader>
             {loading ? (
-              <TableSkeleton columns={puedeEditar ? 4 : 3} />
+              <TableSkeleton columns={(categorias ? 1 : 0) + (puedeEditar ? 4 : 3)} />
             ) : (
               <TableBody>
                 {registros.map((r) => (
@@ -105,6 +165,9 @@ export default function MontoMensualView({
                     <TableCell className="font-medium">
                       {nombreMes(r.mes)} {r.anio}
                     </TableCell>
+                    {categorias && (
+                      <TableCell>{r.categoria ? (categoriaLabel.get(r.categoria) ?? r.categoria) : '—'}</TableCell>
+                    )}
                     <TableCell className="text-right tabular-nums">{formatCLP(r.monto)}</TableCell>
                     <TableCell className="max-w-96 truncate">{r.observacion ?? '—'}</TableCell>
                     {puedeEditar && (
@@ -113,6 +176,7 @@ export default function MontoMensualView({
                           registroExistente={r}
                           tituloNuevo={tituloNuevo}
                           tituloEditar={tituloEditar}
+                          categorias={categorias}
                           onUpsert={onUpsert}
                         />
                       </TableCell>

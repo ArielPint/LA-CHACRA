@@ -93,12 +93,15 @@ export interface SeguimientoPresupuesto {
   deficit_o_superavit: number
 }
 
+export type CategoriaRemuneracion = 'operaciones' | 'administrativos' | 'adm_ventas'
+
 export interface MontoMensual {
   id: string
   mes: number
   anio: number
   monto: number
   observacion: string | null
+  categoria?: CategoriaRemuneracion | null
   created_by: string | null
   created_at: string
   updated_at: string

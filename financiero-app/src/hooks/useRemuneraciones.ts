@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/services/supabaseClient'
 import type { MontoMensual } from '@/types/financiero'
 
-type NuevoMonto = Pick<MontoMensual, 'mes' | 'anio' | 'monto' | 'observacion'>
+type NuevoMonto = Pick<MontoMensual, 'mes' | 'anio' | 'monto' | 'observacion' | 'categoria'>
 
 export function useRemuneraciones() {
   const [remuneraciones, setRemuneraciones] = useState<MontoMensual[]>([])

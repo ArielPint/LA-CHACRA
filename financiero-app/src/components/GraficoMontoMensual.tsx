@@ -18,13 +18,18 @@ export default function GraficoMontoMensual({ registros, loading, colorVar, etiq
     [colorVar, etiqueta],
   )
 
-  const data = useMemo(
-    () =>
-      [...registros]
-        .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
-        .map((r) => ({ label: `${nombreMes(r.mes).slice(0, 3)} ${r.anio}`, monto: r.monto })),
-    [registros],
-  )
+  const data = useMemo(() => {
+    const porMes = new Map<string, { mes: number; anio: number; monto: number }>()
+    for (const r of registros) {
+      const key = `${r.anio}-${r.mes}`
+      const acc = porMes.get(key) ?? { mes: r.mes, anio: r.anio, monto: 0 }
+      acc.monto += r.monto
+      porMes.set(key, acc)
+    }
+    return [...porMes.values()]
+      .sort((a, b) => a.anio - b.anio || a.mes - b.mes)
+      .map((r) => ({ label: `${nombreMes(r.mes).slice(0, 3)} ${r.anio}`, monto: r.monto }))
+  }, [registros])
 
   if (loading) return <Skeleton className="h-[280px] w-full" />
 

@@ -16,17 +16,31 @@ import {
 import { MESES } from '@/utils/formatters'
 import type { MontoMensual } from '@/types/financiero'
 
+interface CategoriaOpcion {
+  value: string
+  label: string
+}
+
 interface FormularioMontoMensualProps {
   registroExistente?: MontoMensual
   tituloNuevo: string
   tituloEditar: string
-  onUpsert: (input: { id?: string; mes: number; anio: number; monto: number; observacion: string | null }) => Promise<MontoMensual>
+  categorias?: CategoriaOpcion[]
+  onUpsert: (input: {
+    id?: string
+    mes: number
+    anio: number
+    monto: number
+    observacion: string | null
+    categoria?: string
+  }) => Promise<MontoMensual>
 }
 
 export default function FormularioMontoMensual({
   registroExistente,
   tituloNuevo,
   tituloEditar,
+  categorias,
   onUpsert,
 }: FormularioMontoMensualProps) {
   const [open, setOpen] = useState(false)
@@ -37,6 +51,7 @@ export default function FormularioMontoMensual({
   const [anio, setAnio] = useState(String(registroExistente?.anio ?? new Date().getFullYear()))
   const [monto, setMonto] = useState(String(registroExistente?.monto ?? ''))
   const [observacion, setObservacion] = useState(registroExistente?.observacion ?? '')
+  const [categoria, setCategoria] = useState(registroExistente?.categoria ?? categorias?.[0]?.value ?? '')
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -48,6 +63,7 @@ export default function FormularioMontoMensual({
         anio: Number(anio),
         monto: Number(monto),
         observacion: observacion.trim() || null,
+        ...(categorias ? { categoria } : {}),
       })
       toast.success('Monto guardado')
       if (!esEdicion) {
@@ -93,6 +109,23 @@ export default function FormularioMontoMensual({
             <Label htmlFor="anio">Año</Label>
             <Input id="anio" type="number" value={anio} onChange={(e) => setAnio(e.target.value)} disabled={esEdicion} required />
           </div>
+          {categorias && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Categoría</Label>
+              <Select value={categoria} onValueChange={setCategoria} disabled={esEdicion}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="monto">Monto (CLP)</Label>
             <Input id="monto" type="number" min="0" step="1" value={monto} onChange={(e) => setMonto(e.target.value)} required />
