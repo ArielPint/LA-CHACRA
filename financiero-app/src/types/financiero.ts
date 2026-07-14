@@ -107,6 +107,14 @@ export interface MontoMensual {
   updated_at: string
 }
 
+export interface EstadoResultadoMensual {
+  anio: number
+  mes: number
+  ingresos: number
+  costos: number
+  resultado: number
+}
+
 export interface AuditLogEntry {
   id: string
   tabla_afectada: string

@@ -6,10 +6,13 @@ import KpiCardsResumen from '@/components/KpiCardsResumen'
 import GraficoPresupuestoPorPartida from '@/components/GraficoPresupuestoPorPartida'
 import GraficoComposicionGlobal from '@/components/GraficoComposicionGlobal'
 import GraficoFacturadoPorMes from '@/components/GraficoFacturadoPorMes'
+import EstadoResultadoMensualView from '@/components/EstadoResultadoMensual'
 import { useSeguimiento } from '@/hooks/useSeguimiento'
+import { useEstadoResultado } from '@/hooks/useEstadoResultado'
 
 export default function Dashboard() {
   const { seguimiento, loading, error } = useSeguimiento()
+  const { estadoResultado, loading: loadingResultado, error: errorResultado } = useEstadoResultado()
 
   return (
     <div className="space-y-4">
@@ -62,6 +65,13 @@ export default function Dashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <div className="space-y-3">
+        <p className="text-[.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
+          Estado de Resultado Mensual
+        </p>
+        <EstadoResultadoMensualView estadoResultado={estadoResultado} loading={loadingResultado} error={errorResultado} />
+      </div>
     </div>
   )
 }
