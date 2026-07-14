@@ -16,6 +16,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4">
+      <p className="text-[.7rem] font-semibold tracking-wide text-muted-foreground uppercase">Indicadores</p>
+      <KpiCardsResumen seguimiento={seguimiento} loading={loading} />
+
       <div className="space-y-3">
         <p className="text-[.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
           Estado de Resultado Mensual
@@ -23,8 +26,6 @@ export default function Dashboard() {
         <EstadoResultadoMensualView estadoResultado={estadoResultado} loading={loadingResultado} error={errorResultado} />
       </div>
 
-      <p className="text-[.7rem] font-semibold tracking-wide text-muted-foreground uppercase">Indicadores</p>
-      <KpiCardsResumen seguimiento={seguimiento} loading={loading} />
       <Tabs defaultValue="total">
         <TabsList variant="line" className="border-b">
           <TabsTrigger value="total">Total</TabsTrigger>
