@@ -111,9 +111,19 @@ export interface MontoMensual {
 export interface EstadoResultadoMensual {
   anio: number
   mes: number
-  ingresos: number
+  materiales: number
+  mano_obra: number
+  gastos_operacionales: number
+  fletes: number
+  subtotal_costos_directos: number
+  gastos_generales: number
+  gastos_activados: number
   costos: number
-  resultado: number
+  ingresos: number
+  margen: number
+  ebitda: number
+  margen_proforma: number
+  ebitda_proforma: number
 }
 
 export interface AuditLogEntry {
