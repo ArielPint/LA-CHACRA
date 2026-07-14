@@ -1,6 +1,6 @@
 import { TrendingUp } from 'lucide-react'
 import type { EstadoResultadoMensual } from '@/types/financiero'
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import EmptyState from '@/components/EmptyState'
 import TableSkeleton from '@/components/TableSkeleton'
 import { formatCLP, formatPct, nombreMes } from '@/utils/formatters'
@@ -12,19 +12,32 @@ interface EstadoResultadoMensualProps {
   error: string | null
 }
 
-const COLUMNAS = 15
+type CampoNumerico = Exclude<keyof EstadoResultadoMensual, 'anio' | 'mes'>
 
-function sumar(rows: EstadoResultadoMensual[], campo: keyof EstadoResultadoMensual) {
-  return rows.reduce((acc, r) => acc + r[campo], 0)
+interface FilaMetrica {
+  campo: CampoNumerico
+  label: string
+  esPct?: boolean
+  esSubtotal?: boolean
+  esResultado?: boolean
 }
 
-function celdaResultado(valor: number, negrita = false) {
-  return (
-    <TableCell className={cn('text-right tabular-nums', negrita && 'font-semibold', valor < 0 ? 'text-destructive' : 'text-success')}>
-      {formatCLP(valor)}
-    </TableCell>
-  )
-}
+const FILAS: FilaMetrica[] = [
+  { campo: 'materiales', label: 'Materiales' },
+  { campo: 'pct_avance_materiales_fabrica', label: '% Avance Materiales Fabrica', esPct: true },
+  { campo: 'mano_obra', label: 'Mano de Obra' },
+  { campo: 'gastos_operacionales', label: 'Gastos Operacionales' },
+  { campo: 'fletes', label: 'Fletes' },
+  { campo: 'subtotal_costos_directos', label: 'Subtotal Costos Directos', esSubtotal: true },
+  { campo: 'gastos_generales', label: 'Gastos Generales' },
+  { campo: 'gastos_activados', label: 'Gastos Activados 2025' },
+  { campo: 'costos', label: 'Total Costos', esSubtotal: true },
+  { campo: 'ingresos', label: 'Ingresos' },
+  { campo: 'margen', label: 'Margen', esResultado: true },
+  { campo: 'ebitda', label: 'EBITDA', esResultado: true },
+  { campo: 'margen_proforma', label: 'Margen Proforma', esResultado: true },
+  { campo: 'ebitda_proforma', label: 'EBITDA Proforma', esResultado: true },
+]
 
 export default function EstadoResultadoMensualView({ estadoResultado, loading, error }: EstadoResultadoMensualProps) {
   if (error) return <p className="text-destructive">{error}</p>
@@ -44,78 +57,51 @@ export default function EstadoResultadoMensualView({ estadoResultado, loading, e
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Mes</TableHead>
-            <TableHead className="text-right">Materiales</TableHead>
-            <TableHead className="text-right">% Avance Materiales Fabrica</TableHead>
-            <TableHead className="text-right">Mano de Obra</TableHead>
-            <TableHead className="text-right">Gastos Operacionales</TableHead>
-            <TableHead className="text-right">Fletes</TableHead>
-            <TableHead className="text-right">Subtotal Costos Directos</TableHead>
-            <TableHead className="text-right">Gastos Generales</TableHead>
-            <TableHead className="text-right">Gastos Activados 2025</TableHead>
-            <TableHead className="text-right">Total Costos</TableHead>
-            <TableHead className="text-right">Ingresos</TableHead>
-            <TableHead className="text-right">Margen</TableHead>
-            <TableHead className="text-right">EBITDA</TableHead>
-            <TableHead className="text-right">Margen Proforma</TableHead>
-            <TableHead className="text-right">EBITDA Proforma</TableHead>
+            <TableHead>Categoría</TableHead>
+            {estadoResultado.map((r) => (
+              <TableHead key={`${r.anio}-${r.mes}`} className="text-right whitespace-nowrap">
+                {nombreMes(r.mes).slice(0, 3)} {r.anio}
+              </TableHead>
+            ))}
+            <TableHead className="text-right">Total</TableHead>
           </TableRow>
         </TableHeader>
         {loading ? (
-          <TableSkeleton columns={COLUMNAS} />
+          <TableSkeleton columns={estadoResultado.length + 2} rows={FILAS.length} />
         ) : (
-          <>
-            <TableBody>
-              {estadoResultado.map((r) => (
-                <TableRow key={`${r.anio}-${r.mes}`}>
-                  <TableCell className="font-medium">
-                    {nombreMes(r.mes)} {r.anio}
+          <TableBody>
+            {FILAS.map((fila) => {
+              const total = fila.esPct ? null : estadoResultado.reduce((acc, r) => acc + r[fila.campo], 0)
+              return (
+                <TableRow key={fila.campo}>
+                  <TableCell className={cn('font-medium', fila.esSubtotal && 'font-semibold')}>{fila.label}</TableCell>
+                  {estadoResultado.map((r) => {
+                    const valor = r[fila.campo]
+                    return (
+                      <TableCell
+                        key={`${r.anio}-${r.mes}`}
+                        className={cn(
+                          'text-right tabular-nums',
+                          fila.esSubtotal && 'font-semibold',
+                          fila.esResultado && cn('font-semibold', valor < 0 ? 'text-destructive' : 'text-success'),
+                        )}
+                      >
+                        {fila.esPct ? formatPct(valor) : formatCLP(valor)}
+                      </TableCell>
+                    )
+                  })}
+                  <TableCell
+                    className={cn(
+                      'text-right font-semibold tabular-nums',
+                      fila.esResultado && total !== null && (total < 0 ? 'text-destructive' : 'text-success'),
+                    )}
+                  >
+                    {total === null ? '—' : formatCLP(total)}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCLP(r.materiales)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatPct(r.pct_avance_materiales_fabrica)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCLP(r.mano_obra)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCLP(r.gastos_operacionales)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCLP(r.fletes)}</TableCell>
-                  <TableCell className="text-right font-medium tabular-nums">{formatCLP(r.subtotal_costos_directos)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCLP(r.gastos_generales)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCLP(r.gastos_activados)}</TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">{formatCLP(r.costos)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatCLP(r.ingresos)}</TableCell>
-                  {celdaResultado(r.margen, true)}
-                  {celdaResultado(r.ebitda)}
-                  {celdaResultado(r.margen_proforma)}
-                  {celdaResultado(r.ebitda_proforma)}
                 </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell className="font-semibold">Total</TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">{formatCLP(sumar(estadoResultado, 'materiales'))}</TableCell>
-                <TableCell />
-                <TableCell className="text-right font-semibold tabular-nums">{formatCLP(sumar(estadoResultado, 'mano_obra'))}</TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">
-                  {formatCLP(sumar(estadoResultado, 'gastos_operacionales'))}
-                </TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">{formatCLP(sumar(estadoResultado, 'fletes'))}</TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">
-                  {formatCLP(sumar(estadoResultado, 'subtotal_costos_directos'))}
-                </TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">
-                  {formatCLP(sumar(estadoResultado, 'gastos_generales'))}
-                </TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">
-                  {formatCLP(sumar(estadoResultado, 'gastos_activados'))}
-                </TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">{formatCLP(sumar(estadoResultado, 'costos'))}</TableCell>
-                <TableCell className="text-right font-semibold tabular-nums">{formatCLP(sumar(estadoResultado, 'ingresos'))}</TableCell>
-                {celdaResultado(sumar(estadoResultado, 'margen'), true)}
-                {celdaResultado(sumar(estadoResultado, 'ebitda'), true)}
-                {celdaResultado(sumar(estadoResultado, 'margen_proforma'), true)}
-                {celdaResultado(sumar(estadoResultado, 'ebitda_proforma'), true)}
-              </TableRow>
-            </TableFooter>
-          </>
+              )
+            })}
+          </TableBody>
         )}
       </Table>
     </div>
