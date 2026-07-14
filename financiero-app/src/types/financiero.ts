@@ -124,6 +124,7 @@ export interface EstadoResultadoMensual {
   ebitda: number
   margen_proforma: number
   ebitda_proforma: number
+  pct_avance_materiales_fabrica: number
 }
 
 export interface AuditLogEntry {

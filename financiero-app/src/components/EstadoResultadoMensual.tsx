@@ -3,7 +3,7 @@ import type { EstadoResultadoMensual } from '@/types/financiero'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import EmptyState from '@/components/EmptyState'
 import TableSkeleton from '@/components/TableSkeleton'
-import { formatCLP, nombreMes } from '@/utils/formatters'
+import { formatCLP, formatPct, nombreMes } from '@/utils/formatters'
 import { cn } from '@/lib/utils'
 
 interface EstadoResultadoMensualProps {
@@ -12,7 +12,7 @@ interface EstadoResultadoMensualProps {
   error: string | null
 }
 
-const COLUMNAS = 14
+const COLUMNAS = 15
 
 function sumar(rows: EstadoResultadoMensual[], campo: keyof EstadoResultadoMensual) {
   return rows.reduce((acc, r) => acc + r[campo], 0)
@@ -46,6 +46,7 @@ export default function EstadoResultadoMensualView({ estadoResultado, loading, e
           <TableRow>
             <TableHead>Mes</TableHead>
             <TableHead className="text-right">Materiales</TableHead>
+            <TableHead className="text-right">% Avance Materiales Fabrica</TableHead>
             <TableHead className="text-right">Mano de Obra</TableHead>
             <TableHead className="text-right">Gastos Operacionales</TableHead>
             <TableHead className="text-right">Fletes</TableHead>
@@ -71,6 +72,7 @@ export default function EstadoResultadoMensualView({ estadoResultado, loading, e
                     {nombreMes(r.mes)} {r.anio}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{formatCLP(r.materiales)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatPct(r.pct_avance_materiales_fabrica)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatCLP(r.mano_obra)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatCLP(r.gastos_operacionales)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatCLP(r.fletes)}</TableCell>
@@ -90,6 +92,7 @@ export default function EstadoResultadoMensualView({ estadoResultado, loading, e
               <TableRow>
                 <TableCell className="font-semibold">Total</TableCell>
                 <TableCell className="text-right font-semibold tabular-nums">{formatCLP(sumar(estadoResultado, 'materiales'))}</TableCell>
+                <TableCell />
                 <TableCell className="text-right font-semibold tabular-nums">{formatCLP(sumar(estadoResultado, 'mano_obra'))}</TableCell>
                 <TableCell className="text-right font-semibold tabular-nums">
                   {formatCLP(sumar(estadoResultado, 'gastos_operacionales'))}
