@@ -291,6 +291,10 @@ const SUPA_URL = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
 const PROD_URL = 'https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/productos.json';
 const H = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json' };
+async function authFetch(path, opts={}){
+  const token = await AUTH.getAccessToken();
+  return fetch(`${SUPA_URL}${path}`, {...opts, headers:{...H, ...(opts.headers||{}), 'Authorization':`Bearer ${token}`}});
+}
 
 // ─────────────────────────────────────────────
 // STATE
@@ -404,7 +408,7 @@ async function loadCatalog() {
   // Custom desde Supabase
   let custom = [];
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/productos_custom?activo=eq.true&select=codigo,descripcion,unidad,cantidad_por_modulo`, { headers: H });
+    const r = await authFetch(`/rest/v1/productos_custom?activo=eq.true&select=codigo,descripcion,unidad,cantidad_por_modulo`);
     if (r.ok) custom = await r.json();
   } catch(e) {}
 

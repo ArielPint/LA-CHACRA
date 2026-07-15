@@ -477,6 +477,10 @@ const SUPA_HEADERS = {
   'apikey': SUPA_KEY,
   'Authorization': 'Bearer ' + SUPA_KEY
 };
+async function authFetch(path, opts={}){
+  const token = await AUTH.getAccessToken();
+  return fetch(`${SUPA_URL}${path}`, {...opts, headers:{...SUPA_HEADERS, ...(opts.headers||{}), 'Authorization':`Bearer ${token}`}});
+}
 
 // BASE DE PRODUCTOS: ver js/productos-base.js (cargado en <head>)
 
@@ -642,9 +646,7 @@ async function saveProveedor() {
 // ════════════════════════════════════════════════════
 async function loadCustomProducts() {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/productos_custom?activo=eq.true&select=*`, {
-      headers: SUPA_HEADERS
-    });
+    const r = await authFetch(`/rest/v1/productos_custom?activo=eq.true&select=*`);
     if (r.ok) {
       customProducts = await r.json();
       const baseMap = {};

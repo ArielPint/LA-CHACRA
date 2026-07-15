@@ -488,6 +488,10 @@ let DATA = {};
 const SUPA_URL='https://vtrpxsgcbojqgdcsplim.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
 const SUPA_H={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+async function authFetch(path, opts={}){
+  const token = await AUTH.getAccessToken();
+  return fetch(`${SUPA_URL}${path}`, {...opts, headers:{...SUPA_H, ...(opts.headers||{}), 'Authorization':`Bearer ${token}`}});
+}
 let _supaDesp=[];
 async function loadDespachosSupa(){
   try{
@@ -637,7 +641,7 @@ async function loadPptoCatalogo(){
   try{
     const [rCat,rCustom]=await Promise.all([
       fetch(PROD_URL+'?v='+Date.now()),
-      fetch(`${SUPA_URL}/rest/v1/productos_custom?activo=eq.true&select=codigo,ppto`,{headers:SUPA_H})
+      authFetch(`/rest/v1/productos_custom?activo=eq.true&select=codigo,ppto`)
     ]);
     const map={};
     if(rCat.ok){
