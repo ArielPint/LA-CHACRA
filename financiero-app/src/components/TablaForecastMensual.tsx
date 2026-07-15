@@ -24,6 +24,7 @@ export default function TablaForecastMensual() {
   const { forecast, loading: loadingForecast } = useForecast(presupuestoId || undefined)
   const [facturadoPorMes, setFacturadoPorMes] = useState<FacturadoPorMes>({})
   const [remuneracionesPorMes, setRemuneracionesPorMes] = useState<FacturadoPorMes>({})
+  const [gastosDirectosPorMes, setGastosDirectosPorMes] = useState<FacturadoPorMes>({})
 
   useEffect(() => {
     if (!presupuestoId) return
@@ -68,15 +69,38 @@ export default function TablaForecastMensual() {
       })
   }, [presupuesto?.tarea_wip])
 
-  // "Facturado" = facturas + remuneraciones asociadas al tarea_wip, igual que
-  // "Costo Total" en la tabla de detalle (financiero_seguimiento_presupuesto).
+  useEffect(() => {
+    if (!presupuestoId) {
+      setGastosDirectosPorMes({})
+      return
+    }
+    supabase
+      .from('financiero_gastos_directos')
+      .select('mes, anio, monto')
+      .eq('presupuesto_id', presupuestoId)
+      .then(({ data }) => {
+        const totales: FacturadoPorMes = {}
+        for (const fila of data ?? []) {
+          const key = `${fila.mes}-${fila.anio}`
+          totales[key] = (totales[key] ?? 0) + Number(fila.monto)
+        }
+        setGastosDirectosPorMes(totales)
+      })
+  }, [presupuestoId])
+
+  // "Facturado" = facturas + remuneraciones asociadas al tarea_wip + gastos
+  // directos cargados para este presupuesto, igual que "Costo Total" en la
+  // tabla de detalle (financiero_seguimiento_presupuesto).
   const costoPorMes = useMemo(() => {
     const totales: FacturadoPorMes = { ...facturadoPorMes }
     for (const [key, monto] of Object.entries(remuneracionesPorMes)) {
       totales[key] = (totales[key] ?? 0) + monto
     }
+    for (const [key, monto] of Object.entries(gastosDirectosPorMes)) {
+      totales[key] = (totales[key] ?? 0) + monto
+    }
     return totales
-  }, [facturadoPorMes, remuneracionesPorMes])
+  }, [facturadoPorMes, remuneracionesPorMes, gastosDirectosPorMes])
 
   // Unión de meses con forecast cargado Y meses con costo real: si solo se
   // itera `forecast`, los meses sin fila de forecast (ej. sin cobertura para
