@@ -84,5 +84,14 @@ export function useFacturas(ordenesCompraId?: string) {
     [refetch],
   )
 
-  return { facturas, loading, error, refetch, createFactura, updateFactura }
+  const deleteFactura = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.from('financiero_facturas').delete().eq('id', id)
+      if (error) throw new Error(error.message)
+      await refetch()
+    },
+    [refetch],
+  )
+
+  return { facturas, loading, error, refetch, createFactura, updateFactura, deleteFactura }
 }

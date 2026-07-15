@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { Receipt, ShoppingCart } from 'lucide-react'
 import { useOrdenesCompra } from '@/hooks/useOrdenesCompra'
 import { useFacturas } from '@/hooks/useFacturas'
@@ -29,7 +30,7 @@ const ESTADO_FACTURA_VARIANT: Record<string, 'secondary' | 'success' | 'destruct
 
 export default function OrdenesCompra() {
   const { canEditOC } = useAuth()
-  const { ordenesCompra, loading, error, createOrdenCompra, updateOrdenCompra } = useOrdenesCompra()
+  const { ordenesCompra, loading, error, createOrdenCompra, updateOrdenCompra, deleteOrdenCompra } = useOrdenesCompra()
   const { facturas, loading: loadingFacturas } = useFacturas()
   const { presupuestos } = usePresupuestosLookup()
   const [search, setSearch] = useState('')
@@ -146,12 +147,26 @@ export default function OrdenesCompra() {
                     <TableCell>{oc.pdf_path ? <VisorPDF pdfPath={oc.pdf_path} /> : '—'}</TableCell>
                     {canEditOC && (
                       <TableCell>
-                        <FormularioOC
-                          ordenCompra={oc}
-                          ordenesCompra={ordenesCompra}
-                          onCreate={createOrdenCompra}
-                          onUpdate={updateOrdenCompra}
-                        />
+                        <div className="flex gap-2">
+                          <FormularioOC
+                            ordenCompra={oc}
+                            ordenesCompra={ordenesCompra}
+                            onCreate={createOrdenCompra}
+                            onUpdate={updateOrdenCompra}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (!confirm(`¿Eliminar la OC ${oc.numero_oc}?`)) return
+                              deleteOrdenCompra(oc.id).catch((err) =>
+                                toast.error(err instanceof Error ? err.message : 'Error al eliminar la OC'),
+                              )
+                            }}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>

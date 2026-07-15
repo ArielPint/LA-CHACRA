@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { Receipt } from 'lucide-react'
 import { useFacturas } from '@/hooks/useFacturas'
 import { useOrdenesCompra } from '@/hooks/useOrdenesCompra'
@@ -25,7 +26,7 @@ const ESTADO_VARIANT: Record<string, 'secondary' | 'success' | 'destructive'> = 
 
 export default function Facturas() {
   const { canEditOC } = useAuth()
-  const { facturas, loading, error, createFactura, updateFactura } = useFacturas()
+  const { facturas, loading, error, createFactura, updateFactura, deleteFactura } = useFacturas()
   const { ordenesCompra } = useOrdenesCompra()
   const { presupuestos } = usePresupuestosLookup()
   const [search, setSearch] = useState('')
@@ -150,13 +151,27 @@ export default function Facturas() {
                       <TableCell>{f.pdf_path ? <VisorPDF pdfPath={f.pdf_path} /> : '—'}</TableCell>
                       {canEditOC && (
                         <TableCell>
-                          <FormularioFactura
-                            factura={f}
-                            facturas={facturas}
-                            ordenesCompra={ordenesCompra}
-                            onCreate={createFactura}
-                            onUpdate={updateFactura}
-                          />
+                          <div className="flex gap-2">
+                            <FormularioFactura
+                              factura={f}
+                              facturas={facturas}
+                              ordenesCompra={ordenesCompra}
+                              onCreate={createFactura}
+                              onUpdate={updateFactura}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (!confirm(`¿Eliminar la factura ${f.numero_factura ?? '(sin número)'}?`)) return
+                                deleteFactura(f.id).catch((err) =>
+                                  toast.error(err instanceof Error ? err.message : 'Error al eliminar la factura'),
+                                )
+                              }}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>

@@ -88,5 +88,14 @@ export function useOrdenesCompra(presupuestoId?: string) {
     [refetch],
   )
 
-  return { ordenesCompra, loading, error, refetch, createOrdenCompra, updateOrdenCompra }
+  const deleteOrdenCompra = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.from('financiero_ordenes_compra').delete().eq('id', id)
+      if (error) throw new Error(error.message)
+      await refetch()
+    },
+    [refetch],
+  )
+
+  return { ordenesCompra, loading, error, refetch, createOrdenCompra, updateOrdenCompra, deleteOrdenCompra }
 }
