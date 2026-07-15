@@ -2809,11 +2809,14 @@ function renderDespachos(){
   let _acumDia=0;
   const acumDiaData=allDiaKeys.map(k=>{_acumDia+=(realDia[k]?.count||0);return _acumDia;});
 
+  let _prevProyAcum=0;
+  const proyAcumDiaData=allDiaKeys.map(k=>{_prevProyAcum=Math.max(_prevProyAcum, proyDia[k]?.acum||0);return _prevProyAcum;});
+
   lineChart('ch-desp-dia', diaLabels, [
     {label:'Despachado acumulado', data:acumDiaData,
       borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
       tension:0.35, pointRadius:3, fill:false},
-    {label:'Proyectado acumulado', data:allDiaKeys.map(k=>proyDia[k]?.acum||0),
+    {label:'Proyectado acumulado', data:proyAcumDiaData,
       borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
       tension:0.35, pointRadius:3, fill:false},
     {label:'Despachado diario', data:allDiaKeys.map(k=>realDia[k]?.count||0),
