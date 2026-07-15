@@ -444,6 +444,19 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
 
     <!-- MODO NUEVO: multi-producto -->
     <div id="mode-multi" style="display:none">
+      <div class="form-grid" style="margin-bottom:10px">
+        <div class="fg">
+          <label>N° Solicitud <span class="auto-tag">opcional</span></label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="f_sol_numero" placeholder="Ej: 12" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarSolicitud();}">
+            <button type="button" class="btn btn-sm" onclick="buscarSolicitud()">🔎 Cargar</button>
+          </div>
+        </div>
+        <div class="fg wide" style="display:flex;align-items:flex-end">
+          <span id="sol-lookup-msg" style="font-size:.75rem"></span>
+        </div>
+      </div>
+      <hr class="form-divider">
       <div class="section-title">
         <span>Productos</span>
       </div>
@@ -638,6 +651,7 @@ let productosCustom = [];
 let allProducts     = [];
 let allProductsMap  = {};
 let _editingProdCod = null;
+let loadedSolicitudNumero = null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 (function(){
@@ -1063,6 +1077,9 @@ function openDrawer(id){
     setF('f_gd',''); setF('f_obs','');
     setF('f_oc_display','');
     document.getElementById('f_resp').value='';
+    setF('f_sol_numero','');
+    document.getElementById('sol-lookup-msg').textContent='';
+    loadedSolicitudNumero=null;
     productLines=[];
     addProductLine();
     document.getElementById('multi-monto-val').textContent='—';
@@ -1096,7 +1113,7 @@ function closeDrawer(force){
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('drawer-reg').classList.remove('open');
   hidePLSugg(); hideSingleSugg(); editId=null;
-  productLines=[]; _lineCounter=0;
+  productLines=[]; _lineCounter=0; loadedSolicitudNumero=null;
 }
 
 function setF(id,val){ document.getElementById(id).value=val; }
@@ -1342,6 +1359,41 @@ function recalcMultiMonto(){
 document.addEventListener('click',e=>{ if(!e.target.closest('.prod-line')&&!e.target.closest('#pl-sugg')) hidePLSugg(); if(!e.target.closest('.pl-code-wrap')&&!e.target.closest('#s-sugg')) hideSingleSugg(); });
 document.querySelector('#drawer-reg .drw-body').addEventListener('scroll',hidePLSugg);
 
+// ── Cargar desde Solicitud de Materiales ──────────────────────────────────────
+async function buscarSolicitud(){
+  const numero=parseInt(getF('f_sol_numero'),10);
+  const msg=document.getElementById('sol-lookup-msg');
+  if(!numero){ msg.textContent='⚠ Ingresa un N° válido.'; msg.style.color='var(--red)'; return; }
+  msg.textContent='Buscando…'; msg.style.color='var(--muted)';
+  try{
+    const sb=await sbClient();
+    const {data,error}=await sb.from('solicitudes').select('*').eq('numero',numero).maybeSingle();
+    if(error) throw new Error(error.message);
+    if(!data){ msg.textContent='⚠ No se encontró esa solicitud.'; msg.style.color='var(--red)'; return; }
+    if(data.estado==='usada'){
+      if(!confirm(`La solicitud N° ${numero} ya fue usada en un Registro GD anteriormente. ¿Cargarla de todas formas?`)){ msg.textContent=''; return; }
+    }
+    const respNombre=responsables.find(r=>r.id===data.responsable_id)?.nombre||'';
+    setF('f_fecha_sol',(data.fecha||'').slice(0,10));
+    setF('f_obs',data.observacion||'');
+    document.getElementById('f_resp').value=respNombre;
+    productLines=[];
+    (data.items||[]).forEach(it=>{
+      const prod=prodMap[normCod(it.codigo)]||allProducts.find(p=>normCod(p.codigo)===normCod(it.codigo))||{};
+      const cantReal=it.cantidad_real!=null?it.cantidad_real:it.cantidad;
+      productLines.push({ idx:++_lineCounter, codigo:it.codigo, descripcion:prod.descripcion||it.descripcion,
+        unidad:prod.unidad||it.unidad, tipo:prod.tipo||'', ppto:prod.ppto||0,
+        cant_sol:cantReal, devol:0, valor_total_item:'' });
+    });
+    if(!productLines.length) addProductLine();
+    renderProductLines();
+    recalcMultiMonto();
+    loadedSolicitudNumero=numero;
+    msg.textContent=`✓ Solicitud N° ${numero} cargada (${(data.items||[]).length} producto(s)).`;
+    msg.style.color='var(--green)';
+  } catch(e){ msg.textContent='⚠ '+e.message; msg.style.color='var(--red)'; }
+}
+
 // ── Guardar / Eliminar ────────────────────────────────────────────────────────
 async function saveRecord(){
   const btn=document.getElementById('btn-save');
@@ -1370,6 +1422,10 @@ async function saveRecord(){
       });
       const {error}=await sb.from('registro_compras').insert(records);
       if(error) throw new Error(error.message);
+      if(loadedSolicitudNumero){
+        try{ await sb.from('solicitudes').update({estado:'usada'}).eq('numero',loadedSolicitudNumero); } catch(e){}
+        loadedSolicitudNumero=null;
+      }
     } else {
       const cs=parseFloat(getF('s_cant_sol'))||0, dv=parseFloat(getF('s_devol'))||0;
       const vt=parseFloat(getF('s_valor_total'))||0, cr=cs-dv, vu=cr?vt/cr:0;
