@@ -128,7 +128,8 @@ export default function TablaForecastMensual() {
     .filter((f) => f.monto_forecast != null)
     .sort((a, b) => b.anio - a.anio || b.mes - a.mes)[0]?.monto_forecast
   const totalForecast = ultimoForecast ?? presupuesto?.presupuesto_original ?? 0
-  const totalFacturado = Object.values(costoPorMes).reduce((acc, v) => acc + v, 0)
+  const totalCostoTotal = Object.values(costoPorMes).reduce((acc, v) => acc + v, 0)
+  const totalFacturado = Object.values(facturadoPorMes).reduce((acc, v) => acc + v, 0)
 
   return (
     <div className="space-y-4">
@@ -155,14 +156,16 @@ export default function TablaForecastMensual() {
               <TableHead className="text-right">Presupuesto</TableHead>
               <TableHead className="text-right">Forecast</TableHead>
               <TableHead className="text-right">Facturado</TableHead>
+              <TableHead className="text-right">Costo Total</TableHead>
               <TableHead className="text-right">Restante</TableHead>
               <TableHead className="text-right">% vs. presupuesto original</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {periodos.map(({ mes, anio, montoForecast }) => {
-              const facturadoMes = costoPorMes[`${mes}-${anio}`] ?? 0
-              const restante = (montoForecast ?? 0) - facturadoMes
+              const facturadoMes = facturadoPorMes[`${mes}-${anio}`] ?? 0
+              const costoTotalMes = costoPorMes[`${mes}-${anio}`] ?? 0
+              const restante = (montoForecast ?? 0) - costoTotalMes
               return (
                 <TableRow key={`${mes}-${anio}`}>
                   <TableCell>
@@ -173,9 +176,10 @@ export default function TablaForecastMensual() {
                   </TableCell>
                   <TableCell className="text-right">{montoForecast === null ? '—' : formatCLP(montoForecast)}</TableCell>
                   <TableCell className="text-right">{formatCLP(facturadoMes)}</TableCell>
+                  <TableCell className="text-right">{formatCLP(costoTotalMes)}</TableCell>
                   <TableCell className="text-right">{formatCLP(restante)}</TableCell>
                   <TableCell className="text-right">
-                    {presupuesto ? formatPct(facturadoMes / presupuesto.presupuesto_original) : '—'}
+                    {presupuesto ? formatPct(costoTotalMes / presupuesto.presupuesto_original) : '—'}
                   </TableCell>
                 </TableRow>
               )
@@ -187,9 +191,10 @@ export default function TablaForecastMensual() {
               </TableCell>
               <TableCell className="text-right">{formatCLP(totalForecast)}</TableCell>
               <TableCell className="text-right">{formatCLP(totalFacturado)}</TableCell>
-              <TableCell className="text-right">{formatCLP(totalForecast - totalFacturado)}</TableCell>
+              <TableCell className="text-right">{formatCLP(totalCostoTotal)}</TableCell>
+              <TableCell className="text-right">{formatCLP(totalForecast - totalCostoTotal)}</TableCell>
               <TableCell className="text-right">
-                {presupuesto ? formatPct(totalFacturado / presupuesto.presupuesto_original) : '—'}
+                {presupuesto ? formatPct(totalCostoTotal / presupuesto.presupuesto_original) : '—'}
               </TableCell>
             </TableRow>
           </TableBody>
