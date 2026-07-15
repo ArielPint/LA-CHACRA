@@ -118,12 +118,17 @@ export default function FinancieroLayout() {
   const { perfil, puedeVer, signOut } = useAuth()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false)
   const tituloPagina = PAGE_TITLES[location.pathname] ?? 'Financiero'
 
   return (
     <div className="flex min-h-svh">
-      {/* Sidebar — visible desde md hacia arriba */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r bg-sidebar py-4 md:flex">
+      {/* Sidebar — visible desde md hacia arriba, ocultable con el botón de menú */}
+      <aside
+        className={cn(
+          'hidden w-64 shrink-0 flex-col border-r bg-sidebar py-4',
+          !desktopCollapsed && 'md:flex',
+        )}
         <div className="mb-2 px-4">
           <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">LA CHACRA</p>
           <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
@@ -138,6 +143,15 @@ export default function FinancieroLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar — siempre visible; el botón de menú solo aparece en mobile */}
         <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-background px-4 md:px-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:inline-flex"
+            onClick={() => setDesktopCollapsed((v) => !v)}
+            title={desktopCollapsed ? 'Mostrar menú' : 'Ocultar menú'}
+          >
+            <Menu className="size-5" />
+          </Button>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
