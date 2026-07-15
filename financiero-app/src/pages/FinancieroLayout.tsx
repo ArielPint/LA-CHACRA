@@ -129,6 +129,7 @@ export default function FinancieroLayout() {
           'hidden w-64 shrink-0 flex-col border-r bg-sidebar py-4',
           !desktopCollapsed && 'md:flex',
         )}
+      >
         <div className="mb-2 px-4">
           <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">LA CHACRA</p>
           <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
