@@ -196,8 +196,16 @@ const AUTH = (() => {
   // ─── Obtener access token de la sesión activa ─────────────────────────────
   async function _getAccessToken() {
     const sb = await _client();
-    const { data: { session } } = await sb.auth.getSession();
+    let { data: { session } } = await sb.auth.getSession();
     if (!session) throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
+    // getSession() puede devolver el access_token cacheado sin refrescar si el
+    // timer de autoRefresh no corrió (pestaña en segundo plano) — forzar
+    // refresh cuando está vencido o por vencer evita 401 contra PostgREST.
+    if (session.expires_at && session.expires_at * 1000 < Date.now() + 10000) {
+      const { data, error } = await sb.auth.refreshSession();
+      if (error || !data.session) throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
+      session = data.session;
+    }
     return session.access_token;
   }
 
