@@ -105,7 +105,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ── Form actions ── */
 .form-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
 
-/* ── Summary table (preview) ── */
+/* ── Summary meta / resumen ── */
 .summary-meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:var(--surface2);border-radius:6px;border:1px solid var(--border)}
 .summary-meta .meta-item{font-size:.82rem}
 .summary-meta .meta-label{color:var(--muted);margin-right:6px}
@@ -197,7 +197,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <!-- ── Tab nav ── -->
 <div id="tab-nav">
   <button class="tab-btn active" onclick="showTab('form')" id="tab-btn-form">📋 Nueva Solicitud</button>
-  <button class="tab-btn" onclick="showTab('preview')" id="tab-btn-preview">👁 Vista Previa</button>
   <button class="tab-btn" onclick="showTab('history')" id="tab-btn-history">📂 Historial</button>
   <button class="tab-btn" onclick="showTab('products')" id="tab-btn-products" style="display:none">🗂 Catálogo</button>
 </div>
@@ -208,7 +207,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   <!-- ════════ TAB 1: NUEVA SOLICITUD ════════ -->
   <div id="panel-form" class="tab-panel active">
     <div class="card">
-      <div class="card-title">Datos automáticos</div>
+      <div class="card-title">Datos de la solicitud</div>
       <div class="auto-fields">
         <div class="auto-field">
           <label>Fecha Solicitud</label>
@@ -217,6 +216,18 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <div class="auto-field">
           <label>Usuario que solicita</label>
           <div class="auto-value" id="auto-user">—</div>
+        </div>
+        <div class="auto-field">
+          <label>Grupo solicitante *</label>
+          <select class="modal-select" id="sel-grupo" onchange="onGrupoChange()">
+            <option value="">Selecciona grupo...</option>
+          </select>
+        </div>
+        <div class="auto-field">
+          <label>Para quién se solicita *</label>
+          <select class="modal-select" id="sel-responsable">
+            <option value="">Selecciona grupo primero...</option>
+          </select>
         </div>
       </div>
     </div>
@@ -234,18 +245,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <button class="btn-add" onclick="addItemRow()">+ Agregar producto</button>
     </div>
 
-    <div class="form-actions">
-      <button class="btn btn-secondary" onclick="clearForm()">🗑 Limpiar</button>
-      <button class="btn btn-primary" onclick="goToPreview()">Ver resumen →</button>
-    </div>
-  </div>
-
-  <!-- ════════ TAB 2: VISTA PREVIA ════════ -->
-  <div id="panel-preview" class="tab-panel">
     <div class="card">
-      <div class="card-title">Resumen de solicitud</div>
-      <div class="summary-meta" id="preview-meta"></div>
-      <table class="data-table" id="preview-table">
+      <div class="card-title">Resumen y envío</div>
+      <table class="data-table" id="resumen-table">
         <thead>
           <tr>
             <th style="width:36px">#</th>
@@ -256,17 +258,18 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
             <th class="num" title="Equivalencia en módulos = cantidad / cantidad por módulo">Módulos</th>
           </tr>
         </thead>
-        <tbody id="preview-tbody"></tbody>
+        <tbody id="resumen-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:16px">Agrega productos arriba para ver el resumen.</td></tr></tbody>
       </table>
       <div class="obs-wrap">
         <label>Observaciones (opcional)</label>
         <textarea class="obs-input" id="obs-input" placeholder="Instrucciones especiales, urgencia, destino, etc."></textarea>
       </div>
     </div>
+
     <div class="form-actions">
-      <button class="btn btn-secondary" onclick="showTab('form')">← Volver a editar</button>
-      <button class="btn btn-secondary" onclick="exportTableToExcel('preview-table','solicitud')">⬇ Excel</button>
-      <button class="btn btn-green" id="submit-btn" onclick="submitSolicitud()">✔ Enviar solicitud</button>
+      <button class="btn btn-secondary" onclick="clearForm()">🗑 Limpiar</button>
+      <button class="btn btn-secondary" onclick="exportTableToExcel('resumen-table','solicitud')">⬇ Excel</button>
+      <button class="btn btn-green" id="submit-btn" onclick="submitSolicitud()">✉ Enviar por correo</button>
     </div>
   </div>
 
@@ -275,6 +278,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div class="card" style="padding:14px 20px">
       <div class="hist-filters">
         <input class="hist-filter-input" id="hist-search" placeholder="🔍 Buscar por usuario o producto..." oninput="renderHistory()" style="flex:1;min-width:200px">
+        <select class="hist-filter-input" id="hist-grupo" onchange="renderHistory()" style="min-width:150px">
+          <option value="">Todos los grupos</option>
+        </select>
         <input class="hist-filter-input" id="hist-date" type="date" oninput="renderHistory()" title="Filtrar por fecha">
         <select class="hist-filter-input" id="hist-status" onchange="renderHistory()" style="min-width:130px">
           <option value="">Todos los estados</option>
@@ -447,6 +453,8 @@ let allProducts = [];     // base + custom
 let productosCustom = []; // solo los de Supabase
 let historyData = [];
 let pendingNewProduct = null; // guardar texto buscado cuando no existe
+let gruposList = [];
+let responsablesList = [];
 
 // ════════════════════════════════════════════════════
 //  INIT
@@ -479,12 +487,61 @@ let pendingNewProduct = null; // guardar texto buscado cuando no existe
   // Cargar productos custom de Supabase
   await loadCustomProducts();
 
+  // Cargar grupos y responsables
+  await loadGruposResponsables();
+
   // Primera fila
   addItemRow();
 
   // Historial
   loadHistory();
 })();
+
+// ════════════════════════════════════════════════════
+//  GRUPOS / RESPONSABLES
+// ════════════════════════════════════════════════════
+async function loadGruposResponsables() {
+  try {
+    const [rg, rr] = await Promise.all([
+      authFetch(`/rest/v1/grupos?activo=eq.true&select=*&order=nombre`),
+      authFetch(`/rest/v1/responsables?activo=eq.true&select=*&order=nombre`)
+    ]);
+    gruposList = rg.ok ? await rg.json() : [];
+    responsablesList = rr.ok ? await rr.json() : [];
+  } catch(e) {
+    gruposList = [];
+    responsablesList = [];
+  }
+
+  const selGrupo = document.getElementById('sel-grupo');
+  gruposList.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.id;
+    opt.textContent = g.nombre;
+    selGrupo.appendChild(opt);
+  });
+
+  const histGrupo = document.getElementById('hist-grupo');
+  gruposList.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.id;
+    opt.textContent = g.nombre;
+    histGrupo.appendChild(opt);
+  });
+}
+
+function onGrupoChange() {
+  const grupoId = document.getElementById('sel-grupo').value;
+  const selResp = document.getElementById('sel-responsable');
+  selResp.innerHTML = '';
+  if (!grupoId) {
+    selResp.innerHTML = '<option value="">Selecciona grupo primero...</option>';
+    return;
+  }
+  const opts = responsablesList.filter(r => String(r.grupo_id) === String(grupoId));
+  selResp.innerHTML = '<option value="">Selecciona responsable...</option>' +
+    opts.map(r => `<option value="${r.id}">${escHtml(r.nombre)}</option>`).join('');
+}
 
 // ════════════════════════════════════════════════════
 //  PERMISOS
@@ -574,7 +631,10 @@ function removeRow(id) {
   if (el) el.remove();
   // Garantizar al menos una fila
   if (document.getElementById('items-list').children.length === 0) addItemRow();
+  renderResumen();
 }
+
+const MODULOS_ALERTA = 20;
 
 function updateModBadge(id) {
   const row = document.getElementById('row-' + id);
@@ -582,12 +642,24 @@ function updateModBadge(id) {
   const cpm = parseFloat(row.dataset.cantidadPorModulo);
   const el = document.getElementById('mod-' + id);
   if (!isNaN(qty) && qty > 0 && !isNaN(cpm) && cpm > 0) {
-    el.textContent = (qty / cpm).toFixed(2);
+    const modulos = qty / cpm;
     el.classList.remove('empty');
+    if (modulos > MODULOS_ALERTA) {
+      el.innerHTML = `⚠ ${modulos.toFixed(2)}`;
+      el.title = `Supera ${MODULOS_ALERTA} módulos`;
+      el.style.color = 'var(--red)';
+    } else {
+      el.textContent = modulos.toFixed(2);
+      el.title = '';
+      el.style.color = '';
+    }
   } else {
     el.textContent = '—';
+    el.title = '';
+    el.style.color = '';
     el.classList.add('empty');
   }
+  renderResumen();
 }
 
 let comboTimeout = {};
@@ -700,48 +772,30 @@ function showTab(name) {
 }
 
 // ════════════════════════════════════════════════════
-//  PREVIEW
+//  RESUMEN (vive dentro del mismo panel-form)
 // ════════════════════════════════════════════════════
-function goToPreview() {
+function renderResumen() {
   const items = getValidItems();
+  const tbody = document.getElementById('resumen-tbody');
   if (items.length === 0) {
-    toast('Agrega al menos un producto con cantidad.', 'err');
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:16px">Agrega productos arriba para ver el resumen.</td></tr>';
     return;
   }
-
-  // Meta
-  const now = new Date();
-  const itemsConModulo = items.filter(it => it.cantidad_por_modulo != null && it.cantidad_por_modulo > 0);
-  const totalModulosMap = {};
-  itemsConModulo.forEach(it => {
-    totalModulosMap[it.codigo] = it.cantidad / it.cantidad_por_modulo;
-  });
-  const totalModulos = Object.values(totalModulosMap).length > 0
-    ? Math.max(...Object.values(totalModulosMap)).toFixed(2)
-    : null;
-  document.getElementById('preview-meta').innerHTML = `
-    <div class="meta-item"><span class="meta-label">Fecha:</span>${now.toLocaleDateString('es-CL', {weekday:'short',year:'numeric',month:'short',day:'numeric'})}</div>
-    <div class="meta-item"><span class="meta-label">Solicitante:</span>${SESSION.name}</div>
-    <div class="meta-item"><span class="meta-label">N° productos:</span>${items.length}</div>
-    ${totalModulos ? `<div class="meta-item"><span class="meta-label">Equiv. módulos (máx):</span><strong style="color:var(--accent)">${totalModulos}</strong></div>` : ''}`;
-
-  // Tabla
-  const tbody = document.getElementById('preview-tbody');
   tbody.innerHTML = items.map((it, i) => {
     const modulos = (it.cantidad_por_modulo != null && it.cantidad_por_modulo > 0)
-      ? (it.cantidad / it.cantidad_por_modulo).toFixed(2)
-      : '—';
+      ? (it.cantidad / it.cantidad_por_modulo)
+      : null;
+    const alerta = modulos != null && modulos > MODULOS_ALERTA;
+    const modulosStr = modulos != null ? modulos.toFixed(2) : '—';
     return `<tr>
       <td class="num">${i+1}</td>
       <td class="code-cell">${escHtml(it.codigo)}</td>
       <td>${escHtml(it.descripcion)}</td>
       <td class="num">${it.cantidad}</td>
       <td class="unit-cell">${escHtml(it.unidad)}</td>
-      <td class="num" style="color:var(--accent);font-weight:600">${modulos}</td>
+      <td class="num" style="font-weight:600;color:${alerta ? 'var(--red)' : 'var(--accent)'}">${alerta ? '⚠ ' : ''}${modulosStr}</td>
     </tr>`;
   }).join('');
-
-  showTab('preview');
 }
 
 function getValidItems() {
@@ -766,14 +820,48 @@ function clearForm() {
   rowCounter = 0;
   addItemRow();
   document.getElementById('obs-input').value = '';
+  renderResumen();
 }
 
 // ════════════════════════════════════════════════════
-//  ENVIAR SOLICITUD → SUPABASE
+//  ENVIAR SOLICITUD → SUPABASE + CORREO
 // ════════════════════════════════════════════════════
+function buildMailto(grupoNombre, responsableNombre, items, observacion) {
+  const now = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const subject = `Solicitud de materiales · ${grupoNombre} · ${now}`;
+  const lineas = items.map((it, i) => {
+    const modulos = (it.cantidad_por_modulo != null && it.cantidad_por_modulo > 0)
+      ? (it.cantidad / it.cantidad_por_modulo).toFixed(2)
+      : '—';
+    const alerta = modulos !== '—' && parseFloat(modulos) > MODULOS_ALERTA ? '  ⚠ supera 20 módulos' : '';
+    return `${i+1}. [${it.codigo}] ${it.descripcion} — ${it.cantidad} ${it.unidad} (${modulos} mód.)${alerta}`;
+  });
+  const body = [
+    `Solicitante: ${SESSION.name}`,
+    `Grupo: ${grupoNombre}`,
+    `Para: ${responsableNombre}`,
+    `Fecha: ${now}`,
+    '',
+    'Productos solicitados:',
+    ...lineas,
+    '',
+    observacion ? `Observaciones: ${observacion}` : ''
+  ].join('\n');
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 async function submitSolicitud() {
   const items = getValidItems();
   if (items.length === 0) { toast('Sin productos válidos.', 'err'); return; }
+
+  const grupoId = document.getElementById('sel-grupo').value;
+  const responsableId = document.getElementById('sel-responsable').value;
+  if (!grupoId) { toast('Selecciona el grupo solicitante.', 'err'); return; }
+  if (!responsableId) { toast('Selecciona para quién se solicita.', 'err'); return; }
+
+  const grupo = gruposList.find(g => String(g.id) === String(grupoId));
+  const responsable = responsablesList.find(r => String(r.id) === String(responsableId));
+  const observacion = document.getElementById('obs-input').value.trim();
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
@@ -783,8 +871,10 @@ async function submitSolicitud() {
     usuario_id: SESSION.id,
     username: SESSION.username,
     nombre: SESSION.name,
+    grupo_id: grupo.id,
+    responsable_id: responsable.id,
     items: items,
-    observacion: document.getElementById('obs-input').value.trim() || null,
+    observacion: observacion || null,
     estado: 'pendiente'
   };
 
@@ -795,10 +885,13 @@ async function submitSolicitud() {
       body: JSON.stringify(payload)
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    const data = await r.json();
-    toast('✔ Solicitud enviada correctamente.', 'ok');
+    await r.json();
+    // Abre el cliente de correo del usuario con la solicitud prellenada
+    window.location.href = buildMailto(grupo.nombre, responsable.nombre, items, observacion);
+    toast('✔ Solicitud guardada. Completa el envío en tu cliente de correo.', 'ok');
     clearForm();
-    document.getElementById('obs-input').value = '';
+    document.getElementById('sel-grupo').value = '';
+    onGrupoChange();
     // Cargar historial y mostrar
     await loadHistory();
     setTimeout(() => showTab('history'), 1200);
@@ -806,7 +899,7 @@ async function submitSolicitud() {
     toast('Error al enviar: ' + e.message, 'err');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '✔ Enviar solicitud';
+    btn.innerHTML = '✉ Enviar por correo';
   }
 }
 
@@ -828,12 +921,17 @@ function renderHistory() {
   const search = (document.getElementById('hist-search')?.value || '').toLowerCase();
   const dateFilter = document.getElementById('hist-date')?.value || '';
   const statusFilter = document.getElementById('hist-status')?.value || '';
+  const grupoFilter = document.getElementById('hist-grupo')?.value || '';
 
   let data = historyData;
 
   // Filtrar por usuario (no-admin solo ve las propias)
   if (SESSION.role !== 'admin') {
     data = data.filter(s => s.usuario_id === SESSION.id);
+  }
+
+  if (grupoFilter) {
+    data = data.filter(s => String(s.grupo_id) === String(grupoFilter));
   }
 
   if (search) {
@@ -869,6 +967,8 @@ function renderHistory() {
           <th style="width:40px"></th>
           <th>Fecha</th>
           <th>Solicitante</th>
+          <th>Grupo</th>
+          <th>Para</th>
           <th class="num">Items</th>
           <th>Estado</th>
           ${isAdmin ? '<th>Acciones</th>' : ''}
@@ -886,6 +986,8 @@ function histRow(s, isAdmin) {
   const badge = statusBadge(s.estado);
   const items = s.items || [];
   const detailId = 'det-' + s.id;
+  const grupoNombre = gruposList.find(g => g.id === s.grupo_id)?.nombre || '—';
+  const responsableNombre = responsablesList.find(r => r.id === s.responsable_id)?.nombre || '—';
 
   const detailRows = items.map((it, i) => {
     const cpm = it.cantidad_por_modulo;
@@ -917,12 +1019,14 @@ function histRow(s, isAdmin) {
       <td style="color:var(--muted);font-size:.8rem;text-align:center">▶</td>
       <td style="font-size:.82rem">${fecha}</td>
       <td style="font-size:.84rem">${escHtml(s.nombre)}</td>
+      <td style="font-size:.82rem">${escHtml(grupoNombre)}</td>
+      <td style="font-size:.82rem">${escHtml(responsableNombre)}</td>
       <td class="num">${items.length}</td>
       <td>${badge}</td>
       ${adminActions}
     </tr>
     <tr id="${detailId}" class="hist-detail">
-      <td colspan="${isAdmin ? 6 : 5}" style="padding:0">
+      <td colspan="${isAdmin ? 8 : 7}" style="padding:0">
         <div style="margin:0 12px 12px;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--border)">
           <table class="data-table" style="margin:0">
             <thead>
