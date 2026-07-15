@@ -272,7 +272,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
     <div class="form-actions">
       <button class="btn btn-secondary" onclick="clearForm()">🗑 Limpiar</button>
       <button class="btn btn-secondary" onclick="exportTableToExcel('resumen-table','solicitud')">⬇ Excel</button>
-      <button class="btn btn-green" id="submit-btn" onclick="submitSolicitud()">✉ Enviar por correo</button>
+      <button class="btn btn-green" id="submit-btn" onclick="submitSolicitud()">💾 Guardar solicitud</button>
+      <button class="btn btn-green" id="send-mail-btn" style="display:none" onclick="enviarCorreoGuardada()">✉ Enviar correo</button>
     </div>
   </div>
 
@@ -458,6 +459,7 @@ let historyData = [];
 let pendingNewProduct = null; // guardar texto buscado cuando no existe
 let gruposList = [];
 let responsablesList = [];
+let lastSavedSolicitud = null;
 
 // ════════════════════════════════════════════════════
 //  INIT
@@ -849,6 +851,9 @@ function clearForm() {
 // ════════════════════════════════════════════════════
 //  ENVIAR SOLICITUD → SUPABASE + CORREO
 // ════════════════════════════════════════════════════
+const PROYECTO_CONST = '930026194';
+const WIP_CONST = '10010';
+
 function padCol(str, len) {
   str = String(str);
   return str.length >= len ? str.slice(0, len - 1) + ' ' : str + ' '.repeat(len - str.length);
@@ -857,11 +862,11 @@ function padCol(str, len) {
 function buildMailto(numero, grupoNombre, responsableNombre, items, observacion) {
   const now = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric'});
   const subject = `Solicitud de materiales N° ${numero} · ${grupoNombre} · ${now}`;
-  const colCod = 14, colDesc = 38, colCant = 10;
-  const header = padCol('Código', colCod) + padCol('Descripción', colDesc) + padCol('Cantidad', colCant) + 'Unidad';
-  const sep = '-'.repeat(colCod + colDesc + colCant + 8);
+  const colProy = 12, colWip = 8, colCod = 12, colDesc = 45, colUnid = 12;
+  const header = padCol('PROYECTO', colProy) + padCol('WIP', colWip) + padCol('CODIGO', colCod) + padCol('DESCRIPCION', colDesc) + padCol('Unid. Med', colUnid) + 'Cantidad';
+  const sep = '-'.repeat(colProy + colWip + colCod + colDesc + colUnid + 10);
   const lineas = items.map(it =>
-    padCol(it.codigo, colCod) + padCol(it.descripcion, colDesc) + padCol(it.cantidad_real, colCant) + it.unidad
+    padCol(PROYECTO_CONST, colProy) + padCol(WIP_CONST, colWip) + padCol(it.codigo, colCod) + padCol(it.descripcion, colDesc) + padCol(it.unidad, colUnid) + it.cantidad_real
   );
   const body = [
     `N° Solicitud: ${numero}`,
@@ -893,7 +898,7 @@ async function submitSolicitud() {
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Enviando...';
+  btn.innerHTML = '<span class="spinner"></span> Guardando...';
 
   const payload = {
     usuario_id: SESSION.id,
@@ -914,21 +919,56 @@ async function submitSolicitud() {
     });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const [saved] = await r.json();
-    // Abre el cliente de correo del usuario con la solicitud prellenada
-    window.location.href = buildMailto(saved.numero, grupo.nombre, responsable.nombre, items, observacion);
-    toast(`✔ Solicitud N° ${saved.numero} guardada. Completa el envío en tu cliente de correo.`, 'ok');
-    clearForm();
-    document.getElementById('sel-grupo').value = '';
-    onGrupoChange();
-    // Cargar historial y mostrar
+    lastSavedSolicitud = { id: saved.id, numero: saved.numero, grupoNombre: grupo.nombre, responsableNombre: responsable.nombre, items, observacion };
+    toast(`✔ Solicitud N° ${saved.numero} guardada. Pulsa "Enviar correo" para completarla.`, 'ok');
+    btn.style.display = 'none';
+    document.getElementById('send-mail-btn').style.display = '';
     await loadHistory();
-    setTimeout(() => showTab('history'), 1200);
   } catch(e) {
-    toast('Error al enviar: ' + e.message, 'err');
+    toast('Error al guardar: ' + e.message, 'err');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '✉ Enviar por correo';
+    btn.innerHTML = '💾 Guardar solicitud';
   }
+}
+
+async function enviarCorreoGuardada() {
+  if (!lastSavedSolicitud) return;
+  const s = lastSavedSolicitud;
+  window.location.href = buildMailto(s.numero, s.grupoNombre, s.responsableNombre, s.items, s.observacion);
+  try {
+    const r = await authFetch(`/rest/v1/solicitudes?id=eq.${s.id}`, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ estado: 'usada' })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+  } catch(e) {
+    toast('No se pudo marcar como usada: ' + e.message, 'err');
+  }
+  lastSavedSolicitud = null;
+  document.getElementById('send-mail-btn').style.display = 'none';
+  document.getElementById('submit-btn').style.display = '';
+  clearForm();
+  document.getElementById('sel-grupo').value = '';
+  onGrupoChange();
+  await loadHistory();
+}
+
+// ════════════════════════════════════════════════════
+//  ELIMINAR (desde Historial)
+// ════════════════════════════════════════════════════
+async function deleteSolicitudHist(id) {
+  if (!confirm('¿Eliminar esta solicitud? Esta acción no se puede deshacer.')) return;
+  try {
+    const r = await authFetch(`/rest/v1/solicitudes?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { 'Prefer': 'return=minimal' }
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    toast('Solicitud eliminada.', 'ok');
+    await loadHistory();
+  } catch(e) { toast('Error al eliminar: ' + e.message, 'err'); }
 }
 
 // ════════════════════════════════════════════════════
@@ -998,6 +1038,7 @@ function renderHistory() {
           <th>Para</th>
           <th class="num">Items</th>
           <th>Estado</th>
+          <th style="min-width:150px">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -1034,6 +1075,15 @@ function histRow(s) {
 
   const obsRow = s.observacion ? `<tr><td colspan="7" style="padding:6px 12px;font-size:.78rem;color:var(--muted)">📝 ${escHtml(s.observacion)}</td></tr>` : '';
 
+  const noUsada = s.estado !== 'usada';
+  const isOwn = s.usuario_id === SESSION.id;
+  const isAdmin = SESSION.role === 'admin';
+  const canDelete = isAdmin || (isOwn && noUsada);
+  const acciones = `
+    <td onclick="event.stopPropagation()">
+      ${canDelete ? `<button class="btn btn-sm" style="background:rgba(247,95,95,.1);color:var(--red);border:1px solid rgba(247,95,95,.25)" onclick="deleteSolicitudHist('${s.id}')" title="Eliminar">🗑</button>` : ''}
+    </td>`;
+
   return `
     <tr class="hist-row" onclick="toggleDetail('${detailId}')">
       <td style="color:var(--muted);font-size:.8rem;text-align:center">▶</td>
@@ -1044,9 +1094,10 @@ function histRow(s) {
       <td style="font-size:.82rem">${escHtml(responsableNombre)}</td>
       <td class="num">${items.length}</td>
       <td>${badge}</td>
+      ${acciones}
     </tr>
     <tr id="${detailId}" class="hist-detail">
-      <td colspan="8" style="padding:0">
+      <td colspan="9" style="padding:0">
         <div style="margin:0 12px 12px;background:var(--bg);border-radius:6px;overflow:hidden;border:1px solid var(--border)">
           <table class="data-table" style="margin:0">
             <thead>
@@ -1075,7 +1126,7 @@ function toggleDetail(id) {
 
 function statusBadge(estado) {
   const map = { pendiente: 'badge-pending', aprobada: 'badge-approved', rechazada: 'badge-rejected', usada: 'badge-usada' };
-  const labels = { pendiente: 'Pendiente', aprobada: 'Aprobada', rechazada: 'Rechazada', usada: 'Usada en GD' };
+  const labels = { pendiente: 'No usada', aprobada: 'Aprobada', rechazada: 'Rechazada', usada: 'Usada' };
   return `<span class="badge ${map[estado] || ''}">${labels[estado] || estado}</span>`;
 }
 
