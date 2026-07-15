@@ -139,6 +139,16 @@ export interface EstadoResultadoMensual {
   pct_avance_materiales_fabrica: number
 }
 
+export interface EstadoResultadoDetallePartida {
+  codigo_articulo: string
+  nombre: string
+  tarea_wip: string | null
+  categoria: string
+  mes: number
+  anio: number
+  monto: number
+}
+
 export interface AuditLogEntry {
   id: string
   tabla_afectada: string

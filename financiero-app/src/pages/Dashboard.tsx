@@ -9,10 +9,12 @@ import GraficoFacturadoPorMes from '@/components/GraficoFacturadoPorMes'
 import EstadoResultadoMensualView from '@/components/EstadoResultadoMensual'
 import { useSeguimiento } from '@/hooks/useSeguimiento'
 import { useEstadoResultado } from '@/hooks/useEstadoResultado'
+import { useEstadoResultadoDetalle } from '@/hooks/useEstadoResultadoDetalle'
 
 export default function Dashboard() {
   const { seguimiento, loading, error } = useSeguimiento()
   const { estadoResultado, loading: loadingResultado, error: errorResultado } = useEstadoResultado()
+  const { detalle: detalleResultado, loading: loadingDetalle } = useEstadoResultadoDetalle()
 
   return (
     <div className="space-y-4">
@@ -23,7 +25,12 @@ export default function Dashboard() {
         <p className="text-[.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
           Estado de Resultado Mensual
         </p>
-        <EstadoResultadoMensualView estadoResultado={estadoResultado} loading={loadingResultado} error={errorResultado} />
+        <EstadoResultadoMensualView
+          estadoResultado={estadoResultado}
+          detalle={detalleResultado}
+          loading={loadingResultado || loadingDetalle}
+          error={errorResultado}
+        />
       </div>
 
       <Tabs defaultValue="total">
