@@ -152,6 +152,7 @@ export default function TablaForecastMensual() {
           <TableHeader>
             <TableRow>
               <TableHead>Mes</TableHead>
+              <TableHead className="text-right">Presupuesto</TableHead>
               <TableHead className="text-right">Forecast</TableHead>
               <TableHead className="text-right">Facturado</TableHead>
               <TableHead className="text-right">Restante</TableHead>
@@ -167,6 +168,9 @@ export default function TablaForecastMensual() {
                   <TableCell>
                     {nombreMes(mes)} {anio}
                   </TableCell>
+                  <TableCell className="text-right">
+                    {presupuesto ? formatCLP(presupuesto.presupuesto_original) : '—'}
+                  </TableCell>
                   <TableCell className="text-right">{montoForecast === null ? '—' : formatCLP(montoForecast)}</TableCell>
                   <TableCell className="text-right">{formatCLP(facturadoMes)}</TableCell>
                   <TableCell className="text-right">{formatCLP(restante)}</TableCell>
@@ -178,6 +182,9 @@ export default function TablaForecastMensual() {
             })}
             <TableRow className="font-semibold">
               <TableCell>Total</TableCell>
+              <TableCell className="text-right">
+                {presupuesto ? formatCLP(presupuesto.presupuesto_original) : '—'}
+              </TableCell>
               <TableCell className="text-right">{formatCLP(totalForecast)}</TableCell>
               <TableCell className="text-right">{formatCLP(totalFacturado)}</TableCell>
               <TableCell className="text-right">{formatCLP(totalForecast - totalFacturado)}</TableCell>
