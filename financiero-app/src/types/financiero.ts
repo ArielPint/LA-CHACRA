@@ -115,6 +115,7 @@ export interface GastoDirecto {
   anio: number
   monto: number
   observacion: string | null
+  proveedor_rut: string | null
   created_by: string | null
   created_at: string
   updated_at: string

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import UploadPDF from '@/components/UploadPDF'
 import BuscadorPresupuestoWip from '@/components/BuscadorPresupuestoWip'
+import BuscadorProveedor from '@/components/BuscadorProveedor'
 import { usePresupuestosLookup, type PresupuestoLookup } from '@/hooks/usePresupuestosLookup'
 import { pdfPath, subirPdf } from '@/services/pdfStorage'
 import { extraerDatosOC } from '@/services/extraccionOC'
@@ -187,17 +188,20 @@ export default function FormularioOC({ ordenCompra, ordenesCompra, onCreate, onU
             )}
           </div>
           <BuscadorPresupuestoWip codigoWip={codigoWip} onCodigoWipChange={setCodigoWip} onResolved={setPresupuesto} />
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="proveedor_rut">RUT proveedor</Label>
-            <Input id="proveedor_rut" value={proveedorRut ?? ''} onChange={(e) => setProveedorRut(e.target.value)} />
-          </div>
+          <BuscadorProveedor
+            rut={proveedorRut ?? ''}
+            onRutChange={setProveedorRut}
+            onResolved={(nombre) => {
+              if (nombre) setNombreProveedorRaw(nombre)
+            }}
+          />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nombre_proveedor_raw">Nombre proveedor</Label>
             <Input
               id="nombre_proveedor_raw"
               value={nombreProveedorRaw ?? ''}
               onChange={(e) => setNombreProveedorRaw(e.target.value)}
-              placeholder="Se completa solo al leer el PDF, o escribilo a mano"
+              placeholder="Se completa solo si el RUT ya está guardado, o escribilo a mano"
             />
           </div>
           <div className="flex flex-col gap-1.5">

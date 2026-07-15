@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/services/supabaseClient'
 import type { GastoDirecto } from '@/types/financiero'
 
-type NuevoGasto = Pick<GastoDirecto, 'presupuesto_id' | 'mes' | 'anio' | 'monto' | 'observacion'>
+type NuevoGasto = Pick<GastoDirecto, 'presupuesto_id' | 'mes' | 'anio' | 'monto' | 'observacion' | 'proveedor_rut'>
 
 export function useGastosDirectos() {
   const [gastos, setGastos] = useState<GastoDirecto[]>([])

@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import RelacionOCFactura from '@/components/RelacionOCFactura'
+import BuscadorProveedor from '@/components/BuscadorProveedor'
 import UploadPDF from '@/components/UploadPDF'
 import { usePresupuestosLookup } from '@/hooks/usePresupuestosLookup'
 import { pdfPath, subirPdf } from '@/services/pdfStorage'
@@ -163,9 +164,8 @@ export default function FormularioFactura({ factura, facturas, ordenesCompra, on
               }}
             />
           </div>
+          <BuscadorProveedor rut={proveedorRut ?? ''} onRutChange={setProveedorRut} onResolved={() => {}} />
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="proveedor_rut">RUT proveedor</Label>
-            <Input id="proveedor_rut" value={proveedorRut ?? ''} onChange={(e) => setProveedorRut(e.target.value)} />
             {facturaDuplicada && (
               <p className="flex items-center gap-1.5 text-sm text-warning">
                 <AlertTriangle className="size-3.5 shrink-0" />

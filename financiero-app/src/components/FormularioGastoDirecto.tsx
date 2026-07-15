@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { usePresupuestosLookup } from '@/hooks/usePresupuestosLookup'
+import BuscadorProveedor from '@/components/BuscadorProveedor'
 import { MESES } from '@/utils/formatters'
 import type { GastoDirecto } from '@/types/financiero'
 
@@ -26,6 +27,7 @@ interface FormularioGastoDirectoProps {
     anio: number
     monto: number
     observacion: string | null
+    proveedor_rut: string | null
   }) => Promise<GastoDirecto>
 }
 
@@ -40,6 +42,7 @@ export default function FormularioGastoDirecto({ registroExistente, onUpsert }: 
   const [anio, setAnio] = useState(String(registroExistente?.anio ?? new Date().getFullYear()))
   const [monto, setMonto] = useState(String(registroExistente?.monto ?? ''))
   const [observacion, setObservacion] = useState(registroExistente?.observacion ?? '')
+  const [proveedorRut, setProveedorRut] = useState(registroExistente?.proveedor_rut ?? '')
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -53,6 +56,7 @@ export default function FormularioGastoDirecto({ registroExistente, onUpsert }: 
         anio: Number(anio),
         monto: Number(monto),
         observacion: observacion.trim() || null,
+        proveedor_rut: proveedorRut.trim() || null,
       })
       toast.success('Gasto guardado')
       if (!esEdicion) {
@@ -114,6 +118,7 @@ export default function FormularioGastoDirecto({ registroExistente, onUpsert }: 
             <Label htmlFor="anio">Año</Label>
             <Input id="anio" type="number" value={anio} onChange={(e) => setAnio(e.target.value)} disabled={esEdicion} required />
           </div>
+          <BuscadorProveedor rut={proveedorRut} onRutChange={setProveedorRut} onResolved={() => {}} />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="monto">Monto (CLP)</Label>
             <Input id="monto" type="number" min="0" step="1" value={monto} onChange={(e) => setMonto(e.target.value)} required />
