@@ -528,6 +528,31 @@ async function getWorkerIdsForGroup(groupDescription) {
   return [];
 }
 
+// Obtiene los IDs de TODOS los trabajadores de los grupos permitidos (nómina completa).
+// Usado cuando no hay filtro de grupo ("Todos los grupos"), para no depender
+// de quién marcó ingreso recientemente (_punches), que es solo un subconjunto.
+async function getAllAllowedWorkerIds() {
+  if (_workers.length === 0) {
+    try {
+      const data = await GeoVictoria.getWorkers();
+      _workers = Array.isArray(data) ? data : [];
+    } catch(e) {
+      // apiv3 no disponible
+    }
+  }
+  const fromWorkers = _workers
+    .filter(w => inAllowedGroup(w.GroupDescription))
+    .map(w => w.Identifier)
+    .filter(Boolean);
+  if (fromWorkers.length > 0) return [...new Set(fromWorkers)];
+
+  const fromCache = _cachedUsers
+    .filter(u => inAllowedGroup(u.GroupDescription || u.Group || u.GroupName || ''))
+    .map(u => u.Identifier || u.UserIdentifier)
+    .filter(Boolean);
+  return [...new Set(fromCache)];
+}
+
 // Acumula usuarios únicos de cualquier respuesta AttendanceBook en _cachedUsers
 function mergeIntoUserCache(users) {
   if (!Array.isArray(users) || users.length === 0) return;
@@ -656,12 +681,28 @@ async function loadAttendance() {
       userIds = users.split(',').map(s => s.trim()).filter(Boolean);
     } else if (groupFilter) {
       userIds = await getWorkerIdsForGroup(groupFilter);
-      // Si no hay IDs del grupo en caché, dejar vacío: la API devuelve TODOS
-      // los colaboradores y se filtra por grupo en el cliente (más abajo).
+      // Si no hay IDs del grupo en caché, usar punch IDs y filtrar la respuesta client-side
+      if (userIds.length === 0) {
+        userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      }
+    } else {
+      // Sin filtro de grupo: usar la nómina completa, no solo quienes marcaron hoy
+      userIds = await getAllAllowedWorkerIds();
+      if (userIds.length === 0) {
+        userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      }
     }
-    // Sin RUTs ni grupo: userIds queda vacío a propósito. AttendanceBook sin
-    // UserIds devuelve la nómina completa de la empresa (fuente confiable,
-    // no depende de quién marcó ingreso reciente en "En Predio Ahora").
+
+    if (userIds.length === 0) {
+      body.innerHTML = `<div class="empty-msg">
+        <strong>Carga primero "En Predio Ahora"</strong>
+        <p style="margin-top:8px;color:var(--muted)">
+          Ve primero a la pestaña <strong>En Predio Ahora</strong> para cargar los
+          identificadores de trabajadores, luego vuelve aquí y consulta.
+        </p>
+      </div>`;
+      return;
+    }
 
     const data = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
     _attendanceData = Array.isArray(data?.Users) ? data.Users : [];
@@ -761,11 +802,28 @@ async function loadResumen() {
 
     if (groupFilter) {
       userIds = await getWorkerIdsForGroup(groupFilter);
-      // Sin IDs del grupo en caché: dejar vacío, la API devuelve TODOS los
-      // colaboradores y se filtra por grupo en el cliente (renderResumen).
+      // Sin IDs del grupo → usar todos los punch IDs y filtrar client-side
+      if (userIds.length === 0) {
+        userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      }
+    } else {
+      // Sin filtro de grupo: usar la nómina completa, no solo quienes marcaron hoy
+      userIds = await getAllAllowedWorkerIds();
+      if (userIds.length === 0) {
+        userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      }
     }
-    // Sin filtro de grupo: userIds vacío a propósito. AttendanceBook sin
-    // UserIds devuelve la nómina completa de la empresa (fuente confiable).
+
+    if (userIds.length === 0) {
+      body.innerHTML = `<div class="empty-msg">
+        <strong>Carga primero "En Predio Ahora"</strong>
+        <p style="margin-top:8px;color:var(--muted)">
+          Ve primero a la pestaña <strong>En Predio Ahora</strong> para cargar los
+          identificadores de trabajadores, luego vuelve aquí y consulta.
+        </p>
+      </div>`;
+      return;
+    }
 
     const data  = await GeoVictoria.getAttendanceBook({ userIds, startDate, endDate });
     let users = Array.isArray(data?.Users) ? data.Users : [];
