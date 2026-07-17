@@ -528,6 +528,31 @@ async function getWorkerIdsForGroup(groupDescription) {
   return [];
 }
 
+// Obtiene los IDs de TODOS los trabajadores de los grupos permitidos (nómina completa).
+// Usado cuando no hay filtro de grupo ("Todos los grupos"), para no depender
+// de quién marcó ingreso recientemente (_punches), que es solo un subconjunto.
+async function getAllAllowedWorkerIds() {
+  if (_workers.length === 0) {
+    try {
+      const data = await GeoVictoria.getWorkers();
+      _workers = Array.isArray(data) ? data : [];
+    } catch(e) {
+      // apiv3 no disponible
+    }
+  }
+  const fromWorkers = _workers
+    .filter(w => inAllowedGroup(w.GroupDescription))
+    .map(w => w.Identifier)
+    .filter(Boolean);
+  if (fromWorkers.length > 0) return [...new Set(fromWorkers)];
+
+  const fromCache = _cachedUsers
+    .filter(u => inAllowedGroup(u.GroupDescription || u.Group || u.GroupName || ''))
+    .map(u => u.Identifier || u.UserIdentifier)
+    .filter(Boolean);
+  return [...new Set(fromCache)];
+}
+
 // Acumula usuarios únicos de cualquier respuesta AttendanceBook en _cachedUsers
 function mergeIntoUserCache(users) {
   if (!Array.isArray(users) || users.length === 0) return;
@@ -661,7 +686,11 @@ async function loadAttendance() {
         userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
       }
     } else {
-      userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      // Sin filtro de grupo: usar la nómina completa, no solo quienes marcaron hoy
+      userIds = await getAllAllowedWorkerIds();
+      if (userIds.length === 0) {
+        userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      }
     }
 
     if (userIds.length === 0) {
@@ -778,7 +807,11 @@ async function loadResumen() {
         userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
       }
     } else {
-      userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      // Sin filtro de grupo: usar la nómina completa, no solo quienes marcaron hoy
+      userIds = await getAllAllowedWorkerIds();
+      if (userIds.length === 0) {
+        userIds = [...new Set(_punches.map(p => p.UserIdentifier).filter(Boolean))];
+      }
     }
 
     if (userIds.length === 0) {
