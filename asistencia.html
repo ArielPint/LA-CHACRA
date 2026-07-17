@@ -994,10 +994,13 @@ function renderResumen(users, from, to, groupFilter) {
 async function loadWorkers() {
   const body = document.getElementById('workers-body');
   body.innerHTML = '<div class="spinner"></div>';
+  let workersError = '';
   try {
     const data = await GeoVictoria.getWorkers();
     _workers = Array.isArray(data) ? data : [];
   } catch(e) {
+    workersError = e.message || '';
+    console.warn('GeoVictoria.getWorkers() falló:', workersError);
     // apiv3 no disponible → reconstruir desde _cachedUsers (acumulado de AttendanceBook)
     const source = _cachedUsers.length > 0 ? _cachedUsers : _attendanceData;
     if (source.length > 0) {
@@ -1024,7 +1027,7 @@ async function loadWorkers() {
       body.innerHTML = `<div class="empty-msg">
         <strong>Nómina no disponible directamente</strong>
         <p style="margin-top:8px;color:var(--muted)">
-          El endpoint de trabajadores no responde (401).<br>
+          El endpoint de trabajadores no respondió: ${esc(workersError || 'error desconocido')}<br>
           Ve a <strong>Resumen</strong> o <strong>Libro de Asistencia</strong>, consulta
           un rango de fechas y vuelve aquí — los trabajadores se cargarán desde esos datos.
         </p>
