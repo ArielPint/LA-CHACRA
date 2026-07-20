@@ -322,16 +322,9 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="kpi-row" id="kpi-stock"></div>
 
-  <!-- Fila 1: cobertura + valor por tipo -->
-  <div class="grid-2">
-    <div class="card"><h3>Cobertura promedio por tipo de material (módulos)</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-cob-tipo"></canvas></div></div>
-    <div class="card"><h3>Distribución valor de stock por tipo</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-val-tipo"></canvas></div></div>
-  </div>
-
-  <!-- Fila 2: criticidad + top alcance individual -->
-  <div class="grid-2">
-    <div class="card"><h3>Items críticos, bajos y OK por tipo de material</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-crit-tipo"></canvas></div></div>
-    <div class="card"><h3>Top 20 — menor alcance individual (módulos)</h3><div class="chart-wrap" style="height:300px"><canvas id="ch-alcance"></canvas></div></div>
+  <!-- Comparación stock actual vs anterior -->
+  <div class="grid-1">
+    <div class="card"><h3>Stock actual vs semana anterior por producto (top 20 variación)</h3><div class="chart-wrap" style="height:340px"><canvas id="ch-stock-comp"></canvas></div></div>
   </div>
 
   <!-- Pérdidas en proceso -->
@@ -344,14 +337,12 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="sec-title">Detalle stock</div>
   <div class="filter-bar">
     <label>Buscar:</label><input id="stock-search" type="text" placeholder="material, código...">
-    <label>Estado:</label>
-    <select id="stock-estado">
+    <label>Tipo Material:</label>
+    <select id="stock-tipo">
       <option value="">Todos</option>
-      <option value="critico">Crítico (&lt;5 mód)</option>
-      <option value="bajo">Bajo (5–14 mód)</option>
-      <option value="ok">OK (≥15 mód)</option>
+      <option value="PRODUCTO CRITICO">Crítico</option>
+      <option value="NO CRITICO">No Crítico</option>
     </select>
-    <label>Tipo:</label><select id="stock-tipo"><option value="">Todos los tipos</option></select>
   </div>
   <div class="card"><div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="exportTableToExcel('tbl-stock','stock')" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">⬇ Excel</button></div><div class="tbl-wrap"><table id="tbl-stock"><thead></thead><tbody></tbody></table></div></div>
 </div>
@@ -709,17 +700,26 @@ async function loadStockSupa(){
       const sf=+(row.stock_fisico||0);
       const consumoMod=prod.cantMod!=null?+prod.cantMod:null;
       const valorUN=prod.precioUN!=null?+prod.precioUN:(prod.precioCompra!=null?+prod.precioCompra:null);
-      const consumo=prod.cantRec!=null?+prod.cantRec:null;
+      // Consumo real = material comprado y recibido que ya no está en stock físico
+      const recibido=prod.cantRec!=null?+prod.cantRec:null;
+      const consumo=recibido!=null?Math.max(0,+(recibido-sf).toFixed(4)):null;
       const alcanceMod=consumoMod&&consumoMod>0?+(sf/consumoMod).toFixed(4):null;
+      const consumoEquivMod=consumoMod&&consumoMod>0&&consumo!=null?+(consumo/consumoMod).toFixed(4):null;
+      // Pérdida = consumo real por encima de lo que justifican los módulos construidos
+      const consumoTeorico=consumoMod!=null?modConstruidos*consumoMod:null;
+      const perdida=(consumo!=null&&consumoTeorico!=null)?+(consumo-consumoTeorico).toFixed(4):null;
+      const perdidaEquivMod=consumoMod&&consumoMod>0&&perdida!=null?+(perdida/consumoMod).toFixed(4):null;
       const valorStock=valorUN!=null?+(sf*valorUN).toFixed(2):null;
+      const consumoValorizado=valorUN!=null&&consumo!=null?+(consumo*valorUN).toFixed(2):null;
+      const valorPerdida=valorUN!=null&&perdida!=null?+(perdida*valorUN).toFixed(2):null;
       return{
         fecha:row.fecha,codigo:row.codigo,material:row.material,um:row.unidad,
         totalSol:null,cantMod:cantModTotal,stockFisico:sf,
         desc:prod.desc||row.material,solicitadoTF:null,consumo:consumo,
-        cubPpto:null,consumoMod:consumoMod,
-        alcanceMod:alcanceMod,alcanceFisico:null,
-        perdida:0,valorUN:valorUN,
-        valorPerdida:0,valorStock:valorStock,
+        cubPpto:null,consumoMod:consumoMod,critico:prod.critico,
+        alcanceMod:alcanceMod,alcanceFisico:null,consumoEquivMod:consumoEquivMod,
+        perdida:perdida,perdidaEquivMod:perdidaEquivMod,valorUN:valorUN,
+        valorPerdida:valorPerdida,valorStock:valorStock,consumoValorizado:consumoValorizado,
         modConstruidos:modConstruidos,
         _semanaKey:row.semana_key
       };
@@ -2375,12 +2375,6 @@ let _stockData=[];       // datos de la semana activa (o todos)
 let _stockAllData=[];    // todos los datos sin filtro de semana
 let _stockSemanas=[];    // [{ts, lbl}] ordenadas asc
 
-function _stockEstado(alc){ return alc<5?'critico':alc<15?'bajo':'ok'; }
-function _stockTipoLabel(x){
-  // Prefer a non-empty, non-numeric desc; fall back to material name
-  const d=(x.desc||'').trim();
-  return d&&!/^\d+$/.test(d)?d:(x.material||'Sin tipo').trim();
-}
 function _stockModConstruidos(s){
   // Use the maximum value found across all rows (most reliable)
   const vals=s.map(x=>x.modConstruidos).filter(v=>v!=null&&v>0);
@@ -2453,6 +2447,13 @@ function renderStock(){
   }
 }
 
+function _stockPrevWeekTs(curTs){
+  if(!_stockSemanas.length) return null;
+  if(!curTs) return _stockSemanas.length>1?_stockSemanas[_stockSemanas.length-2].ts:null;
+  const i=_stockSemanas.findIndex(w=>w.ts===curTs);
+  return i>0?_stockSemanas[i-1].ts:null;
+}
+
 function _stockRenderCharts(){
   const s=_stockData;
   const totalValor=s.reduce((a,x)=>a+(x.valorStock||0),0);
@@ -2468,107 +2469,27 @@ function _stockRenderCharts(){
     {lbl:'Val. pérdidas/proceso', val:fmtM(totalPerdi),    cls:totalPerdi>0?'c-yellow':''},
   ]);
 
-  // ── Agrupar por tipo (campo desc normalizado) ──
-  const tipoMap={};
-  s.forEach(x=>{
-    const t=_stockTipoLabel(x);
-    if(!tipoMap[t]) tipoMap[t]={alcs:[],val:0,critico:0,bajo:0,ok:0};
-    if(x.alcanceMod!=null) tipoMap[t].alcs.push(x.alcanceMod);
-    tipoMap[t].val+=(x.valorStock||0);
-    const estado=_stockEstado(x.alcanceMod||0);
-    tipoMap[t][estado]++;
-  });
-  const tipos=Object.keys(tipoMap).sort();
-  const cobAvg=tipos.map(t=>{const a=tipoMap[t].alcs;return a.length?+(a.reduce((s,v)=>s+v,0)/a.length).toFixed(2):0;});
-  const valTipo=tipos.map(t=>Math.round(tipoMap[t].val));
-  const critArr=tipos.map(t=>tipoMap[t].critico);
-  const bajoArr=tipos.map(t=>tipoMap[t].bajo);
-  const okArr  =tipos.map(t=>tipoMap[t].ok);
-
-  // Chart 1: cobertura promedio por tipo — tooltip con nombre completo
-  killChart('ch-cob-tipo');
-  (()=>{
-    const ctx=document.getElementById('ch-cob-tipo')?.getContext('2d'); if(!ctx) return;
-    CHARTS['ch-cob-tipo']=new Chart(ctx,{
-      type:'bar',
-      data:{labels:tipos,datasets:[{
-        label:'Cobertura prom. (mód.)',data:cobAvg,
-        backgroundColor:cobAvg.map(v=>v<5?'rgba(248,81,73,.82)':v<15?'rgba(210,153,34,.78)':'rgba(63,185,80,.78)'),
-        borderRadius:5
-      }]},
-      options:{
-        indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        layout:{padding:{right:60}},
-        plugins:{
-          legend:{display:false},
-          datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
-          tooltip:{callbacks:{
-            title:items=>[tipos[items[0].dataIndex]],
-            label:c=>` Cobertura: ${c.parsed.x.toFixed(2)} módulos`
-          }}
-        },
-        scales:{
-          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
-          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',font:{size:10}},border:{color:'rgba(255,255,255,0.04)'}}
-        }
-      }
+  // ── Stock actual vs semana anterior por producto ──
+  const sel=document.getElementById('stock-semana-sel');
+  const curTs=sel?+sel.value||0:0;
+  const prevTs=_stockPrevWeekTs(curTs);
+  const prevMap={};
+  if(prevTs){
+    _stockAllData.forEach(x=>{
+      const d=parseDate(x.fecha); if(!d||isNaN(d)) return;
+      if(weekKey(d)===prevTs) prevMap[String(x.codigo).trim().toUpperCase()]=x.stockFisico;
     });
-  })();
-
-  // Chart 2: donut valor por tipo
-  doughnutChart('ch-val-tipo', tipos, valTipo,
-    ['#4f8ef7','#ed3224','#3ecf8e','#f7a24f','#9f7aea','#f75f5f','#38bdf8','#fbbf24',
-     '#a3e635','#e879f9','#67e8f9','#fb923c','#94a3b8','#f472b6','#34d399'],
-    true);
-
-  // Chart 3: criticidad stacked por tipo
-  groupedBar('ch-crit-tipo', tipos, [
-    {label:'Crítico (<5 mód)',  data:critArr, backgroundColor:'rgba(248,81,73,.82)',  borderRadius:3},
-    {label:'Bajo (5-14 mód)',   data:bajoArr, backgroundColor:'rgba(210,153,34,.78)', borderRadius:3},
-    {label:'OK (≥15 mód)',      data:okArr,   backgroundColor:'rgba(63,185,80,.75)',  borderRadius:3}
-  ], {legend:true});
-
-  // Chart 4: top 20 menor alcance — tooltip con nombre completo y código
-  const sorted=[...s].sort((a,b)=>(a.alcanceMod||0)-(b.alcanceMod||0)).slice(0,20);
-  killChart('ch-alcance');
-  (()=>{
-    const ctx=document.getElementById('ch-alcance')?.getContext('2d'); if(!ctx) return;
-    const fullNames=sorted.map(x=>x.desc||x.material||'—');
-    const codes=sorted.map(x=>x.codigo||x.material||'');
-    CHARTS['ch-alcance']=new Chart(ctx,{
-      type:'bar',
-      data:{labels:sorted.map(x=>(x.desc||x.material||'').substring(0,22)),datasets:[{
-        label:'Alcance (mód.)',
-        data:sorted.map(x=>+(x.alcanceMod||0).toFixed(2)),
-        backgroundColor:sorted.map(x=>(x.alcanceMod||0)<5?'rgba(248,81,73,.8)':(x.alcanceMod||0)<15?'rgba(210,153,34,.75)':'rgba(63,185,80,.75)'),
-        borderRadius:5
-      }]},
-      options:{
-        indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        layout:{padding:{right:60}},
-        plugins:{
-          legend:{display:false},
-          datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v.toFixed(1)},
-          tooltip:{callbacks:{
-            title:items=>[fullNames[items[0].dataIndex]+(codes[items[0].dataIndex]?' ['+codes[items[0].dataIndex]+']':'')],
-            label:c=>` Alcance: ${c.parsed.x.toFixed(2)} módulos`
-          }}
-        },
-        scales:{
-          x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
-          y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590',font:{size:10}},border:{color:'rgba(255,255,255,0.04)'}}
-        }
-      }
-    });
-  })();
-
-  // ── Poblar selector de tipos ──
-  const tipoSel=document.getElementById('stock-tipo');
-  if(tipoSel){
-    const cur=tipoSel.value;
-    tipoSel.innerHTML='<option value="">Todos los tipos</option>'+tipos.map(t=>`<option value="${t}">${t}</option>`).join('');
-    if(cur&&tipos.includes(cur)) tipoSel.value=cur;
   }
+  const withPrev=s.map(x=>({
+    x, prev:prevMap[String(x.codigo).trim().toUpperCase()]??null
+  }));
+  const compSorted=[...withPrev].sort((a,b)=>
+    Math.abs((b.x.stockFisico||0)-(b.prev||0))-Math.abs((a.x.stockFisico||0)-(a.prev||0))
+  ).slice(0,20);
+  groupedBar('ch-stock-comp', compSorted.map(r=>(r.x.desc||r.x.material||'').substring(0,18)), [
+    {label:'Anterior', data:compSorted.map(r=>r.prev!=null?+r.prev.toFixed(2):0), backgroundColor:'rgba(125,133,144,.6)', borderRadius:3},
+    {label:'Actual',   data:compSorted.map(r=>+((r.x.stockFisico||0).toFixed(2))), backgroundColor:'rgba(79,142,247,.8)', borderRadius:3}
+  ], {legend:true});
 
   // ── Tabla de pérdidas ──
   const conPerdida=s.filter(x=>(x.valorPerdida||0)>0).sort((a,b)=>(b.valorPerdida||0)-(a.valorPerdida||0));
@@ -2596,7 +2517,7 @@ function _stockRenderCharts(){
   renderStockTable();
 
   // Conectar filtros (solo una vez)
-  ['stock-search','stock-estado','stock-tipo'].forEach(id=>{
+  ['stock-search','stock-tipo'].forEach(id=>{
     const el=document.getElementById(id); if(!el||el._stockBound) return;
     el._stockBound=true;
     el.addEventListener('input', renderStockTable);
@@ -2607,12 +2528,10 @@ function _stockRenderCharts(){
 function renderStockTable(){
   const s=_stockData;
   const q=(document.getElementById('stock-search')?.value||'').toLowerCase().trim();
-  const est=document.getElementById('stock-estado')?.value||'';
   const tipo=document.getElementById('stock-tipo')?.value||'';
 
   const filtered=[...s].filter(x=>{
-    if(est && _stockEstado(x.alcanceMod||0)!==est) return false;
-    if(tipo && _stockTipoLabel(x)!==tipo) return false;
+    if(tipo && x.critico!==tipo) return false;
     if(q){
       const hay=(x.codigo||'')+(x.desc||'')+(x.material||'');
       if(!hay.toLowerCase().includes(q)) return false;
@@ -2621,22 +2540,25 @@ function renderStockTable(){
   }).sort((a,b)=>(a.alcanceMod??999)-(b.alcanceMod??999));
 
   document.querySelector('#tbl-stock thead').innerHTML=
-    `<tr><th>Código</th><th>Descripción</th><th>Stock físico</th><th>Consumo</th><th>Consumo/mód</th><th>Alcance (mód)</th><th>Val. unitario</th><th>Valor stock</th><th>Estado</th></tr>`;
+    `<tr><th>Código</th><th>Descripción</th><th>Stock Físico</th><th>Alcance x Módulo</th><th>Consumo Total</th><th>Equivalencia en Módulos</th><th>Pérdida o en Tránsito</th><th>Equivalencia en Módulos</th><th>Stock Valorizado</th><th>Consumo Valorizado</th><th>Pérdida/Tránsito Valorizado</th></tr>`;
   document.querySelector('#tbl-stock tbody').innerHTML=filtered.map(x=>{
     const alc=x.alcanceMod||0;
-    const badge=alc<5?'<span class="badge b-red">Crítico</span>':alc<15?'<span class="badge b-yellow">Bajo</span>':'<span class="badge b-green">OK</span>';
+    const perdida=x.perdida;
+    const perdidaClr=perdida==null?'':perdida>0?'var(--red)':perdida<0?'var(--blue,#58a6ff)':'var(--text)';
     return`<tr>
       <td style="color:var(--muted);font-size:.78rem">${x.codigo||'—'}</td>
       <td title="${x.desc||''}">${(x.desc||'—').substring(0,40)}</td>
       <td class="num">${fmt(x.stockFisico)}</td>
-      <td class="num">${fmt(x.consumo)}</td>
-      <td class="num">${x.consumoMod!=null?x.consumoMod.toFixed(2):'—'}</td>
       <td class="num" style="color:${alc<5?'var(--red)':alc<15?'var(--yellow)':'var(--green)'}">${alc.toFixed(2)}</td>
-      <td class="num">${fmtM(x.valorUN)}</td>
+      <td class="num">${fmt(x.consumo)}</td>
+      <td class="num">${x.consumoEquivMod!=null?x.consumoEquivMod.toFixed(2):'—'}</td>
+      <td class="num" style="color:${perdidaClr}">${perdida!=null?perdida.toFixed(2):'—'}</td>
+      <td class="num" style="color:${perdidaClr}">${x.perdidaEquivMod!=null?x.perdidaEquivMod.toFixed(2):'—'}</td>
       <td class="num">${fmtM(x.valorStock)}</td>
-      <td>${badge}</td>
+      <td class="num">${fmtM(x.consumoValorizado)}</td>
+      <td class="num" style="color:${perdidaClr}">${fmtM(x.valorPerdida)}</td>
     </tr>`;
-  }).join('')||(filtered.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">Sin resultados</td></tr>':'');
+  }).join('')||(filtered.length===0?'<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:24px">Sin resultados</td></tr>':'');
 }
 
 function abrirStockIngreso(){
