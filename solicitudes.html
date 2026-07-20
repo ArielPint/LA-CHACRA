@@ -695,13 +695,29 @@ function onQtySolChange(id) {
   if (!row.dataset.realDirty) {
     realInput.value = document.getElementById('qty-' + id).value;
   }
+  syncModulosFromQty(id);
   renderResumen();
 }
 
 function onQtyRealChange(id) {
   const row = document.getElementById('row-' + id);
   row.dataset.realDirty = '1';
+  syncModulosFromQty(id);
   renderResumen();
+}
+
+// Refleja en el input Módulos la equivalencia de la Cant. Real tipeada a mano
+function syncModulosFromQty(id) {
+  const row = document.getElementById('row-' + id);
+  const modInput = document.getElementById('mod-' + id);
+  if (modInput.disabled) return;
+  const cpm = parseFloat(row.dataset.cantidadPorModulo);
+  const qtyReal = parseFloat(document.getElementById('qty-real-' + id).value);
+  if (isNaN(cpm) || cpm <= 0 || isNaN(qtyReal) || qtyReal <= 0) {
+    modInput.value = '';
+    return;
+  }
+  modInput.value = +(qtyReal / cpm).toFixed(2);
 }
 
 // Solicitar por cantidad de módulos: calcula Cant. Sol / Cant. Real = módulos × cantidad_por_modulo
