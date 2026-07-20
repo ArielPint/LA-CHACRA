@@ -242,7 +242,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <span style="text-align:center">Unidad</span>
         <span style="text-align:center" title="Lo que tipea el solicitante">Cant. Sol.</span>
         <span style="text-align:center" title="La que se compra realmente, va al correo">Cant. Real</span>
-        <span style="text-align:center">Módulos</span>
+        <span style="text-align:center" title="Tipea cant. de módulos y calcula la Cant. Real">Módulos</span>
         <span></span>
       </div>
       <div id="items-list"></div>
@@ -539,7 +539,7 @@ async function loadGruposResponsables() {
   });
 }
 
-function onGrupoChange() {
+async function onGrupoChange() {
   const grupoId = document.getElementById('sel-grupo').value;
   const selResp = document.getElementById('sel-responsable');
   selResp.innerHTML = '';
@@ -550,6 +550,43 @@ function onGrupoChange() {
   const opts = responsablesList.filter(r => String(r.grupo_id) === String(grupoId));
   selResp.innerHTML = '<option value="">Selecciona responsable...</option>' +
     opts.map(r => `<option value="${r.id}">${escHtml(r.nombre)}</option>`).join('');
+
+  await loadRecetaParaGrupo(grupoId);
+}
+
+// ════════════════════════════════════════════════════
+//  RECETA DE MATERIALES POR GRUPO
+// ════════════════════════════════════════════════════
+let recetasCache = {}; // grupo_id -> [codigo,...]
+
+async function loadRecetaGrupo(grupoId) {
+  if (recetasCache[grupoId]) return recetasCache[grupoId];
+  try {
+    const r = await authFetch(`/rest/v1/recetas_grupo?grupo_id=eq.${grupoId}&select=codigo`);
+    const data = r.ok ? await r.json() : [];
+    recetasCache[grupoId] = data.map(d => d.codigo);
+  } catch(e) {
+    recetasCache[grupoId] = [];
+  }
+  return recetasCache[grupoId];
+}
+
+// Reemplaza la lista de ítems por la receta del grupo (cantidades en 0). Se puede seguir
+// agregando materiales adicionales con "+ Agregar producto".
+async function loadRecetaParaGrupo(grupoId) {
+  const codigos = await loadRecetaGrupo(grupoId);
+  document.getElementById('items-list').innerHTML = '';
+  if (codigos.length === 0) {
+    addItemRow();
+    renderResumen();
+    return;
+  }
+  const codeSet = new Set(codigos.map(c => c.toUpperCase()));
+  const productos = allProducts
+    .filter(p => codeSet.has(p.codigo.toUpperCase()))
+    .sort((a,b) => a.descripcion.localeCompare(b.descripcion));
+  productos.forEach(p => addItemRow(p));
+  renderResumen();
 }
 
 // ════════════════════════════════════════════════════
@@ -607,30 +644,35 @@ function searchProducts(query) {
 // ════════════════════════════════════════════════════
 //  ITEMS / COMBOBOX
 // ════════════════════════════════════════════════════
-function addItemRow() {
+function addItemRow(product) {
   const id = ++rowCounter;
   const list = document.getElementById('items-list');
   const div = document.createElement('div');
   div.className = 'item-row';
   div.id = 'row-' + id;
-  div.dataset.codigo = '';
-  div.dataset.descripcion = '';
-  div.dataset.unidad = '';
+  div.dataset.codigo = product ? product.codigo : '';
+  div.dataset.descripcion = product ? product.descripcion : '';
+  div.dataset.unidad = product ? product.unidad : '';
+  div.dataset.grupo = product && product.grupo ? product.grupo : '';
+  div.dataset.cantidadPorModulo = product && product.cantidad_por_modulo != null ? product.cantidad_por_modulo : '';
+
+  const hasCpm = product && product.cantidad_por_modulo != null && product.cantidad_por_modulo > 0;
+  const qtyDefault = product ? '0' : '';
 
   div.innerHTML = `
     <div class="combo-wrap">
-      <input class="combo-input" id="combo-input-${id}" placeholder="Buscar producto por descripción o código..."
-        autocomplete="off"
+      <input class="combo-input${product ? ' selected' : ''}" id="combo-input-${id}" placeholder="Buscar producto por descripción o código..."
+        autocomplete="off" value="${product ? escHtml(product.descripcion) : ''}"
         oninput="onComboInput(${id}, this.value)"
         onfocus="onComboFocus(${id})"
         onblur="onComboBlur(${id})"
         onkeydown="onComboKey(event, ${id})">
       <div class="combo-dropdown" id="combo-dd-${id}"></div>
     </div>
-    <div class="unit-badge" id="unit-${id}">—</div>
-    <input class="qty-input" id="qty-${id}" type="number" min="1" step="1" placeholder="0" value="" oninput="onQtySolChange(${id})">
-    <input class="qty-input" id="qty-real-${id}" type="number" min="1" step="1" placeholder="0" value="" oninput="onQtyRealChange(${id})">
-    <div class="mod-badge empty" id="mod-${id}">—</div>
+    <div class="unit-badge" id="unit-${id}">${product ? escHtml(product.unidad) : '—'}</div>
+    <input class="qty-input" id="qty-${id}" type="number" min="0" step="1" placeholder="0" value="${qtyDefault}" oninput="onQtySolChange(${id})">
+    <input class="qty-input" id="qty-real-${id}" type="number" min="0" step="1" placeholder="0" value="${qtyDefault}" oninput="onQtyRealChange(${id})">
+    <input class="qty-input" id="mod-${id}" type="number" min="0" step="any" placeholder="${hasCpm ? '0' : '—'}" ${hasCpm ? '' : 'disabled'} title="Cantidad de módulos: calcula la Cant. Real" oninput="onModulosChange(${id})">
     <button class="btn-remove" onclick="removeRow(${id})" title="Eliminar">✕</button>`;
 
   list.appendChild(div);
@@ -653,38 +695,25 @@ function onQtySolChange(id) {
   if (!row.dataset.realDirty) {
     realInput.value = document.getElementById('qty-' + id).value;
   }
-  updateModBadge(id);
+  renderResumen();
 }
 
 function onQtyRealChange(id) {
   const row = document.getElementById('row-' + id);
   row.dataset.realDirty = '1';
-  updateModBadge(id);
+  renderResumen();
 }
 
-function updateModBadge(id) {
+// Solicitar por cantidad de módulos: calcula Cant. Sol / Cant. Real = módulos × cantidad_por_modulo
+function onModulosChange(id) {
   const row = document.getElementById('row-' + id);
-  const qtyReal = parseFloat(document.getElementById('qty-real-' + id).value);
   const cpm = parseFloat(row.dataset.cantidadPorModulo);
-  const el = document.getElementById('mod-' + id);
-  if (!isNaN(qtyReal) && qtyReal > 0 && !isNaN(cpm) && cpm > 0) {
-    const modulos = qtyReal / cpm;
-    el.classList.remove('empty');
-    if (modulos > MODULOS_ALERTA) {
-      el.innerHTML = `⚠ ${modulos.toFixed(2)}`;
-      el.title = `Supera ${MODULOS_ALERTA} módulos`;
-      el.style.color = 'var(--red)';
-    } else {
-      el.textContent = modulos.toFixed(2);
-      el.title = '';
-      el.style.color = '';
-    }
-  } else {
-    el.textContent = '—';
-    el.title = '';
-    el.style.color = '';
-    el.classList.add('empty');
-  }
+  const modulos = parseFloat(document.getElementById('mod-' + id).value);
+  if (isNaN(cpm) || cpm <= 0 || isNaN(modulos)) return;
+  const real = +(modulos * cpm).toFixed(2);
+  document.getElementById('qty-' + id).value = real;
+  document.getElementById('qty-real-' + id).value = real;
+  delete row.dataset.realDirty;
   renderResumen();
 }
 
@@ -781,7 +810,12 @@ function selectProduct(id, p) {
   row.dataset.cantidadPorModulo = p.cantidad_por_modulo != null ? p.cantidad_por_modulo : '';
   document.getElementById('unit-' + id).textContent = p.unidad;
   document.getElementById('combo-dd-' + id).classList.remove('open');
-  updateModBadge(id);
+  const modInput = document.getElementById('mod-' + id);
+  const hasCpm = p.cantidad_por_modulo != null && p.cantidad_por_modulo > 0;
+  modInput.disabled = !hasCpm;
+  modInput.placeholder = hasCpm ? '0' : '—';
+  modInput.value = '';
+  renderResumen();
   document.getElementById('qty-' + id).focus();
 }
 
