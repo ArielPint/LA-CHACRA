@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Chacra · Acceso</title>
+<link rel="icon" type="image/png" href="assets/tecnopanel-isologo-color.png">
 <script src="auth.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,7 +14,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #cd1c18 0%, #cd1c18 45%, #111111 55%, #111111 100%);
+    background: linear-gradient(135deg, #ed3224 0%, #ed3224 45%, #424243 55%, #424243 100%);
     font-family: 'Segoe UI', system-ui, sans-serif;
   }
 
@@ -30,17 +31,14 @@
     text-align: center;
     margin-bottom: 32px;
   }
-  .logo h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #cd1c18;
-    letter-spacing: -0.5px;
+  .logo img {
+    max-width: 220px;
   }
   .logo p {
     font-size: 0.8rem;
     color: #888;
-    margin-top: 4px;
-    letter-spacing: 2px;
+    margin-top: 6px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
   }
 
@@ -68,14 +66,14 @@
     background: #fafafa;
   }
   input:focus {
-    border-color: #cd1c18;
+    border-color: #ed3224;
     background: white;
   }
 
   .btn-login {
     width: 100%;
     padding: 13px;
-    background: #cd1c18;
+    background: #ed3224;
     color: white;
     border: none;
     border-radius: 8px;
@@ -86,7 +84,7 @@
     transition: background 0.2s, transform 0.1s;
     letter-spacing: 0.3px;
   }
-  .btn-login:hover  { background: #a81512; }
+  .btn-login:hover  { background: #c22619; }
   .btn-login:active { transform: scale(0.99); }
   .btn-login:disabled { background: #aaa; cursor: not-allowed; }
 
@@ -130,8 +128,8 @@
 
 <div class="login-card">
   <div class="logo">
-    <h1>La Chacra</h1>
-    <p>Sistema de producción</p>
+    <img src="assets/tecnopanel-logo-color.png" alt="TecnoPanel · Builder Solutions" style="width:auto;height:96px;margin-bottom:6px">
+    <p>La Chacra · Sistema de producción</p>
   </div>
 
   <form id="loginForm">

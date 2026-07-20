@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>La Chacra – Dashboard</title><!-- v2.1 -->
+<link rel="icon" type="image/png" href="assets/tecnopanel-isologo-color.png">
 <script src="xlsx.min.js"></script>
 <script src="excel-export.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -17,8 +18,8 @@
 })();
 </script>
 <style>
-:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#D42B1E;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--btn-bg:rgba(255,255,255,0.08);--r:10px}
-:root[data-theme="light"]{--bg:#f2f3f8;--surface:#ffffff;--surface2:#eef0f7;--accent:#2f6fe0;--brand:#D42B1E;--green:#1f9d63;--red:#d43f3f;--yellow:#b98900;--orange:#c97a1f;--purple:#7c4fd1;--text:#1a1d27;--muted:#5c6079;--border:#dde1ee;--btn-bg:rgba(0,0,0,0.05)}
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--accent:#4f8ef7;--brand:#ed3224;--green:#3ecf8e;--red:#f75f5f;--yellow:#f7d74f;--orange:#f7a74f;--purple:#bc8cff;--text:#e8eaf0;--muted:#7a7f99;--border:#2e3350;--btn-bg:rgba(255,255,255,0.08);--r:10px}
+:root[data-theme="light"]{--bg:#ffffff;--surface:#ffffff;--surface2:#e5e5e5;--accent:#ed3224;--brand:#ed3224;--green:#1f9d63;--red:#d43f3f;--yellow:#b98900;--orange:#c97a1f;--purple:#7c4fd1;--text:#1a1d27;--muted:#424243;--border:#e5e5e5;--btn-bg:rgba(0,0,0,0.05)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:14px}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;gap:12px}
@@ -120,7 +121,7 @@ tbody tr:hover td{background:var(--surface2)}
 <body>
 
 <header>
-  <div class="logo"><span style="font-size:30px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:30px;font-weight:900;color:#D42B1E;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:12px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup></div>
+  <div class="logo"><img src="assets/tecnopanel-isologo-color.png" alt="" style="width:30px;height:30px;margin-right:8px"><span style="font-size:30px;font-weight:900;color:#e8eaf0;letter-spacing:1px;line-height:1">TECNO</span><span style="font-size:30px;font-weight:900;color:#ed3224;letter-spacing:1px;line-height:1">PANEL</span><sup style="font-size:12px;color:#7a7f99;vertical-align:super;margin-left:2px">&#174;</sup></div>
   <div class="upload-area">
     <span id="file-name">Sin archivo cargado</span>
     <span id="load-status"></span>
@@ -2516,7 +2517,7 @@ function _stockRenderCharts(){
 
   // Chart 2: donut valor por tipo
   doughnutChart('ch-val-tipo', tipos, valTipo,
-    ['#4f8ef7','#D42B1E','#3ecf8e','#f7a24f','#9f7aea','#f75f5f','#38bdf8','#fbbf24',
+    ['#4f8ef7','#ed3224','#3ecf8e','#f7a24f','#9f7aea','#f75f5f','#38bdf8','#fbbf24',
      '#a3e635','#e879f9','#67e8f9','#fb923c','#94a3b8','#f472b6','#34d399'],
     true);
 

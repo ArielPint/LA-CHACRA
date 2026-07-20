@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tecno Panel</title>
+<link rel="icon" type="image/png" href="assets/tecnopanel-isologo-color.png">
 <script src="auth.js"></script>
 <style>
 :root {
@@ -11,7 +12,8 @@
   --surface: #1a1d27;
   --surface2: #22263a;
   --accent: #4f8ef7;
-  --brand: #D42B1E;
+  --brand: #ed3224;
+  --brand-gray: #424243;
   --green: #3ecf8e;
   --red: #f75f5f;
   --text: #e8eaf0;
@@ -23,16 +25,17 @@
   --bottombar-h: 62px;
 }
 :root[data-theme="light"] {
-  --bg: #f2f3f8;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface2: #eef0f7;
-  --accent: #2f6fe0;
-  --brand: #D42B1E;
+  --surface2: #e5e5e5;
+  --accent: #ed3224;
+  --brand: #ed3224;
+  --brand-gray: #424243;
   --green: #1f9d63;
   --red: #d43f3f;
   --text: #1a1d27;
-  --muted: #5c6079;
-  --border: #dde1ee;
+  --muted: #424243;
+  --border: #e5e5e5;
   --btn-bg: rgba(0,0,0,.05);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,10 +46,13 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
 .hamburger span { display: block; width: 15px; height: 2px; background: var(--muted); border-radius: 2px; transition: background .15s; }
 .hamburger:hover { border-color: var(--accent); }
 .hamburger:hover span { background: var(--text); }
-.logo { display: flex; align-items: baseline; flex-shrink: 0; }
+.logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.logo img { width: 26px; height: 26px; flex-shrink: 0; }
+.logo-text { display: flex; align-items: baseline; }
 .logo-tecno { font-size: 19px; font-weight: 900; color: var(--text); letter-spacing: 1.5px; }
 .logo-panel { font-size: 19px; font-weight: 900; color: var(--brand); letter-spacing: 1.5px; }
 .logo sup { font-size: 9px; color: var(--muted); margin-left: 2px; font-weight: 400; }
+:root[data-theme="light"] .logo-tecno { color: var(--brand-gray); }
 .tb-page-title { font-size: .82rem; font-weight: 600; color: var(--muted); display: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tb-spacer { flex: 1; }
 .tb-right { display: flex; align-items: center; gap: 6px; }
@@ -80,7 +86,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', syste
 .nav-sep { height: 1px; background: var(--border); margin: 8px 10px; }
 .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; color: var(--muted); font-size: .875rem; font-weight: 500; transition: all .12s; white-space: nowrap; user-select: none; border-left: 3px solid transparent; position: relative; }
 .nav-item:hover { background: var(--surface2); color: var(--text); }
-.nav-item.active { color: var(--brand); background: rgba(212,43,30,.09); border-left-color: var(--brand); }
+.nav-item.active { color: var(--brand); background: rgba(237,50,36,.09); border-left-color: var(--brand); }
 .nav-icon { font-size: 1.05rem; width: 22px; text-align: center; flex-shrink: 0; }
 .nav-label { transition: opacity .2s; }
 #sidebar.collapsed .nav-label { opacity: 0; pointer-events: none; }
@@ -133,7 +139,7 @@ body.sidebar-open iframe { visibility: hidden; }
 <body>
 <div id="topbar">
   <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu"><span></span><span></span><span></span></button>
-  <div class="logo"><span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>&#174;</sup></div>
+  <div class="logo"><img src="assets/tecnopanel-isologo-color.png" alt=""><div class="logo-text"><span class="logo-tecno">TECNO</span><span class="logo-panel">PANEL</span><sup>&#174;</sup></div></div>
   <span class="tb-page-title" id="tb-page-title">Dashboard</span>
   <div class="tb-spacer"></div>
   <div class="tb-right">
