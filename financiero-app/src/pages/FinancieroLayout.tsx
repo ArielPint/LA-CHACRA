@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import isologo from '@/assets/tecnopanel-isologo-color.png'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -131,7 +132,7 @@ export default function FinancieroLayout() {
         )}
       >
         <div className="mb-2 flex items-center gap-2 px-4">
-          <img src="/tecnopanel-isologo-color.png" alt="" className="size-7 shrink-0" />
+          <img src={isologo} alt="" className="size-7 shrink-0" />
           <div className="min-w-0">
             <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">LA CHACRA</p>
             <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
@@ -166,7 +167,7 @@ export default function FinancieroLayout() {
               <SheetTitle className="sr-only">Menú</SheetTitle>
               <div className="flex h-full flex-col py-4">
                 <div className="mb-2 flex items-center gap-2 px-4">
-                  <img src="/tecnopanel-isologo-color.png" alt="" className="size-7 shrink-0" />
+                  <img src={isologo} alt="" className="size-7 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">
                       LA CHACRA

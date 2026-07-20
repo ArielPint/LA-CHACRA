@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import logo from '@/assets/tecnopanel-logo-white.png'
 import { supabase } from '@/services/supabaseClient'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,7 +28,7 @@ export default function Login() {
     <div className="flex min-h-svh items-center justify-center px-4">
       <Card className="w-full max-w-80">
         <CardHeader>
-          <img src="/tecnopanel-logo-white.png" alt="TecnoPanel" className="mx-auto mb-1 h-16 w-auto" />
+          <img src={logo} alt="TecnoPanel" className="mx-auto mb-1 h-16 w-auto" />
           <CardTitle className="text-center">Financiero — LA CHACRA</CardTitle>
         </CardHeader>
         <CardContent>
