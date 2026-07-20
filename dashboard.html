@@ -693,6 +693,7 @@ async function loadStockSupa(){
     const prodMap={};
     (DATA.productos||[]).forEach(p=>{ if(p.codigo) prodMap[String(p.codigo).trim().toUpperCase()]=p; });
     const modConstruidos=(DATA.modulos||[]).filter(x=>x.termReal).length;
+    const modIniciados=(DATA.modulos||[]).filter(x=>x.initReal).length;
     const cantModTotal=(DATA.modulos||[]).length;
     DATA.stock=rows.map(row=>{
       const k=String(row.codigo).trim().toUpperCase();
@@ -705,8 +706,8 @@ async function loadStockSupa(){
       const consumo=recibido!=null?Math.max(0,+(recibido-sf).toFixed(4)):null;
       const alcanceMod=consumoMod&&consumoMod>0?+(sf/consumoMod).toFixed(4):null;
       const consumoEquivMod=consumoMod&&consumoMod>0&&consumo!=null?+(consumo/consumoMod).toFixed(4):null;
-      // Pérdida = consumo real por encima de lo que justifican los módulos construidos
-      const consumoTeorico=consumoMod!=null?modConstruidos*consumoMod:null;
+      // Pérdida = consumo real por encima de lo que justifican los módulos iniciados/en proceso
+      const consumoTeorico=consumoMod!=null?modIniciados*consumoMod:null;
       const perdida=(consumo!=null&&consumoTeorico!=null)?+(consumo-consumoTeorico).toFixed(4):null;
       const perdidaEquivMod=consumoMod&&consumoMod>0&&perdida!=null?+(perdida/consumoMod).toFixed(4):null;
       const valorStock=valorUN!=null?+(sf*valorUN).toFixed(2):null;
