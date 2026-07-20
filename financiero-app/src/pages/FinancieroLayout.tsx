@@ -130,9 +130,12 @@ export default function FinancieroLayout() {
           !desktopCollapsed && 'md:flex',
         )}
       >
-        <div className="mb-2 px-4">
-          <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">LA CHACRA</p>
-          <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
+        <div className="mb-2 flex items-center gap-2 px-4">
+          <img src="/tecnopanel-isologo-color.png" alt="" className="size-7 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">LA CHACRA</p>
+            <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
+          </div>
         </div>
         <SidebarNav puedeVer={puedeVer} />
         <div className="mt-auto pt-4">
@@ -162,11 +165,14 @@ export default function FinancieroLayout() {
             <SheetContent side="left" className="w-64 bg-sidebar p-0">
               <SheetTitle className="sr-only">Menú</SheetTitle>
               <div className="flex h-full flex-col py-4">
-                <div className="mb-2 px-4">
-                  <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">
-                    LA CHACRA
-                  </p>
-                  <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
+                <div className="mb-2 flex items-center gap-2 px-4">
+                  <img src="/tecnopanel-isologo-color.png" alt="" className="size-7 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold tracking-wide text-sidebar-foreground/50 uppercase">
+                      LA CHACRA
+                    </p>
+                    <p className="text-lg font-bold text-sidebar-foreground">Financiero</p>
+                  </div>
                 </div>
                 <SidebarNav puedeVer={puedeVer} onNavigate={() => setMobileOpen(false)} />
                 <div className="mt-auto pt-4">

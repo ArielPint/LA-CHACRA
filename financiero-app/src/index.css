@@ -25,7 +25,7 @@
   --border: #2e3350;
   --input: #2e3350;
   --ring: #4f8ef7;
-  --brand: #d42b1e;
+  --brand: #ed3224;
   --success: #3ecf8e;
   --warning: #f7a74f;
   --purple: #bc8cff;
@@ -33,7 +33,7 @@
   --pink: #f472b6;
   /* Orden categórico fijo tomado del donut de dashboard.html (chart 2: valor por tipo) */
   --chart-1: #4f8ef7;
-  --chart-2: #d42b1e;
+  --chart-2: #ed3224;
   --chart-3: #3ecf8e;
   --chart-4: #f7a74f;
   --chart-5: #bc8cff;
@@ -66,14 +66,14 @@
   --border: #2e3350;
   --input: #2e3350;
   --ring: #4f8ef7;
-  --brand: #d42b1e;
+  --brand: #ed3224;
   --success: #3ecf8e;
   --warning: #f7a74f;
   --purple: #bc8cff;
   --cyan: #38bdf8;
   --pink: #f472b6;
   --chart-1: #4f8ef7;
-  --chart-2: #d42b1e;
+  --chart-2: #ed3224;
   --chart-3: #3ecf8e;
   --chart-4: #f7a74f;
   --chart-5: #bc8cff;

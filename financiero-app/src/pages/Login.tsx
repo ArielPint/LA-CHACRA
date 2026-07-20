@@ -27,7 +27,8 @@ export default function Login() {
     <div className="flex min-h-svh items-center justify-center px-4">
       <Card className="w-full max-w-80">
         <CardHeader>
-          <CardTitle>Financiero — LA CHACRA</CardTitle>
+          <img src="/tecnopanel-logo-white.png" alt="TecnoPanel" className="mx-auto mb-1 h-16 w-auto" />
+          <CardTitle className="text-center">Financiero — LA CHACRA</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="flex flex-col gap-3">
