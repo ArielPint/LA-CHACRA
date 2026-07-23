@@ -2634,7 +2634,9 @@ function renderDespachos(){
   });
 
   const curMesKey=mesKey(todayTs);
+  const curMesOrd=todayTs.getFullYear()*12+todayTs.getMonth();
   const allMesKeys=[...new Set([...Object.keys(realMes),...Object.keys(proyMes)])]
+    .filter(k=>{const[y,m]=k.split('_').map(Number);return y*12+(m-1)<=curMesOrd;})
     .sort((a,b)=>(realMes[a]||proyMes[a]).ts-(realMes[b]||proyMes[b]).ts);
 
   // Build/refresh month filter checkboxes (only on first render or when data changes)
@@ -2688,7 +2690,9 @@ function renderDespachos(){
     proySem[k].acum=Math.max(proySem[k].acum,x.modulosAcumulados||0);
   });
 
-  const allSemKeys=[...new Set([...Object.keys(realSem),...Object.keys(proySem)])].sort();
+  const curSemKey=getISOWeek(todayTs);
+  const allSemKeys=[...new Set([...Object.keys(realSem),...Object.keys(proySem)])]
+    .filter(k=>k<=curSemKey).sort();
   const semLabels=allSemKeys.map(k=>(realSem[k]||proySem[k]).lbl);
 
   let _acumSem=0;
@@ -2729,6 +2733,7 @@ function renderDespachos(){
   // Filter daily data by selected months
   const allDiaKeys=[...new Set([...Object.keys(realDia),...Object.keys(proyDia)])]
     .map(Number).filter(k=>{
+      if(k>todayTs.getTime()) return false;
       const dt=new Date(k); const mk=dt.getFullYear()+'_'+(dt.getMonth()+1);
       return filteredMesSet.has(mk);
     }).sort((a,b)=>a-b);
