@@ -233,6 +233,7 @@ var PAGE_TABS = {
     { id: 'stock',      icon: '&#128451;', label: 'Stock' },
     { id: 'despachos',  icon: '&#128666;', label: 'Despachos' },
     { id: 'prod-diaria',icon: '&#128197;', label: 'Prod. Diaria' },
+    { id: 'ejecutivo',  icon: '&#128119;', label: 'Ejecutivo' },
   ],
   produccion: [
     { id: 'resumen',  icon: '&#128202;', label: 'Resumen' },
@@ -289,7 +290,9 @@ function closeSidebarMobile() { document.getElementById('sidebar').classList.rem
 function navSelect(el) { var sheet = el.dataset.sheet; if (!sheet) return; document.querySelectorAll('.nav-item').forEach(function(i){ i.classList.remove('active'); }); el.classList.add('active'); updatePageTitle(el.dataset.label || sheet); showSheet(sheet); if (isMobile()) closeSidebarMobile(); }
 function updatePageTitle(label) { var el = document.getElementById('tb-page-title'); if (el) el.textContent = label; }
 function updateBottomTabs(pageName) {
-  var tabs = PAGE_TABS[pageName] || [];
+  var tabs = (PAGE_TABS[pageName] || []).filter(function(t){
+    return t.id !== 'ejecutivo' || AUTH.canViewTab('dashboard', 'ejecutivo');
+  });
   var inner = document.getElementById('bottombar-inner');
   var bar = document.getElementById('bottombar');
   if (!inner) return;
