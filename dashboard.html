@@ -1464,15 +1464,11 @@ function renderResumen(){
   // ── Pestaña Ejecutivo: mismos indicadores, otro formato ──
   const kpiEje=document.getElementById('kpi-ejecutivo');
   if(kpiEje) kpiEje.innerHTML=kpiHTML([
-    {lbl:'Avance económico %',    val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
+    {lbl:'Avance económico %', val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
      cls:presupuesto&&totalComprado>presupuesto?'c-red':'c-green'},
-    {lbl:'Avance económico $',    val:fmtM(totalComprado), cls:'c-green'},
-    {lbl:'Módulos terminados',    val:fmt(terminados),  cls:'c-green'},
-    {lbl:'Módulos terminados %',  val:totalMod?fmtPr(terminados/totalMod*100):'—',  cls:'c-green'},
-    {lbl:'Módulos despachados',   val:fmt(despachados), cls:'c-blue'},
-    {lbl:'Módulos despachados %', val:totalMod?fmtPr(despachados/totalMod*100):'—', cls:'c-blue'},
-    {lbl:'Módulos en proceso',    val:fmt(enProceso),   cls:'c-orange'},
-    {lbl:'Módulos en proceso %',  val:totalMod?fmtPr(enProceso/totalMod*100):'—',   cls:'c-orange'},
+    {lbl:'Módulos terminados', val:fmt(terminados),  cls:'c-green'},
+    {lbl:'Módulos despachados',val:fmt(despachados), cls:'c-blue'},
+    {lbl:'Módulos en proceso', val:fmt(enProceso),   cls:'c-orange'},
   ]);
 
   // Distribución 10% buckets – solo ≥50%, excluye completados y despachados
