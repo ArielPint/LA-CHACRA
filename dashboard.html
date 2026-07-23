@@ -158,20 +158,20 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="kpi-row" id="kpi-resumen"></div>
   <div class="card" id="card-av-econ" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px"><h3 style="margin:0">% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3><label id="proy-extra-lbl" style="display:none;align-items:center;gap:6px;font-size:.8rem;color:#7d8590;white-space:nowrap">Proyectado mes actual:<input id="proy-extra-val" type="number" min="0" max="100" step="0.1" value="4.5" style="width:64px;background:#1a1f2e;border:1px solid #3a3f5c;border-radius:4px;color:#e6edf3;padding:3px 6px;font-size:.85rem;text-align:right">%</label></div>
-    <div class="chart-wrap" style="height:320px"><canvas id="ch-av-econ"></canvas></div>
+    <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-av-econ"></canvas></div>
     <div id="tbl-crec-mensual" style="margin-top:10px;overflow-x:auto"></div>
   </div>
   <div class="card" id="card-av-econ-acum" style="margin-bottom:16px">
     <h3>Avance econ&#xF3;mico acumulado &mdash; proyectado vs real</h3>
-    <div class="chart-wrap" style="height:320px"><canvas id="ch-av-econ-acum"></canvas></div>
+    <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-av-econ-acum"></canvas></div>
   </div>
   <div class="card" style="margin-bottom:16px">
     <h3>Compras reales vs Presupuesto por mes</h3>
-    <div class="chart-wrap" style="height:360px"><canvas id="ch-compras-res"></canvas></div>
+    <div class="chart-wrap" style="height:clamp(360px,44vh,510px)"><canvas id="ch-compras-res"></canvas></div>
   </div>
   <div class="card" style="margin-bottom:16px">
     <h3>Distribución módulos por rango de avance</h3>
-    <div class="chart-wrap" style="height:280px"><canvas id="ch-dist-res"></canvas></div>
+    <div class="chart-wrap" style="height:clamp(280px,36vh,430px)"><canvas id="ch-dist-res"></canvas></div>
   </div>
   <div class="card" style="margin-bottom:16px">
     <h3>M&#178; avance acumulado &mdash; real vs programado (por mes)</h3>
@@ -207,13 +207,13 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="grid-1">
     <div class="card">
       <h3>Módulos que salen del galpón por semana</h3>
-      <div class="chart-wrap" style="height:280px"><canvas id="ch-activos"></canvas></div>
+      <div class="chart-wrap" style="height:clamp(280px,36vh,430px)"><canvas id="ch-activos"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
     <div class="card">
       <h3>Tiempo real vs proyectado por torre</h3>
-      <div class="chart-wrap" style="height:280px"><canvas id="ch-tiempo-torre"></canvas></div>
+      <div class="chart-wrap" style="height:clamp(280px,36vh,430px)"><canvas id="ch-tiempo-torre"></canvas></div>
     </div>
   </div>
   <div class="filter-bar" style="margin-top:12px;align-items:center">
@@ -225,13 +225,13 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="grid-1">
     <div class="card">
       <h3 style="display:flex;justify-content:space-between;align-items:center">Tiempo real vs proyectado — Módulos Húmedos<span id="avg-tiempo-humedo" style="font-size:.85rem;font-weight:700;color:var(--accent)"></span></h3>
-      <div class="chart-wrap" style="height:320px"><canvas id="ch-tiempo-humedo"></canvas></div>
+      <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-tiempo-humedo"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
     <div class="card">
       <h3 style="display:flex;justify-content:space-between;align-items:center">Tiempo real vs proyectado — Módulos Secos<span id="avg-tiempo-seco" style="font-size:.85rem;font-weight:700;color:var(--accent)"></span></h3>
-      <div class="chart-wrap" style="height:320px"><canvas id="ch-tiempo-seco"></canvas></div>
+      <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-tiempo-seco"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
@@ -384,7 +384,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="grid-1">
     <div class="card">
       <h3>Despachos por torre y tipo</h3>
-      <div class="chart-wrap" style="height:240px"><canvas id="ch-desp-torre"></canvas></div>
+      <div class="chart-wrap" style="height:clamp(240px,32vh,390px)"><canvas id="ch-desp-torre"></canvas></div>
     </div>
   </div>
 </div>
@@ -892,7 +892,7 @@ function barChart(id, labels, datasets, opts={}){
           return ' '+(opts.fullMoney?fmtFull(v):opts.money?fmtM(v):opts.pct?(+v).toFixed(2)+'%':fmt(v));
         }}},
         datalabels: single?{
-          display:true, color:CHART_TEXT, font:{size:10,weight:'600'},
+          display:true, color:CHART_TEXT, font:{size:opts.dlSize||10,weight:'600'},
           anchor:'end', align:'end', offset:2, clip:false,
           formatter:dlFmt
         }:{display:false}
@@ -925,7 +925,7 @@ function groupedBar(id, labels, datasets, opts={}){
           const v=c.parsed.y;
           return ` ${c.dataset.label}: ${opts.tooltipFull||opts.fullMoney?fmtFull(v):opts.money?fmtM(v):opts.pct?(+v).toFixed(2)+'%':fmt(v)}`;
         }}},
-        datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},
+        datalabels:{display:true,color:CHART_TEXT,font:{size:opts.dlSize||10,weight:'600'},
           anchor:'end',align:'end',offset:1,clip:false,formatter:dlFmt}
       },
       scales:{
@@ -1444,7 +1444,7 @@ function renderResumen(){
   barChart('ch-dist-res', bucketDefs, [{
     label:'Módulos', data:bucketDefs.map(b=>buckets[b]),
     backgroundColor:bColors, borderRadius:5
-  }],{yMoney:false});
+  }],{yMoney:false, dlSize:13});
 
   // Compras reales vs Presupuesto por mes – ordered 2025→2026
   const mesReal={}, mesPpto={};
@@ -1462,7 +1462,7 @@ function renderResumen(){
   groupedBar('ch-compras-res', mOrdered.map(m=>m.lbl),[
     {label:'Compras reales', data:mOrdered.map(m=>Math.round(mesReal[`${m.n}-${m.y}`]||0)), backgroundColor:comprasResColors, borderRadius:4},
     {label:'Presupuesto',    data:mOrdered.map(m=>Math.round(mesPpto[`${m.n}-${m.y}`]||0)), backgroundColor:'rgba(227,144,62,.65)', borderRadius:4},
-  ],{yMoney:true, money:true, tooltipFull:true});
+  ],{yMoney:true, money:true, tooltipFull:true, dlSize:13});
 
   // Tabla: crecimiento mensual de compras reales vs mes anterior
   // crecimiento = (comprasMesActual - comprasMesAnterior) / comprasMesAnterior
@@ -1573,7 +1573,7 @@ function renderResumen(){
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
             datalabels:{
             display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
-            color:CHART_TEXT,font:{size:10,weight:'600'},
+            color:CHART_TEXT,font:{size:13,weight:'600'},
             anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
             align:ctx=>ctx.dataset.type==='bar'?'end':'top',
             offset:2,
@@ -1664,7 +1664,7 @@ function renderResumen(){
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
             datalabels:{
             display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
-            color:CHART_TEXT,font:{size:10,weight:'600'},
+            color:CHART_TEXT,font:{size:13,weight:'600'},
             anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
             align:ctx=>ctx.dataset.type==='bar'?'end':'top',
             offset:2,
@@ -1914,7 +1914,7 @@ function renderCurva(){
     barChart('ch-activos', galponByWeek.map(w=>w.label),[
       {label:'Módulos',data:galponByWeek.map(w=>w.count),
        backgroundColor:'rgba(88,166,255,0.7)',borderColor:'rgba(88,166,255,1)',borderWidth:1},
-    ],{legend:false});
+    ],{legend:false, dlSize:13});
 
     // ── Chart: Tiempo real vs proyectado por torre (no afectado por filtros) ──
     const modsTorreAll=(DATA.modulos||[]).filter(x=>x.initReal && (x.avance??0)>=0.99 && x.tiempoReal>0);
@@ -1930,11 +1930,11 @@ function renderCurva(){
     mixedChart('ch-tiempo-torre', torreTiempoKeys,
       [{label:'Tiempo Real (días)',data:torreTiempoKeys.map(t=>+(torreTiempoMap.get(t).realSum/torreTiempoMap.get(t).realCnt).toFixed(1)),
         backgroundColor:'rgba(63,185,80,0.7)',
-        datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},
+        datalabels:{display:true,color:CHART_TEXT,font:{size:13,weight:'600'},
           anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v!=null?String(v):''}}],
       [{label:'Tiempo Proyectado (días)',data:torreTiempoKeys.map(t=>{const g=torreTiempoMap.get(t);return g.proyCnt?+(g.proySum/g.proyCnt).toFixed(1):null;}),
         borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
-        datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:10,weight:'600'},
+        datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:13,weight:'600'},
           anchor:'end',align:'top',offset:4,clip:false,formatter:v=>v!=null?String(v):''}}],
       {datalabels:{display:'auto'}}
     );
@@ -1962,11 +1962,11 @@ function renderCurva(){
       mixedChart(id, labels,
         [{label:'Tiempo Real (días)',data:mods.map(x=>Math.round(x.tiempoReal)),
           backgroundColor:'rgba(63,185,80,0.7)',
-          datalabels:{display:true,color:CHART_TEXT,font:{size:10,weight:'600'},
+          datalabels:{display:true,color:CHART_TEXT,font:{size:13,weight:'600'},
             anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v!=null?String(v):''}}],
         [{label:'Tiempo Proyectado (días)',data:mods.map(x=>x.tiempoProy>0?Math.round(x.tiempoProy):null),
           borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
-          datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:10,weight:'600'},
+          datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:13,weight:'600'},
             anchor:'end',align:'top',offset:4,clip:false,formatter:v=>v!=null?String(v):''}}],
         {datalabels:{display:'auto'}}
       );
@@ -1984,7 +1984,7 @@ function renderCurva(){
       const dMem=parseDate(r.membranaFecha);
       if(!dMem || isNaN(dMem)) return; // solo módulos con Membrana Cielo ya hecha (no requiere estar terminado)
       if(!ritmoPorTorre.has(r.torre)) ritmoPorTorre.set(r.torre,{
-        pisoMin:null,membranaMin:null,membranaMax:null,termMax:null,total:0
+        pisoMin:null,membranaMin:null,membranaMax:null,termMax:null,total:0,pendientes:0
       });
       const g=ritmoPorTorre.get(r.torre);
       g.total+=1;
@@ -1994,18 +1994,22 @@ function renderCurva(){
       if(!g.membranaMax || dMem>g.membranaMax) g.membranaMax=dMem;
       const dTerm=parseDate(serieTermReal.get(r.serie));
       if(dTerm && !isNaN(dTerm) && (!g.termMax || dTerm>g.termMax)) g.termMax=dTerm;
+      else if(!dTerm || isNaN(dTerm)) g.pendientes+=1; // módulo con membrana hecha pero aún no terminado
     });
     const ritmoTorreRows=[...ritmoPorTorre.entries()]
       .map(([torre,g])=>{
+        // Si hay módulos con membrana cielo hecha pero aún no terminados, la ventana de
+        // terminaciones sigue abierta: usar hoy como límite para reflejar el avance real.
+        const termEnd=g.pendientes>0?(g.termMax&&g.termMax>today?g.termMax:today):g.termMax;
         const diasOG=(g.pisoMin && g.membranaMax)?businessDaysBetween(g.pisoMin,g.membranaMax):null;
-        const diasTerm=(g.membranaMin && g.termMax)?businessDaysBetween(g.membranaMin,g.termMax):null;
-        const diasTotal=(g.pisoMin && g.termMax)?businessDaysBetween(g.pisoMin,g.termMax):null;
+        const diasTerm=(g.membranaMin && termEnd)?businessDaysBetween(g.membranaMin,termEnd):null;
+        const diasTotal=(g.pisoMin && termEnd)?businessDaysBetween(g.pisoMin,termEnd):null;
         return {
           torre, total:g.total,
           diasOG, promOG:diasOG?g.total/diasOG:null,
           diasTerm, promTerm:diasTerm?g.total/diasTerm:null,
           diasTotal,
-          fechaMembrana:g.membranaMax, fechaTermino:g.termMax,
+          fechaMembrana:g.membranaMax, fechaTermino:g.termMax, enCurso:g.pendientes>0,
         };
       })
       .filter(x=>x.diasOG!=null || x.diasTerm!=null)
@@ -2024,7 +2028,7 @@ function renderCurva(){
             <td>${x.diasOG!=null?x.diasOG.toFixed(0):'—'}</td><td>${x.promOG!=null?x.promOG.toFixed(2):'—'}</td>
             <td>${x.diasTerm!=null?x.diasTerm.toFixed(0):'—'}</td><td>${x.promTerm!=null?x.promTerm.toFixed(2):'—'}</td>
             <td>${x.diasTotal!=null?x.diasTotal.toFixed(0):'—'}</td>
-            <td>${x.fechaMembrana?fmtDate(x.fechaMembrana):'—'}</td><td>${x.fechaTermino?fmtDate(x.fechaTermino):'—'}</td></tr>`).join('')
+            <td>${x.fechaMembrana?fmtDate(x.fechaMembrana):'—'}</td><td>${x.fechaTermino?fmtDate(x.fechaTermino):'—'}${x.enCurso?' <span style="color:var(--accent)">(en curso)</span>':''}</td></tr>`).join('')
         : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>';
     }
   };
@@ -2803,7 +2807,7 @@ function renderDespachos(){
   groupedBar('ch-desp-torre',tKeys,tipos.map((tipo,i)=>({
     label:tipo, data:tKeys.map(t=>torrTipoMap[t][tipo]||0),
     backgroundColor:['rgba(88,166,255,.8)','rgba(63,185,80,.8)','rgba(227,144,62,.8)'][i%3], borderRadius:5
-  })));
+  })),{dlSize:13});
 }
 // ═══════════════════════════════════════════════
 // PRODUCCION DIARIA (Supabase)
