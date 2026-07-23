@@ -145,6 +145,7 @@ tbody tr:hover td{background:var(--surface2)}
   <div class="tab" data-tab="despachos">🚚 Despachos</div>
   <div class="tab" data-tab="proyeccion">🔮 Proyección</div>
   <div class="tab" data-tab="prod-diaria" style="display:none">📅 Prod. Diaria</div>
+  <div class="tab" data-tab="ejecutivo" style="display:none">👔 Ejecutivo</div>
 </nav>
 
 <div id="prompt">
@@ -385,6 +386,29 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="card">
       <h3>Despachos por torre y tipo</h3>
       <div class="chart-wrap" style="height:clamp(240px,32vh,390px)"><canvas id="ch-desp-torre"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- EJECUTIVO -->
+<div class="page" id="page-ejecutivo">
+  <div class="kpi-row" id="kpi-ejecutivo"></div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3>
+      <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-eje-av-econ"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Módulos despachados por día vs proyectado</h3>
+      <div class="chart-wrap" style="height:300px"><canvas id="ch-eje-desp-dia"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Tiempo real vs proyectado por torre</h3>
+      <div class="chart-wrap" style="height:clamp(280px,36vh,430px)"><canvas id="ch-eje-tiempo-torre"></canvas></div>
     </div>
   </div>
 </div>
@@ -1044,6 +1068,10 @@ function doughnutChart(id, labels, data, colors, moneyLabels=false){
   }
   var peLbl=document.getElementById('proy-extra-lbl');
   if(peLbl && AUTH.isAdmin()) peLbl.style.display='flex';
+  if(AUTH.canViewTab('dashboard','ejecutivo')){
+    var tabEje=document.querySelector('.tab[data-tab="ejecutivo"]');
+    if(tabEje) tabEje.style.display='';
+  }
   var btnSI=document.getElementById('btn-stock-ingreso');
   if(btnSI){const _s=AUTH.getSession();if(_s&&_s.permissions&&_s.permissions.permiso_stock)btnSI.style.display='inline-block';}
 
@@ -1423,6 +1451,16 @@ function renderResumen(){
     {lbl:'Módulos despachados',val:fmt(despachados),       cls:'c-blue',  sub:totalMod?fmtPr(despachados/totalMod*100)+' del total':''},
   ]);
 
+  // ── Pestaña Ejecutivo: mismos indicadores, otro formato ──
+  const kpiEje=document.getElementById('kpi-ejecutivo');
+  if(kpiEje) kpiEje.innerHTML=kpiHTML([
+    {lbl:'Avance económico',   val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
+     cls:presupuesto&&totalComprado>presupuesto?'c-red':'c-green', sub:fmtM(totalComprado)},
+    {lbl:'Módulos terminados', val:fmt(terminados),  cls:'c-green',  sub:totalMod?fmtPr(terminados/totalMod*100)+' del total':''},
+    {lbl:'Módulos despachados',val:fmt(despachados), cls:'c-blue',   sub:totalMod?fmtPr(despachados/totalMod*100)+' del total':''},
+    {lbl:'Módulos en proceso', val:fmt(enProceso),   cls:'c-orange', sub:totalMod?fmtPr(enProceso/totalMod*100)+' del total':''},
+  ]);
+
   // Distribución 10% buckets – solo ≥50%, excluye completados y despachados
   const bucketDefs=['50–59%','60–69%','70–79%','80–89%','90–99%'];
   const buckets={}; bucketDefs.forEach(b=>buckets[b]=0);
@@ -1630,6 +1668,47 @@ function renderResumen(){
           ch.update();
         });
       })();
+    }
+
+    // Mismo gráfico, sin tabla ni input editable, para la pestaña Ejecutivo
+    killChart('ch-eje-av-econ');
+    const ctxEje = document.getElementById('ch-eje-av-econ')?.getContext('2d');
+    if(ctxEje){
+      CHARTS['ch-eje-av-econ'] = new Chart(ctxEje,{
+        type:'bar',
+        data:{
+          labels:haLabels,
+          datasets:[
+            { type:'bar', label:'Avance económico real', data:haReal,
+              backgroundColor:'rgba(212,43,30,.78)', borderRadius:5, order:2 },
+            { type:'line', label:'Proyectado mensual', data:haProy,
+              borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.12)',
+              pointBackgroundColor:'#4f8ef7', borderWidth:2.5, pointRadius:4,
+              tension:0.35, order:1, fill:false, spanGaps:true }
+          ]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+            tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
+            datalabels:{
+              display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,
+              color:CHART_TEXT,font:{size:13,weight:'600'},
+              anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
+              align:ctx=>ctx.dataset.type==='bar'?'end':'top',
+              offset:2,
+              formatter:v=>(+v).toFixed(1)+'%'
+            }
+          },
+          scales:{
+            x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+            y:{grid:{color:'rgba(255,255,255,0.04)'},
+              ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},
+              border:{color:'rgba(255,255,255,0.04)'}}
+          }
+        }
+      });
     }
 
     // Avance económico acumulado proyectado vs real
@@ -1928,6 +2007,18 @@ function renderCurva(){
     });
     const torreTiempoKeys=[...torreTiempoMap.keys()].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
     mixedChart('ch-tiempo-torre', torreTiempoKeys,
+      [{label:'Tiempo Real (días)',data:torreTiempoKeys.map(t=>+(torreTiempoMap.get(t).realSum/torreTiempoMap.get(t).realCnt).toFixed(1)),
+        backgroundColor:'rgba(63,185,80,0.7)',
+        datalabels:{display:true,color:CHART_TEXT,font:{size:13,weight:'600'},
+          anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v!=null?String(v):''}}],
+      [{label:'Tiempo Proyectado (días)',data:torreTiempoKeys.map(t=>{const g=torreTiempoMap.get(t);return g.proyCnt?+(g.proySum/g.proyCnt).toFixed(1):null;}),
+        borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
+        datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:13,weight:'600'},
+          anchor:'end',align:'top',offset:4,clip:false,formatter:v=>v!=null?String(v):''}}],
+      {datalabels:{display:'auto'}}
+    );
+    // Mismo gráfico para la pestaña Ejecutivo
+    mixedChart('ch-eje-tiempo-torre', torreTiempoKeys,
       [{label:'Tiempo Real (días)',data:torreTiempoKeys.map(t=>+(torreTiempoMap.get(t).realSum/torreTiempoMap.get(t).realCnt).toFixed(1)),
         backgroundColor:'rgba(63,185,80,0.7)',
         datalabels:{display:true,color:CHART_TEXT,font:{size:13,weight:'600'},
@@ -2748,7 +2839,20 @@ function renderDespachos(){
   let _prevProyAcum=0;
   const proyAcumDiaData=allDiaKeys.map(k=>{_prevProyAcum=Math.max(_prevProyAcum, proyDia[k]?.acum||0);return _prevProyAcum;});
 
+  const gapDiaData=acumDiaData.map((v,i)=>v-(proyAcumDiaData[i]||0));
   lineChart('ch-desp-dia', diaLabels, [
+    {label:'Despachado acumulado', data:acumDiaData,
+      borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'Proyectado acumulado', data:proyAcumDiaData,
+      borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
+      tension:0.35, pointRadius:3, fill:false},
+    {label:'GAP (despachado - proyectado)', data:gapDiaData, type:'bar',
+      backgroundColor:gapDiaData.map(v=>v<0?'rgba(248,81,73,.55)':'rgba(63,185,80,.45)'),
+      borderWidth:0, order:3}
+  ], {legend:true});
+  // Mismo gráfico para la pestaña Ejecutivo
+  lineChart('ch-eje-desp-dia', diaLabels, [
     {label:'Despachado acumulado', data:acumDiaData,
       borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
       tension:0.35, pointRadius:3, fill:false},
