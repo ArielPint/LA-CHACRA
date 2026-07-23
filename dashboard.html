@@ -46,7 +46,8 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
 .kpi-lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
 .kpi-val{font-size:1.7rem;font-weight:700}.kpi-sub{font-size:.75rem;color:var(--muted);margin-top:3px}
-#kpi-ejecutivo .kpi-sub{font-size:1.7rem;font-weight:700}
+#kpi-ejecutivo .kpi-lbl{font-size:1.05rem;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0}
+#page-ejecutivo .card h3{font-size:1.4rem;font-weight:800;color:var(--text);text-transform:none;letter-spacing:0}
 .kpi.c-blue .kpi-val{color:var(--accent)}.kpi.c-green .kpi-val{color:var(--green)}
 .kpi.c-red .kpi-val{color:var(--red)}.kpi.c-yellow .kpi-val{color:var(--yellow)}
 .kpi.c-orange .kpi-val{color:var(--orange)}.kpi.c-purple .kpi-val{color:var(--purple)}
@@ -94,7 +95,8 @@ tbody tr:hover td{background:var(--surface2)}
   .page{padding:16px 10px}
   .grid-2{grid-template-columns:1fr!important}
   .kpi-val{font-size:1.3rem}
-  #kpi-ejecutivo .kpi-sub{font-size:1.3rem}
+  #kpi-ejecutivo .kpi-lbl{font-size:.9rem}
+  #page-ejecutivo .card h3{font-size:1.1rem}
   #file-name{max-width:120px}
 }
 @media(max-width:480px){
@@ -399,6 +401,12 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="card">
       <h3>% Avance econ&#xF3;mico mensual &mdash; real vs proyectado</h3>
       <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-eje-av-econ"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Avance econ&#xF3;mico acumulado &mdash; proyectado vs real</h3>
+      <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-eje-av-econ-acum"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
@@ -973,7 +981,7 @@ function lineChart(id, labels, datasets, opts={}){
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{
-        legend:{display:!!opts.legend,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+        legend:{display:!!opts.legend,labels:{color:'#7d8590',boxWidth:14,font:{size:opts.legendSize||11}}},
         tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${opts.pct?(+c.parsed.y).toFixed(2)+'%':fmt(c.parsed.y)}`}},
         datalabels:{display:false}
       },
@@ -1008,7 +1016,7 @@ function mixedChart(id, labels, barDatasets, lineDatasets, opts={}){
       responsive:true,maintainAspectRatio:false,
       layout:{padding:{top:20}},
       plugins:{
-        legend:{display:true,labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+        legend:{display:true,labels:{color:'#7d8590',boxWidth:14,font:{size:opts.legendSize||11}}},
         tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmt(c.parsed.y??0)}},
         datalabels:opts.datalabels||{display:false}
       },
@@ -1456,11 +1464,15 @@ function renderResumen(){
   // ── Pestaña Ejecutivo: mismos indicadores, otro formato ──
   const kpiEje=document.getElementById('kpi-ejecutivo');
   if(kpiEje) kpiEje.innerHTML=kpiHTML([
-    {lbl:'Avance económico',   val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
-     cls:presupuesto&&totalComprado>presupuesto?'c-red':'c-green', sub:fmtM(totalComprado)},
-    {lbl:'Módulos terminados', val:fmt(terminados),  cls:'c-green',  sub:totalMod?fmtPr(terminados/totalMod*100)+' del total':''},
-    {lbl:'Módulos despachados',val:fmt(despachados), cls:'c-blue',   sub:totalMod?fmtPr(despachados/totalMod*100)+' del total':''},
-    {lbl:'Módulos en proceso', val:fmt(enProceso),   cls:'c-orange', sub:totalMod?fmtPr(enProceso/totalMod*100)+' del total':''},
+    {lbl:'Avance económico %',    val:presupuesto?fmtPr(totalComprado/presupuesto*100):'—',
+     cls:presupuesto&&totalComprado>presupuesto?'c-red':'c-green'},
+    {lbl:'Avance económico $',    val:fmtM(totalComprado), cls:'c-green'},
+    {lbl:'Módulos terminados',    val:fmt(terminados),  cls:'c-green'},
+    {lbl:'Módulos terminados %',  val:totalMod?fmtPr(terminados/totalMod*100):'—',  cls:'c-green'},
+    {lbl:'Módulos despachados',   val:fmt(despachados), cls:'c-blue'},
+    {lbl:'Módulos despachados %', val:totalMod?fmtPr(despachados/totalMod*100):'—', cls:'c-blue'},
+    {lbl:'Módulos en proceso',    val:fmt(enProceso),   cls:'c-orange'},
+    {lbl:'Módulos en proceso %',  val:totalMod?fmtPr(enProceso/totalMod*100):'—',   cls:'c-orange'},
   ]);
 
   // Distribución 10% buckets – solo ≥50%, excluye completados y despachados
@@ -1695,7 +1707,7 @@ function renderResumen(){
         options:{
           responsive:true, maintainAspectRatio:false,
           plugins:{
-            legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11},
+            legend:{display:true, labels:{color:'#7d8590',boxWidth:14,font:{size:20},
               generateLabels(chart){
                 try{
                   const fn=Chart.defaults.plugins.legend.labels.generateLabels;
@@ -1786,6 +1798,48 @@ function renderResumen(){
             offset:2,
             formatter:v=>(+v).toFixed(1)+'%'
           }
+          },
+          scales:{
+            x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
+            y:{grid:{color:'rgba(255,255,255,0.04)'},
+              ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},
+              border:{color:'rgba(255,255,255,0.04)'}}
+          }
+        },
+        plugins:[ChartDataLabels]
+      });
+    }
+
+    // Mismo gráfico acumulado para la pestaña Ejecutivo
+    killChart('ch-eje-av-econ-acum');
+    const ctxAcumEje = document.getElementById('ch-eje-av-econ-acum')?.getContext('2d');
+    if(ctxAcumEje){
+      CHARTS['ch-eje-av-econ-acum'] = new Chart(ctxAcumEje,{
+        type:'bar',
+        data:{
+          labels:haLabels,
+          datasets:[
+            { type:'bar', label:'Real acumulado', data:haRealAcum,
+              backgroundColor:'rgba(212,43,30,.78)', borderRadius:5, order:2 },
+            { type:'line', label:'Proyectado acumulado', data:haProyAcum,
+              borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.12)',
+              pointBackgroundColor:'#4f8ef7', borderWidth:2.5, pointRadius:4,
+              tension:0.35, order:1, fill:false, spanGaps:true }
+          ]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{display:true, labels:{color:'#7d8590',boxWidth:14,font:{size:20}}},
+            tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
+            datalabels:{
+              display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,
+              color:CHART_TEXT,font:{size:13,weight:'600'},
+              anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
+              align:ctx=>ctx.dataset.type==='bar'?'end':'top',
+              offset:2,
+              formatter:v=>(+v).toFixed(1)+'%'
+            }
           },
           scales:{
             x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7d8590'},border:{color:'rgba(255,255,255,0.04)'}},
@@ -2064,7 +2118,7 @@ function renderCurva(){
         borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
         datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:13,weight:'600'},
           anchor:'end',align:'top',offset:4,clip:false,formatter:v=>v!=null?String(v):''}}],
-      {datalabels:{display:'auto'}}
+      {datalabels:{display:'auto'}, legendSize:20}
     );
 
     // ── Charts: Tiempo real vs proyectado por módulo (Húmedo / Seco) ──
@@ -2904,7 +2958,7 @@ function renderDespachos(){
     {label:'Proyectado acumulado', data:proyAcumDiaData,
       borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
       tension:0.35, pointRadius:3, fill:false}
-  ], {legend:true});
+  ], {legend:true, legendSize:20});
 
   // ── TABLA RESUMEN MENSUAL ────────────────────────────────────────────────
   let acumReal=0, acumPend=0, prevAcumProy=0;
