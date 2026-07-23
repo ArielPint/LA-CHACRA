@@ -403,7 +403,7 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="grid-1">
     <div class="card">
-      <h3>Módulos despachados por día vs proyectado</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center">Módulos despachados por día vs proyectado<span id="gap-eje-desp-dia" style="font-size:.85rem;font-weight:700"></span></h3>
       <div class="chart-wrap" style="height:300px"><canvas id="ch-eje-desp-dia"></canvas></div>
     </div>
   </div>
@@ -2892,6 +2892,11 @@ function renderDespachos(){
       tension:0.35, pointRadius:3, fill:false}
   ], {legend:true});
   // Mismo gráfico para la pestaña Ejecutivo
+  const gapDiaBadgeEje=document.getElementById('gap-eje-desp-dia');
+  if(gapDiaBadgeEje){
+    gapDiaBadgeEje.textContent=`GAP: ${gapDiaLast>=0?'+':''}${fmt(gapDiaLast)}`;
+    gapDiaBadgeEje.style.color=gapDiaLast<0?'var(--red,#f85149)':'var(--green,#3fb950)';
+  }
   lineChart('ch-eje-desp-dia', diaLabels, [
     {label:'Despachado acumulado', data:acumDiaData,
       borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
