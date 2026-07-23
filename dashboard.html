@@ -1981,6 +1981,8 @@ function renderCurva(){
     const ritmoPorTorre=new Map();
     (DATA.membranaCielo||[]).forEach(r=>{
       if(filterTorres.size && !filterTorres.has(r.torre)) return;
+      const dMem=parseDate(r.membranaFecha);
+      if(!dMem || isNaN(dMem)) return; // solo módulos con Membrana Cielo ya hecha (no requiere estar terminado)
       if(!ritmoPorTorre.has(r.torre)) ritmoPorTorre.set(r.torre,{
         pisoMin:null,membranaMin:null,membranaMax:null,termMax:null,total:0
       });
@@ -1988,11 +1990,8 @@ function renderCurva(){
       g.total+=1;
       const dIni=parseDate(r.pisoFecha);
       if(dIni && !isNaN(dIni) && (!g.pisoMin || dIni<g.pisoMin)) g.pisoMin=dIni;
-      const dMem=parseDate(r.membranaFecha);
-      if(dMem && !isNaN(dMem)){
-        if(!g.membranaMin || dMem<g.membranaMin) g.membranaMin=dMem;
-        if(!g.membranaMax || dMem>g.membranaMax) g.membranaMax=dMem;
-      }
+      if(!g.membranaMin || dMem<g.membranaMin) g.membranaMin=dMem;
+      if(!g.membranaMax || dMem>g.membranaMax) g.membranaMax=dMem;
       const dTerm=parseDate(serieTermReal.get(r.serie));
       if(dTerm && !isNaN(dTerm) && (!g.termMax || dTerm>g.termMax)) g.termMax=dTerm;
     });
