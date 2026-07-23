@@ -57,7 +57,8 @@ const AUTH = (() => {
         stock:        'Stock',
         despachos:    'Despachos',
         proyeccion:   'Proyección',
-        'prod-diaria':'Prod. Diaria'
+        'prod-diaria':'Prod. Diaria',
+        ejecutivo:    'Ejecutivo'
       }
     },
     produccion: {
@@ -137,11 +138,17 @@ const AUTH = (() => {
     { key: 'ingresos',       label: 'Puede editar Ingreso del Proyecto',          tabs: ['ingresos'] }
   ];
 
+  // Pestañas ocultas por defecto aunque la página tenga acceso — se habilitan
+  // a mano por usuario (checkbox en settings.html), como "Ejecutivo" en dashboard.
+  const RESTRICTED_TABS = { dashboard: ['ejecutivo'] };
+
   function defaultPagePerms() {
     const pages = {};
     for (const [pid, pdef] of Object.entries(PAGE_MAP)) {
       const access = !pdef.restricted;
-      pages[pid] = { access, tabs: access ? Object.keys(pdef.tabs) : [] };
+      let tabs = access ? Object.keys(pdef.tabs) : [];
+      if (RESTRICTED_TABS[pid]) tabs = tabs.filter(t => !RESTRICTED_TABS[pid].includes(t));
+      pages[pid] = { access, tabs };
     }
     return pages;
   }
@@ -484,6 +491,7 @@ const AUTH = (() => {
   function canViewTab(pageId, tabId) {
     const s = getSession();
     if (!s) return false;
+    if (s.role === 'admin') return true;
     const pg = s.permissions.pages && s.permissions.pages[pageId];
     if (!pg || !pg.access) return false;
     return Array.isArray(pg.tabs) ? pg.tabs.includes(tabId) : true;

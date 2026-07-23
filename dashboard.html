@@ -46,6 +46,7 @@ nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
 .kpi-lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
 .kpi-val{font-size:1.7rem;font-weight:700}.kpi-sub{font-size:.75rem;color:var(--muted);margin-top:3px}
+#kpi-ejecutivo .kpi-sub{font-size:1.7rem;font-weight:700}
 .kpi.c-blue .kpi-val{color:var(--accent)}.kpi.c-green .kpi-val{color:var(--green)}
 .kpi.c-red .kpi-val{color:var(--red)}.kpi.c-yellow .kpi-val{color:var(--yellow)}
 .kpi.c-orange .kpi-val{color:var(--orange)}.kpi.c-purple .kpi-val{color:var(--purple)}
@@ -93,6 +94,7 @@ tbody tr:hover td{background:var(--surface2)}
   .page{padding:16px 10px}
   .grid-2{grid-template-columns:1fr!important}
   .kpi-val{font-size:1.3rem}
+  #kpi-ejecutivo .kpi-sub{font-size:1.3rem}
   #file-name{max-width:120px}
 }
 @media(max-width:480px){
@@ -366,7 +368,7 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="grid-1">
     <div class="card">
-      <h3>Módulos despachados por día vs proyectado</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center">Módulos despachados por día vs proyectado<span id="gap-desp-dia" style="font-size:.85rem;font-weight:700"></span></h3>
       <div class="chart-wrap" style="height:300px"><canvas id="ch-desp-dia"></canvas></div>
     </div>
   </div>
@@ -1684,16 +1686,27 @@ function renderResumen(){
             { type:'line', label:'Proyectado mensual', data:haProy,
               borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.12)',
               pointBackgroundColor:'#4f8ef7', borderWidth:2.5, pointRadius:4,
-              tension:0.35, order:1, fill:false, spanGaps:true }
+              tension:0.35, order:1, fill:false, spanGaps:true },
+            { type:'bar', label:'Proyectado adicional', data:haProyExtra,
+              backgroundColor:'transparent', borderColor:'rgba(0,0,0,0)',
+              borderWidth:0, order:3 }
           ]
         },
         options:{
           responsive:true, maintainAspectRatio:false,
           plugins:{
-            legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11}}},
+            legend:{display:true, labels:{color:'#7d8590',boxWidth:12,font:{size:11},
+              generateLabels(chart){
+                try{
+                  const fn=Chart.defaults.plugins.legend.labels.generateLabels;
+                  const labels=fn?fn(chart):[];
+                  labels.forEach(l=>{if(l.text==='Proyectado adicional'){l.fillStyle='transparent';l.strokeStyle='rgba(245,166,35,0.95)';l.lineWidth=2;}});
+                  return labels;
+                }catch(e){return [];}
+              }}},
             tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${(+c.parsed.y).toFixed(2)}%`}},
             datalabels:{
-              display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,
+              display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null&&ctx.dataset.label!=='Proyectado adicional',
               color:CHART_TEXT,font:{size:13,weight:'600'},
               anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
               align:ctx=>ctx.dataset.type==='bar'?'end':'top',
@@ -1707,7 +1720,31 @@ function renderResumen(){
               ticks:{color:'#7d8590',callback:v=>v.toFixed(1)+'%'},
               border:{color:'rgba(255,255,255,0.04)'}}
           }
-        }
+        },
+        plugins:[{
+          id:'proyExtraOutlineEje',
+          afterDatasetsDraw(chart){
+            const proDS=chart.data.datasets.find(d=>d.label==='Proyectado adicional');
+            if(!proDS) return;
+            const val=proDS.data.find(v=>v!==null);
+            if(!val) return;
+            const realIdx=chart.data.datasets.findIndex(d=>d.label==='Avance económico real');
+            if(realIdx<0) return;
+            const meta=chart.getDatasetMeta(realIdx);
+            const lastBar=meta.data[meta.data.length-1];
+            if(!lastBar) return;
+            const yScale=chart.scales.y;
+            const y0=yScale.getPixelForValue(0);
+            const y1=yScale.getPixelForValue(val);
+            const bw=lastBar.width;
+            const ctx=chart.ctx;
+            ctx.save();
+            ctx.strokeStyle='rgba(245,166,35,0.95)';
+            ctx.lineWidth=2.5;
+            ctx.strokeRect(lastBar.x-bw/2, Math.min(y0,y1), bw, Math.abs(y0-y1));
+            ctx.restore();
+          }
+        }]
       });
     }
 
@@ -2840,16 +2877,19 @@ function renderDespachos(){
   const proyAcumDiaData=allDiaKeys.map(k=>{_prevProyAcum=Math.max(_prevProyAcum, proyDia[k]?.acum||0);return _prevProyAcum;});
 
   const gapDiaData=acumDiaData.map((v,i)=>v-(proyAcumDiaData[i]||0));
+  const gapDiaLast=gapDiaData.length?gapDiaData[gapDiaData.length-1]:0;
+  const gapDiaBadge=document.getElementById('gap-desp-dia');
+  if(gapDiaBadge){
+    gapDiaBadge.textContent=`GAP: ${gapDiaLast>=0?'+':''}${fmt(gapDiaLast)}`;
+    gapDiaBadge.style.color=gapDiaLast<0?'var(--red,#f85149)':'var(--green,#3fb950)';
+  }
   lineChart('ch-desp-dia', diaLabels, [
     {label:'Despachado acumulado', data:acumDiaData,
       borderColor:'rgba(63,185,80,.9)', backgroundColor:'rgba(63,185,80,.1)',
       tension:0.35, pointRadius:3, fill:false},
     {label:'Proyectado acumulado', data:proyAcumDiaData,
       borderColor:'rgba(88,166,255,.9)', backgroundColor:'rgba(88,166,255,.1)',
-      tension:0.35, pointRadius:3, fill:false},
-    {label:'GAP (despachado - proyectado)', data:gapDiaData, type:'bar',
-      backgroundColor:gapDiaData.map(v=>v<0?'rgba(248,81,73,.55)':'rgba(63,185,80,.45)'),
-      borderWidth:0, order:3}
+      tension:0.35, pointRadius:3, fill:false}
   ], {legend:true});
   // Mismo gráfico para la pestaña Ejecutivo
   lineChart('ch-eje-desp-dia', diaLabels, [
