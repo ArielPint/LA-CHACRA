@@ -1810,12 +1810,14 @@ function renderResumen(){
     const ctxAcumEje = document.getElementById('ch-eje-av-econ-acum')?.getContext('2d');
     if(ctxAcumEje){
       CHARTS['ch-eje-av-econ-acum'] = new Chart(ctxAcumEje,{
-        type:'bar',
+        type:'line',
         data:{
           labels:haLabels,
           datasets:[
-            { type:'bar', label:'Real acumulado', data:haRealAcum,
-              backgroundColor:'rgba(212,43,30,.78)', borderRadius:5, order:2 },
+            { type:'line', label:'Real acumulado', data:haRealAcum,
+              borderColor:'rgba(212,43,30,1)', backgroundColor:'rgba(212,43,30,.12)',
+              pointBackgroundColor:'rgba(212,43,30,1)', borderWidth:2.5, pointRadius:4,
+              tension:0.35, order:2, fill:false, spanGaps:true },
             { type:'line', label:'Proyectado acumulado', data:haProyAcum,
               borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.12)',
               pointBackgroundColor:'#4f8ef7', borderWidth:2.5, pointRadius:4,
@@ -1830,8 +1832,7 @@ function renderResumen(){
             datalabels:{
               display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,
               color:CHART_TEXT,font:{size:13,weight:'600'},
-              anchor:ctx=>ctx.dataset.type==='bar'?'end':'center',
-              align:ctx=>ctx.dataset.type==='bar'?'end':'top',
+              anchor:'top', align:'top',
               offset:2,
               formatter:v=>(+v).toFixed(1)+'%'
             }
