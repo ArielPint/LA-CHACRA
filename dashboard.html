@@ -720,10 +720,28 @@ async function loadAvanceEconProy(){
 // STOCK desde Supabase
 async function loadStockSupa(){
   try{
-    const r=await fetch(SUPA_URL+'/rest/v1/registro_stock?select=*&order=semana_key.desc,material.asc',{headers:SUPA_H});
+    const [r,rCantMod]=await Promise.all([
+      fetch(SUPA_URL+'/rest/v1/registro_stock?select=*&order=semana_key.desc,material.asc',{headers:SUPA_H}),
+      fetch(PROD_URL+'?v='+Date.now()).catch(()=>null)
+    ]);
     if(!r.ok) return;
     const rows=await r.json();
     if(!rows.length) return;
+    // cantidad_por_modulo vigente: catálogo GitHub + productos_custom (Supabase), igual que registro-gd/stock-ingreso
+    const cantModMap={};
+    if(rCantMod&&rCantMod.ok){
+      (await rCantMod.json()||[]).forEach(p=>{
+        if(p.codigo&&p.cantidad_por_modulo!=null) cantModMap[String(p.codigo).trim().toUpperCase()]=+p.cantidad_por_modulo;
+      });
+    }
+    try{
+      const rCustom=await authFetch(`/rest/v1/productos_custom?activo=eq.true&select=codigo,cantidad_por_modulo`);
+      if(rCustom.ok){
+        (await rCustom.json()||[]).forEach(p=>{
+          if(p.codigo&&p.cantidad_por_modulo!=null) cantModMap[String(p.codigo).trim().toUpperCase()]=+p.cantidad_por_modulo;
+        });
+      }
+    }catch(e){}
     const prodMap={};
     (DATA.productos||[]).forEach(p=>{ if(p.codigo) prodMap[String(p.codigo).trim().toUpperCase()]=p; });
     const modConstruidos=(DATA.modulos||[]).filter(x=>x.termReal).length;
@@ -733,7 +751,7 @@ async function loadStockSupa(){
       const k=String(row.codigo).trim().toUpperCase();
       const prod=prodMap[k]||{};
       const sf=+(row.stock_fisico||0);
-      const consumoMod=prod.cantMod!=null?+prod.cantMod:null;
+      const consumoMod=prod.cantMod!=null?+prod.cantMod:(cantModMap[k]!=null?cantModMap[k]:null);
       const valorUN=prod.precioUN!=null?+prod.precioUN:(prod.precioCompra!=null?+prod.precioCompra:null);
       // Consumo real = material comprado y recibido que ya no está en stock físico
       const recibido=prod.cantRec!=null?+prod.cantRec:null;
@@ -1834,8 +1852,8 @@ function renderResumen(){
             datalabels:{
               display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null && ctx.dataIndex!==0,
               color:CHART_TEXT,font:{size:13,weight:'600'},
-              anchor:ctx=>(ctx.dataset.label==='Real acumulado' && ctx.dataIndex===ctx.chart.data.labels.length-1)?'center':'top',
-              align:ctx=>(ctx.dataset.label==='Real acumulado' && ctx.dataIndex===ctx.chart.data.labels.length-1)?'left':'top',
+              anchor:ctx=>(ctx.dataIndex===ctx.chart.data.labels.length-1)?'center':'top',
+              align:ctx=>(ctx.dataIndex===ctx.chart.data.labels.length-1)?'left':'top',
               offset:2,
               formatter:v=>(+v).toFixed(1)+'%'
             }
