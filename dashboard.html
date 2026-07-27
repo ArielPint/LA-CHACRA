@@ -659,6 +659,23 @@ async function loadRitmoProyeccionSupa(){
   }catch(e){console.warn('loadRitmoProyeccionSupa:',e);}
 }
 
+// Proyectado adicional del mes actual (gráfico % Avance económico), compartido entre usuarios
+let _proyExtraAvEcon=4.5;
+async function loadProyExtraAvEconSupa(){
+  try{
+    const r=await fetch(`${SUPA_URL}/rest/v1/config?key=eq.proy_extra_avEcon&select=value`,{headers:SUPA_H});
+    if(!r.ok)return;
+    const rows=await r.json();
+    if(rows&&rows[0]&&rows[0].value!=null) _proyExtraAvEcon=parseFloat(rows[0].value)||_proyExtraAvEcon;
+  }catch(e){console.warn('loadProyExtraAvEconSupa:',e);}
+}
+async function saveProyExtraAvEconSupa(v){
+  await fetch(`${SUPA_URL}/rest/v1/config?key=eq.proy_extra_avEcon`,{
+    method:'PATCH',headers:{...SUPA_H,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({value:String(v)})
+  });
+}
+
 // Ppto vigente por código, resuelto en vivo contra el catálogo (igual que registro-gd.html),
 // en vez de la foto guardada en registro_compras.valor_ppto al momento de la compra.
 const PROD_URL='https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/productos.json';
@@ -830,7 +847,7 @@ function getHomeAvance(){
           var pr = document.getElementById('prompt');
           if(pr) pr.style.display = 'none';
           renderAll();
-          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa()])
+          Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa(),loadProyExtraAvEconSupa()])
             .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
           var t = document.querySelector('.tab[data-tab="resumen"]');
           if(t) t.click();
@@ -1155,7 +1172,7 @@ document.getElementById('file-input').addEventListener('change',function(e){
         document.getElementById('prompt').style.display='none';
         renderAll();
         document.querySelector('.tab[data-tab="resumen"]').click();
-        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa()])
+        Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa(),loadProyExtraAvEconSupa()])
           .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
         st.textContent='✅ Cargado'; st.className='status-ok';
         // Save to localStorage for biblioteca
@@ -1208,7 +1225,7 @@ async function autoLoadFromRepo(){
     try{ const s=document.getElementById('load-status'); s.textContent='✅ Cargado'; s.className='status-ok'; }catch(e){}
     renderAll();
     try{ document.querySelector('.tab[data-tab="resumen"]').click(); }catch(e){}
-    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa()])
+    Promise.all([loadDespachosSupa(),loadComprasSupa(),loadPresupuestoSupa(),loadAvanceEconProy(),loadStockSupa(),loadPptoCatalogo(),loadRitmoProyeccionSupa(),loadProyExtraAvEconSupa()])
       .then(()=>{renderDespachos();renderCompras();renderResumen();renderModulos();});
     showAutoStatus('✅ Datos cargados');
     try{
@@ -1601,7 +1618,7 @@ function renderResumen(){
     });
     const haReal = ha.map(x=>x.avEcon!=null ? +((x.avEcon)*100).toFixed(2) : null);
     const haProy = ha.map(x=>x.avEconProy!=null ? +((x.avEconProy)*100).toFixed(2) : null);
-    const _proySaved=parseFloat(localStorage.getItem('proyExtra_avEcon')||'4.5');
+    const _proySaved=_proyExtraAvEcon;
     const _inpPE=document.getElementById('proy-extra-val');
     if(_inpPE) _inpPE.value=_proySaved;
     const haProyExtra=ha.map((_,i)=>i===ha.length-1?_proySaved:null);
@@ -1685,7 +1702,8 @@ function renderResumen(){
         inp.addEventListener('input',function(){
           const v=parseFloat(this.value);
           if(isNaN(v)||v<0) return;
-          localStorage.setItem('proyExtra_avEcon',v);
+          _proyExtraAvEcon=v;
+          saveProyExtraAvEconSupa(v).catch(e=>console.warn('saveProyExtraAvEconSupa:',e));
           const ch=CHARTS['ch-av-econ'];
           if(!ch) return;
           const ds=ch.data.datasets.find(d=>d.label==='Proyectado adicional');
