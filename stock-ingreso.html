@@ -6,6 +6,7 @@
 <title>Ingreso de Stock — La Chacra</title>
 <link rel="icon" type="image/png" href="assets/tecnopanel-isologo-color.png">
 <script src="auth.js"></script>
+<script src="js/productos-base.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="excel-export.js"></script>
 <script>
@@ -293,7 +294,6 @@ function volverAlStock() {
 // ─────────────────────────────────────────────
 const SUPA_URL = 'https://vtrpxsgcbojqgdcsplim.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnB4c2djYm9qcWdkY3NwbGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzMzQ2ODYsImV4cCI6MjA5NjkxMDY4Nn0.zvLAupmv7T8zXw8U9NOl8VmVtb-BNSfD4JWzaJBsLBA';
-const PROD_URL = 'https://raw.githubusercontent.com/ArielPint/LA-CHACRA/main/data/productos.json';
 const H = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json' };
 async function authFetch(path, opts={}){
   const token = await AUTH.getAccessToken();
@@ -398,16 +398,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 // CATÁLOGO
 // ─────────────────────────────────────────────
 async function loadCatalog() {
-  // Base desde GitHub
-  let base = [];
-  try {
-    const r = await fetch(PROD_URL);
-    if (r.ok) {
-      const j = await r.json();
-      // productos.json puede tener {codigo, descripcion, unidad, cantidad_por_modulo} o {codigo, descripcion, unidad}
-      base = j;
-    }
-  } catch(e) { console.warn('No se pudo cargar productos.json, usando base inline'); }
+  // Base: js/productos-base.js (misma fuente que solicitudes.html/pedidos.html/registro-gd.html)
+  const base = PRODUCTOS_BASE || [];
 
   // Custom desde Supabase
   let custom = [];
@@ -416,15 +408,16 @@ async function loadCatalog() {
     if (r.ok) custom = await r.json();
   } catch(e) {}
 
-  // Merge: custom sobreescribe base
+  // Merge: custom sobreescribe base, pero si custom no trae cant/modulo se conserva la del base
   const map = {};
   base.forEach(p => {
     const k = String(p.codigo).trim().toUpperCase();
-    map[k] = { codigo: p.codigo, descripcion: p.descripcion, unidad: p.unidad || 'UND', qty: p.cantidad_por_modulo || null };
+    map[k] = { codigo: p.codigo, descripcion: p.descripcion, unidad: p.unidad || 'UND', qty: p.cantidad_por_modulo != null ? p.cantidad_por_modulo : null };
   });
   custom.forEach(p => {
     const k = String(p.codigo).trim().toUpperCase();
-    map[k] = { codigo: p.codigo, descripcion: p.descripcion, unidad: p.unidad || 'UND', qty: p.cantidad_por_modulo || null };
+    const baseQty = map[k] ? map[k].qty : null;
+    map[k] = { codigo: p.codigo, descripcion: p.descripcion, unidad: p.unidad || 'UND', qty: p.cantidad_por_modulo != null ? p.cantidad_por_modulo : baseQty };
   });
 
   _allProds = Object.values(map).sort((a, b) => a.descripcion.localeCompare(b.descripcion));
