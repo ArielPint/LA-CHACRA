@@ -915,9 +915,14 @@ function padCol(str, len) {
   return str.length >= len ? str.slice(0, len - 1) + ' ' : str + ' '.repeat(len - str.length);
 }
 
+function buildMailtoSubject(numero, grupoNombre) {
+  const now = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric'});
+  return `Solicitud de materiales N° ${numero} · ${grupoNombre} · ${now}`;
+}
+
 function buildMailto(numero, grupoNombre, responsableNombre, items, observacion) {
   const now = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric'});
-  const subject = `Solicitud de materiales N° ${numero} · ${grupoNombre} · ${now}`;
+  const subject = buildMailtoSubject(numero, grupoNombre);
   const colProy = 12, colWip = 8, colCod = 12, colDesc = 45, colUnid = 12;
   const header = padCol('PROYECTO', colProy) + padCol('WIP', colWip) + padCol('CODIGO', colCod) + padCol('DESCRIPCION', colDesc) + padCol('Unid. Med', colUnid) + 'Cantidad';
   const sep = '-'.repeat(colProy + colWip + colCod + colDesc + colUnid + 10);
@@ -937,6 +942,54 @@ function buildMailto(numero, grupoNombre, responsableNombre, items, observacion)
     observacion ? `Observaciones: ${observacion}` : ''
   ].join('\n');
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function buildEmailHtmlTable(numero, grupoNombre, responsableNombre, items, observacion) {
+  const now = new Date().toLocaleDateString('es-CL', {day:'2-digit',month:'2-digit',year:'numeric'});
+  const filas = items.map(it => `
+    <tr>
+      <td style="border:1px solid #999;padding:4px 8px">${escHtml(PROYECTO_CONST)}</td>
+      <td style="border:1px solid #999;padding:4px 8px">${escHtml(WIP_CONST)}</td>
+      <td style="border:1px solid #999;padding:4px 8px">${escHtml(it.codigo)}</td>
+      <td style="border:1px solid #999;padding:4px 8px">${escHtml(it.descripcion)}</td>
+      <td style="border:1px solid #999;padding:4px 8px">${escHtml(it.unidad)}</td>
+      <td style="border:1px solid #999;padding:4px 8px;text-align:right">${it.cantidad_real}</td>
+    </tr>`).join('');
+  return `
+    <div style="font-family:Segoe UI,Arial,sans-serif;font-size:13px;color:#000">
+      <p>N° Solicitud: <b>${numero}</b><br>
+      Grupo: <b>${escHtml(grupoNombre)}</b><br>
+      Para: <b>${escHtml(responsableNombre)}</b><br>
+      Fecha: <b>${now}</b></p>
+      <table style="border-collapse:collapse;border:1px solid #999">
+        <thead>
+          <tr style="background:#eee;font-weight:bold">
+            <th style="border:1px solid #999;padding:4px 8px">PROYECTO</th>
+            <th style="border:1px solid #999;padding:4px 8px">WIP</th>
+            <th style="border:1px solid #999;padding:4px 8px">CODIGO</th>
+            <th style="border:1px solid #999;padding:4px 8px">DESCRIPCION</th>
+            <th style="border:1px solid #999;padding:4px 8px">Unid. Med</th>
+            <th style="border:1px solid #999;padding:4px 8px">Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+      ${observacion ? `<p>Observaciones: ${escHtml(observacion)}</p>` : ''}
+    </div>`;
+}
+
+async function copyHtmlTableToClipboard(html) {
+  if (!navigator.clipboard || !window.ClipboardItem) return false;
+  try {
+    const item = new ClipboardItem({
+      'text/html': new Blob([html], {type: 'text/html'}),
+      'text/plain': new Blob([html.replace(/<[^>]+>/g, ' ')], {type: 'text/plain'})
+    });
+    await navigator.clipboard.write([item]);
+    return true;
+  } catch(e) {
+    return false;
+  }
 }
 
 async function submitSolicitud() {
@@ -991,7 +1044,16 @@ async function submitSolicitud() {
 async function enviarCorreoGuardada() {
   if (!lastSavedSolicitud) return;
   const s = lastSavedSolicitud;
-  window.location.href = buildMailto(s.numero, s.grupoNombre, s.responsableNombre, s.items, s.observacion);
+  const html = buildEmailHtmlTable(s.numero, s.grupoNombre, s.responsableNombre, s.items, s.observacion);
+  const copied = await copyHtmlTableToClipboard(html);
+  if (copied) {
+    const subject = buildMailtoSubject(s.numero, s.grupoNombre);
+    const body = `N° Solicitud: ${s.numero}\nGrupo: ${s.grupoNombre}\nPara: ${s.responsableNombre}\n\n(Pega aquí la tabla copiada: Ctrl+V)`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    toast('Tabla copiada al portapapeles. Pégala (Ctrl+V) en el cuerpo del correo.', 'ok');
+  } else {
+    window.location.href = buildMailto(s.numero, s.grupoNombre, s.responsableNombre, s.items, s.observacion);
+  }
   try {
     const r = await authFetch(`/rest/v1/solicitudes?id=eq.${s.id}`, {
       method: 'PATCH',
