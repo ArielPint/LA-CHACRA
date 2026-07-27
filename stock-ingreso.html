@@ -533,7 +533,7 @@ async function loadSemana(key) {
   const rows = await r.json();
 
   _items = rows.map(row => {
-    const p = _prodMap[String(row.codigo).toUpperCase()] || {};
+    const p = _prodMap[String(row.codigo).trim().toUpperCase()] || {};
     return {
       _id: row.id,
       codigo: row.codigo,
