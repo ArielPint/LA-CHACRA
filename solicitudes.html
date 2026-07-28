@@ -464,6 +464,7 @@ let pendingNewProduct = null; // guardar texto buscado cuando no existe
 let gruposList = [];
 let responsablesList = [];
 let lastSavedSolicitud = null;
+let editingSolicitudId = null;
 
 // ════════════════════════════════════════════════════
 //  INIT
@@ -902,6 +903,11 @@ function clearForm() {
   addItemRow();
   document.getElementById('obs-input').value = '';
   renderResumen();
+  editingSolicitudId = null;
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = '💾 Guardar solicitud';
+  btn.style.display = '';
+  document.getElementById('send-mail-btn').style.display = 'none';
 }
 
 // ════════════════════════════════════════════════════
@@ -1010,34 +1016,49 @@ async function submitSolicitud() {
   btn.innerHTML = '<span class="spinner"></span> Guardando...';
 
   const payload = {
-    usuario_id: SESSION.id,
-    username: SESSION.username,
-    nombre: SESSION.name,
     grupo_id: grupo.id,
     responsable_id: responsable.id,
     items: items,
-    observacion: observacion || null,
-    estado: 'pendiente'
+    observacion: observacion || null
   };
 
   try {
-    const r = await authFetch(`/rest/v1/solicitudes`, {
-      method: 'POST',
-      headers: { 'Prefer': 'return=representation' },
-      body: JSON.stringify(payload)
-    });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const [saved] = await r.json();
-    lastSavedSolicitud = { id: saved.id, numero: saved.numero, grupoNombre: grupo.nombre, responsableNombre: responsable.nombre, items, observacion };
-    toast(`✔ Solicitud N° ${saved.numero} guardada. Pulsa "Enviar correo" para completarla.`, 'ok');
-    btn.style.display = 'none';
-    document.getElementById('send-mail-btn').style.display = '';
-    await loadHistory();
+    if (editingSolicitudId) {
+      const r = await authFetch(`/rest/v1/solicitudes?id=eq.${editingSolicitudId}`, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      toast('✔ Solicitud actualizada.', 'ok');
+      showTab('history');
+      clearForm();
+      document.getElementById('sel-grupo').value = '';
+      onGrupoChange();
+      await loadHistory();
+    } else {
+      payload.usuario_id = SESSION.id;
+      payload.username = SESSION.username;
+      payload.nombre = SESSION.name;
+      payload.estado = 'pendiente';
+      const r = await authFetch(`/rest/v1/solicitudes`, {
+        method: 'POST',
+        headers: { 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const [saved] = await r.json();
+      lastSavedSolicitud = { id: saved.id, numero: saved.numero, grupoNombre: grupo.nombre, responsableNombre: responsable.nombre, items, observacion };
+      toast(`✔ Solicitud N° ${saved.numero} guardada. Pulsa "Enviar correo" para completarla.`, 'ok');
+      btn.style.display = 'none';
+      document.getElementById('send-mail-btn').style.display = '';
+      await loadHistory();
+    }
   } catch(e) {
     toast('Error al guardar: ' + e.message, 'err');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '💾 Guardar solicitud';
+    btn.innerHTML = editingSolicitudId ? '💾 Actualizar solicitud' : '💾 Guardar solicitud';
   }
 }
 
@@ -1087,6 +1108,45 @@ async function deleteSolicitudHist(id) {
     toast('Solicitud eliminada.', 'ok');
     await loadHistory();
   } catch(e) { toast('Error al eliminar: ' + e.message, 'err'); }
+}
+
+// ════════════════════════════════════════════════════
+//  EDITAR (desde Historial, solo estado 'pendiente' / "No usada")
+// ════════════════════════════════════════════════════
+function editSolicitudHist(id) {
+  const s = historyData.find(x => x.id === id);
+  if (!s) return;
+
+  editingSolicitudId = id;
+  showTab('form');
+
+  document.getElementById('sel-grupo').value = s.grupo_id;
+  const selResp = document.getElementById('sel-responsable');
+  const opts = responsablesList.filter(r => String(r.grupo_id) === String(s.grupo_id));
+  selResp.innerHTML = '<option value="">Selecciona responsable...</option>' +
+    opts.map(r => `<option value="${r.id}">${escHtml(r.nombre)}</option>`).join('');
+  selResp.value = s.responsable_id;
+
+  document.getElementById('items-list').innerHTML = '';
+  rowCounter = 0;
+  (s.items || []).forEach(it => {
+    const product = allProducts.find(p => p.codigo.toUpperCase() === it.codigo.toUpperCase())
+      || { codigo: it.codigo, descripcion: it.descripcion, unidad: it.unidad, grupo: it.grupo, cantidad_por_modulo: it.cantidad_por_modulo };
+    addItemRow(product);
+    document.getElementById('qty-' + rowCounter).value = it.cantidad;
+    document.getElementById('qty-real-' + rowCounter).value = it.cantidad_real;
+    if (it.cantidad_real !== it.cantidad) document.getElementById('row-' + rowCounter).dataset.realDirty = '1';
+    syncModulosFromQty(rowCounter);
+  });
+  if ((s.items || []).length === 0) addItemRow();
+
+  document.getElementById('obs-input').value = s.observacion || '';
+  renderResumen();
+
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = '💾 Actualizar solicitud';
+  btn.style.display = '';
+  document.getElementById('send-mail-btn').style.display = 'none';
 }
 
 // ════════════════════════════════════════════════════
@@ -1197,8 +1257,10 @@ function histRow(s) {
   const isOwn = s.usuario_id === SESSION.id;
   const isAdmin = SESSION.role === 'admin';
   const canDelete = isAdmin || (isOwn && noUsada);
+  const canEdit = s.estado === 'pendiente' && (isAdmin || isOwn);
   const acciones = `
     <td onclick="event.stopPropagation()">
+      ${canEdit ? `<button class="btn btn-sm" style="background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.3)" onclick="editSolicitudHist('${s.id}')" title="Editar">✏️</button>` : ''}
       ${canDelete ? `<button class="btn btn-sm" style="background:rgba(247,95,95,.1);color:var(--red);border:1px solid rgba(247,95,95,.25)" onclick="deleteSolicitudHist('${s.id}')" title="Eliminar">🗑</button>` : ''}
     </td>`;
 
