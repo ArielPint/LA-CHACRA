@@ -698,6 +698,7 @@ let productLines    = [];
 let ocGDs           = [];
 let prodMap         = {};
 let gdOCMap         = {};
+let gdRespMap        = {};
 let respGrupoMap    = {};
 let ocFilterSelected = new Set();
 let _sbClient       = null;
@@ -809,7 +810,15 @@ async function loadData(){
     else from += PAGE;
   }
   registros = all;
+  buildGdRespMap();
 }
+// Una guía = una persona: si algún ítem de la guía trae responsable y otros vinieron vacíos
+// (carga histórica ítem por ítem), se completa con el responsable ya cargado para ese N° GD.
+function buildGdRespMap(){
+  gdRespMap={};
+  registros.forEach(r=>{ if(r.responsable && !gdRespMap[r.gd]) gdRespMap[r.gd]=r.responsable; });
+}
+function resolveResp(r){ return r.responsable || gdRespMap[r.gd] || ''; }
 async function loadResponsables(){
   const sb = await sbClient();
   const [rData, gData] = await Promise.all([
@@ -944,7 +953,7 @@ function getFiltered(){
   return registros.filter(r=>{
     if(gd && String(r.gd)!==gd) return false;
     if(resp){
-      const rg=respGrupoMap[r.responsable]||null;
+      const rg=respGrupoMap[resolveResp(r)]||null;
       if(resp==='sin-grupo'){ if(rg) return false; }
       else if(resp.startsWith('g:')){ if(String(rg||'')!==resp.slice(2)) return false; }
     }
@@ -987,7 +996,7 @@ function renderTable(){
         <td class="r" style="color:var(--muted)">${fmtNum(getPPTO(r))}</td>
         <td class="r ${dc}">${fmtNum(calcDifUnd(r))}</td><td class="r ${dc}">${fmtNum(difT)}</td>
         <td class="r ${pc}">${pct!==null?pct.toFixed(1)+'%':'—'}</td>
-        <td>${esc(r.responsable||'')}</td><td class="c">${tipoChip(r.tipo_producto)}</td>
+        <td>${esc(resolveResp(r)||'')}</td><td class="c">${tipoChip(r.tipo_producto)}</td>
         <td class="r" style="color:var(--green);font-weight:700">${fmtNum(montoGD[r.gd])}</td>
       </tr>`;
     });
@@ -1729,7 +1738,7 @@ function exportExcel(){
     'UNIDAD':r.unidad,'CANTIDAD SOLICITADA':r.cantidad_sol,'DEVOLUCIÓN':r.devolucion,
     'CANTIDAD RECIBIDA':calcCR(r),'VALOR TOTAL ITEM GD':getVTI(r),'VALOR X UN':calcVUnd(r),
     'VALOR PPTO':getPPTO(r),'DIF. VALOR UND.':calcDifUnd(r),'DIF VALOR TOTAL':calcDifT(r),
-    'DIF %':calcPct(r)!==null?calcPct(r)/100:'','RESPONSABLE':r.responsable,
+    'DIF %':calcPct(r)!==null?calcPct(r)/100:'','RESPONSABLE':resolveResp(r),
     'TIPO PRODUCTO':r.tipo_producto,'MONTO TOTAL GD':montoGD[r.gd]||0,'CREADO POR':r.created_by
   }));
   const ws=XLSX.utils.json_to_sheet(rows);
@@ -1946,9 +1955,9 @@ function getReportFiltered(){
     if(gd && String(r.gd)!==gd) return false;
     if(desde && r.fecha_guia<desde) return false;
     if(hasta && r.fecha_guia>hasta) return false;
-    if(respSel && r.responsable!==respSel) return false;
+    if(respSel && resolveResp(r)!==respSel) return false;
     if(grupoSel){
-      const rg=respGrupoMap[r.responsable]||null;
+      const rg=respGrupoMap[resolveResp(r)]||null;
       if(grupoSel==='sin-grupo'){ if(rg) return false; }
       else if(String(rg||'')!==grupoSel) return false;
     }
@@ -1961,14 +1970,15 @@ function buildReportModel(filtered){
   const pppStats=computeCodigoStats();
   const gruposMap={};
   filtered.forEach(r=>{
-    const gid=respGrupoMap[r.responsable]||null;
+    const resp=resolveResp(r);
+    const gid=respGrupoMap[resp]||null;
     const key=gid?String(gid):'sin-grupo';
     if(!gruposMap[key]){
       const gObj=gid?grupos.find(g=>g.id===gid):null;
       gruposMap[key]={key,nombre:gObj?gObj.nombre:'Sin grupo',responsables:new Set(),productos:{}};
     }
     const G=gruposMap[key];
-    if(r.responsable) G.responsables.add(r.responsable);
+    if(resp) G.responsables.add(resp);
     const ck=normCod(r.codigo);
     if(!G.productos[ck]) G.productos[ck]={codigo:r.codigo,descripcion:r.descripcion,unidades:new Set(),cantidadTotal:0,guias:[]};
     const P=G.productos[ck];
@@ -2026,7 +2036,7 @@ function renderReport(){
         if(P.valorizacion!=null) gValor+=P.valorizacion;
         if(!P.ok) gObs++;
         const subRows=P.guias.map(r=>`<tr>
-            <td>${esc(r.gd)}</td><td>${fmtDate(r.fecha_guia)}</td><td>${esc(r.responsable||'—')}</td>
+            <td>${esc(r.gd)}</td><td>${fmtDate(r.fecha_guia)}</td><td>${esc(resolveResp(r)||'—')}</td>
             <td class="r">${fmtDecOrDash(calcCR(r),2)}</td><td>${esc(r.unidad||'—')}</td>
           </tr>`).join('');
         return `<tr class="rg-prod-row" onclick="rgToggleProd(this)">
