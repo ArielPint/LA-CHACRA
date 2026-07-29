@@ -45,7 +45,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tab-pane{display:none;flex:1;overflow:hidden;flex-direction:column}
 .tab-pane.active{display:flex}
 
-#stats{display:flex;gap:10px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;align-items:center}
+#stats,#rg-stats{display:flex;gap:10px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;align-items:center}
 .stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;min-width:130px}
 .stat .lbl{font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
 .stat .val{font-size:1.3rem;font-weight:800}
@@ -66,9 +66,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 #tbl-resumen tfoot td{border-top:2px solid var(--border);font-weight:800;padding:6px 12px;color:var(--text)}
 .btn-resumen{margin-left:auto;font-size:.72rem}
 
-#toolbar{display:flex;align-items:center;gap:7px;padding:8px 18px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-#toolbar input,#toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:.77rem;outline:none;min-width:0}
-#toolbar input:focus,#toolbar select:focus{border-color:var(--accent)}
+#toolbar,#rg-toolbar{display:flex;align-items:center;gap:7px;padding:8px 18px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+#toolbar input,#toolbar select,#rg-toolbar input,#rg-toolbar select{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:.77rem;outline:none;min-width:0}
+#toolbar input:focus,#toolbar select:focus,#rg-toolbar input:focus,#rg-toolbar select:focus{border-color:var(--accent)}
 input[type="date"]{color-scheme:dark}
 .tsep{width:1px;height:20px;background:var(--border);margin:0 2px;flex-shrink:0}
 .tlbl{font-size:.7rem;color:var(--muted);white-space:nowrap}
@@ -87,7 +87,7 @@ input[type="date"]{color-scheme:dark}
 .ms-clear{background:none;border:none;color:var(--accent);font-size:.72rem;cursor:pointer;padding:2px 4px}
 .ms-clear:hover{text-decoration:underline}
 
-#tbl-wrap{flex:1;overflow:auto;padding:0 18px 18px}
+#tbl-wrap,#rg-wrap{flex:1;overflow:auto;padding:0 18px 18px}
 table{width:100%;border-collapse:collapse;margin-top:8px;min-width:1600px}
 #main-table tfoot td{position:sticky;bottom:0;background:var(--surface2);border-top:2px solid var(--border);padding:5px 8px;font-size:.77rem;font-weight:700;white-space:nowrap}
 #main-table tfoot td.r{text-align:right}
@@ -235,6 +235,29 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
 .badge-src{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
 .badge-base{background:rgba(62,207,142,.15);color:var(--green)}
 .badge-custom{background:rgba(245,166,35,.15);color:var(--yellow)}
+
+/* Reporte por Grupo */
+.badge-estado{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.65rem;font-weight:700}
+.badge-estado-ok{background:rgba(62,207,142,.15);color:var(--green)}
+.badge-estado-warn{background:rgba(245,166,35,.15);color:var(--yellow)}
+.rg-grupo{background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.rg-grupo-hdr{display:flex;align-items:center;gap:14px;padding:12px 16px;cursor:pointer;background:rgba(79,142,247,.06);list-style:none}
+.rg-grupo-hdr::-webkit-details-marker{display:none}
+.rg-grupo-name{font-size:.88rem;font-weight:700;color:var(--text)}
+.rg-grupo-resps{font-size:.72rem;color:var(--muted);flex:1}
+.rg-grupo-kpis{display:flex;gap:14px;font-size:.72rem;color:var(--muted)}
+.rg-grupo-kpis b{color:var(--text);font-family:'Consolas',monospace}
+.rg-grupo-body{padding:10px 16px 14px}
+.rg-prod-row{cursor:pointer}
+.rg-gd-subrow{display:none}
+.rg-gd-subrow.show{display:table-row}
+.rg-gd-subrow td{padding:10px 14px!important;background:var(--bg)}
+.rg-gd-subtable{width:100%;border-collapse:collapse;min-width:0}
+.rg-gd-subtable th{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;padding:4px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.rg-gd-subtable th.r,.rg-gd-subtable td.r{text-align:right}
+.rg-gd-subtable td{padding:4px 8px;font-size:.76rem}
+.rg-gd-subtable tfoot td{border-top:1px solid var(--border);font-weight:700}
+
 /* Modal catálogo */
 .modal-bg-gd{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:1000}
 .modal-bg-gd.open{display:flex}
@@ -265,6 +288,7 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
   <button class="tab-btn" onclick="showTab('oc',this)">📄 Órdenes de Compra</button>
   <button class="tab-btn" onclick="showTab('responsables',this)">👥 Responsables</button>
   <button class="tab-btn" onclick="showTab('catalogo',this)">🗂 Catálogo</button>
+  <button class="tab-btn" onclick="showTab('reporte-grupo',this)">📦 Reporte por Grupo</button>
 </div>
 
 <div id="tab-content">
@@ -410,6 +434,34 @@ tbody td{padding:5px 8px;font-size:.79rem;white-space:nowrap;max-width:200px;ove
         <tfoot id="cat-tfoot-gd"></tfoot>
       </table>
     </div>
+  </div>
+
+  <!-- TAB 5: Reporte por Grupo -->
+  <div class="tab-pane" id="pane-reporte-grupo">
+    <div id="rg-stats">
+      <div class="stat sc-blue"><div class="lbl">Grupos</div><div class="val" id="rg-k-grupos">—</div></div>
+      <div class="stat sc-blue"><div class="lbl">Responsables</div><div class="val" id="rg-k-resps">—</div></div>
+      <div class="stat sc-blue"><div class="lbl">Guías</div><div class="val" id="rg-k-gds">—</div></div>
+      <div class="stat sc-yellow"><div class="lbl">Productos distintos</div><div class="val" id="rg-k-prods">—</div></div>
+      <div class="stat sc-yellow"><div class="lbl">Cantidad total</div><div class="val val-full" id="rg-k-cant">—</div></div>
+      <div class="stat sc-yellow"><div class="lbl">Módulos equivalentes</div><div class="val val-full" id="rg-k-modulos">—</div></div>
+      <div class="stat sc-green"><div class="lbl">Valor total valorizable</div><div class="val val-full" id="rg-k-valor">—</div></div>
+      <div class="stat sc-red"><div class="lbl">Con observaciones</div><div class="val" id="rg-k-obs">—</div></div>
+    </div>
+    <div id="rg-toolbar">
+      <span class="tlbl">Filtros:</span>
+      <input type="text" id="rg-f-buscar" placeholder="Código, descripción…" style="width:160px" oninput="renderReport()">
+      <input type="text" id="rg-f-gd" placeholder="N° GD" style="width:80px" oninput="renderReport()">
+      <select id="rg-f-grupo" onchange="renderReport()" style="width:150px"><option value="">Todos los grupos</option></select>
+      <select id="rg-f-resp" onchange="renderReport()" style="width:170px"><option value="">Todos los responsables</option></select>
+      <input type="date" id="rg-f-desde" style="width:130px" oninput="renderReport()">
+      <span class="tlbl">al</span>
+      <input type="date" id="rg-f-hasta" style="width:130px" oninput="renderReport()">
+      <div class="tsep"></div>
+      <button class="btn btn-sm" onclick="clearReportFilters()">✕ Limpiar</button>
+      <span style="margin-left:auto;font-size:.72rem;color:var(--muted)" id="rg-count-label"></span>
+    </div>
+    <div id="rg-wrap"></div>
   </div>
 
 </div>
@@ -684,6 +736,7 @@ async function init(){
     buildGdOCMap();
     populateRespSelect();
     populateOCFilter();
+    populateReportFilters();
     // Show "Nuevo producto" button only for admins
     const s=AUTH.getSession?AUTH.getSession():null;
     if(s&&s.role==='admin') document.getElementById('btn-cat-add').style.display='';
@@ -725,6 +778,18 @@ function rebuildAllProducts(){
   allProducts=Object.values(base).sort((a,b)=>a.descripcion.localeCompare(b.descripcion));
   allProductsMap={};
   allProducts.forEach(p=>{ allProductsMap[normCod(p.codigo)]=p; });
+}
+// {monto,cant} acumulados por código en TODAS las guías históricas — base del Precio Promedio Ponderado
+function computeCodigoStats(){
+  const m={};
+  (registros||[]).forEach(r=>{
+    const cr=calcCR(r); if(cr<=0) return;
+    const vt=getVTI(r); if(vt<=0) return;
+    const k=normCod(r.codigo);
+    if(!m[k]) m[k]={monto:0,cant:0};
+    m[k].monto+=vt; m[k].cant+=cr;
+  });
+  return m;
 }
 // Ppto vigente del catálogo para un registro (siempre en vivo, no la foto guardada al momento de la compra)
 function getPPTO(r){
@@ -865,6 +930,7 @@ function showTab(name, btn){
   document.getElementById('btn-nuevo').style.display = isReg ? '' : 'none';
   document.getElementById('btn-excel').style.display = isReg ? '' : 'none';
   if(name==='catalogo') renderCatalogGD();
+  if(name==='reporte-grupo') renderReport();
 }
 
 // ── Tabla ─────────────────────────────────────────────────────────────────────
@@ -1004,6 +1070,7 @@ async function refreshData(){
     await Promise.all([loadData(), loadOC()]);
     buildGdOCMap();
     populateOCFilter();
+    populateReportFilters();
     renderTable(); updateStats();
   } catch(e){ alert('Error al recargar: '+e.message); }
   finally{ btn.disabled=false; btn.textContent='↻ Actualizar'; }
@@ -1694,18 +1761,8 @@ function renderCatalogGD(){
   const tbody=document.getElementById('cat-tbody-gd');
   const isAdmin=AUTH.canEditProducts?AUTH.canEditProducts():false;
 
-  // Calcular Precio Promedio Ponderado por código
-  const pppMap={};
-  (registros||[]).forEach(r=>{
-    const cr=calcCR(r);
-    if(cr<=0) return;
-    const vt=getVTI(r);
-    if(vt<=0) return;
-    const k=String(r.codigo).trim().toUpperCase();
-    if(!pppMap[k]) pppMap[k]={monto:0,cant:0};
-    pppMap[k].monto+=vt;
-    pppMap[k].cant+=cr;
-  });
+  // Calcular Precio Promedio Ponderado por código (global, todas las guías históricas)
+  const pppMap=computeCodigoStats();
 
   // Armar set de códigos filtrados para calcular totales
   const filteredCodes=new Set(list.map(p=>String(p.codigo).trim().toUpperCase()));
@@ -1858,6 +1915,177 @@ async function deleteProdGD(codigo){
 // Cerrar modales al click fuera
 document.getElementById('modal-edit-prod-gd').addEventListener('mousedown',function(e){if(e.target===this)closeEditProdGD();});
 document.getElementById('modal-add-prod-gd').addEventListener('mousedown',function(e){if(e.target===this)closeAddProdGD();});
+
+// ── Reporte por Grupo ───────────────────────────────────────────────────────────
+function populateReportFilters(){
+  const gsel=document.getElementById('rg-f-grupo');
+  if(gsel){
+    const cur=gsel.value;
+    gsel.innerHTML='<option value="">Todos los grupos</option>';
+    grupos.filter(g=>g.activo).forEach(g=>{ const op=document.createElement('option'); op.value=String(g.id); op.textContent=g.nombre; gsel.appendChild(op); });
+    if(responsables.some(r=>!r.grupo_id)){ const op=document.createElement('option'); op.value='sin-grupo'; op.textContent='Sin grupo'; gsel.appendChild(op); }
+    if(cur) gsel.value=cur;
+  }
+  const rsel=document.getElementById('rg-f-resp');
+  if(rsel) buildRespOptions(rsel,'Todos los responsables');
+}
+function clearReportFilters(){
+  ['rg-f-buscar','rg-f-gd','rg-f-desde','rg-f-hasta'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rg-f-grupo').value='';
+  document.getElementById('rg-f-resp').value='';
+  renderReport();
+}
+function getReportFiltered(){
+  const buscar=document.getElementById('rg-f-buscar').value.trim().toLowerCase();
+  const gd=document.getElementById('rg-f-gd').value.trim();
+  const grupoSel=document.getElementById('rg-f-grupo').value;
+  const respSel=document.getElementById('rg-f-resp').value;
+  const desde=document.getElementById('rg-f-desde').value;
+  const hasta=document.getElementById('rg-f-hasta').value;
+  return registros.filter(r=>{
+    if(gd && String(r.gd)!==gd) return false;
+    if(desde && r.fecha_guia<desde) return false;
+    if(hasta && r.fecha_guia>hasta) return false;
+    if(respSel && r.responsable!==respSel) return false;
+    if(grupoSel){
+      const rg=respGrupoMap[r.responsable]||null;
+      if(grupoSel==='sin-grupo'){ if(rg) return false; }
+      else if(String(rg||'')!==grupoSel) return false;
+    }
+    if(buscar){ const h=(String(r.codigo)+' '+(r.descripcion||'')).toLowerCase(); if(!h.includes(buscar)) return false; }
+    return true;
+  });
+}
+// Arma Grupo → Producto → Guías a partir de las guías filtradas, cruzando con catálogo (allProductsMap) y PPP global
+function buildReportModel(filtered){
+  const pppStats=computeCodigoStats();
+  const gruposMap={};
+  filtered.forEach(r=>{
+    const gid=respGrupoMap[r.responsable]||null;
+    const key=gid?String(gid):'sin-grupo';
+    if(!gruposMap[key]){
+      const gObj=gid?grupos.find(g=>g.id===gid):null;
+      gruposMap[key]={key,nombre:gObj?gObj.nombre:'Sin grupo',responsables:new Set(),productos:{}};
+    }
+    const G=gruposMap[key];
+    if(r.responsable) G.responsables.add(r.responsable);
+    const ck=normCod(r.codigo);
+    if(!G.productos[ck]) G.productos[ck]={codigo:r.codigo,descripcion:r.descripcion,unidades:new Set(),cantidadTotal:0,guias:[]};
+    const P=G.productos[ck];
+    P.cantidadTotal+=calcCR(r);
+    P.unidades.add(r.unidad||'');
+    P.guias.push(r);
+  });
+  Object.values(gruposMap).forEach(G=>{
+    Object.values(G.productos).forEach(P=>{
+      const prod=allProductsMap[normCod(P.codigo)];
+      P.enCatalogo=!!prod;
+      if(prod) P.descripcion=prod.descripcion;
+      P.unidad=P.unidades.size===1?[...P.unidades][0]:null;
+      P.cantidadPorModulo=prod&&prod.cantidad_por_modulo!=null?prod.cantidad_por_modulo:null;
+      const st=pppStats[normCod(P.codigo)];
+      P.ppp=st&&st.cant>0?st.monto/st.cant:null;
+      const flags=[];
+      if(!P.enCatalogo) flags.push('Producto no encontrado en catálogo');
+      if(P.unidades.size>1) flags.push('Unidad no conciliada');
+      if(P.enCatalogo && P.cantidadPorModulo==null) flags.push('Sin cantidad por módulo');
+      if(P.enCatalogo && P.unidades.size<=1 && P.ppp==null) flags.push('Sin PPP');
+      P.ok=flags.length===0;
+      P.estado=flags.length?flags.join(' · '):'OK';
+      P.modulos=(P.enCatalogo && P.cantidadPorModulo>0 && P.unidades.size===1)?P.cantidadTotal/P.cantidadPorModulo:null;
+      P.valorizacion=(P.ok && P.ppp!=null)?P.cantidadTotal*P.ppp:null;
+      P.guias.sort((a,b)=>(b.fecha_guia||'').localeCompare(a.fecha_guia||''));
+    });
+  });
+  return gruposMap;
+}
+function fmtDecOrDash(n,max){ return (n==null||isNaN(n))?'—':n.toLocaleString('es-CL',{maximumFractionDigits:max||4}); }
+function rgToggleProd(el){ el.nextElementSibling.classList.toggle('show'); }
+function renderReport(){
+  const filtered=getReportFiltered();
+  document.getElementById('rg-count-label').textContent=`${filtered.length} de ${registros.length} registros`;
+  const gruposMap=buildReportModel(filtered);
+  const wrap=document.getElementById('rg-wrap');
+  const keys=Object.keys(gruposMap).filter(k=>k!=='sin-grupo').sort((a,b)=>gruposMap[a].nombre.localeCompare(gruposMap[b].nombre));
+  if(gruposMap['sin-grupo']) keys.push('sin-grupo');
+
+  let kGuias=0,kProdsSet=new Set(),kCant=0,kModulos=0,kValor=0,kObs=0;
+  const kResps=new Set();
+
+  if(!keys.length){
+    wrap.innerHTML=`<div class="no-data">${registros.length?'Sin resultados — ajustá los filtros.':'Sin registros.'}</div>`;
+  } else {
+    wrap.innerHTML=keys.map(key=>{
+      const G=gruposMap[key];
+      const prods=Object.values(G.productos).sort((a,b)=>(a.descripcion||'').localeCompare(b.descripcion||''));
+      let gGuias=new Set(),gCant=0,gModulos=0,gValor=0,gObs=0;
+      const rows=prods.map(P=>{
+        P.guias.forEach(r=>gGuias.add(r.gd));
+        gCant+=P.cantidadTotal;
+        if(P.modulos!=null) gModulos+=P.modulos;
+        if(P.valorizacion!=null) gValor+=P.valorizacion;
+        if(!P.ok) gObs++;
+        const subRows=P.guias.map(r=>`<tr>
+            <td>${esc(r.gd)}</td><td>${fmtDate(r.fecha_guia)}</td><td>${esc(r.responsable||'—')}</td>
+            <td class="r">${fmtDecOrDash(calcCR(r),2)}</td><td>${esc(r.unidad||'—')}</td>
+          </tr>`).join('');
+        return `<tr class="rg-prod-row" onclick="rgToggleProd(this)">
+            <td>▸ ${esc(P.descripcion||'—')}</td>
+            <td class="mono">${esc(P.codigo)}</td>
+            <td class="r">${fmtDecOrDash(P.cantidadTotal,2)}</td>
+            <td>${esc(P.unidad||'MIXTA')}</td>
+            <td class="r">${fmtDecOrDash(P.cantidadPorModulo,4)}</td>
+            <td class="r">${fmtDecOrDash(P.modulos,4)}</td>
+            <td class="r">${P.ppp!=null?fmtNum(P.ppp):'—'}</td>
+            <td>${P.ppp!=null?esc(P.unidad||'—'):'—'}</td>
+            <td class="r">${P.valorizacion!=null?fmtNum(P.valorizacion):'—'}</td>
+            <td><span class="badge-estado ${P.ok?'badge-estado-ok':'badge-estado-warn'}">${esc(P.estado)}</span></td>
+          </tr>
+          <tr class="rg-gd-subrow"><td colspan="10"><table class="rg-gd-subtable">
+            <thead><tr><th>N° Guía</th><th>Fecha</th><th>Responsable</th><th class="r">Cantidad</th><th>Unidad</th></tr></thead>
+            <tbody>${subRows}</tbody>
+            <tfoot><tr><td colspan="3">Total</td><td class="r">${fmtDecOrDash(P.cantidadTotal,2)}</td><td>${esc(P.unidad||'MIXTA')}</td></tr></tfoot>
+          </table></td></tr>`;
+      }).join('');
+      kGuias+=gGuias.size; kCant+=gCant; kModulos+=gModulos; kValor+=gValor; kObs+=gObs;
+      prods.forEach(P=>kProdsSet.add(P.codigo));
+      G.responsables.forEach(r=>kResps.add(r));
+      const respList=[...G.responsables].sort().join(', ')||'—';
+      return `<details class="rg-grupo">
+          <summary class="rg-grupo-hdr">
+            <span class="rg-grupo-name">${esc(G.nombre)}</span>
+            <span class="rg-grupo-resps">${esc(respList)}</span>
+            <span class="rg-grupo-kpis">
+              <span>Guías: <b>${gGuias.size}</b></span>
+              <span>Productos: <b>${prods.length}</b></span>
+              <span>Módulos: <b>${fmtDecOrDash(gModulos,2)}</b></span>
+              <span>Valor: <b>${fmtNum(gValor)}</b></span>
+              ${gObs?`<span style="color:var(--yellow)">Obs: <b>${gObs}</b></span>`:''}
+            </span>
+          </summary>
+          <div class="rg-grupo-body">
+            <table class="data-table-gd">
+              <thead><tr>
+                <th>Producto</th><th>Código</th><th class="r">Cant. Total</th><th>Unidad</th>
+                <th class="r">Cant./Módulo</th><th class="r">Módulos Equiv.</th>
+                <th class="r">PPP</th><th>Unidad PPP</th><th class="r">Valorización</th><th>Estado</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </details>`;
+    }).join('');
+  }
+
+  document.getElementById('rg-k-grupos').textContent=keys.filter(k=>k!=='sin-grupo').length;
+  document.getElementById('rg-k-resps').textContent=kResps.size;
+  document.getElementById('rg-k-gds').textContent=kGuias;
+  document.getElementById('rg-k-prods').textContent=kProdsSet.size;
+  document.getElementById('rg-k-cant').textContent=fmtDecOrDash(kCant,2);
+  document.getElementById('rg-k-modulos').textContent=fmtDecOrDash(kModulos,2);
+  document.getElementById('rg-k-valor').textContent=fmtNum(kValor);
+  document.getElementById('rg-k-obs').textContent=kObs;
+}
 </script>
 </body>
 </html>
