@@ -211,6 +211,12 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="grid-1">
     <div class="card">
+      <h3>Módulos terminados por semana</h3>
+      <div class="chart-wrap" style="height:clamp(280px,36vh,430px)"><canvas id="ch-term-bar"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
       <h3>Módulos que salen del galpón por semana</h3>
       <div class="chart-wrap" style="height:clamp(280px,36vh,430px)"><canvas id="ch-activos"></canvas></div>
     </div>
@@ -2101,6 +2107,26 @@ function renderCurva(){
       {label:'Real',       data:avByWeek.map(w=>w.termRealAcum),
        borderColor:'rgba(63,185,80,1)',backgroundColor:'rgba(63,185,80,0.08)',fill:true,tension:0.3,pointRadius:3,pointHoverRadius:5,borderWidth:2},
     ],{legend:true});
+
+    // ── Aggregate MODULOS by week (terminados, termReal) ──
+    let termF=(DATA.modulos||[]).filter(x=>{
+      const d=parseDate(x.termReal); if(!d||isNaN(d)||d>today) return false;
+      if(filterMonths.size){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return filterMonths.has(ym);}
+      return true;
+    });
+    const termWeeks=new Map();
+    termF.forEach(r=>{
+      const d=parseDate(r.termReal); if(!d||isNaN(d)) return;
+      const wk=weekKey(d);
+      termWeeks.set(wk,(termWeeks.get(wk)||0)+1);
+    });
+    const termByWeek=[...termWeeks.entries()].sort((a,b)=>a[0]-b[0]).map(([wk,count])=>({label:weekLabel(wk),count}));
+
+    // ── Chart: Módulos terminados por semana ──
+    barChart('ch-term-bar', termByWeek.map(w=>w.label),[
+      {label:'Módulos',data:termByWeek.map(w=>w.count),
+       backgroundColor:'rgba(63,185,80,0.7)',borderColor:'rgba(63,185,80,1)',borderWidth:1},
+    ],{legend:false, dlSize:13});
 
     // ── Aggregate MEMBRANA_CIELO by week (salida de galpón) ──
     let galponF=(DATA.membranaCielo||[]).filter(x=>{
