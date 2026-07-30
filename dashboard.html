@@ -199,6 +199,12 @@ tbody tr:hover td{background:var(--surface2)}
       <div class="chart-wrap" style="height:320px"><canvas id="ch-curva-s"></canvas></div>
     </div>
   </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Promedio diario por semana (cant. módulos / 5 días)</h3>
+      <div id="tbl-curva-semanal"></div>
+    </div>
+  </div>
   <div class="grid-2">
     <div class="card">
       <h3>Módulos iniciados acumulados: real vs planificado</h3>
@@ -225,24 +231,6 @@ tbody tr:hover td{background:var(--surface2)}
     <div class="card">
       <h3>Tiempo real vs proyectado por torre</h3>
       <div class="chart-wrap" style="height:clamp(280px,36vh,430px)"><canvas id="ch-tiempo-torre"></canvas></div>
-    </div>
-  </div>
-  <div class="filter-bar" style="margin-top:12px;align-items:center">
-    <label>🏗 Filtrar por torre:</label>
-    <div id="curva-torre-filter" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-    <button onclick="curvaTorreFilterAll(true)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Todos</button>
-    <button onclick="curvaTorreFilterAll(false)" style="font-size:.75rem;padding:3px 8px;background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:4px;cursor:pointer">Ninguno</button>
-  </div>
-  <div class="grid-1">
-    <div class="card">
-      <h3 style="display:flex;justify-content:space-between;align-items:center">Tiempo real vs proyectado — Módulos Húmedos<span id="avg-tiempo-humedo" style="font-size:.85rem;font-weight:700;color:var(--accent)"></span></h3>
-      <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-tiempo-humedo"></canvas></div>
-    </div>
-  </div>
-  <div class="grid-1">
-    <div class="card">
-      <h3 style="display:flex;justify-content:space-between;align-items:center">Tiempo real vs proyectado — Módulos Secos<span id="avg-tiempo-seco" style="font-size:.85rem;font-weight:700;color:var(--accent)"></span></h3>
-      <div class="chart-wrap" style="height:clamp(320px,40vh,470px)"><canvas id="ch-tiempo-seco"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
@@ -1957,19 +1945,6 @@ function renderCurvaFiltered(){
   _curvaMesFilter=checked.size===cbs.length?null:checked;
   if(_curvaRenderCharts) _curvaRenderCharts();
 }
-let _curvaTorreFilter=null; // null = all torres, Set = filtered
-function curvaTorreFilterAll(val){
-  document.querySelectorAll('#curva-torre-filter input[type=checkbox]').forEach(cb=>cb.checked=val);
-  _curvaTorreFilter=val?null:new Set();
-  if(_curvaRenderCharts) _curvaRenderCharts();
-}
-function renderCurvaTorreFiltered(){
-  const cbs=[...document.querySelectorAll('#curva-torre-filter input[type=checkbox]')];
-  if(!cbs.length) return;
-  const checked=new Set(cbs.filter(c=>c.checked).map(c=>c.value));
-  _curvaTorreFilter=checked.size===cbs.length?null:checked;
-  if(_curvaRenderCharts) _curvaRenderCharts();
-}
 function renderCurva(){
   const today=new Date(); today.setHours(23,59,59,999);
 
@@ -1991,18 +1966,6 @@ function renderCurva(){
         <input type="checkbox" value="${m}" checked onchange="renderCurvaFiltered()" style="cursor:pointer">${MN[+mn]} ${y}</label>`;
     }).join('');
     _curvaMesFilter=null;
-  }
-
-  // Build torre filter for tiempo charts
-  const torreSet=new Set((DATA.modulos||[]).map(x=>x.torre).filter(Boolean));
-  const torres=[...torreSet].sort();
-  const torreFilterDiv=document.getElementById('curva-torre-filter');
-  if(torreFilterDiv&&torreFilterDiv.children.length!==torres.length){
-    torreFilterDiv.innerHTML=torres.map(t=>
-      `<label style="display:flex;align-items:center;gap:3px;font-size:.78rem;color:var(--text);cursor:pointer;padding:2px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:4px">
-        <input type="checkbox" value="${t}" checked onchange="renderCurvaTorreFiltered()" style="cursor:pointer">${t}</label>`
-    ).join('');
-    _curvaTorreFilter=null;
   }
 
   // KPIs (always based on full data up to today)
@@ -2148,6 +2111,47 @@ function renderCurva(){
        backgroundColor:'rgba(88,166,255,0.7)',borderColor:'rgba(88,166,255,1)',borderWidth:1},
     ],{legend:false, dlSize:13});
 
+    // ── Aggregate DESPACHOS by week ──
+    const despSrc=_supaDesp.length?_supaDesp.map(x=>({fecha:x.fecha_despacho,modulo:x.modulo})):(DATA.despachos||[]);
+    let despF=despSrc.filter(x=>{
+      const d=parseDate(x.fecha); if(!d||isNaN(d)||d>today) return false;
+      if(filterMonths.size){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return filterMonths.has(ym);}
+      return true;
+    });
+    const despWeeks=new Map();
+    despF.forEach(r=>{
+      const d=parseDate(r.fecha); if(!d||isNaN(d)) return;
+      const wk=weekKey(d);
+      if(!despWeeks.has(wk)) despWeeks.set(wk,new Set());
+      if(r.modulo) despWeeks.get(wk).add(r.modulo);
+    });
+
+    // ── Tabla: promedio diario por semana (cant. módulos / 5 días hábiles) ──
+    const semWks=[...new Set([...avWeeks.keys(),...termWeeks.keys(),...galponWeeks.keys(),...despWeeks.keys()])].sort((a,b)=>a-b);
+    const avgDia=n=>n/5;
+    const promDia=n=>avgDia(n).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1});
+    const promCls=n=>{const v=avgDia(n);return v>2.2?'c-green':(v>=1.2?'c-yellow':'c-red');};
+    const tblCurvaSemanal=document.getElementById('tbl-curva-semanal');
+    if(tblCurvaSemanal){
+      tblCurvaSemanal.innerHTML=semWks.length
+        ? semWks.map(wk=>{
+            const iniciados=avWeeks.get(wk)?.initReal||0;
+            const salida=galponWeeks.get(wk)||0;
+            const terminado=termWeeks.get(wk)||0;
+            const despachado=despWeeks.get(wk)?.size||0;
+            return `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+              <div style="min-width:110px;font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Semana ${weekLabel(wk)}</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;flex:1">
+                <div class="kpi ${promCls(iniciados)}"><div class="kpi-lbl">Módulos iniciados</div><div class="kpi-val">${promDia(iniciados)}</div></div>
+                <div class="kpi ${promCls(salida)}"><div class="kpi-lbl">Salida galpón</div><div class="kpi-val">${promDia(salida)}</div></div>
+                <div class="kpi ${promCls(terminado)}"><div class="kpi-lbl">Módulo terminado</div><div class="kpi-val">${promDia(terminado)}</div></div>
+                <div class="kpi ${promCls(despachado)}"><div class="kpi-lbl">Módulo despachado</div><div class="kpi-val">${promDia(despachado)}</div></div>
+              </div>
+            </div>`;
+          }).join('')
+        : '<div style="text-align:center;color:var(--muted);padding:20px">Sin datos</div>';
+    }
+
     // ── Chart: Tiempo real vs proyectado por torre (no afectado por filtros) ──
     const modsTorreAll=(DATA.modulos||[]).filter(x=>x.initReal && (x.avance??0)>=0.99 && x.tiempoReal>0);
     const torreTiempoMap=new Map();
@@ -2183,39 +2187,6 @@ function renderCurva(){
       {datalabels:{display:'auto'}, legendSize:20}
     );
 
-    // ── Charts: Tiempo real vs proyectado por módulo (Húmedo / Seco) ──
-    const filterTorres=_curvaTorreFilter||new Set();
-    const modsF=(DATA.modulos||[]).filter(x=>{
-      if(!x.initReal) return false;
-      if(filterTorres.size && !filterTorres.has(x.torre)) return false;
-      if(filterMonths.size){
-        const d=parseDate(x.initReal);
-        if(!d||isNaN(d)) return false;
-        const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        if(!filterMonths.has(ym)) return false;
-      }
-      return true;
-    });
-    [{tipo:'HUMEDO',id:'ch-tiempo-humedo'},{tipo:'SECO',id:'ch-tiempo-seco'}].forEach(({tipo,id})=>{
-      const mods=modsF
-        .filter(x=>(x.tipo||'').toUpperCase()===tipo && x.initReal && (x.avance??0)>=0.99 && x.tiempoReal>0)
-        .sort((a,b)=>(a.modulo||'').localeCompare(b.modulo||'','es',{numeric:true}));
-      const labels=mods.map(x=>x.modulo||'?');
-      const badgeEl=document.getElementById(id==='ch-tiempo-humedo'?'avg-tiempo-humedo':'avg-tiempo-seco');
-      if(badgeEl) badgeEl.textContent=mods.length?`⌀ ${(mods.reduce((s,x)=>s+(x.tiempoReal||0),0)/mods.length).toFixed(1)} días reales`:'';
-      mixedChart(id, labels,
-        [{label:'Tiempo Real (días)',data:mods.map(x=>Math.round(x.tiempoReal)),
-          backgroundColor:'rgba(63,185,80,0.7)',
-          datalabels:{display:true,color:CHART_TEXT,font:{size:13,weight:'600'},
-            anchor:'end',align:'end',offset:2,clip:false,formatter:v=>v!=null?String(v):''}}],
-        [{label:'Tiempo Proyectado (días)',data:mods.map(x=>x.tiempoProy>0?Math.round(x.tiempoProy):null),
-          borderColor:'rgba(227,144,62,1)',backgroundColor:'rgba(0,0,0,0)',
-          datalabels:{display:true,color:'rgba(227,144,62,1)',font:{size:13,weight:'600'},
-            anchor:'end',align:'top',offset:4,clip:false,formatter:v=>v!=null?String(v):''}}],
-        {datalabels:{display:'auto'}}
-      );
-    });
-
     // ── Tabla: ritmo por torre (módulos totales / días hábiles), Obra Gruesa y Terminaciones ──
     // Obra Gruesa: desde inicio del módulo más temprano de la torre (Piso) hasta el término
     //   de Membrana Cielo del último módulo de la torre.
@@ -2224,7 +2195,6 @@ function renderCurva(){
     const serieTermReal=new Map((DATA.modulos||[]).map(x=>[x.serie,x.termReal]));
     const ritmoPorTorre=new Map();
     (DATA.membranaCielo||[]).forEach(r=>{
-      if(filterTorres.size && !filterTorres.has(r.torre)) return;
       const dMem=parseDate(r.membranaFecha);
       if(!dMem || isNaN(dMem)) return; // solo módulos con Membrana Cielo ya hecha (no requiere estar terminado)
       if(!ritmoPorTorre.has(r.torre)) ritmoPorTorre.set(r.torre,{
