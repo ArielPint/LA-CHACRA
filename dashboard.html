@@ -201,7 +201,10 @@ tbody tr:hover td{background:var(--surface2)}
   </div>
   <div class="grid-1">
     <div class="card">
-      <h3>Promedio diario por semana (cant. módulos / 5 días)</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+        <h3 style="margin:0">Promedio diario por semana (cant. módulos / 5 días)</h3>
+        <select id="curva-semanal-mes" onchange="renderCurvaSemanalFiltered()" style="background:#1a1f2e;border:1px solid var(--border);border-radius:4px;color:var(--text);padding:4px 8px;font-size:.8rem;cursor:pointer"></select>
+      </div>
       <div id="tbl-curva-semanal"></div>
     </div>
   </div>
@@ -1932,7 +1935,13 @@ function renderResumen(){
 // CURVA S
 // ═══════════════════════════════════════════════
 let _curvaMesFilter=null; // null = all months, Set = filtered
+let _curvaSemanalMes=null; // null = todos los meses, 'YYYY-MM' = mes elegido (solo afecta la tabla de promedio semanal)
 let _curvaRenderCharts=null;
+function renderCurvaSemanalFiltered(){
+  const sel=document.getElementById('curva-semanal-mes');
+  _curvaSemanalMes=sel&&sel.value?sel.value:null;
+  if(_curvaRenderCharts) _curvaRenderCharts();
+}
 function curvaFilterAll(val){
   document.querySelectorAll('#curva-mes-filter input[type=checkbox]').forEach(cb=>cb.checked=val);
   _curvaMesFilter=val?null:new Set();
@@ -1966,6 +1975,15 @@ function renderCurva(){
         <input type="checkbox" value="${m}" checked onchange="renderCurvaFiltered()" style="cursor:pointer">${MN[+mn]} ${y}</label>`;
     }).join('');
     _curvaMesFilter=null;
+  }
+
+  const semMesSelect=document.getElementById('curva-semanal-mes');
+  if(semMesSelect&&semMesSelect.options.length!==months.length+1){
+    semMesSelect.innerHTML='<option value="">Todos los meses</option>'+months.map(m=>{
+      const[y,mn]=m.split('-');
+      return `<option value="${m}">${MN[+mn]} ${y}</option>`;
+    }).join('');
+    semMesSelect.value=_curvaSemanalMes||'';
   }
 
   // KPIs (always based on full data up to today)
@@ -2111,23 +2129,38 @@ function renderCurva(){
        backgroundColor:'rgba(88,166,255,0.7)',borderColor:'rgba(88,166,255,1)',borderWidth:1},
     ],{legend:false, dlSize:13});
 
-    // ── Aggregate DESPACHOS by week ──
+    // ── Tabla: promedio diario por semana — filtro de mes propio, independiente del filtro superior ──
     const despSrc=_supaDesp.length?_supaDesp.map(x=>({fecha:x.fecha_despacho,modulo:x.modulo})):(DATA.despachos||[]);
-    let despF=despSrc.filter(x=>{
-      const d=parseDate(x.fecha); if(!d||isNaN(d)||d>today) return false;
-      if(filterMonths.size){const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;return filterMonths.has(ym);}
-      return true;
-    });
-    const despWeeks=new Map();
-    despF.forEach(r=>{
-      const d=parseDate(r.fecha); if(!d||isNaN(d)) return;
+    const semMonth=_curvaSemanalMes;
+    const semMatch=d=>!semMonth||`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`===semMonth;
+
+    const semAvWeeks=new Map();
+    (DATA.avplan||[]).forEach(r=>{
+      const d=parseDate(r.fecha); if(!d||isNaN(d)||d>today||!semMatch(d)) return;
       const wk=weekKey(d);
-      if(!despWeeks.has(wk)) despWeeks.set(wk,new Set());
-      if(r.modulo) despWeeks.get(wk).add(r.modulo);
+      semAvWeeks.set(wk,(semAvWeeks.get(wk)||0)+(r.initReal||0));
+    });
+    const semTermWeeks=new Map();
+    (DATA.modulos||[]).forEach(r=>{
+      const d=parseDate(r.termReal); if(!d||isNaN(d)||d>today||!semMatch(d)) return;
+      const wk=weekKey(d);
+      semTermWeeks.set(wk,(semTermWeeks.get(wk)||0)+1);
+    });
+    const semGalponWeeks=new Map();
+    (DATA.membranaCielo||[]).forEach(r=>{
+      const d=parseDate(r.membranaFecha); if(!d||isNaN(d)||d>today||!semMatch(d)) return;
+      const wk=weekKey(d);
+      semGalponWeeks.set(wk,(semGalponWeeks.get(wk)||0)+1);
+    });
+    const semDespWeeks=new Map();
+    despSrc.forEach(r=>{
+      const d=parseDate(r.fecha); if(!d||isNaN(d)||d>today||!semMatch(d)) return;
+      const wk=weekKey(d);
+      if(!semDespWeeks.has(wk)) semDespWeeks.set(wk,new Set());
+      if(r.modulo) semDespWeeks.get(wk).add(r.modulo);
     });
 
-    // ── Tabla: promedio diario por semana (cant. módulos / 5 días hábiles) ──
-    const semWks=[...new Set([...avWeeks.keys(),...termWeeks.keys(),...galponWeeks.keys(),...despWeeks.keys()])].sort((a,b)=>a-b);
+    const semWks=[...new Set([...semAvWeeks.keys(),...semTermWeeks.keys(),...semGalponWeeks.keys(),...semDespWeeks.keys()])].sort((a,b)=>a-b);
     const avgDia=n=>n/5;
     const promDia=n=>avgDia(n).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1});
     const promCls=n=>{const v=avgDia(n);return v>2.2?'c-green':(v>=1.2?'c-yellow':'c-red');};
@@ -2135,10 +2168,10 @@ function renderCurva(){
     if(tblCurvaSemanal){
       tblCurvaSemanal.innerHTML=semWks.length
         ? semWks.map(wk=>{
-            const iniciados=avWeeks.get(wk)?.initReal||0;
-            const salida=galponWeeks.get(wk)||0;
-            const terminado=termWeeks.get(wk)||0;
-            const despachado=despWeeks.get(wk)?.size||0;
+            const iniciados=semAvWeeks.get(wk)||0;
+            const salida=semGalponWeeks.get(wk)||0;
+            const terminado=semTermWeeks.get(wk)||0;
+            const despachado=semDespWeeks.get(wk)?.size||0;
             return `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px">
               <div style="min-width:110px;font-size:.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Semana ${weekLabel(wk)}</div>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;flex:1">
